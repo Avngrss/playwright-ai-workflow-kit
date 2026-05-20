@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Avngrss/github-actions#readme",
   "devDependencies": {
+    "@playwright/mcp": "^0.0.75",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0"
   }
