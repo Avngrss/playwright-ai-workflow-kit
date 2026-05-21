@@ -1,0 +1,343 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - text: View the
+    - link "Documentation" [ref=e4] [cursor=pointer]:
+      - /url: https://testsmith-io.github.io/practice-software-testing/#/
+    - text: for this application.
+  - generic [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: Practice Black Box Testing & Bug Hunting
+      - button "Testing Guide" [ref=e9] [cursor=pointer]
+      - button "🐛 Bug Hunting" [ref=e10] [cursor=pointer]
+    - navigation [ref=e11]:
+      - generic [ref=e12]:
+        - link "Practice Software Testing - Toolshop" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img [ref=e14]
+        - button "Toggle navigation" [expanded] [active] [ref=e32] [cursor=pointer]
+        - generic [ref=e354]:
+          - menubar "Main menu" [ref=e355]:
+            - menuitem "Home" [ref=e356]:
+              - link "Home" [ref=e357] [cursor=pointer]:
+                - /url: /
+            - menuitem "Categories" [ref=e358]:
+              - button "Categories" [ref=e359] [cursor=pointer]
+            - menuitem "Contact" [ref=e360]:
+              - link "Contact" [ref=e361] [cursor=pointer]:
+                - /url: /contact
+            - menuitem "Sign in" [ref=e362]:
+              - link "Sign in" [ref=e363] [cursor=pointer]:
+                - /url: /auth/login
+          - button "Select language" [ref=e365] [cursor=pointer]:
+            - img [ref=e367]
+            - text: EN
+  - generic [ref=e46]:
+    - generic [ref=e47]:
+      - paragraph [ref=e48]:
+        - img "Banner" [ref=e49]
+      - separator [ref=e50]
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "Sort" [level=4] [ref=e53]:
+          - img [ref=e55]
+          - text: Sort
+        - separator [ref=e57]
+        - combobox "sort" [ref=e60]:
+          - option [selected]
+          - option "Name (A - Z)"
+          - option "Name (Z - A)"
+          - option "Price (High - Low)"
+          - option "Price (Low - High)"
+          - option "CO₂ Rating (A - E)"
+          - option "CO₂ Rating (E - A)"
+        - heading "Price Range" [level=4] [ref=e61]:
+          - img [ref=e63]
+          - text: Price Range
+        - separator [ref=e65]
+        - generic "ngx-slider" [ref=e67]:
+          - slider "ngx-slider" [ref=e72] [cursor=pointer]
+          - slider "ngx-slider-max" [ref=e73] [cursor=pointer]
+          - generic [ref=e74]: "0"
+          - generic [ref=e75]: "200"
+          - generic [ref=e76]: "1"
+          - generic [ref=e77]: "100"
+        - heading "Search" [level=4] [ref=e79]:
+          - img [ref=e81]
+          - text: Search
+        - separator [ref=e83]
+        - generic [ref=e85]:
+          - generic [ref=e86]: Search
+          - textbox "Search" [ref=e87]
+          - button "X" [ref=e88] [cursor=pointer]
+          - button "Search" [ref=e89] [cursor=pointer]
+        - heading "Filters" [level=4] [ref=e90]:
+          - img [ref=e92]
+          - text: Filters
+        - separator [ref=e94]
+        - heading "By category:" [level=4] [ref=e95]
+        - group "Categories" [ref=e96]:
+          - generic [ref=e97]: Categories
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - checkbox "Hand Tools" [ref=e100]
+              - text: Hand Tools
+            - list [ref=e101]:
+              - group "Categories" [ref=e102]:
+                - generic [ref=e103]: Categories
+                - generic [ref=e105]:
+                  - checkbox "Hammer" [ref=e106]
+                  - text: Hammer
+                - generic [ref=e108]:
+                  - checkbox "Hand Saw" [ref=e109]
+                  - text: Hand Saw
+                - generic [ref=e111]:
+                  - checkbox "Wrench" [ref=e112]
+                  - text: Wrench
+                - generic [ref=e114]:
+                  - checkbox "Screwdriver" [ref=e115]
+                  - text: Screwdriver
+                - generic [ref=e117]:
+                  - checkbox "Pliers" [ref=e118]
+                  - text: Pliers
+                - generic [ref=e120]:
+                  - checkbox "Chisels" [ref=e121]
+                  - text: Chisels
+                - generic [ref=e123]:
+                  - checkbox "Measures" [ref=e124]
+                  - text: Measures
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - checkbox "Power Tools" [ref=e127]
+              - text: Power Tools
+            - list [ref=e128]:
+              - group "Categories" [ref=e129]:
+                - generic [ref=e130]: Categories
+                - generic [ref=e132]:
+                  - checkbox "Grinder" [ref=e133]
+                  - text: Grinder
+                - generic [ref=e135]:
+                  - checkbox "Sander" [ref=e136]
+                  - text: Sander
+                - generic [ref=e138]:
+                  - checkbox "Saw" [ref=e139]
+                  - text: Saw
+                - generic [ref=e141]:
+                  - checkbox "Drill" [ref=e142]
+                  - text: Drill
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - checkbox "Other" [ref=e145]
+              - text: Other
+            - list [ref=e146]:
+              - group "Categories" [ref=e147]:
+                - generic [ref=e148]: Categories
+                - generic [ref=e150]:
+                  - checkbox "Tool Belts" [ref=e151]
+                  - text: Tool Belts
+                - generic [ref=e153]:
+                  - checkbox "Storage Solutions" [ref=e154]
+                  - text: Storage Solutions
+                - generic [ref=e156]:
+                  - checkbox "Workbench" [ref=e157]
+                  - text: Workbench
+                - generic [ref=e159]:
+                  - checkbox "Safety Gear" [ref=e160]
+                  - text: Safety Gear
+                - generic [ref=e162]:
+                  - checkbox "Fasteners" [ref=e163]
+                  - text: Fasteners
+        - heading "By brand:" [level=4] [ref=e165]
+        - group "Brands" [ref=e166]:
+          - generic [ref=e167]: Brands
+          - generic [ref=e169]:
+            - checkbox "ForgeFlex Tools" [ref=e170]
+            - text: ForgeFlex Tools
+          - generic [ref=e172]:
+            - checkbox "MightyCraft Hardware" [ref=e173]
+            - text: MightyCraft Hardware
+        - heading "Sustainability:" [level=4] [ref=e175]
+        - group "Eco-Friendly Products" [ref=e176]:
+          - generic [ref=e177]: Eco-Friendly Products
+          - generic [ref=e179]:
+            - checkbox "Show only eco-friendly products" [ref=e180]
+            - text: Show only eco-friendly products
+      - generic [ref=e181]:
+        - generic [ref=e182]:
+          - 'link "Combination Pliers Compare Combination Pliers CO₂: A B C D E $14.15" [ref=e183] [cursor=pointer]':
+            - /url: /product/01KS38QC8CPAWM48SX2J171P6H
+            - generic [ref=e184]:
+              - img "Combination Pliers" [ref=e185]
+              - button "Compare" [ref=e186]:
+                - img [ref=e188]
+            - generic [ref=e190]:
+              - heading "Combination Pliers" [level=5] [ref=e191]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e192]:
+                - text: "CO₂:"
+                - generic [ref=e193]: A
+                - generic [ref=e194]: B
+                - generic [ref=e195]: C
+                - generic [ref=e196]: D
+                - generic [ref=e197]: E
+            - generic [ref=e199]: $14.15
+          - 'link "Pliers Compare Pliers CO₂: A B C D E $12.01" [ref=e200] [cursor=pointer]':
+            - /url: /product/01KS38QC8F4XT66M43YA9FC2SK
+            - generic [ref=e201]:
+              - img "Pliers" [ref=e202]
+              - button "Compare" [ref=e203]:
+                - img [ref=e205]
+            - generic [ref=e207]:
+              - heading "Pliers" [level=5] [ref=e208]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e209]:
+                - text: "CO₂:"
+                - generic [ref=e210]: A
+                - generic [ref=e211]: B
+                - generic [ref=e212]: C
+                - generic [ref=e213]: D
+                - generic [ref=e214]: E
+            - generic [ref=e216]: $12.01
+          - 'link "Bolt Cutters Compare Bolt Cutters CO₂: A B C D E $48.41" [ref=e217] [cursor=pointer]':
+            - /url: /product/01KS38QC8HPJ7AK4N28WTH23J7
+            - generic [ref=e218]:
+              - img "Bolt Cutters" [ref=e219]
+              - button "Compare" [ref=e220]:
+                - img [ref=e222]
+            - generic [ref=e224]:
+              - heading "Bolt Cutters" [level=5] [ref=e225]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e226]:
+                - text: "CO₂:"
+                - generic [ref=e227]: A
+                - generic [ref=e228]: B
+                - generic [ref=e229]: C
+                - generic [ref=e230]: D
+                - generic [ref=e231]: E
+            - generic [ref=e233]: $48.41
+          - 'link "Long Nose Pliers Compare Long Nose Pliers CO₂: A B C D E Out of stock $14.24" [ref=e234] [cursor=pointer]':
+            - /url: /product/01KS38QC8K207WWWSVK0H85009
+            - generic [ref=e235]:
+              - img "Long Nose Pliers" [ref=e236]
+              - button "Compare" [ref=e237]:
+                - img [ref=e239]
+            - generic [ref=e241]:
+              - heading "Long Nose Pliers" [level=5] [ref=e242]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e243]:
+                - text: "CO₂:"
+                - generic [ref=e244]: A
+                - generic [ref=e245]: B
+                - generic [ref=e246]: C
+                - generic [ref=e247]: D
+                - generic [ref=e248]: E
+            - generic [ref=e249]:
+              - generic [ref=e250]: Out of stock
+              - generic [ref=e251]: $14.24
+          - 'link "Slip Joint Pliers Compare Slip Joint Pliers CO₂: A B C D E $9.17" [ref=e252] [cursor=pointer]':
+            - /url: /product/01KS38QC8MD6N2AWQRX357637C
+            - generic [ref=e253]:
+              - img "Slip Joint Pliers" [ref=e254]
+              - button "Compare" [ref=e255]:
+                - img [ref=e257]
+            - generic [ref=e259]:
+              - heading "Slip Joint Pliers" [level=5] [ref=e260]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e261]:
+                - text: "CO₂:"
+                - generic [ref=e262]: A
+                - generic [ref=e263]: B
+                - generic [ref=e264]: C
+                - generic [ref=e265]: D
+                - generic [ref=e266]: E
+            - generic [ref=e268]: $9.17
+          - 'link "Claw Hammer with Shock Reduction Grip Compare Claw Hammer with Shock Reduction Grip CO₂: A B C D E $13.41" [ref=e269] [cursor=pointer]':
+            - /url: /product/01KS38QC8PPGQV3G97RB80JSQ0
+            - generic [ref=e270]:
+              - img "Claw Hammer with Shock Reduction Grip" [ref=e271]
+              - button "Compare" [ref=e272]:
+                - img [ref=e274]
+            - generic [ref=e276]:
+              - heading "Claw Hammer with Shock Reduction Grip" [level=5] [ref=e277]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e278]:
+                - text: "CO₂:"
+                - generic [ref=e279]: A
+                - generic [ref=e280]: B
+                - generic [ref=e281]: C
+                - generic [ref=e282]: D
+                - generic [ref=e283]: E
+            - generic [ref=e285]: $13.41
+          - 'link "Hammer Compare Hammer CO₂: A B C D E $12.58" [ref=e286] [cursor=pointer]':
+            - /url: /product/01KS38QC8Q27WHE1H31ZP7P820
+            - generic [ref=e287]:
+              - img "Hammer" [ref=e288]
+              - button "Compare" [ref=e289]:
+                - img [ref=e291]
+            - generic [ref=e293]:
+              - heading "Hammer" [level=5] [ref=e294]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e295]:
+                - text: "CO₂:"
+                - generic [ref=e296]: A
+                - generic [ref=e297]: B
+                - generic [ref=e298]: C
+                - generic [ref=e299]: D
+                - generic [ref=e300]: E
+            - generic [ref=e302]: $12.58
+          - 'link "Claw Hammer Compare Claw Hammer CO₂: A B C D E $11.48" [ref=e303] [cursor=pointer]':
+            - /url: /product/01KS38QC8SJFJTZ7WTF2TSTY5B
+            - generic [ref=e304]:
+              - img "Claw Hammer" [ref=e305]
+              - button "Compare" [ref=e306]:
+                - img [ref=e308]
+            - generic [ref=e310]:
+              - heading "Claw Hammer" [level=5] [ref=e311]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e312]:
+                - text: "CO₂:"
+                - generic [ref=e313]: A
+                - generic [ref=e314]: B
+                - generic [ref=e315]: C
+                - generic [ref=e316]: D
+                - generic [ref=e317]: E
+            - generic [ref=e319]: $11.48
+          - 'link "Thor Hammer Compare Thor Hammer CO₂: A B C D E $11.14" [ref=e320] [cursor=pointer]':
+            - /url: /product/01KS38QC8V5M0JGDPPP53DJ7YZ
+            - generic [ref=e321]:
+              - img "Thor Hammer" [ref=e322]
+              - button "Compare" [ref=e323]:
+                - img [ref=e325]
+            - generic [ref=e327]:
+              - heading "Thor Hammer" [level=5] [ref=e328]
+              - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e329]:
+                - text: "CO₂:"
+                - generic [ref=e330]: A
+                - generic [ref=e331]: B
+                - generic [ref=e332]: C
+                - generic [ref=e333]: D
+                - generic [ref=e334]: E
+            - generic [ref=e336]: $11.14
+        - navigation [ref=e339]:
+          - list [ref=e340]:
+            - listitem [ref=e341]:
+              - button "Previous": «
+            - listitem [ref=e342]:
+              - button "Page-1" [ref=e343] [cursor=pointer]: "1"
+            - listitem [ref=e344]:
+              - button "Page-2" [ref=e345] [cursor=pointer]: "2"
+            - listitem [ref=e346]:
+              - button "Page-3" [ref=e347] [cursor=pointer]: "3"
+            - listitem [ref=e348]:
+              - button "Page-4" [ref=e349] [cursor=pointer]: "4"
+            - listitem [ref=e350]:
+              - button "Page-5" [ref=e351] [cursor=pointer]: "5"
+            - listitem [ref=e352]:
+              - button "Next" [ref=e353] [cursor=pointer]: »
+  - paragraph [ref=e36]:
+    - text: This is a DEMO application (
+    - link "GitHub repo" [ref=e37] [cursor=pointer]:
+      - /url: https://github.com/testsmith-io/practice-software-testing
+    - text: ), used for software testing training purpose. |
+    - link "Privacy Policy" [ref=e38] [cursor=pointer]:
+      - /url: /privacy
+    - text: "| Banner photo by"
+    - link "Barn Images" [ref=e39] [cursor=pointer]:
+      - /url: https://unsplash.com/@barnimages
+    - text: "on"
+    - link "Unsplash" [ref=e40] [cursor=pointer]:
+      - /url: https://unsplash.com/photos/t5YUoHW6zRo
+    - text: .
+  - button "Open chat" [ref=e42] [cursor=pointer]:
+    - img [ref=e43]

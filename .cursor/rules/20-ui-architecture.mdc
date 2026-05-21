@@ -1,0 +1,52 @@
+---
+alwaysApply: true
+---
+
+## No Assertions in Page Objects
+
+Page Objects must not import or use Playwright expect.
+
+Bad:
+
+```ts
+import { expect, type Locator, type Page } from "@playwright/test";
+
+export class AccountPage {
+  readonly accountHeading: Locator;
+
+  constructor(private readonly page: Page) {
+    this.accountHeading = page.getByRole("heading", { name: "My account" });
+  }
+
+  async expectLoaded(): Promise<void> {
+    await expect(this.page).toHaveURL(/\/account$/);
+    await expect(this.accountHeading).toBeVisible();
+  }
+}
+alwaysApply: true
+---
+
+# UI Test Architecture Rules
+
+## Core Principle
+
+UI tests must be readable as user scenarios.
+
+Page Objects describe pages and user actions.
+Spec files describe test scenarios, assertions, and reporting steps.
+
+The goal is to keep tests readable, stable, and maintainable.
+
+---
+
+## Page Object Responsibility
+
+A Page Object must represent exactly one page or screen.
+
+Page Objects may contain:
+
+- locators
+- user actions
+- navigation actions that belong to this page
+- simple helper methods that perform user interactions on this page
+```

@@ -1,0 +1,11 @@
+[     917ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://api.practicesoftwaretesting.com/users/me:0
+[     920ms] [ERROR] ERROR {message: Unauthorized} @ https://practicesoftwaretesting.com/chunk-TKC3W22G.js:6
+[    1119ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://api.practicesoftwaretesting.com/users/me:0
+[   29659ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://practicesoftwaretesting.com/auth/login:0
+[  123708ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://api.practicesoftwaretesting.com/users/login:0
+[  236245ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://api.practicesoftwaretesting.com/users/me:0
+[  236389ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://api.practicesoftwaretesting.com/users/refresh:0
+[  236500ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://practicesoftwaretesting.com/auth/login:0
+[  237242ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://api.practicesoftwaretesting.com/users/me:0
+[  237243ms] [ERROR] ERROR {message: Unauthorized} @ https://practicesoftwaretesting.com/chunk-TKC3W22G.js:6
+[  240249ms] [WARNING] The resource https://practicesoftwaretesting.com/assets/img/barn-2400x1600.avif was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://practicesoftwaretesting.com/auth/login:0

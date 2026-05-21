@@ -1,0 +1,84 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - text: View the
+    - link "Documentation" [ref=e4] [cursor=pointer]:
+      - /url: https://testsmith-io.github.io/practice-software-testing/#/
+    - text: for this application.
+  - generic [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: Practice Black Box Testing & Bug Hunting
+      - button "Testing Guide" [ref=e9] [cursor=pointer]
+      - button "🐛 Bug Hunting" [ref=e10] [cursor=pointer]
+    - navigation [ref=e11]:
+      - generic [ref=e12]:
+        - link "Practice Software Testing - Toolshop" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img [ref=e14]
+        - button "Toggle navigation" [expanded] [ref=e32] [cursor=pointer]
+        - generic [ref=e66]:
+          - menubar "Main menu" [ref=e67]:
+            - menuitem "Home" [ref=e68]:
+              - link "Home" [ref=e69] [cursor=pointer]:
+                - /url: /
+            - menuitem "Categories" [ref=e70]:
+              - button "Categories" [ref=e71] [cursor=pointer]
+            - menuitem "Contact" [ref=e72]:
+              - link "Contact" [ref=e73] [cursor=pointer]:
+                - /url: /contact
+            - menuitem "Jane Doe My account My favorites My profile My invoices My messages Sign out" [ref=e81]:
+              - button "Jane Doe" [expanded] [active] [ref=e75] [cursor=pointer]
+              - list "Jane Doe" [ref=e82]:
+                - listitem [ref=e83]:
+                  - link "My account" [ref=e84] [cursor=pointer]:
+                    - /url: /account
+                - listitem [ref=e85]:
+                  - link "My favorites" [ref=e86] [cursor=pointer]:
+                    - /url: /account/favorites
+                - listitem [ref=e87]:
+                  - link "My profile" [ref=e88] [cursor=pointer]:
+                    - /url: /account/profile
+                - listitem [ref=e89]:
+                  - link "My invoices" [ref=e90] [cursor=pointer]:
+                    - /url: /account/invoices
+                - listitem [ref=e91]:
+                  - link "My messages" [ref=e92] [cursor=pointer]:
+                    - /url: /account/messages
+                - listitem [ref=e93]:
+                  - separator [ref=e94]
+                - listitem [ref=e95]:
+                  - generic [ref=e96]: Sign out
+          - button "Select language" [ref=e77] [cursor=pointer]:
+            - img [ref=e79]
+            - text: EN
+  - generic [ref=e46]:
+    - heading "My account" [level=1] [ref=e47]
+    - paragraph [ref=e48]: Here you can manage your profile, favorites and orders.
+    - generic [ref=e49]:
+      - button "Favorites" [ref=e50] [cursor=pointer]:
+        - img [ref=e52]
+        - text: Favorites
+      - button "Profile" [ref=e54] [cursor=pointer]:
+        - img [ref=e56]
+        - text: Profile
+      - button "Invoices" [ref=e58] [cursor=pointer]:
+        - img [ref=e60]
+        - text: Invoices
+      - button "Messages" [ref=e62] [cursor=pointer]:
+        - img [ref=e64]
+        - text: Messages
+  - paragraph [ref=e36]:
+    - text: This is a DEMO application (
+    - link "GitHub repo" [ref=e37] [cursor=pointer]:
+      - /url: https://github.com/testsmith-io/practice-software-testing
+    - text: ), used for software testing training purpose. |
+    - link "Privacy Policy" [ref=e38] [cursor=pointer]:
+      - /url: /privacy
+    - text: "| Banner photo by"
+    - link "Barn Images" [ref=e39] [cursor=pointer]:
+      - /url: https://unsplash.com/@barnimages
+    - text: "on"
+    - link "Unsplash" [ref=e40] [cursor=pointer]:
+      - /url: https://unsplash.com/photos/t5YUoHW6zRo
+    - text: .
+  - button "Open chat" [ref=e42] [cursor=pointer]:
+    - img [ref=e43]

@@ -1,0 +1,30 @@
+---
+description: locator rules
+alwaysApply: true
+---
+
+# Locator Strategy
+
+Project uses custom test attribute: data-test
+
+Always use:
+
+page.getByTestId('value')
+
+Never use:
+
+page.locator('[data-test="value"]')
+
+Reason:
+
+- better readability
+- Playwright optimized
+- more stable abstraction
+
+Example:
+
+Bad:
+page.locator('[data-test="login-submit"]')
+
+Good:
+page.getByTestId('login-submit')
