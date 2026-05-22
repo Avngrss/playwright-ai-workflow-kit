@@ -1,10 +1,85 @@
 ---
+description: UI test architecture rules for Playwright (UI-only focus)
 alwaysApply: true
 ---
 
-## No Assertions in Page Objects
+# UI Test Architecture Rules
 
-Page Objects must not import or use Playwright expect.
+## Core Principle
+
+UI tests must read as user scenarios.
+
+- Page Objects describe pages and user actions.
+- Spec files describe scenarios, assertions, and reporting steps (`test.step`).
+
+Goals:
+- readability
+- stability
+- maintainability
+- minimal flakiness
+
+---
+
+## Hook & Duplication Policy (UI)
+
+### beforeEach scope
+- `beforeEach` may only perform safe setup:
+  - navigation to the starting page of the scenario
+  - "page is loaded" checks (URL + key element visible)
+
+- `beforeEach` must NOT perform the action under test.
+
+### Avoid duplicated navigation
+If a `beforeEach` already navigates to a page, individual tests must NOT repeat the same navigation steps.
+Example: if `beforeEach` opens Forgot Password page, tests must not call `homePage.open() -> openLogin() -> openForgotPassword()` again.
+
+### Navigation tests must be isolated
+Tests that validate navigation paths (e.g., "Login -> Forgot Password link works") must live in a separate `describe` block whose `beforeEach` does NOT already execute that navigation path.
+
+### Avoid duplicated "page loaded" assertions
+If `beforeEach` asserts the starting page is loaded (URL + key element),
+tests should not repeat the same assertions unless:
+- the test specifically verifies staying on the page after an action, or
+- the test verifies a redirect to another page.
+
+---
+## Project Layout (Mandatory)
+
+- `tests/` contains only spec files and setup/seed specs.
+  - UI specs: `tests/ui/**`
+  - Seed/setup specs: `tests/**/seed*.spec.ts` (or `tests/setup/**`)
+- `src/test/` contains the test framework code:
+  - `src/test/pages/**` for Page Objects
+  - `src/test/fixtures/**` for fixtures
+  - `src/test/data/**` for test data modules
+  - `src/test/utils/**` for helpers
+
+Do not place Page Objects in `tests/pages`.
+All new Page Objects must be created under `src/test/pages`.
+
+---
+
+## Page Object Responsibility
+
+A Page Object must represent exactly one page/screen.
+
+Page Objects may contain:
+- locators
+- user actions
+- navigation actions that belong to this page
+
+Page Objects must NOT contain:
+- Playwright `expect` or any assertions
+- cross-page flows
+- test runner logic (`test`, `test.step`, hooks)
+- test data retrieval (`process.env`, random data generation)
+- unrelated navigation
+
+---
+
+## No Assertions in Page Objects (Mandatory)
+
+Page Objects must not import or use Playwright `expect`.
 
 Bad:
 
@@ -23,30 +98,3 @@ export class AccountPage {
     await expect(this.accountHeading).toBeVisible();
   }
 }
-alwaysApply: true
----
-
-# UI Test Architecture Rules
-
-## Core Principle
-
-UI tests must be readable as user scenarios.
-
-Page Objects describe pages and user actions.
-Spec files describe test scenarios, assertions, and reporting steps.
-
-The goal is to keep tests readable, stable, and maintainable.
-
----
-
-## Page Object Responsibility
-
-A Page Object must represent exactly one page or screen.
-
-Page Objects may contain:
-
-- locators
-- user actions
-- navigation actions that belong to this page
-- simple helper methods that perform user interactions on this page
-```

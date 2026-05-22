@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test:ui": "npx playwright test tests/ui --project=ui-chromium",
+    "check:conventions": "node scripts/check-conventions.mjs",
+    "qa:gate": "npm run check:conventions && npm run test:ui",
+    "project-map": "node scripts/gen-project-map.mjs"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Avngrss/github-actions.git"
