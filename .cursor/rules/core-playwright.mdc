@@ -1,0 +1,72 @@
+---
+description: Universal Playwright testing rules
+alwaysApply: true
+---
+
+# Core Playwright Rules
+
+## Synchronization
+
+- Do not use `waitForTimeout`.
+- Prefer Playwright web-first assertions and auto-wait behavior.
+- Do not blindly increase timeout or retry values.
+- If waiting is required, wait for a specific user-visible, network, or application state.
+
+## Locators
+
+- Prefer stable, user-facing locators.
+- Locator priority:
+  1. `getByRole` with accessible name
+  2. `getByLabel`, `getByPlaceholder`, `getByText` when stable
+  3. `getByTestId`
+  4. CSS only when no semantic locator is available
+- Avoid XPath, `nth-child`, generated CSS classes, and layout-dependent selectors unless explicitly justified.
+- Do not scatter raw selectors across tests.
+- Keep selectors encapsulated in page or component objects.
+
+## Assertions
+
+- Do not use fake assertions to force passing tests.
+- Assertions must verify meaningful behavior, state, or contract.
+- Prefer web-first assertions for UI state.
+- Do not change expected behavior unless the specification or requirement is incorrect.
+- Keep domain-specific assertions outside the framework core.
+
+## Framework Universality
+
+- Framework core must provide mechanisms, not business scenarios.
+- Do not add project-specific pages, flows, selectors, roles, users, endpoints, or domain models to the core layer.
+- Keep project-specific logic in the project layer.
+- Core utilities must be generic, typed, and reusable across projects.
+
+## Configuration
+
+- Do not hardcode URLs, credentials, tokens, environment names, or project-specific IDs.
+- Use typed configuration providers.
+- Environment-specific values must come from configuration, secrets, or external providers.
+
+## Fixtures
+
+- Keep core fixtures infrastructure-focused.
+- Do not put business flows into core fixtures.
+- Compose project-specific fixtures outside the core framework.
+- Avoid creating a single overloaded base fixture that knows everything.
+
+## Test Data
+
+- Avoid hardcoded reusable test data in tests.
+- Use factories, builders, or providers for generated and reusable data.
+- Keep project-specific test data outside the framework core.
+
+## Code Changes
+
+- Keep changes minimal and targeted.
+- Do not refactor unrelated areas while fixing a test.
+- Preserve public APIs unless an intentional breaking change is required.
+- Prefer composition over inheritance for framework extensions.
+
+## Diagnostics
+
+- Failures should be actionable and easy to diagnose.
+- Add meaningful error messages when creating custom helpers or assertions.
+- Do not hide errors with broad try/catch blocks.

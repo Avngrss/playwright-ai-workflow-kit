@@ -1,0 +1,249 @@
+---
+description: Generic sorting and filtering assertion strategy
+alwaysApply: false
+globs:
+  - tests/ui/**/*.spec.ts
+---
+
+# Sorting and Filtering Assertion Strategy
+
+## Purpose
+
+These rules define how sorting and filtering behavior should be asserted in UI tests.
+
+The goal is to verify behavior through stable invariants instead of fragile exact datasets.
+
+These rules apply to lists, tables, grids, catalogs, search results, and any UI that displays sortable or filterable collections.
+
+---
+
+## General Principles
+
+- Use invariant-based assertions.
+- Do not assert exact fixed item, row, record, or result counts unless the count itself is the behavior under test.
+- Do not depend on a specific static dataset unless the test owns or explicitly prepares that dataset.
+- Do not mask insufficient data with fake assertions.
+- Assertions must prove the sorting or filtering behavior, not merely that some UI element exists.
+
+---
+
+## Sorting Rules
+
+- Sorting checks should verify monotonic order.
+- Ascending sorting should verify that each next comparable value is greater than or equal to the previous value.
+- Descending sorting should verify that each next comparable value is less than or equal to the previous value.
+- Equal values must be allowed unless the requirement explicitly requires strict ordering.
+- Do not assert the entire exact sorted list unless the dataset is controlled by the test.
+- Normalize values before comparing them.
+
+### Comparable values
+
+Values must be converted into comparable forms before assertions.
+
+Examples:
+
+- prices and currency values should be compared as numbers;
+- dates should be compared as timestamps or date objects;
+- percentages should be compared as numbers;
+- localized text should use a consistent comparison strategy;
+- empty or missing values should follow the product requirement.
+
+### Good
+
+```ts
+await test.step("Verify prices are sorted in ascending order", async () => {
+  const prices = await productList.getVisiblePrices();
+
+  expect(prices.length).toBeGreaterThan(1);
+  expect(isMonotonicAscending(prices)).toBeTruthy();
+});
+```
+
+### Bad
+
+```ts
+await test.step("Verify products are sorted", async () => {
+  await expect(productList.items).toHaveCount(12);
+  await expect(productList.items.nth(0)).toContainText("Product A");
+  await expect(productList.items.nth(1)).toContainText("Product B");
+});
+```
+
+### Why this is bad
+
+The test verifies a fixed dataset instead of sorting behavior.
+
+It will fail when valid data changes, even if sorting still works correctly.
+
+---
+
+## Filtering Rules
+
+- Filtering checks should verify that visible items satisfy the selected predicate.
+- Do not assert an exact fixed result count unless result count is the behavior under test.
+- Do not assert an exact fixed result list unless the dataset is controlled by the test.
+- For positive filtering scenarios, verify that at least one visible item is present.
+- For negative filtering scenarios, verify the expected empty state.
+- Predicate checks must match the filter semantics.
+
+### Examples of predicates
+
+```ts
+item.brand === selectedBrand
+```
+
+```ts
+item.price >= minPrice && item.price <= maxPrice
+```
+
+```ts
+item.status === selectedStatus
+```
+
+```ts
+item.name.toLowerCase().includes(searchQuery.toLowerCase())
+```
+
+### Good
+
+```ts
+await test.step("Verify all visible items match the selected brand", async () => {
+  const items = await productList.getVisibleItems();
+
+  expect(items.length).toBeGreaterThan(0);
+  expect(items.every(item => item.brand === selectedBrand)).toBeTruthy();
+});
+```
+
+### Bad
+
+```ts
+await test.step("Verify filtered products", async () => {
+  await expect(productList.items).toHaveCount(4);
+});
+```
+
+### Why this is bad
+
+A fixed count does not prove that filtering is correct.
+
+The test may pass with incorrect items or fail when valid test data changes.
+
+---
+
+## Reset Rules
+
+- Reset should clear active sorting or filtering controls.
+- Reset should restore a broader or baseline state when applicable.
+- Reset should remove selected filter chips, query parameters, or active control states when those are part of the UI behavior.
+- Do not require reset to restore the exact original item order unless this behavior is explicitly specified.
+- Prefer comparing before-filter and after-reset state by meaningful properties, not exact item lists.
+
+### Good
+
+```ts
+await test.step("Verify reset restores broader results", async () => {
+  const filteredItems = await productList.getVisibleItems();
+
+  await filters.reset();
+
+  const resetItems = await productList.getVisibleItems();
+
+  expect(resetItems.length).toBeGreaterThanOrEqual(filteredItems.length);
+  await filters.expectNoActiveFilters();
+});
+```
+
+---
+
+## Data Preconditions
+
+- Sorting tests require enough comparable data to prove ordering.
+- Filtering tests require enough data to prove the selected predicate unless the test verifies an empty state.
+- Do not replace missing data with fake assertions.
+- If the dataset is insufficient, prepare suitable test data or mark the test setup as invalid.
+
+### Sorting precondition
+
+```ts
+expect(values.length).toBeGreaterThan(1);
+```
+
+### Positive filtering precondition
+
+```ts
+expect(items.length).toBeGreaterThan(0);
+```
+
+### Bad
+
+```ts
+expect(items.length).toBeGreaterThanOrEqual(0);
+```
+
+### Why this is bad
+
+This assertion is always true and does not prove anything.
+
+---
+
+## Pagination, Infinite Scroll, and Virtualized Lists
+
+- For paginated, infinite-scroll, or virtualized lists, assertions apply only to the currently visible or loaded items unless the test explicitly covers cross-page behavior.
+- If the requirement says sorting or filtering applies globally, the test must define how global behavior is verified.
+- Do not claim that the entire dataset is sorted or filtered if only one page or viewport was checked.
+
+---
+
+## Controlled Dataset Exception
+
+Exact expected lists or counts are allowed only when the test fully controls the dataset.
+
+Examples:
+
+- the test creates records through API setup;
+- the test uses a seeded fixture dataset;
+- the test runs against a mocked response;
+- the requirement explicitly defines a fixed result count;
+- the UI behavior under test is the count itself.
+
+### Allowed
+
+```ts
+await test.step("Verify page size is applied", async () => {
+  await pageSizeSelector.select("25");
+
+  await expect(table.rows).toHaveCount(25);
+});
+```
+
+This is valid because page size count is the behavior under test.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- exact fixed result counts for dynamic datasets;
+- exact fixed result order for uncontrolled datasets;
+- checking only that the list is visible after sorting or filtering;
+- fake assertions such as `length >= 0`;
+- ignoring insufficient test data;
+- comparing prices, dates, or percentages as raw strings;
+- claiming global sorting/filtering while checking only the first visible page;
+- using reset assertions that depend on unstable item order.
+
+---
+
+## Main Principle
+
+Sorting and filtering tests should verify behavioral invariants.
+
+Sorting proves order.
+
+Filtering proves predicate satisfaction.
+
+Reset proves controls and result scope were restored.
+
+The test should not depend on fragile, uncontrolled, project-specific data.

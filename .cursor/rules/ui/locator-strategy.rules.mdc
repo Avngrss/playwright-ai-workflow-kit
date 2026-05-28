@@ -1,0 +1,145 @@
+---
+description: Locator strategy for UI automation
+alwaysApply: true
+---
+
+# Locator Strategy Rules
+
+## Purpose
+
+These rules define how UI locators should be selected.
+
+The goal is to keep selectors stable, readable, and aligned with Playwright best practices.
+
+---
+
+## Locator Priority
+
+Prefer stable, user-facing locators.
+
+Recommended priority:
+
+1. `getByRole` with accessible name;
+2. `getByLabel`;
+3. `getByPlaceholder`;
+4. `getByText` when stable and meaningful;
+5. `getByTestId`;
+6. CSS only when no semantic locator is available.
+
+Avoid XPath, generated CSS classes, `nth-child`, and layout-dependent selectors unless explicitly justified.
+
+---
+
+## Test ID Strategy
+
+Use the project-configured test id strategy consistently.
+
+If Playwright is configured with:
+
+```ts
+testIdAttribute: "data-test"
+```
+
+then use:
+
+```ts
+page.getByTestId("login-submit");
+```
+
+Do not use:
+
+```ts
+page.locator('[data-test="login-submit"]');
+```
+
+The locator API should reflect the configured framework convention.
+
+---
+
+## Stable Locators
+
+Good:
+
+```ts
+page.getByRole("button", { name: "Sign in" });
+```
+
+Good:
+
+```ts
+page.getByLabel("Email");
+```
+
+Good:
+
+```ts
+page.getByTestId("login-submit");
+```
+
+Bad:
+
+```ts
+page.locator(".css-1x2abc");
+```
+
+Bad:
+
+```ts
+page.locator("body > div:nth-child(2) > div > button");
+```
+
+Bad:
+
+```ts
+page.locator("//html/body/div[3]/div/button");
+```
+
+---
+
+## Locator Ownership
+
+Do not scatter raw selectors across specs.
+
+Locators should normally live in:
+
+- Page Objects;
+- Component Objects;
+- dedicated low-level UI helpers when truly generic.
+
+Specs should express user intent, not selector mechanics.
+
+Good:
+
+```ts
+await loginPage.login(user.email, user.password);
+```
+
+Avoid:
+
+```ts
+await page.locator('[data-test="email"]').fill(user.email);
+await page.locator('[data-test="password"]').fill(user.password);
+await page.locator('[data-test="login-submit"]').click();
+```
+
+---
+
+## Fragile Locator Exception
+
+Fragile locators are allowed only as a temporary last resort when:
+
+- there is no semantic locator;
+- there is no test id;
+- the UI cannot be changed immediately;
+- the reason is documented;
+- the locator is isolated inside a Page Object or Component Object.
+
+Do not place fragile locators directly in specs.
+
+---
+
+## Main Principle
+
+Use locators that describe stable user-facing behavior or explicit test contracts.
+
+Avoid locators that depend on layout, generated classes, or incidental DOM structure.

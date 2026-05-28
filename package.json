@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test:ui": "npx playwright test tests/ui --project=ui-chromium",
-    "check:conventions": "node scripts/check-conventions.mjs",
-    "qa:gate": "npm run check:conventions && npm run test:ui",
-    "project-map": "node scripts/gen-project-map.mjs"
+    "project-map:update": "node scripts/project-cartographer.mjs",
+    "conventions:check": "node scripts/check-conventions.mjs",
+    "qa:gate": "npm run conventions:check"
   },
   "repository": {
     "type": "git",

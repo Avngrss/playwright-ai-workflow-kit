@@ -1,0 +1,20 @@
+---
+description: Examples policy for all framework rules
+alwaysApply: true
+---
+
+# Examples Policy
+
+Code examples in framework rules are illustrative.
+
+They demonstrate preferred and discouraged patterns, but they are not mandatory implementation templates.
+
+Do not copy example names, paths, classes, methods, roles, users, endpoints, tags, or domains unless they already exist in the project.
+
+Adapt the pattern to the actual project map and existing architecture.
+
+Follow the architectural intent of the example, not its exact naming or domain.
+
+If an example conflicts with the project map, existing framework structure, or dedicated project rules, follow the project map and the more specific rule.
+
+Do not create new abstractions only because they appear in an example.

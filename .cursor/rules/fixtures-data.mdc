@@ -1,0 +1,724 @@
+---
+description: Fixtures and test data usage rules
+alwaysApply: true
+---
+
+# Fixtures and Test Data
+
+## Purpose
+
+These rules define how fixtures and test data must be used in a universal Playwright + TypeScript testing framework.
+
+The main goals are:
+
+- Keep fixtures reusable and predictable.
+- Avoid hidden test behavior.
+- Prevent fixture layers from becoming project-specific framework logic.
+- Keep test data generation centralized.
+- Preserve clear boundaries between framework core and project-specific code.
+
+---
+
+## Fixtures
+
+- Use fixtures when objects, services, configuration, or data are reused across tests or specs.
+- Do not create fixtures for one-off values used by a single test only.
+- Do not hide the action under test inside fixtures.
+- Do not hide business flows inside core fixtures.
+- Keep fixtures thin and focused on setup, dependency wiring, and teardown only.
+- Fixtures should prepare context, not execute the scenario being tested.
+
+### Good
+
+```ts
+test("user can apply sorting", async ({ homePage }) => {
+  await homePage.open();
+  await homePage.sorting.applySort("price,asc");
+
+  await expect(homePage.productList.items).toBeVisible();
+});
+```
+
+### Bad
+
+```ts
+test("user can apply sorting", async ({ sortedHomePage }) => {
+  await expect(sortedHomePage.productList.items).toBeVisible();
+});
+```
+
+### Why this is bad
+
+The fixture name `sortedHomePage` suggests that the actual sorting action was already performed inside the fixture.
+
+This hides the action under test and makes the test less readable, less debuggable, and less universal.
+
+---
+
+## Core vs Project Fixture Boundary
+
+- Core fixtures must be infrastructure-focused and reusable across projects.
+- Core fixtures must provide generic mechanisms, not product-specific behavior.
+- Core fixtures must not expose project-specific pages, components, roles, users, business flows, selectors, endpoints, or domain models.
+- Project-specific fixtures must live in the project layer.
+- Page Object fixtures belong to the project layer unless they represent truly generic framework pages or tools.
+- Business data fixtures belong to the project layer.
+- Authentication mechanisms may exist in the core, but concrete login flows, users, and roles must stay in the project layer.
+
+### Allowed in core fixtures
+
+Examples of acceptable core fixtures:
+
+```ts
+type CoreFixtures = {
+  config: TestConfig;
+  logger: Logger;
+  apiClient: ApiClient;
+  testInfoHelper: TestInfoHelper;
+};
+```
+
+### Not allowed in core fixtures
+
+Examples of project-specific fixtures that must not live in framework core:
+
+```ts
+type BadCoreFixtures = {
+  loginPage: LoginPage;
+  checkoutPage: CheckoutPage;
+  adminUser: User;
+  productBuilder: ProductBuilder;
+  orderApi: OrderApi;
+};
+```
+
+### Why this matters
+
+If the framework core knows about `LoginPage`, `CheckoutPage`, `adminUser`, `Product`, or `Order`, it is no longer universal.
+
+The framework becomes coupled to one product domain and cannot be reused cleanly in another project.
+
+---
+
+## Fixture Composition Policy
+
+Use layered fixture composition with `test.extend`.
+
+The preferred default chain is:
+
+```text
+base.fixture.ts
+  -> data.fixture.ts
+    -> pages.fixture.ts
+      -> test.ts
+```
+
+### Layer responsibilities
+
+#### `base.fixture.ts`
+
+Exports the Playwright base test and `expect`.
+
+This layer should contain only generic foundation-level setup.
+
+Examples:
+
+- base `test`;
+- `expect`;
+- global test configuration;
+- logger;
+- generic API client;
+- generic utilities;
+- generic teardown helpers.
+
+#### `data.fixture.ts`
+
+Extends base fixtures with reusable test data fixtures.
+
+This layer may exist either in the core or project layer depending on what it contains.
+
+Generic data helpers may live in core.
+
+Project-specific datasets, builders, generators, and domain models must live in the project layer.
+
+#### `pages.fixture.ts`
+
+Extends data fixtures with Page Object fixtures.
+
+This layer is normally project-specific.
+
+It should not live in the framework core unless the pages are truly generic framework tools.
+
+#### `test.ts`
+
+Final fixture entry point for specs.
+
+Specs should import only from this file.
+
+---
+
+## Fixture Chain Flexibility
+
+The default chain can be extended when a project needs additional clear boundaries.
+
+Allowed examples:
+
+```text
+base.fixture.ts
+  -> api.fixture.ts
+    -> data.fixture.ts
+      -> pages.fixture.ts
+        -> test.ts
+```
+
+```text
+base.fixture.ts
+  -> auth.fixture.ts
+    -> data.fixture.ts
+      -> pages.fixture.ts
+        -> test.ts
+```
+
+```text
+base.fixture.ts
+  -> services.fixture.ts
+    -> pages.fixture.ts
+      -> test.ts
+```
+
+Additional layers are allowed only when they represent a real architectural boundary.
+
+Do not add fixture layers just to group random helpers.
+
+---
+
+## Import Policy
+
+Specs must import only the final fixture entry point.
+
+### Good
+
+```ts
+import { test, expect } from "@project/fixtures/test";
+```
+
+### Temporarily acceptable if aliases are not configured
+
+```ts
+import { test, expect } from "../../../src/test/fixtures/test";
+```
+
+### Avoid
+
+```ts
+import { test, expect } from "@playwright/test";
+```
+
+```ts
+import { test, expect } from "../../../src/test/fixtures/base.fixture";
+```
+
+```ts
+import { test, expect } from "../../../src/test/fixtures/data.fixture";
+```
+
+```ts
+import { test, expect } from "../../../src/test/fixtures/pages.fixture";
+```
+
+### Why this matters
+
+Importing from different fixture layers bypasses the framework contract.
+
+It may cause:
+
+- missing custom fixtures;
+- inconsistent setup;
+- duplicated initialization;
+- different behavior between specs;
+- broken reporting or diagnostics;
+- hidden dependency differences.
+
+The final `test.ts` file is the only public test entry point for specs.
+
+---
+
+## Component Access Policy
+
+Access component behavior through Page Objects by default.
+
+Do not expose components as fixtures unless direct component access is clearly needed across multiple suites.
+
+### Good
+
+```ts
+type UiFixtures = {
+  homePage: HomePage;
+};
+
+test("sorts products", async ({ homePage }) => {
+  await homePage.sorting.applySort("price,asc");
+});
+```
+
+### Bad
+
+```ts
+type UiFixtures = {
+  sortComponent: SortComponent;
+};
+
+test("sorts products", async ({ sortComponent }) => {
+  await sortComponent.applySort("price,asc");
+});
+```
+
+### Why this matters
+
+Exposing every component as a fixture leads to fixture explosion.
+
+Bad result:
+
+```ts
+test("filters products", async ({
+  header,
+  sidebar,
+  sortComponent,
+  filterComponent,
+  paginationComponent,
+  productCard,
+  toast,
+}) => {
+  await filterComponent.applyFilter("brand", "Nike");
+});
+```
+
+This makes tests too coupled to UI structure.
+
+Page Objects should act as the main entry point to page-level behavior.
+
+Components should normally be composed inside Page Objects.
+
+---
+
+## When Component Fixtures Are Allowed
+
+Component fixtures are allowed only when all conditions are true:
+
+- The component is reused across multiple suites.
+- The component can be tested or used independently from a specific page.
+- The component represents a stable architectural unit.
+- Direct access improves clarity rather than exposing internal UI structure.
+- The fixture remains thin and does not execute business flows.
+
+### Acceptable example
+
+```ts
+type UiFixtures = {
+  datePicker: DatePickerComponent;
+};
+```
+
+This may be acceptable if the date picker is a shared system-level component used across many pages and test suites.
+
+---
+
+## Test Data Sources
+
+This rule applies to:
+
+- business test data;
+- form data;
+- generated data;
+- reusable datasets;
+- domain models;
+- request payloads;
+- expected response contracts.
+
+Test data must come from test data modules defined by the project map.
+
+Examples:
+
+- datasets;
+- builders;
+- generators;
+- factories;
+- types;
+- schemas;
+- fixtures.
+
+Do not generate inline random data in specs.
+
+### Bad
+
+```ts
+test("creates a user", async ({ userPage }) => {
+  const email = `user-${Date.now()}@test.com`;
+
+  await userPage.createUser({ email });
+});
+```
+
+### Good
+
+```ts
+test("creates a user", async ({ userPage, userBuilder }) => {
+  const user = userBuilder.build();
+
+  await userPage.createUser(user);
+});
+```
+
+---
+
+## Deterministic Constants in Specs
+
+Simple deterministic constants are allowed directly in specs when they describe test mechanics.
+
+Allowed examples:
+
+```ts
+const sortKey = "price,asc";
+const expectedItemsCount = 10;
+const searchQuery = "laptop";
+```
+
+These constants are acceptable because they are simple, readable, and directly describe the test behavior.
+
+However, reusable business objects should not be created inline.
+
+### Bad
+
+```ts
+const user = {
+  firstName: "John",
+  lastName: "Smith",
+  email: `john-${Date.now()}@test.com`,
+  role: "admin",
+};
+```
+
+### Good
+
+```ts
+const user = userBuilder.build({
+  role: "admin",
+});
+```
+
+---
+
+## Builder Rules
+
+- Builders return valid data by default.
+- Builders support overrides via `Partial<T>`.
+- Builders should not require every field to be manually specified.
+- Builders should generate only structurally valid data.
+- Unique fields are generated centrally through generators, not ad-hoc in specs.
+- Builders should be project-specific if they create domain-specific objects.
+- Generic builders may live in core only if they are truly domain-neutral.
+
+### Good
+
+```ts
+const user = userBuilder.build({
+  role: "admin",
+});
+```
+
+### Bad
+
+```ts
+const user = {
+  firstName: "John",
+  lastName: "Smith",
+  email: `john-${Date.now()}@test.com`,
+  role: "admin",
+};
+```
+
+---
+
+## Generator Rules
+
+- Generators must be centralized.
+- Do not create random or unique values directly in specs.
+- Do not duplicate generator logic across builders.
+- Generators should have clear names and predictable output formats.
+- If uniqueness is required, use a dedicated unique value generator.
+
+### Good
+
+```ts
+const email = generators.email();
+```
+
+### Bad
+
+```ts
+const email = `test-${Math.random()}@example.com`;
+```
+
+---
+
+## Action Under Test Rule
+
+Fixtures must not execute the primary action that the test is supposed to verify.
+
+### Bad
+
+```ts
+const test = base.extend<{
+  loggedInPage: DashboardPage;
+}>({
+  loggedInPage: async ({ page, user }, use) => {
+    const loginPage = new LoginPage(page);
+
+    await loginPage.open();
+    await loginPage.login(user);
+
+    await use(new DashboardPage(page));
+  },
+});
+```
+
+### Why this is bad
+
+If the test verifies login behavior, the login action is hidden inside the fixture.
+
+The spec no longer clearly shows what is being tested.
+
+### Better
+
+```ts
+test("user can log in", async ({ loginPage, user }) => {
+  await loginPage.open();
+  await loginPage.login(user);
+
+  await expect(loginPage.dashboardLink).toBeVisible();
+});
+```
+
+---
+
+## Setup vs Scenario Boundary
+
+Fixtures may perform setup that is not the subject of the test.
+
+Fixtures must not perform the main scenario being tested.
+
+### Allowed
+
+A fixture may create an API client:
+
+```ts
+apiClient: async ({ config }, use) => {
+  await use(new ApiClient(config.apiBaseUrl));
+};
+```
+
+### Allowed
+
+A fixture may create a Page Object:
+
+```ts
+homePage: async ({ page }, use) => {
+  await use(new HomePage(page));
+};
+```
+
+### Risky
+
+A fixture opens the page automatically:
+
+```ts
+homePage: async ({ page }, use) => {
+  const homePage = new HomePage(page);
+
+  await homePage.open();
+
+  await use(homePage);
+};
+```
+
+This is acceptable only if opening the page is a universal setup convention for that fixture and not part of the test scenario.
+
+### Not allowed
+
+A fixture performs a business action:
+
+```ts
+sortedHomePage: async ({ page }, use) => {
+  const homePage = new HomePage(page);
+
+  await homePage.open();
+  await homePage.sorting.applySort("price,asc");
+
+  await use(homePage);
+};
+```
+
+---
+
+## Fixture Naming Rules
+
+Fixture names must describe what they provide, not what hidden actions they performed.
+
+### Good
+
+```ts
+homePage
+apiClient
+userBuilder
+testConfig
+logger
+```
+
+### Bad
+
+```ts
+loggedInPage
+sortedHomePage
+createdOrder
+submittedForm
+approvedUser
+```
+
+These names often indicate that the fixture performs hidden actions or business flows.
+
+If such state is required, prefer explicit setup steps in the test or a clearly named project-level setup helper.
+
+---
+
+## Public Fixture API
+
+Treat the final fixture entry point as a public API for specs.
+
+Rules:
+
+- Keep public fixture names stable.
+- Avoid exposing internal helper fixtures.
+- Avoid exposing low-level implementation details.
+- Prefer meaningful domain-level Page Objects over raw components.
+- Prefer typed fixtures.
+- Do not create duplicate fixtures with overlapping responsibilities.
+
+### Bad
+
+```ts
+type Fixtures = {
+  pageUtils: PageUtils;
+  pageHelper: PageHelper;
+  uiUtils: UiUtils;
+};
+```
+
+### Better
+
+```ts
+type Fixtures = {
+  homePage: HomePage;
+  userBuilder: UserBuilder;
+  apiClient: ApiClient;
+};
+```
+
+---
+
+## Anti-Patterns
+
+Avoid the following patterns:
+
+- Huge `base.fixture.ts` that contains everything.
+- Business flows inside core fixtures.
+- Page Objects inside framework core.
+- Components exposed as fixtures by default.
+- Inline random data in specs.
+- Multiple fixture entry points imported by specs.
+- Fixtures that perform assertions.
+- Fixtures that silently change application state.
+- Fixtures with unclear side effects.
+- Fixtures that depend on test execution order.
+- Fixtures that hide the action under test.
+- Fixtures that create project-specific data in framework core.
+
+---
+
+## Recommended Structure
+
+Recommended universal structure:
+
+```text
+framework-core/
+  fixtures/
+    base.fixture.ts
+    config.fixture.ts
+    api.fixture.ts
+    logger.fixture.ts
+
+project/
+  fixtures/
+    data.fixture.ts
+    pages.fixture.ts
+    test.ts
+
+  pages/
+    HomePage.ts
+    ProductPage.ts
+    LoginPage.ts
+
+  components/
+    SortingComponent.ts
+    FilterComponent.ts
+
+  test-data/
+    builders/
+      user.builder.ts
+      product.builder.ts
+
+    generators/
+      email.generator.ts
+      id.generator.ts
+
+    datasets/
+      users.dataset.ts
+
+    types/
+      user.type.ts
+      product.type.ts
+
+  specs/
+    products/
+      sorting.spec.ts
+```
+
+---
+
+## Main Principle
+
+The framework core owns reusable mechanisms.
+
+The project layer owns product-specific behavior.
+
+Fixtures are a mechanism.
+
+Most concrete fixture content is project-specific.
+
+Therefore:
+
+- Core may define fixture patterns and generic infrastructure fixtures.
+- Project layer should define Page Object fixtures, domain data fixtures, users, roles, flows, and business-specific setup.
+
+---
+
+## Final Rule
+
+A fixture is acceptable only if it answers clearly:
+
+1. What reusable object or setup does it provide?
+2. Is it thin and focused?
+3. Does it avoid hiding the action under test?
+4. Does it belong to the correct layer?
+5. Can it be reused without coupling the framework core to one specific product?
+
+If the answer is unclear, do not create the fixture.

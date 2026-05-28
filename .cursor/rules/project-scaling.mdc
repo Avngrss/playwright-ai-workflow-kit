@@ -1,0 +1,351 @@
+---
+description: Project scaling and optional domain flow layer rules
+alwaysApply: false
+---
+
+# Project Scaling and Domain Flow Layer
+
+## Purpose
+
+These rules define when and how to introduce an optional domain flow layer as a project grows.
+
+The goal is to prevent business workflows from being mixed into Page Objects, Components, fixtures, or specs.
+
+Do not introduce a domain layer by default.
+
+Use it only when project complexity requires a separate place for reusable cross-page business flows.
+
+---
+
+## Core Test Layers
+
+The default UI test structure should stay simple.
+
+Recommended base layers:
+
+```text
+tests/ui      -> test cases and scenario verification
+fixtures      -> dependency injection and setup wiring
+pages         -> page structure and page-level behavior
+components    -> reusable UI blocks and UI behavior
+data          -> datasets, builders, generators, and types
+```
+
+These layers are enough for small and medium test areas.
+
+Do not add extra layers unless there is a clear scaling need.
+
+---
+
+## Layer Responsibilities
+
+### Tests
+
+Tests should:
+
+- describe the scenario;
+- call Page Object, Component, or domain flow methods;
+- keep the action under test explicit;
+- contain scenario-specific assertions;
+- use `test.step` for meaningful user-level phases.
+
+Tests should not:
+
+- contain duplicated long business workflows;
+- contain raw selector mechanics;
+- hide the main action under test.
+
+---
+
+### Fixtures
+
+Fixtures should:
+
+- wire dependencies;
+- provide reusable objects;
+- prepare safe setup context.
+
+Fixtures should not:
+
+- hide the action under test;
+- execute business flows by default;
+- become orchestration layers;
+- contain project-specific business scenarios in framework core.
+
+---
+
+### Pages
+
+Page Objects should:
+
+- model page structure;
+- expose navigation;
+- expose page-level user actions;
+- expose meaningful page elements;
+- compose components.
+
+Page Objects should not:
+
+- orchestrate long business flows across multiple pages;
+- know unrelated pages;
+- become domain services;
+- contain complex business workflows.
+
+---
+
+### Components
+
+Components should:
+
+- model reusable UI blocks;
+- expose UI behavior of that block;
+- stay focused on component-level interactions.
+
+Components should not:
+
+- orchestrate business flows;
+- know full user journeys;
+- access unrelated page areas;
+- become domain objects.
+
+---
+
+### Data
+
+Data layer should contain:
+
+- datasets;
+- builders;
+- generators;
+- factories;
+- types;
+- schemas.
+
+Data layer should not:
+
+- execute UI actions;
+- perform business workflows;
+- depend on Page Objects or Components.
+
+---
+
+## Optional Domain Flow Layer
+
+For large projects, an optional domain flow layer may be introduced.
+
+Example structure:
+
+```text
+domain/
+  auth/
+    auth.flow.ts
+  catalog/
+    catalog.flow.ts
+  orders/
+    order.flow.ts
+```
+
+The domain layer groups reusable business flows.
+
+It should orchestrate existing Page Objects, Components, API clients, or data builders.
+
+It must not contain low-level UI logic.
+
+---
+
+## What Domain Flows May Do
+
+Domain flows may:
+
+- coordinate actions across multiple pages;
+- reuse Page Objects and Components;
+- reuse API clients for setup when appropriate;
+- express common business workflows;
+- reduce duplicated long scenario sequences;
+- keep tests readable when flows are shared across suites.
+
+Example:
+
+```ts
+class OrderFlow {
+  constructor(
+    private catalogPage: CatalogPage,
+    private productPage: ProductPage,
+    private cartPage: CartPage,
+  ) {}
+
+  async addProductToCart(productName: string) {
+    await this.catalogPage.open();
+    await this.catalogPage.productList.openProduct(productName);
+    await this.productPage.addToCart();
+  }
+}
+```
+
+---
+
+## What Domain Flows Must Not Do
+
+Domain flows must not:
+
+- contain selectors;
+- use `page.locator` directly;
+- replace Page Objects;
+- replace Components;
+- hide the action under test;
+- perform assertions by default;
+- become large service hierarchies;
+- contain framework-core logic;
+- be introduced for one-off scenarios.
+
+Bad:
+
+```ts
+class OrderFlow {
+  constructor(private page: Page) {}
+
+  async addProductToCart(productName: string) {
+    await this.page.locator(".search").fill(productName);
+    await this.page.locator(".product-card").first().click();
+    await this.page.locator(".add-to-cart").click();
+  }
+}
+```
+
+Why this is bad:
+
+The domain flow contains low-level UI logic and bypasses Page Objects.
+
+This makes the domain layer another Page Object layer instead of a business orchestration layer.
+
+---
+
+## Scaling Triggers
+
+Introduce a domain flow layer only when one or more of these triggers appear:
+
+- multiple test suites share the same business flow;
+- the same cross-page workflow is duplicated in many specs;
+- Page Objects start calling unrelated Page Objects;
+- fixtures start executing business scenarios;
+- test bodies become long and repetitive because of shared setup flows;
+- cross-page logic becomes difficult to maintain;
+- a business workflow needs one stable reusable abstraction.
+
+---
+
+## When Not To Introduce Domain Layer
+
+Do not introduce a domain layer when:
+
+- the behavior belongs to one page;
+- the behavior belongs to one component;
+- the flow is used by only one test;
+- Page Objects and Components already express the scenario clearly;
+- the new layer would only rename existing Page Object calls;
+- the feature is simple, such as sorting, filtering, opening a modal, or checking page content.
+
+Bad:
+
+```ts
+await catalogDomain.applySortingByPrice();
+```
+
+Better:
+
+```ts
+await catalogPage.sorting.applySort("price,asc");
+```
+
+Sorting is component/page behavior, not a domain flow.
+
+---
+
+## Domain Flow Naming
+
+Use names that describe business workflows, not UI mechanics.
+
+Good:
+
+```text
+AuthFlow
+CheckoutFlow
+OrderCreationFlow
+ProductPurchaseFlow
+```
+
+Bad:
+
+```text
+ClickFlow
+SortingFlow
+ModalFlow
+ButtonFlow
+```
+
+---
+
+## Assertions in Domain Flows
+
+Domain flows should not perform scenario-specific assertions by default.
+
+Prefer assertions in specs.
+
+Allowed exception:
+
+- very small structural guard checks may be used if required to safely continue the flow;
+- such checks must not replace scenario verification in the test.
+
+Good:
+
+```ts
+await orderFlow.addProductToCart(product.name);
+
+await expect(cartPage.item(product.name)).toBeVisible();
+```
+
+Risky:
+
+```ts
+await orderFlow.addProductToCartAndVerify(product.name);
+```
+
+---
+
+## Core vs Project Boundary
+
+The domain flow layer is project-specific.
+
+Do not put domain flows into framework core.
+
+Framework core owns reusable mechanisms.
+
+Project layer owns:
+
+- business flows;
+- Page Objects;
+- Components;
+- domain models;
+- project-specific data;
+- roles;
+- users;
+- endpoints;
+- business assertions.
+
+---
+
+## Main Principle
+
+Start simple.
+
+Use tests, fixtures, pages, components, and data first.
+
+Introduce a domain flow layer only when repeated cross-page business workflows create real maintenance problems.
+
+Domain flows orchestrate business behavior.
+
+Page Objects and Components handle UI mechanics.
+
+Fixtures wire dependencies.
+
+Tests verify scenarios.

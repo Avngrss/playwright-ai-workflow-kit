@@ -1,0 +1,104 @@
+---
+description: UI component discovery workflow for unclear Page Object and Component Object ownership
+alwaysApply: false
+globs:
+  - "src/**/pages/**/*.ts"
+  - "src/**/components/**/*.ts"
+  - "src/**/fixtures/**/*.ts"
+  - "tests/ui/**/*.spec.ts"
+---
+
+# UI Component Discovery Rules
+
+## Purpose
+
+These rules define when to run UI component discovery before creating or moving Page Objects and Component Objects.
+
+The goal is to avoid wrong ownership, speculative components, and route-boundary mistakes.
+
+---
+
+## When Discovery Is Required
+
+Run UI component discovery before creating or moving Component Objects when:
+
+- it is unclear whether something is a Page Object or Component Object;
+- a component may be overengineered;
+- a Page Object is becoming too large;
+- route ownership is ambiguous;
+- visual structure conflicts with URL or navigation structure;
+- UI structure needs inspection;
+- repeated UI behavior appears across suites but ownership is unclear.
+
+---
+
+## Discovery Questions
+
+Discovery output should answer:
+
+1. What is the route or screen boundary?
+2. What are the meaningful UI blocks?
+3. Which blocks are reused?
+4. Which blocks are complex?
+5. Which blocks have stable root locators?
+6. Which components are justified now?
+7. Which components should be postponed?
+8. Which existing abstractions can be reused?
+9. Which specs or suites are affected?
+
+---
+
+## Discovery Skill
+
+If the repository provides a dedicated discovery skill, use it.
+
+Example:
+
+```text
+.cursor/skills/discover-ui-components/SKILL.md
+```
+
+If the path does not exist in the project, do not invent it.
+
+Use the project map and existing conventions as the source of truth.
+
+---
+
+## Output
+
+Discovery should produce a short recommendation:
+
+```text
+Owner:
+  Page Object or Component Object
+
+Reason:
+  Route boundary / reuse / complexity / semantic UI block / Page Object growth
+
+Action:
+  create / reuse / postpone / refactor
+
+Affected files:
+  list of relevant files
+```
+
+---
+
+## Do Not
+
+Do not:
+
+- create components only because UI elements exist;
+- create a Page Object for a small UI block;
+- move logic across ownership boundaries without reason;
+- bypass existing Page Objects;
+- introduce component fixtures by default;
+- refactor unrelated areas during discovery.
+
+---
+
+## Main Principle
+
+Discover first when ownership is unclear.
+
+Do not guess architecture.

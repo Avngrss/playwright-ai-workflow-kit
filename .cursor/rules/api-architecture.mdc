@@ -1,0 +1,422 @@
+---
+description: API architecture, authentication, clients, and test design rules
+alwaysApply: false
+globs:
+  - tests/api/**/*.spec.ts
+---
+
+# API Architecture Rules
+
+## Purpose
+
+These rules define how API tests and API support layers must be structured in a universal Playwright + TypeScript testing framework.
+
+The main goals are:
+
+- Keep API tests independent from UI architecture.
+- Keep API clients simple and composable.
+- Avoid duplicated authentication logic.
+- Reuse authentication safely.
+- Prevent hidden business workflows inside clients or fixtures.
+- Keep the framework core reusable across projects.
+
+---
+
+## Core Principles
+
+- API tests must rely on request and response models only.
+- API tests must not use UI patterns.
+- Do not use Page Objects for API testing.
+- Do not use Component Objects for API testing.
+- Keep the API layer simple, explicit, and composable.
+- API tests must not depend on UI state unless the test explicitly verifies UI/API integration.
+- API support code should provide mechanisms, not hidden business scenarios.
+
+---
+
+## API Layering
+
+Use clear, lightweight layers.
+
+Recommended layers:
+
+```text
+request/context -> low-level transport
+auth provider    -> authentication and token/session acquisition
+client           -> optional endpoint grouping and request composition
+builders         -> request payload creation
+schemas/types    -> response contracts
+assertions       -> reusable contract checks
+tests            -> behavior verification
+```
+
+---
+
+## Transport Layer
+
+The transport layer is responsible only for sending HTTP requests.
+
+It may handle:
+
+- base URL;
+- headers;
+- query parameters;
+- request body;
+- timeouts;
+- request context;
+- response object.
+
+It must not contain:
+
+- business workflows;
+- domain assertions;
+- hardcoded credentials;
+- project-specific user roles;
+- hidden setup flows.
+
+---
+
+## Authentication Strategy
+
+- Authentication must be implemented through a reusable auth provider.
+- Tests must not perform login directly.
+- Do not duplicate login logic across tests.
+- Do not hardcode tokens.
+- Do not hardcode credentials.
+- Authentication must go through the auth provider.
+- Token or session reuse strategy must be applied.
+- Token reuse must be scoped explicitly.
+- Token refresh or recreation must be handled by the auth provider when required.
+
+---
+
+## Auth Provider Responsibilities
+
+An auth provider may:
+
+- obtain tokens or sessions;
+- cache tokens;
+- refresh expired tokens;
+- provide authorization headers;
+- support multiple auth strategies;
+- isolate tokens by environment, role, account, or worker when needed.
+
+An auth provider must not:
+
+- expose hardcoded tokens;
+- expose hardcoded credentials;
+- contain project-specific business flows;
+- perform unrelated setup;
+- create domain entities;
+- hide the action under test.
+
+---
+
+## Token Reuse Policy
+
+- Do not recreate tokens in every test.
+- Reuse tokens when it is safe and valid.
+- Token reuse scope must be explicit.
+- Recommended token cache keys include environment, role or account, and worker/project scope when parallel execution requires isolation.
+- Do not share one global token across unrelated roles or accounts.
+- Do not reuse expired or invalid tokens.
+- Do not hide token refresh failures.
+
+### Good
+
+```ts
+const token = await authProvider.getToken({
+  role: "admin",
+});
+```
+
+### Bad
+
+```ts
+const token = "eyJhbGciOi...";
+```
+
+### Bad
+
+```ts
+test("gets users", async ({ request }) => {
+  const token = await login();
+
+  const response = await request.get("/users", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  expect(response.status()).toBe(200);
+});
+```
+
+---
+
+## Core vs Project Auth Boundary
+
+The framework core may provide generic authentication mechanisms.
+
+Allowed in core:
+
+```text
+AuthProvider
+TokenCache
+CredentialsProvider
+AuthHeaderFactory
+AuthStrategy interface
+```
+
+Project-specific authentication data must live in the project layer.
+
+Not allowed in core:
+
+```text
+adminUser
+buyerUser
+sellerUser
+crmLogin
+checkoutLogin
+superAdminToken
+project-specific role names
+project-specific credentials
+```
+
+Concrete users, roles, credentials, and login endpoints belong to the project layer.
+
+---
+
+## API Client Rules
+
+- API clients are optional grouping layers.
+- Use clients when endpoints are reused across multiple tests.
+- Do not create clients for one-off requests.
+- Keep clients thin.
+- Clients should compose requests and return responses or typed response data.
+- Clients should not perform assertions by default.
+- Clients should not hide business workflows.
+- Clients should not silently create prerequisite data unless explicitly designed as setup helpers in the project layer.
+
+### Good
+
+```ts
+const response = await userClient.createUser(payload);
+
+expect(response.status()).toBe(201);
+```
+
+### Bad
+
+```ts
+await userClient.createUserAndVerifySuccess(payload);
+```
+
+### Why this is bad
+
+The client hides the assertion.
+
+Tests become less explicit and the client becomes responsible for behavior verification.
+
+---
+
+## Test Design
+
+- One API test should have one primary API action under test.
+- Setup and cleanup API calls are allowed when required.
+- Avoid chaining multiple API calls unless the test explicitly verifies an API workflow.
+- Always validate status code.
+- Always validate essential response fields.
+- Validate response schema or contract when applicable.
+- Tests should make the behavior under test obvious.
+- Do not hide the main API action inside fixtures, clients, or setup helpers.
+
+### Good
+
+```ts
+test("creates a user", async ({ userClient, userBuilder }) => {
+  const payload = userBuilder.build();
+
+  const response = await userClient.createUser(payload);
+  const body = await response.json();
+
+  expect(response.status()).toBe(201);
+  expect(body.id).toBeDefined();
+  expect(body.email).toBe(payload.email);
+});
+```
+
+### Acceptable with setup
+
+```ts
+test("gets existing user by id", async ({ userClient, userBuilder }) => {
+  const user = await userClient.createUser(userBuilder.build());
+  const createdUser = await user.json();
+
+  const response = await userClient.getUserById(createdUser.id);
+  const body = await response.json();
+
+  expect(response.status()).toBe(200);
+  expect(body.id).toBe(createdUser.id);
+});
+```
+
+The primary action under test is `getUserById`.
+
+The create call is setup.
+
+---
+
+## Workflow API Tests
+
+Multiple API calls are allowed when the test explicitly verifies a workflow.
+
+Workflow tests must be intentional and clear.
+
+### Allowed
+
+```ts
+test("creates and cancels an order", async ({ orderClient, orderBuilder }) => {
+  const createResponse = await orderClient.createOrder(orderBuilder.build());
+  const order = await createResponse.json();
+
+  const cancelResponse = await orderClient.cancelOrder(order.id);
+  const cancelledOrder = await cancelResponse.json();
+
+  expect(cancelResponse.status()).toBe(200);
+  expect(cancelledOrder.status).toBe("cancelled");
+});
+```
+
+### Rule
+
+If a test contains multiple business API actions, the test name and steps must make the workflow explicit.
+
+---
+
+## Setup and Cleanup
+
+- Setup API calls are allowed when they prepare required state.
+- Cleanup API calls are allowed when they remove state created by the test.
+- Setup and cleanup must not hide the primary action under test.
+- Prefer API setup over UI setup for API tests.
+- Cleanup should be reliable and safe to retry.
+- Tests must not depend on execution order.
+
+---
+
+## Response Validation
+
+Every API test must validate:
+
+- status code;
+- essential response fields;
+- error message or error code for negative tests;
+- schema or contract when applicable.
+
+### Positive response checks
+
+```ts
+expect(response.status()).toBe(200);
+expect(body.id).toBeDefined();
+```
+
+### Negative response checks
+
+```ts
+expect(response.status()).toBe(400);
+expect(body.error.code).toBe("VALIDATION_ERROR");
+```
+
+---
+
+## Request Payloads
+
+- Do not hardcode reusable request payloads directly in specs.
+- Use builders, factories, or datasets for reusable request data.
+- Builders should return valid payloads by default.
+- Builders should support overrides via `Partial<T>`.
+- Unique fields must be generated centrally through generators.
+
+### Good
+
+```ts
+const payload = userBuilder.build({
+  role: "admin",
+});
+```
+
+### Bad
+
+```ts
+const payload = {
+  email: `user-${Date.now()}@test.com`,
+  firstName: "John",
+  lastName: "Smith",
+  role: "admin",
+};
+```
+
+---
+
+## Assertions
+
+- Keep assertions in tests or dedicated assertion helpers.
+- Do not put assertions inside API clients by default.
+- Assertion helpers must be generic or clearly project-specific.
+- Core assertion helpers must not know project-specific domain rules.
+- Do not use fake assertions to force passing tests.
+
+### Bad
+
+```ts
+expect(response).toBeDefined();
+```
+
+This is usually insufficient because it does not validate API behavior.
+
+### Better
+
+```ts
+expect(response.status()).toBe(200);
+expect(body.id).toBeDefined();
+expect(body.email).toBe(expectedEmail);
+```
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- hardcoded tokens;
+- hardcoded credentials;
+- login in every test;
+- login directly inside specs;
+- API tests using Page Objects;
+- API tests using UI components;
+- clients with hidden assertions;
+- clients with hidden business workflows;
+- complex service hierarchies;
+- one giant API service for all endpoints;
+- duplicated auth logic;
+- shared global tokens across unrelated roles;
+- tests depending on execution order;
+- fake assertions such as `expect(response).toBeDefined()` only;
+- long API chains when only one endpoint behavior is under test.
+
+---
+
+## Main Principle
+
+API tests should verify API behavior through explicit request and response contracts.
+
+Auth should be reusable and centralized.
+
+Clients should be thin.
+
+Tests should show the primary API action under test.
+
+The framework core provides mechanisms.
+
+The project layer owns concrete endpoints, roles, credentials, payloads, and domain contracts.

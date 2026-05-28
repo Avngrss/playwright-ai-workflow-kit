@@ -1,0 +1,48 @@
+---
+description: Flaky test handling and stabilization policy
+alwaysApply: true
+---
+
+# Flakiness Policy
+
+## Purpose
+
+These rules define how flaky tests must be handled.
+
+---
+
+## Rules
+
+- Do not mask flaky tests by blindly increasing timeouts or retries.
+- Do not add `waitForTimeout`.
+- Do not weaken assertions to make a test pass.
+- Do not move the action under test into hooks or fixtures to avoid instability.
+- Investigate the root cause before changing synchronization.
+- Prefer web-first assertions, stable locators, deterministic data, and explicit state checks.
+- If a test is quarantined or marked flaky, the reason must be documented.
+- Flaky markers must not become permanent without owner review.
+
+---
+
+## Common Root Causes
+
+Check for:
+
+- unstable locators;
+- missing loaded-state checks;
+- dynamic test data;
+- shared state leakage;
+- backend delays;
+- race conditions;
+- animations or transitions;
+- incorrect fixture scope;
+- dependency on test order;
+- insufficient data preconditions.
+
+---
+
+## Main Principle
+
+Heal the root cause.
+
+Do not hide instability.

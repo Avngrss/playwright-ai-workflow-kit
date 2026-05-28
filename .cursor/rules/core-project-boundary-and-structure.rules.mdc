@@ -1,0 +1,834 @@
+---
+description: Core/project boundary, naming, file structure, and import conventions
+alwaysApply: true
+---
+
+# Core / Project Boundary and Structure Rules
+
+## Purpose
+
+These rules define the boundary between framework core and project-specific implementation.
+
+They also define naming, file structure, and import conventions.
+
+The goal is to keep the framework reusable, predictable, and easy for AI agents to extend without guessing architecture.
+
+---
+
+## Main Principle
+
+Framework core provides reusable mechanisms.
+
+Project layer provides concrete product implementation.
+
+Do not make framework core aware of one specific application, domain, product, user role, endpoint, selector, or business workflow.
+
+---
+
+## Rule Priority
+
+When creating or modifying files, follow this priority:
+
+1. Project map.
+2. Core / Project Boundary rules.
+3. More specific rules for the affected layer.
+4. General framework rules.
+5. Examples from rules only as illustrative patterns.
+
+If a generic example conflicts with the project map or existing architecture, follow the project map.
+
+Do not create files, folders, classes, tags, commands, roles, endpoints, or abstractions only because they appear in examples.
+
+---
+
+# Core vs Project Boundary
+
+## Framework Core Owns Mechanisms
+
+Framework core may contain reusable mechanisms that can work across projects.
+
+Allowed in framework core:
+
+- base test setup;
+- base fixtures;
+- generic fixture composition mechanisms;
+- typed configuration loading mechanisms;
+- environment configuration infrastructure;
+- logger;
+- reporting integrations;
+- trace/artifact helpers;
+- generic API transport;
+- generic request context wrappers;
+- generic auth provider interfaces;
+- generic token/session cache mechanisms;
+- generic credentials provider interfaces;
+- generic assertion helpers;
+- generic data generators;
+- generic utilities;
+- Playwright setup mechanisms;
+- quality gate integration helpers;
+- common TypeScript types that are not domain-specific.
+
+---
+
+## Project Layer Owns Product Behavior
+
+Project layer owns concrete application behavior.
+
+Project layer should contain:
+
+- specs;
+- Page Objects;
+- Component Objects;
+- concrete fixtures;
+- project-specific data fixtures;
+- project-specific builders;
+- project-specific generators;
+- datasets;
+- domain models;
+- business flows;
+- concrete API clients;
+- concrete endpoints;
+- concrete users;
+- concrete roles;
+- credentials references;
+- selectors;
+- domain assertions;
+- project-specific tags;
+- storage states for concrete project users;
+- setup flows for concrete project scenarios.
+
+---
+
+## Not Allowed in Framework Core
+
+Framework core must not contain:
+
+- project-specific Page Objects;
+- project-specific Component Objects;
+- concrete business flows;
+- concrete user roles;
+- concrete credentials;
+- concrete users;
+- concrete endpoints;
+- domain models;
+- domain assertions;
+- selectors for a specific product;
+- project-specific test data;
+- project-specific datasets;
+- project-specific builders;
+- project-specific generators;
+- feature-specific fixtures;
+- product-specific tags;
+- product-specific workflows;
+- hardcoded URLs;
+- hardcoded tokens;
+- hardcoded passwords;
+- hardcoded environment values.
+
+---
+
+## Allowed Core Examples
+
+Good examples of core-level abstractions:
+
+```text
+BaseFixture
+ConfigProvider
+Logger
+ApiTransport
+AuthProvider
+TokenCache
+CredentialsProvider
+ReporterAdapter
+ArtifactHelper
+RetryPolicy
+DateGenerator
+StringGenerator
+SchemaValidator
+```
+
+These are mechanisms.
+
+They do not know the concrete product domain.
+
+---
+
+## Not Allowed Core Examples
+
+Bad examples in framework core:
+
+```text
+LoginPage
+CheckoutPage
+ProductsPage
+AdminUser
+BuyerUser
+SellerUser
+OrderBuilder
+ProductBuilder
+CheckoutFlow
+OrderApiClient
+/catalog endpoint
+/checkout endpoint
+@checkout tag
+```
+
+These are product-specific concepts.
+
+They belong to the project layer.
+
+---
+
+## Auth Boundary
+
+Framework core may provide generic authentication mechanisms.
+
+Allowed in core:
+
+```text
+AuthProvider
+AuthStrategy
+TokenCache
+CredentialsProvider
+AuthHeaderFactory
+StorageStateManager
+```
+
+Project layer owns concrete authentication details:
+
+```text
+admin user
+buyer user
+seller role
+login endpoint
+tenant-specific credentials
+project storage state
+project role matrix
+```
+
+Core may know how authentication works technically.
+
+Core must not know who the concrete project users are.
+
+---
+
+## API Boundary
+
+Framework core may provide:
+
+- generic API transport;
+- request context creation;
+- base URL injection mechanism;
+- auth header mechanism;
+- response parsing utilities;
+- generic schema validation utilities.
+
+Project layer owns:
+
+- concrete API clients;
+- endpoint paths;
+- request payload builders;
+- response domain types;
+- endpoint-specific assertions;
+- workflow-specific API setup;
+- domain-specific contracts.
+
+Bad in core:
+
+```text
+OrderClient
+ProductClient
+UserManagementClient
+createOrder()
+approveOrder()
+cancelCheckout()
+```
+
+Good in core:
+
+```text
+ApiClient
+ApiTransport
+RequestOptions
+AuthHeaders
+ResponseParser
+```
+
+---
+
+## UI Boundary
+
+Page Objects and Component Objects are normally project-specific.
+
+Framework core must not contain Page Objects or Component Objects for one concrete product.
+
+Project layer owns:
+
+- pages;
+- components;
+- selectors;
+- navigation paths;
+- UI-specific actions;
+- structural page assertions;
+- project-specific UI flows.
+
+Allowed in core only if truly generic:
+
+- base UI helper types;
+- locator helper types;
+- generic accessibility helpers;
+- generic screenshot helpers;
+- generic visual comparison mechanism;
+- generic Playwright utilities.
+
+---
+
+## Fixture Boundary
+
+Core fixtures must be infrastructure-focused.
+
+Allowed in core fixtures:
+
+```text
+config
+logger
+apiTransport
+authProvider
+testInfoHelper
+artifactHelper
+```
+
+Project fixtures may expose:
+
+```text
+loginPage
+homePage
+productsPage
+userBuilder
+orderBuilder
+projectApiClient
+projectAuthState
+```
+
+Do not expose project-specific pages, users, roles, endpoints, or business flows from framework core fixtures.
+
+---
+
+## Data Boundary
+
+Core may contain generic data mechanisms.
+
+Allowed in core:
+
+- generic random string generator;
+- generic email generator;
+- generic date helper;
+- generic ID generator;
+- generic builder base type if it is truly domain-neutral.
+
+Project layer owns domain data:
+
+- user builder;
+- product builder;
+- order builder;
+- address dataset;
+- payment data;
+- role matrix;
+- project-specific schemas;
+- domain-specific payloads.
+
+---
+
+# Naming and File Structure Rules
+
+## Purpose
+
+Naming should make ownership obvious.
+
+File structure should make the layer obvious.
+
+AI agents must follow existing project structure and the project map before creating new files.
+
+---
+
+## General Naming Rules
+
+- Use names that describe ownership and responsibility.
+- Avoid vague names such as `helper`, `utils`, `common`, `manager`, `service`, or `misc` unless the responsibility is clearly defined.
+- Do not create duplicate abstractions with different names.
+- Do not create new folders just to group one file.
+- Do not create new naming patterns when an existing convention exists.
+- Prefer explicit names over generic names.
+- Prefer project-approved path aliases over deep relative imports.
+
+---
+
+## Recommended File Suffixes
+
+Use consistent suffixes when the project map does not define another convention.
+
+Recommended:
+
+```text
+*.page.ts          -> Page Objects
+*.component.ts     -> Component Objects
+*.fixture.ts       -> Playwright fixtures
+*.builder.ts       -> test data builders
+*.generator.ts     -> data generators
+*.dataset.ts       -> static or reusable datasets
+*.client.ts        -> API clients
+*.provider.ts      -> providers such as config/auth/credentials
+*.flow.ts          -> project-level domain or workflow flows
+*.schema.ts        -> schemas or contract definitions
+*.type.ts          -> shared types
+*.spec.ts          -> tests
+*.rules.md         -> rule files
+*.mdc              -> Cursor rule files when applicable
+```
+
+Do not introduce a suffix that duplicates an existing convention.
+
+---
+
+## Recommended Class Names
+
+Examples of clear class names:
+
+```text
+LoginPage
+AccountPage
+HeaderComponent
+FilterPanelComponent
+ResultListComponent
+UserBuilder
+EmailGenerator
+ApiClient
+AuthProvider
+CheckoutFlow
+ConfigProvider
+```
+
+Avoid names like:
+
+```text
+CommonHelper
+TestUtils
+PageManager
+FlowManager
+GeneralService
+MainHelper
+BaseEverything
+```
+
+unless the responsibility is precise and justified.
+
+---
+
+## Page Object Naming
+
+Page Objects should be named after a route, screen, page, or navigation boundary.
+
+Good:
+
+```text
+LoginPage
+AccountPage
+ProductsPage
+CheckoutPage
+OrderDetailsPage
+```
+
+Avoid:
+
+```text
+SortingPage
+SubmitButtonPage
+HeaderPage
+ProductCardPage
+```
+
+These are usually components or page parts, not pages.
+
+---
+
+## Component Object Naming
+
+Component Objects should be named after meaningful UI blocks.
+
+Good:
+
+```text
+HeaderComponent
+SidebarComponent
+ToastComponent
+ModalComponent
+FilterPanelComponent
+SortComponent
+ResultListComponent
+TableComponent
+CartSummaryComponent
+```
+
+Avoid creating components for:
+
+```text
+SubmitButtonComponent
+EmailInputComponent
+SingleLinkComponent
+OneTextComponent
+```
+
+unless the element has meaningful reusable behavior.
+
+---
+
+## API Naming
+
+API clients should represent endpoint groups or resource areas, not workflows.
+
+Good:
+
+```text
+UserClient
+OrderClient
+CatalogClient
+AuthClient
+```
+
+Avoid:
+
+```text
+CreateAndApproveOrderService
+FullCheckoutApiService
+LoginAndPrepareUserClient
+```
+
+If multiple API calls represent a business workflow, use a project-level flow only when justified.
+
+Do not create complex service hierarchies by default.
+
+---
+
+## Builder and Generator Naming
+
+Builders create valid domain data by default.
+
+Generators create primitive or unique values.
+
+Good:
+
+```text
+UserBuilder
+OrderBuilder
+EmailGenerator
+IdGenerator
+DateGenerator
+```
+
+Avoid:
+
+```text
+RandomHelper
+DataUtils
+FakeManager
+CommonBuilder
+```
+
+Project-specific builders belong to the project layer.
+
+Generic primitive generators may live in core only when domain-neutral.
+
+---
+
+## Flow Naming
+
+Flows are project-specific and should describe reusable business workflows.
+
+Good:
+
+```text
+AuthFlow
+CheckoutFlow
+OrderCreationFlow
+ProductPurchaseFlow
+```
+
+Avoid:
+
+```text
+ClickFlow
+SortingFlow
+ButtonFlow
+ModalFlow
+```
+
+Simple page or component behavior does not need a flow.
+
+Do not introduce a domain flow layer unless repeated cross-page business workflows justify it.
+
+---
+
+# File Placement Rules
+
+## Follow Project Map First
+
+Before creating a file, check:
+
+- project map;
+- existing folder conventions;
+- existing naming conventions;
+- path aliases;
+- nearby similar files;
+- relevant rule files.
+
+Do not invent structure if the project already has a convention.
+
+---
+
+## Suggested Structure
+
+If the project map does not define another structure, use this model:
+
+```text
+framework-core/
+  fixtures/
+  config/
+  api/
+  auth/
+  logging/
+  reporting/
+  utils/
+  assertions/
+  types/
+
+project/
+  fixtures/
+  pages/
+  components/
+  test-data/
+    builders/
+    generators/
+    datasets/
+    types/
+  api/
+    clients/
+    schemas/
+    types/
+  domain/
+  specs/
+```
+
+This structure is a guideline.
+
+The actual project map is the source of truth.
+
+---
+
+## Framework Core File Placement
+
+Place in framework core only if the file is reusable across projects.
+
+Examples:
+
+```text
+framework-core/config/config-provider.ts
+framework-core/api/api-transport.ts
+framework-core/auth/auth-provider.ts
+framework-core/logging/logger.ts
+framework-core/fixtures/base.fixture.ts
+framework-core/utils/date-generator.ts
+```
+
+Do not place project-specific files in framework core.
+
+---
+
+## Project File Placement
+
+Place product-specific files in the project layer.
+
+Examples:
+
+```text
+project/pages/login.page.ts
+project/pages/account.page.ts
+project/components/header.component.ts
+project/test-data/builders/user.builder.ts
+project/test-data/generators/email.generator.ts
+project/api/clients/order.client.ts
+project/domain/checkout.flow.ts
+project/specs/ui/account/account.spec.ts
+```
+
+---
+
+# Import Rules
+
+## Import From Public Entry Points
+
+Specs should import from approved public entry points.
+
+Good:
+
+```ts
+import { test, expect } from "@project/fixtures/test";
+```
+
+Avoid:
+
+```ts
+import { test, expect } from "@playwright/test";
+```
+
+Avoid importing from internal fixture layers unless the project map explicitly allows it.
+
+---
+
+## Prefer Path Aliases
+
+Use path aliases when the project map defines them.
+
+Good:
+
+```ts
+import { LoginPage } from "@project/pages/login.page";
+```
+
+Avoid deep relative paths when aliases exist:
+
+```ts
+import { LoginPage } from "../../../../src/project/pages/login.page";
+```
+
+If aliases are not configured, follow the existing repository convention.
+
+Do not invent aliases.
+
+---
+
+## Do Not Bypass Layers
+
+Do not import project-specific code into framework core.
+
+Bad:
+
+```ts
+// framework-core/auth/auth-provider.ts
+import { adminUser } from "@project/test-data/users.dataset";
+```
+
+Good:
+
+```ts
+// project/fixtures/auth.fixture.ts
+import { adminUser } from "@project/test-data/users.dataset";
+```
+
+Core can define interfaces.
+
+Project layer can provide concrete implementations.
+
+---
+
+# Creation Rules
+
+## Before Creating Any New Abstraction
+
+Check whether an existing abstraction can be reused or extended.
+
+Check:
+
+- Page Objects;
+- Component Objects;
+- fixtures;
+- builders;
+- generators;
+- API clients;
+- providers;
+- utilities;
+- flows;
+- project map.
+
+Do not create duplicate abstractions with overlapping responsibilities.
+
+---
+
+## Create in Core Only When
+
+A new file belongs in core only when:
+
+- it is reusable across projects;
+- it does not know the product domain;
+- it does not contain selectors;
+- it does not contain concrete endpoints;
+- it does not contain concrete roles or users;
+- it does not contain business flows;
+- it provides a mechanism rather than a scenario.
+
+---
+
+## Create in Project Layer When
+
+A new file belongs in project layer when it contains:
+
+- selectors;
+- routes;
+- Page Objects;
+- Component Objects;
+- business workflows;
+- concrete API endpoints;
+- project-specific data;
+- domain models;
+- concrete roles;
+- concrete users;
+- domain assertions;
+- feature specs.
+
+---
+
+# Anti-Patterns
+
+Avoid:
+
+- project-specific logic in framework core;
+- Page Objects in framework core for one concrete app;
+- Component Objects in framework core for one concrete app;
+- hardcoded URLs, tokens, credentials, or environment values;
+- duplicate builders with different names;
+- duplicate API clients for the same endpoint group;
+- generic `utils` folders full of unrelated logic;
+- generic wrappers around Playwright without clear value;
+- deep relative imports when aliases exist;
+- creating folders before a real grouping need appears;
+- naming files after implementation details instead of responsibility;
+- moving business flows into Page Objects;
+- moving project-specific auth details into core;
+- creating abstractions only because examples show them.
+
+---
+
+# Review Checklist
+
+Before accepting architecture, naming, or structure changes, verify:
+
+- the project map was followed;
+- the file belongs to the correct layer;
+- core does not contain project-specific behavior;
+- project-specific code does not leak into core;
+- names clearly describe responsibility;
+- no duplicate abstraction was introduced;
+- no speculative abstraction was added;
+- imports follow approved entry points and aliases;
+- no hardcoded secrets or environment values were added;
+- no product-specific roles, users, endpoints, selectors, or flows were added to core.
+
+---
+
+# Final Principle
+
+If the code is reusable infrastructure, it may belong in framework core.
+
+If the code knows the product, page, user, role, endpoint, selector, data model, or business workflow, it belongs in the project layer.
+
+When unsure, keep the implementation in the project layer until a real reusable core mechanism is proven.

@@ -1,0 +1,54 @@
+---
+description: Diagnostics, reporting, and failure analysis rules
+alwaysApply: true
+---
+
+# Diagnostics and Reporting Rules
+
+## Purpose
+
+These rules define how failures should be made actionable.
+
+---
+
+## Rules
+
+- Failure messages must be actionable.
+- Custom helpers and assertion helpers should provide meaningful error context.
+- Do not hide errors with broad `try/catch`.
+- Do not swallow exceptions.
+- Do not replace real failures with generic messages.
+- Attach or preserve relevant artifacts when supported by the project.
+- Prefer structured logs for framework-level diagnostics.
+- Logs must not expose secrets, tokens, passwords, cookies, or personal data.
+
+---
+
+## Failure Context Should Help Identify
+
+When applicable, failures should make it clear:
+
+- what action was performed;
+- what was expected;
+- what actual state was observed;
+- which locator, endpoint, or fixture was involved;
+- which environment was used;
+- whether setup failed or assertion failed.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- `try/catch` that only logs and continues;
+- fake fallback values after failures;
+- generic errors like `Something went wrong`;
+- hiding original stack traces;
+- logging sensitive data.
+
+---
+
+## Main Principle
+
+A failure should be easy to diagnose without guessing.

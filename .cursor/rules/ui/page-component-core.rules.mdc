@@ -1,0 +1,247 @@
+---
+description: Core Page Object and Component Object ownership rules
+alwaysApply: true
+---
+
+# Page Object and Component Object Core Rules
+
+## Purpose
+
+These rules define the ownership model for Page Objects and Component Objects.
+
+The goal is to keep UI automation code simple, explicit, composable, and stable for AI-assisted development.
+
+---
+
+## Core Idea
+
+Use Page Objects for pages, screens, routes, or navigation boundaries.
+
+Use Component Objects for meaningful UI blocks inside pages.
+
+A Page Object represents a page or screen and composes components.
+
+A Component Object owns the behavior of a specific UI block.
+
+Do not create abstractions "just in case".
+
+---
+
+## Default Approach
+
+1. Start with a Page Object.
+2. Keep simple page-specific locators and actions inside the Page Object.
+3. Extract a utility only for pure reusable non-UI logic.
+4. Extract a Component Object only when reuse, real complexity, semantic UI boundary, or Page Object growth justifies it.
+5. Provide a Component Object through fixtures only if direct fixture access is clearly needed.
+
+---
+
+## Page Object Responsibility
+
+A Page Object must represent one page, screen, route, or navigation boundary.
+
+Page Objects may contain:
+
+- page-level locators;
+- user actions that belong to this page;
+- navigation actions that belong to this page;
+- page-loaded markers;
+- simple helper methods for interactions on this page;
+- composition of Component Objects.
+
+Page Objects must not contain:
+
+- `test.step`;
+- test runner logic;
+- hooks;
+- test data generation;
+- direct `process.env` access;
+- unrelated navigation;
+- cross-page business flows;
+- speculative methods for future tests.
+
+---
+
+## Component Object Responsibility
+
+A Component Object represents a meaningful UI block inside a page.
+
+Component Objects may contain:
+
+- component-level locators;
+- user actions inside the component;
+- helper methods for interacting with this component;
+- simple state readers for this component;
+- parsing logic directly related to component text or values.
+
+Component Objects must not contain:
+
+- `test.step`;
+- test runner logic;
+- hooks;
+- test data generation;
+- direct `process.env` access;
+- unrelated page navigation;
+- cross-page business flows;
+- unrelated component behavior.
+
+---
+
+## Route and Navigation Boundary
+
+Page Object ownership is primarily defined by route, screen, or navigation boundary.
+
+Do not merge a page into another Page Object only because it visually looks related or is reachable from that page.
+
+If a UI area has its own URL, screen state, or dedicated navigation entry, it should normally have its own Page Object.
+
+Example:
+
+```text
+/products  -> ProductsPage
+/login     -> LoginPage
+/account   -> AccountPage
+/checkout  -> CheckoutPage
+```
+
+Route or navigation ownership is stronger than visual placement.
+
+When route ownership is unclear, use the UI Component Discovery rule before refactoring.
+
+---
+
+## Page Object as Composition Root
+
+Page Objects should compose UI components instead of owning all UI logic.
+
+Good structure:
+
+```text
+OwningPage
+  ├── HeaderComponent
+  ├── FilterPanelComponent
+  ├── SortComponent
+  └── ResultListComponent
+```
+
+Tests should normally access components through the owning Page Object.
+
+Good:
+
+```ts
+await listPage.sorting.selectByValue("name-asc");
+
+const names = await listPage.results.getNames();
+```
+
+Avoid exposing components directly as fixtures by default.
+
+---
+
+## No Cross-Page Business Flows
+
+Do not hide cross-page workflows inside Page Objects or Component Objects.
+
+Bad:
+
+```ts
+await checkoutPage.loginAndBuyItem();
+```
+
+Better:
+
+```ts
+await loginPage.login(user.email, user.password);
+await catalogPage.results.openItem(itemName);
+await cartPage.checkout();
+await checkoutPage.placeOrder();
+```
+
+The test may orchestrate simple cross-page flows.
+
+A dedicated domain or workflow layer may be introduced only when repeated cross-page business flows justify it.
+
+---
+
+## Method Design Rules
+
+Methods in Page Objects and Component Objects should be:
+
+- explicit;
+- user-intent based;
+- minimal;
+- created only when required by current tests or current refactoring.
+
+Good:
+
+```ts
+await listPage.sorting.selectByValue("price-desc");
+```
+
+Good:
+
+```ts
+const prices = await listPage.results.getPrices();
+```
+
+Bad:
+
+```ts
+await listPage.performAdvancedDynamicSortingWorkflowWithValidation();
+```
+
+Bad:
+
+```ts
+await listPage.clickElement("sort");
+```
+
+Avoid generic methods that hide intent.
+
+---
+
+## Public API Minimalism
+
+Do not add public methods for future possible tests.
+
+Only add methods required by current tests or current refactoring.
+
+Bad:
+
+```ts
+async sortByRating(): Promise<void> {}
+
+async sortByPopularity(): Promise<void> {}
+
+async sortByNewest(): Promise<void> {}
+```
+
+Better:
+
+```ts
+async selectByValue(value: string): Promise<void> {
+  await this.sortSelect.selectOption(value);
+}
+```
+
+---
+
+## Main Principle
+
+Page Object owns the page boundary.
+
+Component Object owns a meaningful UI block.
+
+Tests own the scenario.
+
+Fixtures wire dependencies.
+
+Domain flows, when justified, own reusable cross-page business workflows.
+
+
+## Discovery Fallback
+
+If Page Object or Component Object ownership is unclear, follow the UI Component Discovery rule before creating or moving abstractions.
+
+Do not guess route ownership or component boundaries.

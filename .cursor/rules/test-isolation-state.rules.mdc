@@ -1,0 +1,58 @@
+---
+description: Test isolation, state, cleanup, and parallel execution rules
+alwaysApply: true
+---
+
+# Test Isolation and State Rules
+
+## Purpose
+
+These rules define how tests must manage state and avoid cross-test dependencies.
+
+---
+
+## Rules
+
+- Tests must be independent.
+- Tests must not depend on execution order.
+- Tests must not depend on state created by another test.
+- Tests must be safe for parallel execution unless explicitly marked otherwise.
+- Shared state must be read-only or safely isolated.
+- Data created by a test must be unique, isolated, or cleaned up.
+- Cleanup must be safe to retry.
+- Do not use global mutable state to coordinate tests.
+- Do not rely on previous browser/session state unless provided through an approved fixture or storage state.
+
+---
+
+## Setup
+
+Use setup through:
+
+- fixtures;
+- builders;
+- API setup;
+- seeded datasets;
+- storage state;
+- project-approved test data providers.
+
+Do not perform hidden setup in unrelated helpers.
+
+---
+
+## Cleanup
+
+Cleanup is required when created data can affect other tests.
+
+Cleanup may be done through:
+
+- API cleanup;
+- fixture teardown;
+- database cleanup only if project-approved;
+- environment reset mechanisms.
+
+---
+
+## Main Principle
+
+A test should pass or fail based on its own setup and assertions, not on previous tests.

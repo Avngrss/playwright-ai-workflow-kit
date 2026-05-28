@@ -1,0 +1,103 @@
+---
+description: Assertion ownership for Page Objects and Component Objects
+alwaysApply: true
+---
+
+# Page Object and Component Assertion Rules
+
+## Purpose
+
+These rules define where assertions should live.
+
+The goal is to keep scenario verification explicit and prevent Page Objects or Component Objects from becoming assertion containers.
+
+---
+
+## Core Rule
+
+Page Objects and Component Objects must not import or use Playwright `expect`.
+
+Scenario-specific assertions must live in spec files.
+
+Reusable assertion logic may live in dedicated assertion helpers.
+
+---
+
+## Allowed in Page Objects and Components
+
+Page Objects and Component Objects may expose:
+
+- locators;
+- structural markers;
+- state reader methods;
+- parsed values;
+- user actions;
+- component-level actions.
+
+Allowed examples:
+
+- `root`
+- `heading`
+- `loadedMarker`
+- `getVisibleItems()`
+- `getPrices()`
+- `isExpanded()`
+- `selectedValue()`
+
+Assertions using these values must be performed in specs or dedicated assertion helpers.
+
+---
+
+## Not Allowed in Page Objects and Components
+
+Do not use:
+
+- Playwright `expect`;
+- scenario-specific assertions;
+- business assertions;
+- hidden verification;
+- methods that combine action and assertion.
+
+Avoid method patterns such as:
+
+- `expectLoaded`;
+- `expectVisible`;
+- `expectReady`;
+- `sortAndVerify`;
+- `loginAndExpectSuccess`;
+- `submitAndValidate`;
+- `createAndCheck`.
+
+---
+
+## Specs Own Scenario Verification
+
+Specs should verify scenario outcomes explicitly.
+
+Good pattern:
+
+- action is called through Page Object or Component;
+- assertion is visible in the spec;
+- expected behavior is clear from the test body.
+
+---
+
+## Dedicated Assertion Helpers
+
+Dedicated assertion helpers are allowed when they are reusable and clearly scoped.
+
+Core assertion helpers must be domain-neutral.
+
+Project assertion helpers may contain project-specific domain checks.
+
+Assertion helpers must not hide the action under test.
+
+---
+
+## Main Principle
+
+Page Objects and Components expose UI structure, actions, and readable state.
+
+Specs and assertion helpers verify behavior.
+
+Do not hide verification inside Page Objects or Components.

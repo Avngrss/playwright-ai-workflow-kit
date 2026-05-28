@@ -1,0 +1,224 @@
+---
+description: Repository workflow for AI coding agents
+alwaysApply: true
+---
+
+# Agent Workflow
+
+## Purpose
+
+These rules define how AI coding agents must work inside the repository.
+
+The goal is to keep changes small, intentional, reviewable, and aligned with the project architecture.
+
+---
+
+## Core Workflow
+
+- Implement changes in small, reviewable batches.
+- Keep changes minimal and targeted.
+- Do not modify unrelated files.
+- Do not perform opportunistic refactoring while solving a targeted task.
+- Follow the project map before creating files, folders, imports, tags, scripts, or abstractions.
+- Do not invent architecture when an existing convention exists.
+- Do not overengineer abstractions.
+
+---
+
+## Default Implementation Cycle
+
+For UI feature work, follow the dedicated Feature Lifecycle rule.
+
+Default cycle:
+
+```text
+plan -> data -> Page Objects/components -> tests -> verify -> heal -> harden
+```
+
+Do not go directly into test implementation when data, structure, or existing abstractions are not understood.
+
+For non-UI work, adapt the cycle to the relevant architecture rules.
+
+Examples:
+
+```text
+API:
+plan -> payload/data -> client/request -> tests -> verify -> heal -> harden
+```
+
+```text
+Framework utility:
+plan -> existing usage check -> minimal utility -> targeted tests/checks -> verify
+```
+
+---
+
+## Planning
+
+Before implementing, identify:
+
+- requested change;
+- affected layer;
+- existing relevant files;
+- reusable project abstractions;
+- required data;
+- required verification command.
+
+For large changes or refactors, first explain:
+
+- scope;
+- affected layers;
+- risks;
+- proposed migration path;
+- verification plan.
+
+Do not start large refactors without review.
+
+---
+
+## Abstraction Defaults
+
+Prefer the simplest correct abstraction.
+
+### UI work
+
+- For UI work, default to Page Object first.
+- Add Component only after clear reuse or real UI complexity appears.
+- Keep Components UI-focused.
+- Do not create domain flows for simple page or component behavior.
+
+### API work
+
+- For API work, default to request/response model.
+- Add thin API client only when endpoints are reused or grouping improves clarity.
+- Do not introduce Page Objects, Components, or UI patterns for API tests.
+- Do not create complex service hierarchies.
+
+### Utilities
+
+- Add utility only when pure reusable logic appears.
+- Do not create utility modules for one-off logic.
+- Keep utilities domain-neutral if they live in framework core.
+
+### Fixtures
+
+- Add fixture only when reusable dependency wiring, setup, or repeated object creation appears.
+- Do not create fixtures for one-off values.
+- Do not hide the action under test inside fixtures.
+- Keep fixtures thin and focused on setup/wiring.
+
+---
+
+## Reuse Before Create
+
+Before adding a new abstraction, check whether an existing one can be reused or extended.
+
+Check existing:
+
+- Page Objects;
+- Components;
+- fixtures;
+- builders;
+- generators;
+- clients;
+- utilities;
+- rules;
+- project map entries.
+
+Do not create duplicate abstractions with overlapping responsibilities.
+
+---
+
+## Verification
+
+After code changes:
+
+1. Run impacted spec(s) or targeted checks.
+2. Run relevant type/lint checks when applicable.
+3. Run the repository quality gate command defined by the project map.
+
+Do not mark work complete if verification was skipped.
+
+If verification cannot be run, state clearly:
+
+- what was changed;
+- what should be run;
+- why verification was not executed.
+
+---
+
+## Healing
+
+When tests fail, fix the root cause.
+
+Do not hide failures by:
+
+- adding `waitForTimeout`;
+- blindly increasing timeouts;
+- weakening assertions;
+- adding fake assertions;
+- changing expected behavior without requirement confirmation;
+- moving the action under test into hooks or fixtures.
+
+---
+
+## Hardening
+
+Harden only reusable learnings.
+
+Update rules, skills, utilities, or documentation only when the issue represents:
+
+- a recurring pattern;
+- an architectural risk;
+- a convention gap;
+- a reusable improvement.
+
+Do not add new rules for one-off cases.
+
+---
+
+## Blockers
+
+If required information is missing:
+
+- do not invent paths, commands, tags, roles, users, endpoints, or architecture;
+- inspect existing project conventions when possible;
+- use the project map as the source of truth;
+- ask for clarification only when the decision cannot be made safely.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- large unreviewed refactors;
+- unrelated file changes;
+- creating abstractions before need appears;
+- copying examples from rules as mandatory implementation;
+- bypassing the project map;
+- adding fixtures for one-off values;
+- adding utilities for one-off logic;
+- applying UI patterns to API tests;
+- skipping verification;
+- masking test failures instead of healing root causes.
+
+---
+
+## Main Principle
+
+The agent must behave like a careful maintainer.
+
+Small change.
+
+Known layer.
+
+Existing convention first.
+
+Minimal abstraction.
+
+Targeted verification.
+
+Root-cause healing.
+
+Reusable hardening only when justified.

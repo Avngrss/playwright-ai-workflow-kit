@@ -1,38 +1,65 @@
----
-description: Project map for agents (Playwright UI framework)
-alwaysApply: true
----
 
-# Project Map (Playwright UI)
+## Repository Tree
 
-## Commands
-- Install: npm i
-- Run all UI: npx playwright test tests/ui --project=ui-chromium
-- Run one spec: npx playwright test <path-to-spec>
-- Gate: npm run qa:gate
-
-## Layout
-- tests/ = spec files only (ui/api/e2e)
-- src/test/ = test framework (pages, fixtures, data, utils)
-
-## Key Conventions (UI)
-- UI specs must use test.step
-- expect only in spec files (no expect in Page Objects)
-- beforeEach only for safe navigation + page-loaded checks
-- data-test => getByTestId (testIdAttribute configured)
-- Page Objects provided via fixtures (no manual `new ...Page(page)` in specs)
-
-## Repo tree (auto-generated, depth=4)
 <!-- PROJECT_MAP_START -->
 
 - github-actions/
   - 📁 .cursor/
     - 📁 rules/
+      - 📁 ui/
+        - 📄 component-extraction.rules.mdc
+        - 📄 locator-strategy.rules.mdc
+        - 📄 page-component-assertions.rules.mdc
+        - 📄 page-component-core.rules.mdc
+        - 📄 ui-component-discovery.rules.mdc
+        - 📄 ui-patterns-catalog.rules.mdc
+        - 📄 ui-refactoring.rules.mdc
       - 📄 00-project-map.mdc
-      - 📄 20-ui-architecture.mdc
-      - 📄 30-locators.mdc
-      - 📄 40-page-pattern.mdc
-      - 📄 50-healer.mdc
+      - 📄 agent-workflow.mdc
+      - 📄 api-architecture.mdc
+      - 📄 configuration-secrets.rules.mdc
+      - 📄 core-playwright.mdc
+      - 📄 core-project-boundary-and-structure.rules.mdc
+      - 📄 diagnostics-reporting.rules.mdc
+      - 📄 examples-policy.mdc
+      - 📄 feature-lifecycle.mdc
+      - 📄 fixtures-data.mdc
+      - 📄 flakiness-policy.rules.mdc
+      - 📄 project-scaling.mdc
+      - 📄 sorting-filtering.mdc
+      - 📄 test-isolation-state.rules.mdc
+      - 📄 test-structure-tags.mdc
+    - 📁 skills/
+      - 📁 create-api-client/
+        - 📄 SKILL.md
+      - 📁 create-fixture/
+        - 📄 SKILL.md
+      - 📁 create-page-object/
+        - 📄 SKILL.md
+      - 📁 create-test-data-builder/
+        - 📄 SKILL.md
+      - 📁 discover-ui-components/
+        - 📄 SKILL.md
+      - 📁 harden-rules-from-failure/
+        - 📄 SKILL.md
+      - 📁 heal-ui-test/
+        - 📄 SKILL.md
+      - 📁 implement-api-feature/
+        - 📄 SKILL.md
+      - 📁 implement-ui-feature/
+        - 📄 SKILL.md
+      - 📁 refactor-overengineering/
+        - 📄 SKILL.md
+      - 📁 refactor-page-object-to-components/
+        - 📄 SKILL.md
+      - 📁 review-framework-change/
+        - 📄 SKILL.md
+      - 📁 review-ui-suite/
+        - 📄 SKILL.md
+      - 📁 run-verification/
+        - 📄 SKILL.md
+      - 📁 update-project-map/
+        - 📄 SKILL.md
     - 📄 mcp.json
   - 📁 .github/
     - 📁 agents/
@@ -42,33 +69,17 @@ alwaysApply: true
     - 📁 workflows/
       - 📄 copilot-setup-steps.yml
       - 📄 playwright.yml
-  - 📁 promts/
-    - 📄 generator.md
-    - 📄 healer.md
-    - 📄 planner.md
-    - 📄 think.txt
+  - 📁 docs/
+    - 📄 AI_AGENT_PROMPTS_RU.md
+    - 📄 AI_AGENT_PROMPTS.md
+    - 📄 AI_WORKFLOW_MAP_RU.md
+    - 📄 AI_WORKFLOW_MAP.md
+    - 📄 prompt-playbook.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
-    - 📄 gen-project-map.mjs
+    - 📄 project-cartographer.mjs
   - 📁 specs/
-    - 📄 forgot-password.md
-    - 📄 login.md
-  - 📁 src/
-    - 📁 test/
-      - 📁 data/
-        - 📄 users.ts
-      - 📁 fixtures/
-        - 📄 ui.fixture.ts
-      - 📁 pages/
-        - 📄 AccountPage.ts
-        - 📄 ForgotPasswordPage.ts
-        - 📄 HomePage.ts
-        - 📄 LoginPage.ts
   - 📁 tests/
-    - 📁 ui/
-      - 📁 auth/
-        - 📄 forgot-password.ui.spec.ts
-        - 📄 login.ui.spec.ts
     - 📄 seed.spec.ts
   - 📄 .env
   - 📄 .gitignore
@@ -77,3 +88,4 @@ alwaysApply: true
   - 📄 playwright.config.ts
 
 <!-- PROJECT_MAP_END -->
+

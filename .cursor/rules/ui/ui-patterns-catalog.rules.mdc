@@ -1,0 +1,213 @@
+---
+description: Common UI component patterns and taxonomy
+alwaysApply: false
+globs:
+  - "tests/ui/**/*.spec.ts"
+  - "src/**/*.ts"
+---
+
+# UI Patterns Catalog
+
+## Purpose
+
+These rules describe common UI component patterns.
+
+They are guidelines, not mandatory templates.
+
+Do not force the UI to match predefined component names.
+
+Follow the actual UI structure, route ownership, and project map.
+
+---
+
+## Examples Policy
+
+Examples in this rule are illustrative.
+
+Follow the pattern, not the exact names.
+
+Do not create domains, classes, tags, or files only because they appear in examples.
+
+---
+
+## Component Types
+
+Component Objects should be categorized by their role in the UI, not by fixed names.
+
+These categories are guidelines.
+
+---
+
+## Structural Components
+
+Reusable layout or navigation blocks.
+
+Examples:
+
+- header;
+- sidebar;
+- navigation menu;
+- layout container.
+
+Create only when reuse or complexity justifies it.
+
+Do not create a `HeaderComponent` only because a header exists visually.
+
+---
+
+## Control Components
+
+User-driven controls that change state or displayed data.
+
+Examples:
+
+- sorting controls;
+- filtering panels;
+- pagination controls;
+- search controls;
+- tab controls.
+
+Simple one-off controls may stay inside the owning Page Object.
+
+Extract when reuse, complexity, semantic boundary, or Page Object growth justifies it.
+
+---
+
+## Data Components
+
+UI that represents collections or structured data.
+
+Examples:
+
+- lists;
+- tables;
+- grids;
+- cards collection;
+- search results;
+- item collections.
+
+Data components may expose state readers.
+
+Good:
+
+```ts
+const names = await listPage.results.getNames();
+const prices = await listPage.results.getPrices();
+```
+
+Scenario-specific assertions should remain in specs.
+
+---
+
+## Overlay Components
+
+UI that appears over the main content.
+
+Examples:
+
+- modal;
+- dialog;
+- dropdown;
+- toast;
+- popover.
+
+Extract when the overlay has repeated behavior, multiple locators, or meaningful interactions.
+
+---
+
+## Form Components
+
+Grouped input logic and validation.
+
+Examples:
+
+- form section;
+- input group;
+- address form;
+- payment form;
+- field set.
+
+Do not wrap every single input into a component.
+
+---
+
+## Sorting and Listing Pattern
+
+For collection-like pages, sorting and result listing are often meaningful UI blocks.
+
+A possible structure:
+
+```text
+CollectionPage
+  ├── SortComponent
+  └── ResultListComponent
+```
+
+This is only a guideline.
+
+If sorting is a trivial one-off select, it may stay inside the Page Object.
+
+If sorting or listing logic grows, extract it into a Component Object.
+
+Good:
+
+```ts
+await collectionPage.sorting.selectByValue("price-desc");
+
+const prices = await collectionPage.results.getPrices();
+```
+
+Avoid:
+
+```ts
+await collectionPage.sortByPriceDescAndVerify();
+```
+
+The method hides action and assertion together.
+
+---
+
+## Header Component Pattern
+
+A `HeaderComponent` is justified when header behavior becomes reused or complex.
+
+Valid triggers:
+
+- repeated navigation actions across pages;
+- account menu behavior;
+- sign-in navigation reused across suites;
+- logout behavior;
+- cart navigation;
+- search navigation;
+- Page Objects becoming too large because of header logic.
+
+Do not create `HeaderComponent` only because a header exists visually.
+
+If current Page Objects are small and header actions are minimal, keep the logic in the owning Page Object until reuse or complexity is proven.
+
+---
+
+## Extensibility
+
+These categories are not fixed.
+
+New categories may be introduced based on project needs.
+
+When a new UI pattern appears:
+
+1. Identify its role.
+2. Check existing abstractions.
+3. Create a new category only if necessary.
+4. Keep naming aligned with actual UI behavior.
+
+Do not force new UI patterns into existing categories if they do not fit naturally.
+
+---
+
+## Main Principle
+
+Patterns guide architecture.
+
+They do not replace observation.
+
+Reflect real UI behavior and structure.

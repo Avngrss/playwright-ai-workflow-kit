@@ -1,0 +1,232 @@
+---
+description: Component extraction and anti-overengineering rules
+alwaysApply: true
+---
+
+# Component Extraction Rules
+
+## Purpose
+
+These rules define when to extract Component Objects and when not to.
+
+The goal is to avoid both extremes:
+
+```text
+Bad: everything inside one giant Page Object
+Bad: tiny artificial components for every locator
+Good: Page Object as route/screen owner
+Good: Component Object as meaningful UI block owner
+```
+
+---
+
+## When Component Object Is Justified
+
+A Component Object is justified when at least one condition is true:
+
+- the UI block is reused across multiple pages or suites;
+- the UI block has multiple related locators and actions;
+- the UI block has a stable root locator;
+- the UI block represents a real reusable UI area;
+- the UI block represents a meaningful semantic UI area;
+- extracting it reduces meaningful duplication;
+- extracting it prevents a Page Object from becoming too large;
+- extracting it makes AI-generated changes more predictable and localized.
+
+Examples of meaningful UI blocks:
+
+- header;
+- sidebar;
+- modal;
+- toast;
+- table;
+- filter panel;
+- sorting control;
+- pagination;
+- result list;
+- form section;
+- cart summary.
+
+---
+
+## When Not To Create Component Objects
+
+Do not create a Component Object when:
+
+- the UI element is a single locator with no behavior;
+- the UI element is used only once and adds no readability;
+- the logic is trivial and does not represent a UI block;
+- extraction increases complexity without clear benefit;
+- the abstraction is created "just in case";
+- the wrapper only renames Playwright methods.
+
+Bad:
+
+```ts
+export class SubmitButtonComponent {
+  constructor(private readonly page: Page) {}
+
+  async click(): Promise<void> {
+    await this.page.getByTestId("submit").click();
+  }
+}
+```
+
+Better:
+
+```ts
+await formPage.submitButton.click();
+```
+
+or:
+
+```ts
+await formPage.submit();
+```
+
+---
+
+## Anti-God Page Object Rule
+
+A Page Object must not become a dumping ground for all UI behavior.
+
+Consider extracting Component Objects when one or more of these signs appears:
+
+- the Page Object has too many public methods;
+- the Page Object owns multiple unrelated UI areas;
+- locator groups naturally belong together;
+- sorting, filtering, listing, forms, tables, navigation, or modals are mixed together;
+- the class becomes hard to read;
+- AI-generated changes frequently touch unrelated methods;
+- repeated locator/action patterns appear.
+
+---
+
+## Component Root Locator
+
+Prefer Component Objects with a stable root locator.
+
+Good:
+
+```ts
+export class HeaderComponent {
+  constructor(private readonly root: Locator) {}
+
+  readonly signInLink = this.root.getByTestId("nav-sign-in");
+}
+```
+
+Acceptable when a stable root does not exist yet:
+
+```ts
+export class HeaderComponent {
+  constructor(private readonly page: Page) {}
+
+  readonly signInLink = this.page.getByTestId("nav-sign-in");
+}
+```
+
+Do not invent fragile CSS just to create a component.
+
+Bad:
+
+```ts
+this.root = page.locator("body > div:nth-child(2) > div > div:first-child");
+```
+
+---
+
+## Component Ownership Policy
+
+A Component Object should normally belong to a Page Object when the component is part of that page layout.
+
+Good:
+
+```ts
+export class ListPage {
+  readonly sorting: SortComponent;
+  readonly results: ResultListComponent;
+
+  constructor(page: Page) {
+    this.sorting = new SortComponent(page);
+    this.results = new ResultListComponent(page);
+  }
+}
+```
+
+Tests should normally access components through the Page Object.
+
+Good:
+
+```ts
+await listPage.sorting.selectByValue("name-asc");
+
+const names = await listPage.results.getNames();
+```
+
+Avoid:
+
+```ts
+test("sorts items", async ({ sorting, results }) => {
+  await sorting.selectByValue("name-asc");
+
+  const names = await results.getNames();
+});
+```
+
+Use component fixtures only when direct access to the component is clearly needed across multiple suites.
+
+---
+
+## Component Fixture Rule
+
+Do not provide Component Objects through fixtures by default.
+
+Before creating a component fixture, verify:
+
+- the component is reused in several suites;
+- direct fixture access is clearer than Page Object composition;
+- it does not create ownership confusion;
+- it does not bypass the Page Object model;
+- it does not create fixture explosion.
+
+---
+
+## Component Enforcement
+
+If a UI block represents distinct behavior, consider extracting it into a Component Object when it introduces:
+
+- reuse;
+- real complexity;
+- semantic UI boundary;
+- Page Object growth;
+- repeated locator/action patterns.
+
+Do not automatically extract every visible UI block.
+
+Component extraction must improve clarity, locality, or reuse.
+
+---
+
+## Main Principle
+
+Extract components because they solve a real structure problem.
+
+Do not extract components just because an element exists.
+
+## Review Checklist
+
+Before accepting Page Object or Component changes, verify:
+
+- each Page Object represents one page, screen, route, or navigation boundary;
+- each Component Object represents a meaningful UI block;
+- components are accessed through Page Objects by default;
+- no component fixtures were added without clear need;
+- no scenario-specific assertions exist in Page Objects or Components;
+- no `test.step` exists in Page Objects or Components;
+- no test data generation exists in Page Objects or Components;
+- no direct `process.env` access exists in Page Objects or Components;
+- no cross-page business flow is hidden in Page Objects or Components;
+- no speculative methods were added;
+- no fragile locators were introduced;
+- no God Page Object was created.

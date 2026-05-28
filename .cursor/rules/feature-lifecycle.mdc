@@ -1,0 +1,328 @@
+---
+description: UI feature implementation lifecycle
+alwaysApply: true
+---
+
+# UI Feature Implementation Lifecycle
+
+All UI feature work must follow a consistent lifecycle.
+
+The goal is to prevent ad-hoc test implementation and keep the framework structure reusable, readable, and maintainable.
+
+---
+
+## Core Principle
+
+Do not go directly into test implementation without understanding:
+
+- feature scope;
+- required scenarios;
+- required data;
+- existing Page Objects;
+- existing Components;
+- expected assertions;
+- affected rules or skills.
+
+Feature implementation must be intentional, not test-first chaos.
+
+---
+
+## Lifecycle Steps
+
+### 1. Plan
+
+Define the feature scope before changing code.
+
+Identify:
+
+- user-facing behavior;
+- primary scenarios;
+- negative or edge scenarios when relevant;
+- affected pages;
+- affected components;
+- required data;
+- expected assertions;
+- tags and test scope.
+
+Output:
+
+```text
+Feature scope and scenario list are clear.
+```
+
+---
+
+### 2. Reuse Check
+
+Before creating new abstractions, check what already exists.
+
+Check existing:
+
+- datasets;
+- builders;
+- generators;
+- Page Objects;
+- Components;
+- fixtures;
+- assertion helpers;
+- utilities.
+
+Prefer reuse or extension over creating duplicate abstractions.
+
+Output:
+
+```text
+Existing abstractions were reused or gaps were identified.
+```
+
+---
+
+### 3. Data
+
+Define required test data before writing tests.
+
+Use project-defined:
+
+- datasets;
+- builders;
+- generators;
+- factories;
+- types.
+
+Do not generate reusable business data inline in specs.
+
+Output:
+
+```text
+Required data sources are defined or confirmed.
+```
+
+---
+
+### 4. Page Objects
+
+Add or update Page Objects for navigation, page structure, and page-level behavior.
+
+Page Objects should expose user-intent methods and meaningful page elements.
+
+They should not hide the main action under test.
+
+Output:
+
+```text
+Page-level structure and behavior are represented.
+```
+
+---
+
+### 5. Components
+
+Extract meaningful UI blocks when they are reusable or structurally important.
+
+Do not create Components for one-off fragments.
+
+Components should normally be accessed through Page Objects unless direct component access is justified.
+
+Output:
+
+```text
+Reusable UI blocks are represented without over-abstraction.
+```
+
+---
+
+### 6. Tests
+
+Implement specs only after data and structure are defined.
+
+Tests must:
+
+- use `test.step` for meaningful user-level phases;
+- keep the main action under test explicit;
+- use stable Page Object or Component methods;
+- avoid raw selector mechanics;
+- use required tags;
+- avoid hidden behavior in hooks or fixtures.
+
+Scenario-specific assertions belong in specs.
+
+Page Objects and Components may expose small structural assertions such as:
+
+- `expectLoaded`;
+- `expectVisible`;
+- `expectReady`;
+- `expectNoActiveFilters`.
+
+Output:
+
+```text
+Tests clearly show user scenario, action, and verification.
+```
+
+---
+
+### 7. Verify
+
+Run targeted validation.
+
+Required:
+
+- run affected tests;
+- run relevant lint/type checks;
+- run `qa:gate` when applicable.
+
+Do not mark implementation complete without verification.
+
+Output:
+
+```text
+Targeted tests and quality gate passed or failures are understood.
+```
+
+---
+
+### 8. Heal
+
+If tests are flaky, broken, or unstable, fix the root cause.
+
+Do not hide instability by:
+
+- increasing timeouts blindly;
+- adding `waitForTimeout`;
+- weakening assertions;
+- using fake assertions;
+- changing expected behavior without requirement confirmation.
+
+Output:
+
+```text
+Failure root cause is fixed, not masked.
+```
+
+---
+
+### 9. Harden
+
+Update rules, skills, utilities, or project documentation only when the issue represents a reusable pattern or recurring risk.
+
+Do not add new rules for one-off situations.
+
+Possible hardening actions:
+
+- add a missing rule;
+- improve an existing rule;
+- add a reusable helper;
+- improve a builder or generator;
+- improve Page Object or Component boundaries;
+- update the project map;
+- document a new convention.
+
+Output:
+
+```text
+Reusable learning was captured when needed.
+```
+
+---
+
+## Core vs Project Boundary
+
+Feature-specific implementation belongs to the project layer.
+
+Project layer owns:
+
+- Page Objects;
+- Components;
+- feature specs;
+- project datasets;
+- project builders;
+- project generators;
+- domain assertions;
+- project tags.
+
+Framework core owns reusable mechanisms only.
+
+Core may be updated only when the feature reveals a generic reusable need, such as:
+
+- fixture mechanism;
+- config provider;
+- logger;
+- generic API client infrastructure;
+- generic assertion utility;
+- reporting integration;
+- shared test utilities.
+
+Do not add project-specific pages, components, flows, users, roles, selectors, or domain models to framework core.
+
+---
+
+## Small Changes Policy
+
+For small changes, the lifecycle may be lightweight.
+
+Examples:
+
+- updating an existing locator;
+- adding one assertion to an existing test;
+- fixing a typo;
+- adjusting an existing builder field;
+- improving an existing component method.
+
+Even for small changes, do not violate core rules:
+
+- do not hide the action under test;
+- do not add inline random data;
+- do not add raw selector chaos;
+- do not add project-specific logic to core;
+- do not skip verification.
+
+---
+
+## Large Feature Policy
+
+For new UI areas, new flows, or new reusable components, all applicable lifecycle steps must be explicit.
+
+Large feature work must define:
+
+- scenarios;
+- data strategy;
+- Page Object structure;
+- Component structure;
+- test coverage;
+- tags;
+- verification plan;
+- hardening needs.
+
+---
+
+## Rule
+
+Do not skip applicable lifecycle steps.
+
+Do not go directly into test implementation without data and structure defined.
+
+Do not create new abstractions before checking whether existing ones can be reused.
+
+Do not update framework core unless the change is genuinely reusable across projects.
+
+---
+
+## Main Principle
+
+A UI feature should be implemented as a structured, reusable testing capability.
+
+Plan the behavior.
+
+Define the data.
+
+Model the page.
+
+Extract reusable components.
+
+Write clear tests.
+
+Verify the result.
+
+Heal root causes.
+
+Harden reusable learning.

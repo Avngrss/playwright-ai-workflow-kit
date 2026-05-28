@@ -1,0 +1,101 @@
+---
+description: Minimal UI refactoring rules for Page Objects and Components
+alwaysApply: false
+globs:
+  - "src/**/*.ts"
+  - "tests/ui/**/*.spec.ts"
+---
+
+# UI Refactoring Rules
+
+## Purpose
+
+These rules define how to refactor Page Objects, Component Objects, and related UI test code safely.
+
+The goal is to improve structure without changing behavior or introducing unrelated changes.
+
+---
+
+## Minimal Refactoring Rule
+
+When refactoring existing Page Objects into Component Objects:
+
+1. Keep behavior unchanged.
+2. Move only related locators and methods.
+3. Do not add new features.
+4. Do not add new fixtures unless required.
+5. Do not rewrite unrelated tests.
+6. Do not rename public methods unless necessary.
+7. Run the smallest relevant spec first.
+8. Then run the repository quality gate.
+
+---
+
+## Before Refactoring
+
+Before refactoring, identify:
+
+- current owner Page Object;
+- route or screen boundary;
+- repeated locator groups;
+- repeated action groups;
+- component candidates;
+- affected specs;
+- smallest verification command.
+
+Do not refactor by guesswork.
+
+If ownership is unclear, follow the UI Component Discovery rule.
+
+---
+
+## Allowed Refactoring
+
+Allowed:
+
+- move related locators into a Component Object;
+- move related actions into a Component Object;
+- keep public behavior equivalent;
+- update imports;
+- update the owning Page Object composition;
+- update affected specs minimally.
+
+---
+
+## Not Allowed During Refactoring
+
+Do not:
+
+- add new test scenarios;
+- change expected behavior;
+- add speculative methods;
+- introduce new fixtures without clear need;
+- create generic wrappers around Playwright;
+- move business flows into Page Objects;
+- move assertions into Page Objects if they are scenario-specific;
+- rewrite unrelated specs;
+- rename public APIs unless required.
+
+---
+
+## Verification
+
+After refactoring:
+
+1. Run the smallest impacted spec.
+2. Run relevant UI specs if the component is shared.
+3. Run the repository quality gate command defined by the project map.
+
+If verification cannot be run, state what should be run and why it was not executed.
+
+---
+
+## Main Principle
+
+Refactoring should improve ownership and locality without changing behavior.
+
+Small move.
+
+Same behavior.
+
+Targeted verification.
