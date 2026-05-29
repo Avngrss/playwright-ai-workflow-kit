@@ -26,10 +26,13 @@
       - 📄 fixtures-data.mdc
       - 📄 flakiness-policy.rules.mdc
       - 📄 project-scaling.mdc
+      - 📄 reporting-allure.mdc
       - 📄 sorting-filtering.mdc
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-structure-tags.mdc
     - 📁 skills/
+      - 📁 configure-allure-reporting/
+        - 📄 SKILL.md
       - 📁 create-api-client/
         - 📄 SKILL.md
       - 📁 create-fixture/
@@ -69,17 +72,80 @@
     - 📁 workflows/
       - 📄 copilot-setup-steps.yml
       - 📄 playwright.yml
+  - 📁 allure-results/
+    - 📄 0cc37151-9da8-4f7d-a6dd-461cc26d0884-result.json
+    - 📄 0f725331-2368-4340-b40e-42766f78c9b9-result.json
+    - 📄 25b66cf0-6cb0-4bfd-b1ef-bce539f30bc4-result.json
+    - 📄 32fb3328-bd4d-4975-90fe-6afccd2e1927-result.json
+    - 📄 3395ae42-be4e-42f5-bcf3-a7b4d128ad75-result.json
+    - 📄 34bba7cc-174c-468b-a8ab-fc355098c2e4-result.json
+    - 📄 497fadc6-9f40-4e1b-882c-575338cce982-result.json
+    - 📄 4b2070f3-455a-439d-b407-ea755e9fdb3c-attachment.md
+    - 📄 4faba5b6-71a5-456c-9c6d-bdd39e554c42-result.json
+    - 📄 504f863f-96da-4a0f-892f-965b6fdbf6a3-result.json
+    - 📄 51ee3b29-c22c-4f5b-b82e-f589f978d1e6-attachment.md
+    - 📄 52395d05-753a-4061-8cdc-a114e5d09c62-result.json
+    - 📄 56ac8fe9-be82-4686-8ab9-81f80d279e2d-result.json
+    - 📄 5989c384-d4d2-4713-a7e0-8b0c41bef3d6-result.json
+    - 📄 59d4b9e7-6b06-4470-9168-0bf326c5de59-result.json
+    - 📄 641442bb-ac76-4e31-b64c-c100c6752287-result.json
+    - 📄 66002620-51ae-4924-a6e3-34ea0fe61ba2-result.json
+    - 📄 6fe76dca-a895-44f8-be0a-7feacb0f0c35-attachment.md
+    - 📄 7781ad51-2466-4ac6-a634-7122045bacef-result.json
+    - 📄 7b4ad24d-d666-4ec5-9a50-9b397dd2d96c-attachment.md
+    - 📄 7b648c42-27c7-4f2b-9cc7-8664e6251983-result.json
+    - 📄 84f1fa04-f48b-42d3-836e-03dce1ade681-result.json
+    - 📄 875a73a2-dae1-40ad-ba17-76bd67cb8589-result.json
+    - 📄 91136d04-cb27-433e-bb42-0b049486cefa-result.json
+    - 📄 96d98c29-dfe3-407b-a559-9056ab92ce33-result.json
+    - 📄 9f8b50c9-bb33-4007-8406-0f7e1c0cc8c3-result.json
+    - 📄 b5ce418c-18a6-4ffc-b8dd-fd21a992eec4-attachment.md
+    - 📄 bd378f35-b458-4153-b8ef-de66f252731e-attachment.md
+    - 📄 be95eacc-87b3-4838-b75d-391774a4c2e5-result.json
+    - 📄 bffd7053-8085-4933-b66e-8ac7ebcd3453-result.json
+    - 📄 c76564a3-5382-4dad-8ca4-59e9e40bb9b0-result.json
+    - 📄 d8f16f20-241a-4cd7-9c7e-da6eaad45268-result.json
+    - 📄 f3ffbf33-2c5d-4c75-9ce3-84921a156650-result.json
+    - 📄 fb246a01-349a-4cb6-a8dc-83ab8eaa92df-result.json
+    - 📄 feaa4553-54cf-4087-a4aa-85827b3ed1d2-result.json
+    - 📄 fee3fe96-7679-41f5-b5cc-7e18bce63517-result.json
   - 📁 docs/
     - 📄 AI_AGENT_PROMPTS_RU.md
     - 📄 AI_AGENT_PROMPTS.md
     - 📄 AI_WORKFLOW_MAP_RU.md
     - 📄 AI_WORKFLOW_MAP.md
+    - 📄 HOW_TO_USE_AI_AUTOMATION_RU.md
+    - 📄 HOW_TO_USE_AI_AUTOMATION.md
+    - 📄 HOW_TO_USE_PROJECT_MAP_RU.md
     - 📄 prompt-playbook.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
     - 📄 project-cartographer.mjs
   - 📁 specs/
+    - 📄 contact-us.md
+    - 📄 login.md
+  - 📁 src/
+    - 📁 test/
+      - 📁 data/
+        - 📁 assets/
+        - 📁 builders/
+        - 📁 generators/
+        - 📁 types/
+      - 📁 fixtures/
+        - 📄 base.fixture.ts
+        - 📄 test.ts
+        - 📄 ui.fixture.ts
+      - 📁 pages/
+        - 📄 contact-us.page.ts
+        - 📄 home.page.ts
+        - 📄 login.page.ts
+        - 📄 signup-account-info.page.ts
   - 📁 tests/
+    - 📁 ui/
+      - 📁 auth/
+        - 📄 login.ui.spec.ts
+      - 📁 contact/
+        - 📄 contact-us.ui.spec.ts
     - 📄 seed.spec.ts
   - 📄 .env
   - 📄 .gitignore
@@ -89,3 +155,29 @@
 
 <!-- PROJECT_MAP_END -->
 
+
+---
+
+## Test Assets
+
+Upload test files:
+
+- `src/test/assets/files/`
+
+Rules:
+
+- only safe synthetic files;
+- no `.env`;
+- no secrets;
+- no real personal data;
+- no tokens;
+- no cookies;
+- no storage state files;
+- no credentials files.
+
+Usage:
+
+- use this folder for files uploaded in UI tests;
+- do not upload files from project root;
+- do not upload configuration files;
+- do not upload real user files.

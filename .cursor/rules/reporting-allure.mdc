@@ -1,0 +1,211 @@
+---
+description: Allure reporting usage rules
+alwaysApply: true
+---
+
+# Allure Reporting Rules
+
+## Purpose
+
+These rules define how Allure reporting should be used in the Playwright + TypeScript test framework.
+
+The goal is to keep reporting useful, structured, and separated from test logic.
+
+---
+
+## Core Principle
+
+Allure is a reporting layer.
+
+Allure must not become part of Page Object, Component Object, API client, builder, generator, or domain flow logic.
+
+Tests and framework infrastructure may provide reporting metadata and diagnostic artifacts.
+
+---
+
+## Allowed Allure Usage
+
+Allure may be used in:
+
+- specs;
+- test-level metadata helpers;
+- reporting fixtures;
+- diagnostic helpers;
+- failure attachment utilities;
+- CI/report generation scripts.
+
+Allure may be used for:
+
+- feature labels;
+- story labels;
+- suite labels;
+- severity labels;
+- owner labels;
+- links to requirements or tickets;
+- screenshots;
+- traces;
+- videos;
+- API request/response diagnostics when safe;
+- failure context.
+
+---
+
+## Not Allowed Allure Usage
+
+Do not use Allure in:
+
+- Page Objects;
+- Component Objects;
+- test data builders;
+- generators;
+- API clients;
+- domain flows;
+- low-level utilities without reporting responsibility.
+
+Do not put Allure calls inside user actions.
+
+Do not make test behavior depend on Allure.
+
+Do not hide assertions inside Allure steps.
+
+Do not use Allure as a replacement for `test.step`.
+
+---
+
+## Metadata Ownership
+
+Test metadata belongs in specs or dedicated test metadata helpers.
+
+Good metadata examples:
+
+- feature;
+- story;
+- severity;
+- owner;
+- issue link;
+- test case link.
+
+Do not hardcode project-specific labels in framework core.
+
+Project-specific labels belong to the project layer or project map.
+
+---
+
+## Allure Steps vs Playwright test.step
+
+Use Playwright `test.step` as the primary step structure for UI tests.
+
+Do not replace `test.step` with Allure steps.
+
+If Allure step integration is used, it must mirror meaningful user-level steps and must not duplicate every low-level Playwright action.
+
+---
+
+## Attachments
+
+Attachments should be useful for failure analysis.
+
+Allowed attachments:
+
+- screenshot;
+- Playwright trace link or trace artifact;
+- video;
+- sanitized API request;
+- sanitized API response;
+- relevant logs;
+- environment summary without secrets.
+
+Do not attach:
+
+- passwords;
+- tokens;
+- cookies;
+- session storage with secrets;
+- full local storage when it may contain sensitive data;
+- personal data unless explicitly allowed;
+- huge unrelated logs;
+- raw secrets from environment variables.
+
+---
+
+## API Reporting
+
+API tests may attach sanitized request and response diagnostics.
+
+Do not attach:
+
+- Authorization headers;
+- tokens;
+- cookies;
+- passwords;
+- secret keys;
+- full sensitive payloads.
+
+If request/response logging is added, sensitive fields must be masked.
+
+---
+
+## Failure Diagnostics
+
+Allure attachments should help answer:
+
+- what action was performed;
+- what was expected;
+- what actually happened;
+- what page, endpoint, fixture, or data object was involved;
+- which environment was used.
+
+Do not attach noise just to make the report look rich.
+
+---
+
+## Core vs Project Boundary
+
+Framework core may provide generic Allure integration mechanisms.
+
+Allowed in core:
+
+- generic reporter configuration;
+- generic attachment helper;
+- generic metadata helper interface;
+- secret masking utility;
+- report generation script.
+
+Project layer owns:
+
+- feature names;
+- story names;
+- owners;
+- ticket links;
+- requirement links;
+- project-specific labels;
+- domain-specific attachment content.
+
+---
+
+## Guardrails
+
+Do not:
+
+- call Allure from Page Objects or Components;
+- call Allure from builders or generators;
+- call Allure from API clients by default;
+- attach secrets;
+- attach tokens;
+- attach passwords;
+- duplicate every Playwright action as an Allure step;
+- use Allure to hide assertions;
+- make tests pass or fail based on reporting logic;
+- put project-specific reporting metadata into framework core.
+
+---
+
+## Main Principle
+
+Allure improves diagnostics and traceability.
+
+It must not own test behavior.
+
+It must not leak secrets.
+
+It must not pollute Page Objects, Components, clients, or data layers.

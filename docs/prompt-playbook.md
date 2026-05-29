@@ -110,7 +110,72 @@ Also include:
 VERIFY:
 No code generation yet.
 ```
+Use Playwright Planner.
 
+TASK:
+Go to https://automationexercise.com/contact_us  and create a development-ready UI test plan for the Contact Us form.
+
+Use Playwright MCP to inspect the real page UI and form behavior.
+
+Follow the project map and repository rules.
+
+Read available requirements from:
+- visible page UI;
+- form fields;
+- labels/placeholders;
+- buttons;
+- validation behavior;
+- success/error messages;
+- required fields;
+- file upload behavior, if present.
+
+If explicit requirements are not available, infer only from observable UI behavior and clearly mark assumptions.
+
+CONSTRAINTS:
+- UI-only for now.
+- Do not include API tests.
+- Do not implement code.
+- Do not create Page Objects, Components, fixtures, builders, or specs yet.
+- Do not modify any files except the requested plan file.
+- Do not invent hidden business requirements.
+- Do not include scenarios that cannot be validated through UI behavior.
+
+PLAN REQUIREMENTS:
+Create scenarios covering:
+- positive cases;
+- negative cases;
+- edge cases;
+- validation cases;
+- file upload behavior, if applicable;
+- required field behavior;
+- form reset or post-submit state, if observable.
+
+For each scenario include:
+- scenario ID;
+- title;
+- priority: smoke or regression;
+- tags: @ui and @smoke or @regression;
+- preconditions;
+- test data;
+- steps;
+- expected result;
+- notes or assumptions, if any.
+
+Also include:
+- feature scope;
+- out of scope;
+- required test data summary;
+- candidate Page Objects;
+- candidate Component Objects;
+- risks and unknowns;
+- recommended first implementation batch of 3-5 scenarios.
+
+SAVE PLAN AS:
+specs/contact-us.md
+
+Do not implement automation code yet.
+
+The plan must be ready for development.
 ---
 
 ## 4. Generator Prompt Template

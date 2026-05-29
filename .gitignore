@@ -6,4 +6,12 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.env
+.env.uat
+/allure-results/
+/allure-report/
+.scannerwork/
+.sonarlint/
+sonar-project.properties
+.vscode/
 

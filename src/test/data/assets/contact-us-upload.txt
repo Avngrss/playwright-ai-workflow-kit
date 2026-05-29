@@ -1,0 +1,2 @@
+Synthetic upload file for Contact Us UI tests.
+This file contains no secrets and is safe for test automation.
