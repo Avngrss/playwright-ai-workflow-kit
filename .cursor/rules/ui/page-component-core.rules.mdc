@@ -226,6 +226,68 @@ async selectByValue(value: string): Promise<void> {
 ```
 
 ---
+## Raw Locator Mechanics In UI Specs
+
+UI specs must not contain raw selector mechanics for application UI elements.
+
+Avoid direct usage in specs:
+
+- page.locator("...");
+- page.getByTestId("...");
+- page.getByRole("...");
+- page.getByText("...");
+- page.getByLabel("...");
+
+when a Page Object or Component Object should own the locator.
+
+Specs should interact with application UI through:
+
+- Page Object locators/actions/state readers;
+- Component Object locators/actions/state readers, when component extraction is justified;
+- dedicated assertion helpers, if applicable.
+
+Allowed exceptions:
+
+- Playwright-native page assertions that do not select application elements, for example URL assertions;
+- browser/dialog/download/page-level APIs when they are the behavior under test;
+- temporary investigation code that is not committed.
+
+Example:
+
+```ts
+// Bad
+await expect(page.locator("#email")).toBeVisible();
+
+// Good
+await expect(loginPage.emailInput).toBeVisible();
+```
+---
+
+## Cross-Page Assertions
+
+If a UI scenario navigates from one page to another, the spec must not assert destination page elements through:
+
+- raw selectors;
+- source Page Object;
+- unrelated Component Object.
+
+Use the destination Page Object for destination page markers.
+
+Example:
+
+Registration redirects to Login page.
+
+Preferred:
+
+- assert URL if relevant;
+- assert LoginPage marker or LoginPage locator.
+
+Avoid:
+
+- asserting Login page elements with page.locator(...) inside the Registration spec;
+- putting Login page locators into RegisterPage.
+
+Do not make one Page Object own locators from another route, screen, or page.
 
 ## Main Principle
 

@@ -626,3 +626,48 @@ For small or new API features:
 
 Do NOT move logic into prompts.  
 Keep prompts minimal and rely on the system.
+
+---
+
+## Think
+
+Новая UI-фича?
+-> Planner -> Generator + implement-ui-feature
+
+Падает тест?
+-> Healer + heal-ui-test
+
+Нужны данные?
+-> create-test-data-builder
+
+Нужен Page Object?
+-> create-page-object
+
+Нужен Component?
+-> сначала discover-ui-components
+
+Новый API endpoint?
+-> implement-api-feature
+
+Нужен API client?
+-> create-api-client
+
+Нужен Allure?
+-> configure-allure-reporting
+
+Изменилась структура?
+-> update-project-map
+
+После любых изменений?
+-> run verification / qa:gate
+
+
+Не пытаться помнить всё.
+
+1 задача = 1 основной skill.
+
+Project Map решает где.
+Rules решают что нельзя.
+Skill решает как.
+Agent выполняет.
+Scripts проверяют.

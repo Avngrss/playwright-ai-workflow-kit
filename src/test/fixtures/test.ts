@@ -1,1 +1,1 @@
-export { expect, test } from "./ui.fixture";
+export { expect, test } from "./pages.fixture";

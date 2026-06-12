@@ -450,6 +450,7 @@ Avoid:
 
 ---
 
+---
 ## Main Principle
 
 API tests verify API behavior through explicit request and response contracts.
@@ -463,3 +464,13 @@ Tests are minimal and readable.
 The framework core provides mechanisms.
 
 The project layer owns concrete endpoints, payloads, roles, users, clients, and domain contracts.
+
+If response schema or contract assertions require more than a few lines, create or reuse a dedicated API assertion helper instead of putting helper functions in the spec.
+
+Keep specs focused on:
+- arrange;
+- request;
+- status;
+- scenario-level assertions.
+
+Do not create generic validation frameworks unless already used by the project.

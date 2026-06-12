@@ -4,8 +4,12 @@ import path from "node:path";
 const ROOT = process.cwd();
 
 const UI_TESTS_DIR = path.join(ROOT, "tests", "ui");
+const API_TESTS_DIR = path.join(ROOT, "tests", "api");
+
 const PAGES_DIR = path.join(ROOT, "src", "test", "pages");
 const COMPONENTS_DIR = path.join(ROOT, "src", "test", "components");
+const DATA_DIR = path.join(ROOT, "src", "test", "data");
+const API_CLIENTS_DIR = path.join(ROOT, "src", "test", "api", "clients");
 
 function listFiles(dir, filterFn) {
   const result = [];
@@ -38,10 +42,6 @@ function rel(file) {
 function fail(message) {
   console.error(`\nCONVENTION CHECK FAILED:\n${message}\n`);
   process.exit(1);
-}
-
-function warn(message) {
-  console.warn(`\nWARNING:\n${message}\n`);
 }
 
 function ok(message) {
@@ -103,6 +103,15 @@ function checkUiSpecs(uiSpecs) {
 
   ok("No UI specs instantiate Page Objects directly.");
 
+  checkNoPattern(
+    uiSpecs,
+    /path\.resolve\s*\(\s*(process\.cwd\(\)|__dirname)\s*,\s*["'][^"']*\.env["']\s*\)|setInputFiles\s*\(\s*["'][^"']*\.env["']\s*\)|["'][^"']*\.env["']/,
+    (file) =>
+      `UI spec references .env file. Do not use secrets/config files as upload/test assets: ${rel(file)}`
+  );
+
+  ok("No UI specs reference .env as test asset.");
+
   for (const spec of uiSpecs) {
     const content = read(spec);
 
@@ -113,9 +122,38 @@ function checkUiSpecs(uiSpecs) {
     if (!content.includes("@smoke") && !content.includes("@regression")) {
       fail(`UI spec is missing @smoke or @regression tag coverage: ${rel(spec)}`);
     }
+
+    if (content.includes("toHaveScreenshot(") && !content.includes("@visual")) {
+      fail(`UI spec uses toHaveScreenshot() but is missing @visual tag: ${rel(spec)}`);
+    }
   }
 
   ok("All UI specs have @ui and @smoke/@regression tag coverage.");
+  ok("All UI specs with toHaveScreenshot() have @visual tag.");
+}
+
+function checkApiSpecs(apiSpecs) {
+  if (apiSpecs.length === 0) {
+    skip("No API spec files found under tests/api. API spec checks were not executed.");
+    return;
+  }
+
+  checkNoPattern(
+    apiSpecs,
+    /waitForTimeout\s*\(/,
+    (file) => `API spec uses waitForTimeout(): ${rel(file)}`
+  );
+
+  ok("No API specs use waitForTimeout().");
+
+  checkNoPattern(
+    apiSpecs,
+    /path\.resolve\s*\(\s*(process\.cwd\(\)|__dirname)\s*,\s*["'][^"']*\.env["']\s*\)|["'][^"']*\.env["']/,
+    (file) =>
+      `API spec references .env file. Do not use secrets/config files as test assets: ${rel(file)}`
+  );
+
+  ok("No API specs reference .env as test asset.");
 }
 
 function checkUiModelFiles(pageFiles, componentFiles) {
@@ -180,15 +218,52 @@ function checkUiModelFiles(pageFiles, componentFiles) {
   );
 
   ok("No Page Objects or Components generate inline random data.");
+
+  checkNoPattern(
+    uiModelFiles,
+    /toHaveScreenshot\s*\(/,
+    (file) =>
+      `Page/Component uses toHaveScreenshot(). Visual assertions belong in specs: ${rel(file)}`
+  );
+
+  ok("No Page Objects or Components use toHaveScreenshot().");
+}
+
+function checkNoAllureInForbiddenLayers(files) {
+  if (files.length === 0) {
+    skip("No files found in forbidden Allure layers. Allure layer checks were not executed.");
+    return;
+  }
+
+  checkNoPattern(
+    files,
+    /from\s*["']allure-js-commons["']|from\s*["']allure-playwright["']|allure\./,
+    (file) =>
+      `Forbidden Allure usage outside spec/reporting layer: ${rel(file)}`
+  );
+
+  ok("No forbidden Allure usage in pages, components, data, or API clients.");
 }
 
 function main() {
   const uiSpecs = listFiles(UI_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
+  const apiSpecs = listFiles(API_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
+
   const pageFiles = listFiles(PAGES_DIR, (file) => file.endsWith(".ts"));
   const componentFiles = listFiles(COMPONENTS_DIR, (file) => file.endsWith(".ts"));
+  const dataFiles = listFiles(DATA_DIR, (file) => file.endsWith(".ts"));
+  const apiClientFiles = listFiles(API_CLIENTS_DIR, (file) => file.endsWith(".ts"));
 
   checkUiSpecs(uiSpecs);
+  checkApiSpecs(apiSpecs);
   checkUiModelFiles(pageFiles, componentFiles);
+
+  checkNoAllureInForbiddenLayers([
+    ...pageFiles,
+    ...componentFiles,
+    ...dataFiles,
+    ...apiClientFiles,
+  ]);
 
   console.log("\nConvention checks passed.\n");
 }

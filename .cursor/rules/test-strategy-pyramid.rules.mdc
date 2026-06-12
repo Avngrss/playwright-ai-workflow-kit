@@ -1,0 +1,293 @@
+---
+description: Test strategy and test pyramid rules
+alwaysApply: true
+---
+
+# Test Strategy and Test Pyramid Rules
+
+## Purpose
+
+These rules define how agents should choose the right test level.
+
+The goal is to avoid writing expensive UI tests for everything and to keep the test suite balanced, fast, stable, and maintainable.
+
+---
+
+## Core Principle
+
+Use the lowest reliable test level that proves the behavior.
+
+Do not default to UI tests.
+
+Do not duplicate the same behavior across UI, API, visual, and schema tests unless each level verifies a different risk.
+
+---
+
+## Test Levels
+
+### Static / Type Checks
+
+Use for:
+
+- TypeScript correctness;
+- import correctness;
+- type contracts;
+- compile-time safety.
+
+Examples:
+
+- typecheck;
+- lint;
+- schema type inference.
+
+---
+
+### API Tests
+
+Use for:
+
+- backend behavior;
+- request/response contracts;
+- validation rules;
+- authorization behavior;
+- CRUD behavior;
+- error contracts;
+- data setup verification;
+- business rules exposed by API.
+
+API tests should be preferred over UI tests when UI behavior is not the main risk.
+
+---
+
+### UI Tests
+
+Use for:
+
+- user journeys;
+- navigation flows;
+- form interaction;
+- browser behavior;
+- integration between frontend and backend;
+- critical user-facing paths;
+- accessibility of visible controls when relevant;
+- flows that cannot be validated through API alone.
+
+UI tests should be fewer, higher-value, and scenario-focused.
+
+---
+
+### Visual Tests
+
+Use for:
+
+- layout regressions;
+- stable visual states;
+- forms, modals, empty states, success states;
+- UI appearance that functional assertions cannot fully protect.
+
+Visual tests must be checkpoints inside meaningful UI scenarios by default.
+
+Do not create visual tests for every page by default.
+
+---
+
+### Schema / Contract Tests
+
+Use for:
+
+- API response shape;
+- request payload contract;
+- OpenAPI/Swagger-backed schemas;
+- runtime validation with schema libraries such as Zod.
+
+Schema validation does not replace behavior assertions.
+
+---
+
+## Coverage Decision Rules
+
+Before creating a test, decide:
+
+- what risk is being covered;
+- which layer can verify it most cheaply and reliably;
+- whether this behavior is already covered elsewhere;
+- whether a UI test would duplicate API or schema coverage;
+- whether visual coverage adds unique value;
+- whether the test belongs in smoke or regression.
+
+---
+
+## Avoid Duplicate Coverage
+
+Do not write multiple tests at different levels that verify the same thing in the same way.
+
+Bad duplication:
+
+- API test verifies required email validation;
+- UI test also verifies the same backend email validation only by submitting form;
+- visual test also checks the same state without adding visual value.
+
+Good layered coverage:
+
+- API test verifies validation contract;
+- UI test verifies the form shows validation feedback to the user;
+- visual checkpoint verifies the validation state layout.
+
+Each level covers a different risk.
+
+---
+
+## UI Test Selection
+
+Create UI tests only when the value is user-facing.
+
+Good UI candidates:
+
+- critical happy path;
+- main navigation flow;
+- form submission flow;
+- authentication flow;
+- checkout/cart flow;
+- user-visible validation behavior;
+- frontend integration with backend;
+- important error/success states.
+
+Avoid UI tests for:
+
+- every API validation rule;
+- every field combination;
+- pure backend logic;
+- simple data permutations;
+- contract-only checks;
+- behavior already covered better by API tests.
+
+---
+
+## API Test Selection
+
+Create API tests for:
+
+- endpoint contract;
+- status codes;
+- response body fields;
+- validation errors;
+- auth/permission errors;
+- data creation/update/delete;
+- negative cases documented by contract;
+- business rules exposed by API.
+
+Do not use UI tests when API tests prove the same backend behavior more directly.
+
+---
+
+## Visual Test Selection
+
+Create visual checkpoints only for meaningful UI states.
+
+Good visual states:
+
+- default form state;
+- filled form state;
+- validation error state;
+- success state;
+- modal open state;
+- empty state;
+- disabled state.
+
+Do not add screenshots after every low-level action.
+
+Do not create visual snapshots only to increase coverage.
+
+---
+
+## Planning Requirements
+
+Feature plans must include a test level recommendation for each scenario.
+
+For each scenario, specify one of:
+
+- static/typecheck;
+- API;
+- UI;
+- visual checkpoint;
+- schema/contract;
+- not automated.
+
+Each recommendation must include a short reason.
+
+---
+
+## Not Automated
+
+It is acceptable to mark a scenario as not automated when:
+
+- it is too unstable;
+- it requires external systems;
+- it duplicates existing coverage;
+- it is better covered by manual/exploratory testing;
+- automation cost is higher than value.
+
+Do not automate everything by default.
+
+---
+
+## Smoke vs Regression
+
+Smoke tests should cover:
+
+- critical happy paths;
+- basic availability;
+- highest business risk flows.
+
+Regression tests may cover:
+
+- edge cases;
+- negative cases;
+- broader combinations;
+- visual checkpoints;
+- lower-priority scenarios.
+
+Do not put every test into smoke.
+
+---
+## UI Preconditions
+
+UI tests should not use long UI flows as setup when the precondition can be created at a lower reliable layer.
+
+Prefer API or approved data setup for preconditions such as:
+
+- existing user;
+- existing product;
+- existing order;
+- existing duplicate entity.
+
+The UI test should focus on the user-facing behavior under test.
+
+Example:
+
+For duplicate registration email feedback:
+
+- create the existing user through API or approved setup;
+- submit registration form through UI with the same email;
+- assert visible duplicate email feedback.
+
+Do not repeat the successful registration UI journey inside the duplicate-email test unless that repeated journey is the behavior under test.
+
+Setup code must not:
+
+- validate the full API contract;
+- hide the UI action under test;
+- introduce API client abstractions unless reuse justifies it;
+- make the test depend on unrelated UI journeys.
+---
+## Main Principle
+
+Balanced coverage is better than more tests.
+
+Prefer fast, stable, low-level tests for contracts and logic.
+
+Use UI tests for user-facing confidence.
+
+Use visual tests only for meaningful appearance risks.
+
+Avoid duplicate coverage across layers.

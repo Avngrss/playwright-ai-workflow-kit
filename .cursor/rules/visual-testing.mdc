@@ -1,0 +1,434 @@
+---
+description: Visual and screenshot testing rules
+alwaysApply: true
+---
+
+# Visual Testing Rules
+
+## Purpose
+
+These rules define how visual and screenshot tests must be used in the Playwright + TypeScript test framework.
+
+The goal is to catch meaningful visual regressions without creating flaky, noisy, or environment-dependent tests.
+
+---
+
+## Core Principle
+
+Visual tests verify UI appearance.
+
+Visual tests must not replace functional assertions.
+
+Functional behavior must be verified with normal Playwright assertions.
+
+Visual assertions are an additional safety layer for layout, styling, and visual regressions.
+
+---
+
+## When Visual Tests Are Appropriate
+
+Use visual tests for stable UI areas where visual regression matters.
+
+Good candidates:
+
+- important pages;
+- forms;
+- modals;
+- dialogs;
+- headers;
+- navigation areas;
+- empty states;
+- error states;
+- confirmation states;
+- layout-critical components;
+- visual states that are hard to validate with text assertions only.
+
+Examples:
+
+- Contact Us form layout;
+- checkout summary layout;
+- login form layout;
+- modal dialog appearance;
+- product card visual state;
+- table empty state.
+
+---
+
+## When Visual Tests Are Not Appropriate
+
+Do not use visual tests for unstable or highly dynamic UI unless dynamic regions are masked or stabilized.
+
+Avoid visual tests for:
+
+- timestamps;
+- random data;
+- ads;
+- animations;
+- videos;
+- carousels;
+- live counters;
+- third-party widgets;
+- user-generated content;
+- uncontrolled API-driven lists;
+- environment-specific content;
+- pages with non-deterministic layout.
+
+Do not create visual tests just because a page exists.
+
+---
+
+## Visual Test Stability
+
+Before taking a screenshot, the test must put the UI into a stable state.
+
+Stable state means:
+
+- page or component is loaded;
+- required data is visible;
+- animations are finished or disabled;
+- dynamic elements are masked;
+- viewport is controlled;
+- browser/project is consistent;
+- no unrelated overlays are visible;
+- no loading indicators are visible.
+
+Do not use `waitForTimeout` to stabilize screenshots.
+
+Use meaningful UI readiness checks instead.
+
+---
+
+## Screenshot Scope
+
+Prefer the smallest meaningful screenshot scope.
+
+Recommended order:
+
+1. component or section screenshot;
+2. page screenshot only when full-page layout matters;
+3. full-page screenshot only when explicitly justified.
+
+Avoid full-page screenshots by default because they are more likely to be flaky.
+
+---
+
+## Functional Assertions Still Required
+
+Every visual test must include functional readiness assertions before the screenshot.
+
+Examples of readiness assertions:
+
+- page heading is visible;
+- form fields are visible;
+- modal is visible;
+- expected state is reached;
+- loading indicator disappeared.
+
+Do not write tests that only take a screenshot without verifying the target state first.
+
+---
+
+## Dynamic Content
+
+Dynamic content must be handled intentionally.
+
+Allowed strategies:
+
+- mask dynamic locators;
+- use deterministic test data;
+- use stable fixture data;
+- screenshot a smaller stable region;
+- avoid screenshotting dynamic area.
+
+Do not update screenshots to hide dynamic noise.
+
+---
+
+## Baseline Policy
+
+Screenshot baselines must be updated intentionally.
+
+Do not update snapshots automatically to make tests pass.
+
+A baseline update is allowed only when:
+
+- the visual change is expected;
+- the change was reviewed;
+- the affected screenshot is understood;
+- the update is scoped to the intended visual change.
+
+Unexpected visual diffs must be investigated.
+
+---
+
+## Visual Baseline Approval
+
+Visual baselines must be created or updated only by explicit request.
+
+Agents must not approve, keep, or update baseline snapshots silently.
+
+Default behavior for visual implementation:
+
+- add the planned visual checkpoint;
+- run the impacted visual test once;
+- if baseline is missing, report the missing baseline;
+- do not keep or commit generated baseline artifacts unless explicitly requested.
+
+Baseline approval mode is allowed only when the user explicitly asks to create, approve, or update baselines.
+
+When baseline approval mode is explicitly requested:
+
+- run the impacted visual test with snapshot update enabled;
+- review/report the created or updated snapshot files;
+- run the same impacted visual test again without snapshot update;
+- report both command results.
+
+Do not include visual checks in regular quality gate until the baseline environment is stable.
+
+Visual baselines should be generated and verified in a controlled environment, because rendering may differ by operating system, browser, fonts, headless mode, hardware, and other environment factors.
+
+---
+
+## Visual Dynamic Content Stabilization## Visual Dynamic unstable dynamic content.
+
+Before adding a screenshot assertion, identify dynamic or environment-dependent content, such as:
+
+- generated emails;
+- generated names;
+- timestamps;
+- IDs;
+- prices or counters that change;
+- animations;
+- spinners;
+- ads;
+- remote images;
+- user-specific content;
+- validation messages containing dynamic values.
+
+Prefer stable visual states.
+
+Use this priority order:
+
+1. choose a stable UI state that does not show dynamic data;
+2. use deterministic test data when it does not reduce test value;
+3. mask only the dynamic elements that are not relevant to the visual risk;
+4. use screenshot style overrides only when masking is not enough and the project allows it.
+
+Do not mask the element that is the actual visual behavior under test.
+
+Do not use broad masks that hide meaningful layout or content regressions.
+
+Masking belongs in the spec screenshot assertion.
+
+Page Objects and Components may expose locators for dynamic elements, but they must not contain screenshot assertions.
+
+If dynamic data cannot be stabilized safely, postpone the visual checkpoint and report the reason.
+
+
+---
+
+## Visual Checkpoint Policy
+
+Visual assertions should normally be used as checkpoints inside existing UI scenario tests.
+
+A visual checkpoint captures a meaningful and stable UI state reached during the scenario.
+
+Good visual checkpoints:
+
+- default form state;
+- filled form state;
+- validation error state;
+- success state;
+- empty state;
+- modal open state;
+- disabled state;
+- loading finished state;
+- confirmation state.
+
+Do not create separate visual spec files by default.
+
+Create separate visual specs only when:
+
+- visual checks need separate CI execution;
+- there are many visual-only states;
+- visual baseline review is handled separately;
+- visual checks make functional specs too noisy;
+- the project map explicitly defines a separate visual test location.
+
+Functional assertions must come before visual assertions.
+
+A screenshot must confirm appearance of an already verified state, not replace behavior verification.
+
+---
+
+## Multi-State Visual Scenarios
+
+A single UI test may contain multiple visual checkpoints when the scenario naturally moves through multiple meaningful UI states.
+
+Allowed example:
+
+- default form state screenshot;
+- validation error state screenshot;
+- filled form state screenshot;
+- success state screenshot.
+
+Each visual checkpoint must:
+
+- be preceded by functional readiness assertions;
+- use a stable screenshot target;
+- avoid dynamic content;
+- use deterministic test data;
+- have a clear screenshot name.
+
+Do not add screenshots after every low-level action.
+
+Only capture states that are meaningful for visual regression.
+
+---
+
+## Tags
+
+Visual tests must use the `@visual` tag.
+
+Visual tests must also keep the normal layer tag:
+
+- UI visual tests use `@ui`;
+- visual smoke tests may use `@smoke`;
+- visual regression tests should use `@regression`.
+
+Example tag set:
+
+- `@ui`
+- `@visual`
+- `@regression`
+
+---
+
+## Visual Checkpoints Inside Scenarios
+
+Prefer visual checkpoints inside existing UI scenario tests.
+
+Do not create separate visual specs by default.
+
+A visual checkpoint must capture a meaningful UI state reached through user actions.
+
+Functional assertions must verify the state before screenshot.
+
+A scenario may contain multiple visual checkpoints when the UI naturally moves through meaningful states.
+
+---
+
+## File Placement
+
+Visual assertions may live inside regular UI specs when they verify the same user scenario or stable UI state.
+
+Good:
+
+- functional UI test opens a form;
+- test verifies required controls;
+- test takes a scoped screenshot of the stable form section.
+
+Separate visual spec files are optional.
+
+Use separate visual specs only when:
+
+- visual checks need a separate CI job;
+- visual checks are slow or flaky compared to functional tests;
+- visual baseline review is handled separately;
+- multiple visual states are tested without adding functional value;
+- project map defines a separate visual test location.
+
+
+- `tests/ui/<area>/<feature>.visual.spec.ts`
+- `tests/ui/<area>/<feature>.ui.spec.ts` if visual checks are part of the same feature suite.
+
+
+Follow the project map.
+
+Do not create separate visual specs by default.
+
+
+---
+
+## Page Objects and Components
+
+Page Objects and Components may expose locators or actions needed to reach the visual state.
+
+Page Objects and Components must not:
+
+- perform visual assertions;
+- call `toHaveScreenshot`;
+- use Playwright `expect`;
+- update snapshots;
+- contain visual test logic.
+
+Visual assertions belong in specs.
+
+---
+
+## Allure and Reporting
+
+Visual tests may rely on Playwright and Allure report artifacts.
+
+Do not attach secrets or sensitive data.
+
+Do not attach `.env`, storage state, cookies, tokens, passwords, or credentials.
+
+If visual screenshots are attached to reports, they must not expose sensitive data.
+
+---
+
+## Cross-Environment Stability
+
+Visual baselines are environment-sensitive.
+
+Do not compare screenshots across uncontrolled:
+
+- operating systems;
+- browsers;
+- fonts;
+- viewport sizes;
+- device scale factors;
+- themes;
+- locales.
+
+Use consistent Playwright project settings for visual tests.
+
+---
+
+## Review Requirements
+
+Before accepting a visual test, verify:
+
+- screenshot target is stable;
+- dynamic content is masked or avoided;
+- functional readiness assertions exist;
+- tags include `@visual`;
+- screenshot scope is not larger than needed;
+- no `waitForTimeout` was added;
+- no visual logic was added to Page Objects or Components;
+- baseline update is intentional.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- visual tests for every page by default;
+- full-page screenshots without justification;
+- screenshot-only tests with no readiness assertions;
+- screenshots of dynamic data;
+- screenshots of secrets or personal data;
+- `waitForTimeout` before screenshots;
+- updating baselines blindly;
+- hiding functional assertions behind screenshot checks;
+- putting `toHaveScreenshot` inside Page Objects or Components.
+
+---
+
+## Main Principle
+
+Visual tests should catch meaningful visual regressions.
+
+They must be stable, scoped, intentional, and separate from functional behavior checks.

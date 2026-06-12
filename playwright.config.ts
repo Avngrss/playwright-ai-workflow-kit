@@ -14,6 +14,10 @@ export default defineConfig({
   reporter: [["line"], ["allure-playwright"]],
   expect: {
     timeout: 10000,
+    toHaveScreenshot: {
+      maxDiffPixels: 50,
+      threshold: 0.2,
+    },
   },
   use: {
     baseURL: process.env.PRACTICE_TESTING_URL,
@@ -21,7 +25,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
     trace: "on-first-retry",
-    testIdAttribute: "data-qa",
+    testIdAttribute: "data-test",
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
@@ -30,11 +34,17 @@ export default defineConfig({
     {
       name: "ui-chromium",
       testMatch: /.*\.ui\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: process.env.PRACTICE_TESTING_URL,
+      },
     },
     {
       name: "api",
-      testMatch: /.*\.api\.spec\.ts/,
+      testMatch: /tests\/api\/.*\.api\.spec\.ts/,
+      use: {
+        baseURL: process.env.API_BASE_URL,
+      },
     },
   ],
 });

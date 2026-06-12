@@ -203,13 +203,40 @@ Do not generate reusable business data inline in specs.
 
 Do not create data fixtures for one-off values.
 
+#### Test Data Ownership Check
+
+Before writing UI tests:
+
+- identify whether the scenario needs structured form data;
+- reuse an existing builder, generator, or dataset when available;
+- create or update a dedicated test data builder only if reusable structured data is needed;
+- do not define reusable buildData, buildFormData, buildRegistrationData, or similar factory functions inside specs;
+- do not export form data types from Page Objects or Component Objects.
+
+If a Page Object action method needs typed data, import the type from the test data layer.
+
+The test data layer should own:
+
+- form data types;
+- payload types;
+- default test data values;
+- builders;
+- generators;
+- datasets.
+
+Page Objects and Component Objects should not own:
+
+- test data types;
+- builders;
+- generators;
+- default values;
+- random or unique data creation.
+
 ---
 
 ### 5. Identify Required Page Objects
 
-Identify affected Page Objects.
-
-Update Page Objects minimally.
+Identify.Identify affected Page Objects.
 
 Page Objects should represent:
 
@@ -221,6 +248,66 @@ Page Objects should represent:
 Do not create a new Page Object for a UI block that belongs inside an existing page layout.
 
 Do not add speculative methods for future tests.
+
+#### Locator Declaration Style Check
+
+When creating or updatingators as readonly fields;When creating or updating Page Objects or Component Objects:
+- initialize locator fields inside the constructor;
+- do not use getter-based locators by default;
+- do not mix getter locators and constructor-initialized locator fields in the same file;
+- keep locator initialization simple and side-effect free;
+- ensure locator property names match the assigned selector or test id.
+
+Preferred style:
+
+- readonly emailInput: Locator;
+- readonly passwordInput: Locator;
+- readonly submitButton: Locator;
+
+Constructor initialization:
+
+- this.emailInput = page.getByTestId("email");
+- this.passwordInput = page.getByTestId("password");
+- this.submitButton = page.getByTestId("register-submit");
+
+Avoid by default:
+
+- get emailInput(): Locator { return this.page.getByTestId("email"); }
+
+Getter-based locators are allowed only when:
+
+- the existing Page Object already consistently uses getter style;
+- or there is a specific technical reason documented in the implementation report.
+
+- use the project-preferred locator declaration style;
+
+#### Page Object Boundary Check
+
+When creating or updating Page Objects:
+
+- keep Page Objects focused on locators, actions, state readers, and structural markers;
+- do not put test data types, builders, generators, or default values into Page Objects;
+- do not add assertions to Page Objects;
+- do not add test.step to Page Objects;
+- do not make one Page Object own locators from another page, route, or screen;
+- use clear method names that describe the actual UI action.
+
+Method names must match behavior.
+
+Examples:
+
+- use fillRegistrationForm(data) when the method fills the full registration form;
+- use fillRequiredFields(data) only when the method fills strictly required fields;
+- use submit() only when the method clicks the submit action and does not hide extra workflow.
+
+Do not hide in Page Object methods:
+
+- assertions;
+- business workflows;
+- test data generation;
+- cross-page behavior;
+- API setup;
+- reporting logic.
 
 ---
 
@@ -268,21 +355,99 @@ Do not perform the action under test in `beforeEach`.
 
 Do not repeat navigation already done in `beforeEach`.
 
+
+#### Cross-Page Navigation Check
+
+When a UI scenario redirects from one page to another:
+
+- assert the URL if relevant;
+- use the destination Page Object for visible destination markers;
+- do not use raw page.locator(...) in specs for destination page elements;
+- do not use direct page.getByTestId(...), page.getByRole(...), page.getByText(...), or page.getByLabel(...) in specs for destination page elements;
+- do not put destination page locators into the source Page Object.
+
+Example:
+
+Registration redirects to Login page.
+
+Correct approach:
+
+- RegisterPage owns registration page locators and actions;
+- LoginPage owns login page markers and locators;
+- the spec asserts navigation using URL and LoginPage marker.
+
+Avoid:
+
+- asserting Login page elements with raw selectors in the Registration spec;
+- adding Login page locators to RegisterPage;
+- using RegisterPage to verify Login page state.
+
+#### Preconditions And Setup
+
+Use the lowest reliable setup layer for preconditions.
+
+If a UI scenario requires an existing backend entity, prefer API or approved data setup over repeating a long UI flow.
+
+Examples of setup data:
+
+- existing user;
+- existing product;
+- existing order;
+- existing duplicate entity.
+
+The UI test should focus on the user-facing behavior under test.
+
+Example:
+
+For duplicate registration email feedback:
+
+- create the existing user through API or approved setup;
+- open the registration page;
+- submit the registration form with the same email;
+- assert visible duplicate email feedback.
+
+Do not repeat the successful registration UI journey inside the duplicate-email test unless that repeated journey is the behavior under test.
+
+Setup code must not:
+
+- validate the full API contract;
+- hide the UI action under test;
+- introduce API client abstractions unless reuse justifies it;
+- make the test depend on unrelated UI journeys.
 ---
 
-## Assertion Policy
+## Assertion Policy## Assertion Policy assertion helpers may be used for reusable or non-trivial assertions.
 
-Scenario-specific assertions belong in specs.
+Page Objects and Component Objects must not use Playwright expect.
 
-Small structural readiness assertions may live in Page Objects or Component Objects when they represent stable UI readiness.
+Page Objects and Component Objects may expose:
 
-Allowed structural examples:
+- locators;
+- actions;
+- state readers;
+- parsed values;
+- structural markers.
 
-- `expectLoaded`;
-- `expectVisible`;
-- `expectReady`;
-- `expectHidden`;
-- `expectNoActiveFilters`.
+Allowed Page Object or Component Object methods:
+
+- open();
+- submit();
+- fillRegistrationForm(data);
+- getVisibleItems();
+- getValidationMessageText();
+- isLoaded();
+- waitForReady();
+
+Not allowed in Page Objects or Component Objects:
+
+- expect;
+- test.step;
+- toHaveScreenshot;
+- Allure;
+- process.env;
+- inline random data;
+- business assertions;
+- screenshot assertions.
 
 Business assertions must not be hidden inside Page Objects or Component Objects.
 
@@ -290,12 +455,14 @@ Do not use methods that combine action and verification.
 
 Avoid method patterns such as:
 
-- `sortAndVerify`;
-- `loginAndExpectSuccess`;
-- `submitAndValidate`;
-- `createAndCheck`.
+- sortAndVerify;
+- loginAndExpectSuccess;
+- submitAndValidate;
+- createAndCheck.
 
 Keep action and verification explicit in the spec.
+
+Scenario-specific assertions belong in specs.
 
 ---
 
@@ -490,6 +657,22 @@ This skill is complete when:
 - no speculative abstractions were added;
 - impacted specs were run or documented as not run;
 - quality gate was run or documented as not run.
+
+---
+## Optional UI Discovery
+
+Use Playwright generator/codegen/MCP only when repository files and existing Page Objects are not enough to identify stable locators or actual UI behavior.
+
+Do not treat generated code as final implementation.
+
+Generated code must be converted into the project architecture:
+- selectors/actions in Page Objects or Components;
+- specs remain scenario-focused;
+- no raw selector mechanics in specs;
+- required tags and test.step are added;
+- no speculative components or fixtures.
+
+Do not run a separate discovery step unless locator ownership or UI behavior is unclear.
 
 ---
 

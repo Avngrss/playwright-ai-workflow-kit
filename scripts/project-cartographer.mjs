@@ -13,10 +13,16 @@ const MAX_DEPTH = 4;
 const IGNORE_DIRS = new Set([
   "node_modules",
   ".git",
+  ".vscode",
+  ".playwright-mcp",
+
   "test-results",
   "playwright-report",
-  ".playwright-mcp",
-  ".vscode",
+  "blob-report",
+
+  "allure-results",
+  "allure-report",
+
   "dist",
   "build",
   "coverage"

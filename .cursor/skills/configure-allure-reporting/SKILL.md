@@ -91,6 +91,28 @@ Project-specific labels belong to the project layer or project map.
 
 ---
 
+### Metadata Placement
+
+When adding Allure metadata to specs:
+
+- keep concrete metadata values in the spec;
+- use the shared Allure metadata helper;
+- prefer a local common metadata const for repeated suite/feature/owner values;
+- keep story, severity, tms, and issue close to the test they describe;
+- use beforeEach for shared metadata only when it reduces repetition;
+- do not create feature-specific metadata helpers unless repetition is significant.
+
+Do not add Allure calls to:
+
+- Page Objects;
+- Components;
+- API clients;
+- builders;
+- generators;
+- domain flows.
+
+---
+
 ## Allure Steps vs Playwright test.step
 
 Use Playwright `test.step` as the primary step structure for UI tests.
@@ -209,3 +231,27 @@ It must not own test behavior.
 It must not leak secrets.
 
 It must not pollute Page Objects, Components, clients, or data layers.
+
+---
+
+## API Metadata Policy
+
+Use the shared Allure metadata helper for both UI and API tests.
+
+Current shared helper:
+
+- `src/test/reporting/allure-metadata.helper.ts`
+
+Do not create a separate API metadata helper unless metadata behavior truly differs.
+
+Do not create API diagnostics helpers until sanitized request/response attachments are required.
+
+API specs own concrete metadata values.
+
+API clients must not call Allure or reporting helpers.
+
+Builders, generators, auth providers, and non-reporting fixtures must not call Allure.
+
+Future optional helper:
+
+- `src/test/reporting/allure-api-diagnostics.helper.ts`

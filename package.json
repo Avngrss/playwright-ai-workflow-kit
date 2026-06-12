@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test:ui": "npx playwright test tests/ui --project=ui-chromium",
+    "test:api": "npx playwright test tests/api --project=api",
     "project-map:update": "node scripts/project-cartographer.mjs",
     "conventions:check": "node scripts/check-conventions.mjs",
     "qa:gate": "npm run conventions:check"

@@ -2,7 +2,7 @@
 description: API architecture, authentication, clients, and test design rules
 alwaysApply: false
 globs:
-  - tests/api/**/*.spec.ts
+  - tests/api/**/*.api.spec.ts
 ---
 
 # API Architecture Rules
@@ -406,7 +406,29 @@ Avoid:
 - long API chains when only one endpoint behavior is under test.
 
 ---
+## API spec readability
 
+API specs should stay scenario-focused.
+
+Do not put reusable schema validators, response contract assertion helpers, or low-level assertion utilities directly into spec files.
+
+Use dedicated assertion helpers for reusable or non-trivial API response assertions.
+
+Allowed in specs:
+- scenario steps;
+- request execution;
+- status assertions;
+- key business/contract assertions;
+- small local test case arrays.
+
+Assertion helpers must not:
+- send requests;
+- hide workflows;
+- read process.env;
+- use Allure;
+- mutate test data;
+- depend on API clients for assertions.
+---
 ## Main Principle
 
 API tests should verify API behavior through explicit request and response contracts.

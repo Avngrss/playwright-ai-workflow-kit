@@ -1,0 +1,284 @@
+---
+description: Code quality, readability, and generated code cleanliness rules
+alwaysApply: true
+---
+
+# Code Quality and Cleanliness Rules
+
+## Purpose
+
+These rules define baseline code quality expectations for AI-generated and human-written test automation code.
+
+The goal is to keep code readable, minimal, maintainable, and free from unnecessary duplication or accidental complexity.
+
+---
+
+## Core Principle
+
+Code must be simple, intentional, and easy to review.
+
+Following architecture rules is not enough.
+
+Generated code must also be clean.
+
+Prefer clear, boring, maintainable code over clever or over-abstracted code.
+
+---
+
+## General Rules
+
+- Keep changes minimal and targeted.
+- Do not modify unrelated files.
+- Do not add code that is not required by the current task.
+- Do not create abstractions for future possible use.
+- Do not duplicate logic across tests, helpers, fixtures, or Page Objects.
+- Do not hide important scenario behavior inside helpers.
+- Do not add local helpers when a shared helper already exists.
+- Do not add shared helpers for one-off logic.
+- Prefer existing project conventions over new patterns.
+- Remove unused imports, unused variables, and unused methods.
+- Keep naming explicit and responsibility-based.
+
+---
+
+## Test Code Cleanliness
+
+Specs should be readable as user scenarios.
+
+Tests should avoid:
+
+- large blocks of repeated setup;
+- repeated metadata setup;
+- repeated dialog handling;
+- repeated payload objects;
+- repeated upload file path logic;
+- unnecessary local helper functions;
+- comments that explain workarounds instead of fixing root cause;
+- hidden fallback navigation;
+- assertions mixed with unrelated setup;
+- too many concerns in one test.
+
+A test should clearly show:
+
+- setup;
+- action under test;
+- expected result;
+- optional visual checkpoint if meaningful.
+
+---
+
+## Local Helper Policy
+
+Do not create spec-local helper functions when the logic is reusable across multiple tests or specs.
+
+Move reusable helper logic to the correct shared layer.
+
+Examples:
+
+- repeated Allure metadata logic -> reporting helper;
+- repeated test data object -> builder;
+- repeated upload file path -> dataset or test asset helper;
+- repeated dialog handling -> page/spec helper only if it does not hide behavior;
+- repeated API payload -> builder;
+- repeated API request composition -> thin API client if justified.
+
+Spec-local helpers are allowed only when:
+
+- they are used only inside one spec;
+- they improve readability;
+- they do not hide the action under test;
+- they do not duplicate an existing shared helper;
+- they are not likely to be reused elsewhere.
+
+---
+
+## Duplication Policy
+
+Avoid meaningful duplication.
+
+Meaningful duplication includes repeated:
+
+- form data objects;
+- API payloads;
+- Allure metadata setup;
+- upload file paths;
+- dialog handling;
+- locator mechanics in specs;
+- assertion blocks with the same intent;
+- cleanup logic;
+- request construction;
+- fixture wiring.
+
+Do not remove duplication by creating unclear abstractions.
+
+Prefer the smallest clear abstraction at the correct layer.
+
+---
+
+## Workaround Policy
+
+Do not add workarounds directly in tests unless they are explicitly justified and temporary.
+
+Avoid patterns such as:
+
+- fallback navigation;
+- retrying actions manually;
+- ignoring unexpected overlays;
+- swallowing errors;
+- broad `try/catch`;
+- conditional behavior that hides real failures;
+- comments explaining flaky behavior without fixing it.
+
+If a workaround is required, it must be:
+
+- documented;
+- scoped;
+- temporary;
+- linked to a known issue if possible;
+- placed at the correct layer.
+
+Do not hide product or environment instability inside specs.
+
+---
+
+## Naming Rules
+
+Names must describe intent and responsibility.
+
+Good names:
+
+- `contactUsFormBuilder`
+- `applyAllureMetadata`
+- `uploadTestFilePath`
+- `submitContactForm`
+- `waitForSubmissionDialog`
+
+Avoid vague names:
+
+- `helper`
+- `utils`
+- `data`
+- `thing`
+- `doStuff`
+- `handleFlow`
+- `common`
+- `manager`
+
+Do not create generic names unless the responsibility is genuinely generic and clear.
+
+---
+
+## Test Data Cleanliness
+
+Do not keep reusable business/form/API data inline in specs.
+
+Use:
+
+- builders for reusable structured data;
+- generators for unique primitive values;
+- datasets for stable reusable constants;
+- safe test assets for upload files.
+
+Allowed inline values:
+
+- simple scenario constants;
+- expected labels;
+- fixed search query;
+- sort key;
+- small test mechanics values.
+
+Do not use `.env`, secrets, or project root files as test upload files.
+
+---
+
+## Reporting Cleanliness
+
+Do not duplicate reporting metadata logic in every spec.
+
+Use shared reporting helpers when metadata setup repeats.
+
+Concrete metadata values may stay in specs.
+
+Reusable reporting mechanics belong to reporting helpers.
+
+Do not put reporting code in:
+
+- Page Objects;
+- Components;
+- API clients;
+- builders;
+- generators;
+- domain flows.
+
+---
+
+## Visual Checkpoint Cleanliness
+
+Visual checkpoints should be meaningful scenario states.
+
+Do not add screenshots after every low-level action.
+
+Good visual checkpoints:
+
+- default form state;
+- filled form state;
+- validation error state;
+- success state;
+- modal open state;
+- empty state.
+
+Avoid:
+
+- screenshot-only tests without functional assertions;
+- separate visual specs by default;
+- full-page screenshots without justification;
+- screenshots of dynamic or secret data.
+
+---
+
+## API Code Cleanliness
+
+API tests should remain request/response focused.
+
+Avoid:
+
+- long API chains for simple endpoint tests;
+- clients that hide assertions;
+- clients that hide workflows;
+- inline reusable payloads;
+- hardcoded tokens or credentials;
+- duplicated auth logic;
+- service hierarchies without need.
+
+Use builders for reusable payloads.
+
+Use thin clients only when reuse or clarity justifies it.
+
+---
+
+## Review Checklist
+
+Before accepting generated code, check:
+
+- no unrelated files changed;
+- no unused code added;
+- no duplicate helper introduced;
+- no repeated data object left in specs;
+- no local helper should be shared;
+- no shared helper was created for one-off logic;
+- no workaround hides real failure;
+- no test became too long or unclear;
+- no abstraction was added just in case;
+- names are clear;
+- behavior is unchanged unless intended;
+- verification was run or documented.
+
+---
+
+## Main Principle
+
+Clean code is part of test stability.
+
+A test can follow architecture rules and still be bad.
+
+Generated code must be minimal, readable, deduplicated, and easy to maintain.
