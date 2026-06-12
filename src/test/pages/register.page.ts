@@ -49,12 +49,14 @@ export class RegisterPage {
   }
 
   async open(): Promise<void> {
-    await this.page.goto("/auth/register");
+    await this.page.goto("/auth/register", { waitUntil: "domcontentloaded" });
   }
 
   async waitForReady(): Promise<void> {
-    await this.firstNameInput.waitFor({ state: "visible" });
-    await this.submitButton.waitFor({ state: "visible" });
+    await this.page.waitForURL(/\/auth\/register$/);
+    await this.registrationForm.waitFor({ state: "visible", timeout: 20000 });
+    await this.firstNameInput.waitFor({ state: "visible", timeout: 20000 });
+    await this.submitButton.waitFor({ state: "visible", timeout: 20000 });
   }
 
   async fillRegistrationForm(data: RegistrationFormData): Promise<void> {

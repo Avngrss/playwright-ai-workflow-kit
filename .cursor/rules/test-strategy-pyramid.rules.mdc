@@ -250,7 +250,76 @@ Regression tests may cover:
 Do not put every test into smoke.
 
 ---
-## UI Preconditions
+
+## UI Preconditions## UI Preconditions the precondition can be created at a lower reliable layer.
+
+Prefer API or approved data setup for preconditions such as:
+
+- existing user;
+- existing product;
+- existing order;
+- existing duplicate entity.
+
+The UI test should focus on the user-facing behavior under test.
+
+API setup in UI tests must be used only to create required preconditions.
+
+API setup in UI tests must not validate the full API contract.
+
+API setup should verify only that the required precondition was created successfully.
+
+Examples of valid UI preconditions:
+
+- existing user;
+- existing product;
+- existing order;
+- existing duplicate entity;
+- existing cart.
+
+Do not use shared static credentials or shared static users when fresh test data can be created safely.
+
+Do not derive API host by rewriting the UI host.
+
+Do not use heuristics such as:
+
+- stripping `www`;
+- prefixing the UI host with `api`;
+- building API URLs manually in specs.
+
+Specs must not read `process.env` directly.
+
+If API setup is needed, use an approved setup mechanism from the fixture, config, or setup layer.
+
+If no approved API setup mechanism exists for the needed precondition, use one of these options:
+
+- create the precondition through the UI flow as an explicit temporary setup;
+- stop and report a setup architecture gap;
+- create a minimal approved setup helper only when reuse justifies it.
+
+Example:
+
+For duplicate registration email feedback:
+
+- create the existing user through API or approved setup if reliable;
+- otherwise create the existing user through the UI flow as an explicit temporary setup;
+- submit registration form through UI with the same email;
+- assert visible duplicate email feedback.
+
+Do not repeat a long UI journey as setup unless:
+
+- no approved reliable lower-level setup exists;
+- the UI setup is explicitly temporary;
+- the setup is required to use the same backend/runtime path as the UI action under test.
+
+Setup code must not:
+
+- validate the full API contract;
+- hide the UI action under test;
+- introduce API client abstractions unless reuse justifies it;
+- make the test depend on unrelated UI journeys;
+- use shared static credentials when fresh data is possible.
+
+---
 
 UI tests should not use long UI flows as setup when the precondition can be created at a lower reliable layer.
 

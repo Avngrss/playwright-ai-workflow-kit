@@ -47,7 +47,7 @@ export function expectUserResponseSchema(body: unknown): void {
   }
 
   expectNullableStringIfDefined(user.phone);
-  expectStringIfDefined(user.dob);
+  expectNullableStringIfDefined(user.dob);
   expectStringIfDefined(user.email);
   expectStringIfDefined(user.id);
   expectNullableStringIfDefined(user.provider);

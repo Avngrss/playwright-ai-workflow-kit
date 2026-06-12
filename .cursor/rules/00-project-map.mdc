@@ -107,6 +107,8 @@
     - 📄 check-conventions.mjs
     - 📄 project-cartographer.mjs
   - 📁 specs/
+    - 📄 contact.md
+    - 📄 login.md
     - 📄 registration.md
   - 📁 src/
     - 📁 test/
@@ -121,15 +123,25 @@
         - 📄 pages.fixture.ts
         - 📄 test.ts
       - 📁 pages/
+        - 📄 account.page.ts
+        - 📄 contact.page.ts
         - 📄 login.page.ts
         - 📄 register.page.ts
       - 📁 reporting/
         - 📄 allure-metadata.helper.ts
   - 📁 tests/
     - 📁 api/
+      - 📁 contact/
+        - 📄 contact.api.spec.ts
+      - 📁 login/
+        - 📄 login.api.spec.ts
       - 📁 registration/
         - 📄 register-user.api.spec.ts
     - 📁 ui/
+      - 📁 contact/
+        - 📄 contact.ui.spec.ts
+      - 📁 login/
+        - 📄 login.ui.spec.ts
       - 📁 registration/
         - 📁 register.ui.spec.ts-snapshots/
         - 📄 register.ui.spec.ts

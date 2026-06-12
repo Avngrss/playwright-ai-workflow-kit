@@ -1,10 +1,8 @@
-Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
-
-Feature plan:
-<path to feature plan>
+Use Skill: @.cursor/skills/implement-api-feature/SKILL.mdUse Skill: @.cursor/skills:
+<API coverage items from the feature plan to implement now>
 
 Task:
-Implement only the first API batch from the API Implementation Brief.
+Implement only the selected API implementation scope from the API Implementation Brief.
 
 Input:
 - API contract: <swagger/openapi/docs link>
@@ -13,6 +11,7 @@ Input:
 Scope:
 - API tests only
 - no UI tests
+- no visual checkpoints
 - minimal changes
 - do not create new builder/client/helper unless required by the plan or clearly justified
 
@@ -24,16 +23,22 @@ Rules:
 - create API client only if request composition is duplicated or reuse is justified
 - API client must not contain assertions
 - use dedicated assertion helper for non-trivial response contract/schema assertions
+- postpone unstable or ambiguous cases instead of forcing flaky assertions
 
 If blocked:
-stop and report missing contract, builder, auth, or response details.
+stop and report missing contract, builder, auth, setup, or response details.
 
 After changes:
 run impacted API spec and quality gate from project map.
 
 Report:
 - files changed
-- tests added
+- tests added/updated
 - builder/client/helper decisions
+- postponed or blocked cases
 - verification commands/results
 - remaining risks
+
+Feature plan:
+<path to feature plan>
+

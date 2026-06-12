@@ -3,14 +3,17 @@ Use Skill: @.cursor/skills/implement-visual-test/SKILL.md
 Target:
 <spec/page/component>
 
-Scenario:
-<scenario>
+Scenario/state:
+<scenario or visual state>
 
 Task:
-<add visual checkpoint | verify existing visual checkpoint behavior | approve existing baseline>
+<add visual checkpoint | verify existing checkpoint | approve existing baseline>
 
 Approve baseline:
 <yes | no>
+
+Context:
+<any dynamic content, masking, baseline, environment, or stability notes>
 
 Rules:
 - visual assertion must stay in spec
@@ -31,7 +34,6 @@ If Approve baseline is no:
 - do not update or commit baseline snapshots
 - keep Playwright failure artifacts or actual screenshots for review if generated
 - report artifact paths when available
-
 
 If Approve baseline is yes:
 - run impacted visual test with snapshot update enabled

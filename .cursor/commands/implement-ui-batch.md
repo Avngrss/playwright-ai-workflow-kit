@@ -1,10 +1,7 @@
-Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
-
-Feature plan:
-<path to feature plan>
+Use Skill: @.cursor/skills/implement-ui-feature/SKILL.mdUse Skill: @.cursor coverage items from the feature plan to implement now>
 
 Task:
-Implement only the first UI batch from the UI Implementation Brief.
+Implement only the selected UI implementation scope from the UI Implementation Brief.
 
 Scope:
 - UI tests only
@@ -37,12 +34,22 @@ Tests:
 - avoid inline random data
 - keep assertions in specs or dedicated assertion helpers
 
+If blocked:
+stop and report missing locator, data, fixture, page ownership, or behavior details.
+
 After changes:
 run impacted UI spec and quality gate from project map.
 
 Report:
 - files changed
-- tests added
+- tests added/updated
 - Page Object/component decisions
+- data/setup strategy
+- postponed or blocked cases
 - verification commands/results
 - remaining risks
+
+Feature plan:
+<path to feature plan>
+
+Implementation scope:

@@ -185,6 +185,34 @@ Do not invent folders, aliases, commands, or naming conventions.
 
 ---
 
+
+### Optional UI Inspection With Playwright MCP### Optional UI Inspection With feature plan are not enough to identify stable locators or actual UI behavior.
+
+Good reasons to use Playwright MCP:
+
+- locator ownership is unclear;
+- stable locators cannot be identified from code;
+- actual page structure is unclear;
+- UI behavior after an action is unclear;
+- generated locator candidates need validation;
+- page route or visible state differs from the plan;
+- form labels, test ids, roles, or validation messages are unknown.
+
+Do not use Playwright MCP by default for every UI implementation task.
+
+Do not commit raw generated/codegen output.
+
+If Playwright MCP is used:
+
+- inspect the real UI state;
+- identify stable locator candidates;
+- convert discovered locators into Page Object or Component Object ownership;
+- keep specs scenario-focused;
+- avoid raw selector mechanics in specs;
+- report why MCP was needed and what was discovered.
+
+---
+
 ### 4. Identify Required Test Data
 
 Before writing tests, identify required data.
@@ -355,6 +383,7 @@ Do not perform the action under test in `beforeEach`.
 
 Do not repeat navigation already done in `beforeEach`.
 
+---
 
 #### Cross-Page Navigation Check
 
@@ -382,6 +411,8 @@ Avoid:
 - adding Login page locators to RegisterPage;
 - using RegisterPage to verify Login page state.
 
+---
+
 #### Preconditions And Setup
 
 Use the lowest reliable setup layer for preconditions.
@@ -393,27 +424,47 @@ Examples of setup data:
 - existing user;
 - existing product;
 - existing order;
-- existing duplicate entity.
+- existing duplicate entity;
+- existing cart.
 
 The UI test should focus on the user-facing behavior under test.
+
+When UI tests need backend preconditions:
+
+- prefer an approved API setup mechanism when it exists;
+- do not derive API host from the UI host;
+- do not use host rewriting heuristics such as stripping `www` or prefixing the UI host with `api`;
+- do not build API URLs manually in specs;
+- do not read `process.env` in specs;
+- do not validate full API contracts in UI setup;
+- verify only that the required precondition was created successfully;
+- avoid shared static credentials when fresh test data can be created safely;
+- if no approved API setup mechanism exists, use explicit UI setup temporarily or report a setup architecture gap.
 
 Example:
 
 For duplicate registration email feedback:
 
-- create the existing user through API or approved setup;
+- create the existing user through API or approved setup if reliable;
+- otherwise create the existing user through the UI flow as an explicit temporary setup;
 - open the registration page;
 - submit the registration form with the same email;
 - assert visible duplicate email feedback.
 
-Do not repeat the successful registration UI journey inside the duplicate-email test unless that repeated journey is the behavior under test.
+Do not repeat a long UI journey as setup unless:
+
+- no approved reliable lower-level setup exists;
+- the UI setup is explicitly temporary;
+- the setup is required to use the same backend/runtime path as the UI action under test.
 
 Setup code must not:
 
 - validate the full API contract;
 - hide the UI action under test;
 - introduce API client abstractions unless reuse justifies it;
-- make the test depend on unrelated UI journeys.
+- make the test depend on unrelated UI journeys;
+- use shared static credentials when fresh data is possible.
+
 ---
 
 ## Assertion Policy## Assertion Policy assertion helpers may be used for reusable or non-trivial assertions.
