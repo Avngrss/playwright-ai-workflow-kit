@@ -10,7 +10,7 @@ const CONTACT_MESSAGE_PAYLOAD = {
     'This is a deterministic contact API message used for smoke contract validation and status checks.',
 } as const;
 
-test.describe('Contact API | POST /messages', () => {
+test.describe('Contact API | POST /messages', { tag: ['@contact'] }, () => {
   test('sends a contact message with successful response data', { tag: ['@api', '@smoke'] }, async ({ request }) => {
     const response = await request.post(CONTACT_MESSAGES_ENDPOINT, {
       data: CONTACT_MESSAGE_PAYLOAD,

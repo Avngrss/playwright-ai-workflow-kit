@@ -2,7 +2,71 @@
 
 ## Goal
 
-Use this skill when planning test coverage risks;Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
+Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
+
+The goal is to choose the right test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.
+
+The plan must describe the full coverage picture, not only the first small batch.
+
+Do not implement tests during this skill.
+
+---
+
+## Related Rules
+
+Follow these rules:
+
+- Test Strategy and Test Pyramid Rules;
+- API Architecture Rules;
+- Visual Testing Rules;
+- Project Map Rules;
+- Agent Workflow;
+- Examples Policy.
+
+If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
+
+---
+
+## When To Use
+
+Use this skill when:
+
+- creating a new feature test plan;
+- deciding whether behavior should be covered by UI, API, visual, schema, or not automated;
+- reviewing too many proposed UI tests;
+- splitting smoke and regression coverage;
+- avoiding duplicate coverage across layers;
+- creating API and UI implementation briefs before coding.
+
+---
+
+## When NOT To Use
+
+Do not use this skill when:
+
+- the task is a small locator fix;
+- test level is already clear;
+- a failing test needs healing;
+- implementation has already been approved and scoped;
+- the task is only to implement tests from an existing plan.
+
+---
+
+## Workflow
+
+### 1. Identify Behaviors
+
+List the behaviors or requirements to cover.
+
+Do not start from test cases.
+
+Start from:
+
+- user-facing risks;
+- backend/API risks;
+- validation rules;
+- integration points;
+- visual risks;
 - error handling;
 - contract/schema risks.
 
@@ -50,7 +114,40 @@ API coverage is preferred for backend contract, validation, data, and status beh
 
 ---
 
-### 4. Avoid Duplicate Coverage
+### 4. Define Scope Boundary
+
+Before recommending coverage, define the exact feature scope.
+
+Identify:
+
+- source of truth;
+- in-scope behaviors;
+- out-of-scope behaviors;
+- related but excluded controls, endpoints, query parameters, states, or variants.
+
+Do not expand coverage to adjacent functionality unless it is explicitly in scope.
+
+If a feature is based on a specific UI control, API field, endpoint, user flow, or requirement, use that as the scope boundary.
+
+Examples of adjacent functionality:
+
+- nearby UI controls;
+- additional filters;
+- additional query parameters;
+- related endpoints;
+- optional variants;
+- unsupported negative cases;
+- integration combinations.
+
+Adjacent functionality may be planned only when it covers a distinct stated risk or is explicitly requested.
+
+If scope is ambiguous, document the ambiguity and ask for clarification or mark related items as blocked/postponed.
+
+Implementation briefs must not ask implementation agents to cover adjacent functionality unless it is explicitly included in the feature scope.
+
+---
+
+### 5. Avoid Duplicate Coverage
 
 Check whether the behavior is already covered or better covered at another layer.
 
@@ -77,7 +174,7 @@ Bad duplicate coverage example:
 
 ---
 
-### 5. Define Smoke vs Regression
+### 6. Define Smoke vs Regression
 
 Mark each automated scenario as:
 
@@ -94,7 +191,7 @@ Do not put every test into smoke.
 
 ---
 
-### 6. Decide Visual Checkpoints
+### 7. Decide Visual Checkpoints
 
 Recommend visual checkpoints only for meaningful visual risks.
 
@@ -125,7 +222,7 @@ If baseline approval is not requested, visual checkpoints should normally be mar
 
 ---
 
-### 7. Recommend Implementation Scope
+### 8. Recommend Implementation Scope
 
 Recommend implementation scope by level.
 
@@ -170,7 +267,7 @@ Implementation commands should later select a level-specific implementation scop
 
 ---
 
-### 8. Create Implementation Briefs
+### 9. Create Implementation Briefs
 
 Create implementation briefs that are actionable for implementation agents.
 
@@ -180,6 +277,7 @@ API Implementation Brief should include:
 
 - endpoint and method per scenario;
 - payload source or builder need;
+- scenario data strategy;
 - expected status;
 - response assertions;
 - API client decision;
@@ -192,6 +290,7 @@ UI Implementation Brief should include:
 - scenario steps;
 - tags;
 - preconditions and test data;
+- scenario data strategy;
 - expected visible outcome;
 - recommended Page Object;
 - likely Page Object actions or readers;
@@ -204,7 +303,7 @@ Implementation briefs should describe how to implement the coverage safely, but 
 
 ---
 
-### 9. Validate Scenarios vs Implementation Decisions
+### 10. Validate Scenarios vs Implementation Decisions
 
 Before finalizing the plan, verify that planned scenarios represent real coverage items.
 
@@ -234,16 +333,67 @@ Implementation details include:
 
 Bad:
 
-- scenario A: POST /messages happy path
-- scenario B: response contract assertion helper
+- scenario A: POST /messages happy path;
+- scenario B: response contract assertion helper.
 
 Good:
 
-- scenario: POST /messages happy path
-  - response assertions: status 200 and documented response shape
-  - assertion helper decision: use helper only if response assertion is non-trivial
+- scenario: POST /messages happy path;
+- response assertions: status 200 and documented response shape;
+- assertion helper decision: use helper only if response assertion is non-trivial.
 
 Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metadata helpers belong in implementation briefs as decisions, not in coverage backlog as scenarios.
+
+---
+
+### 11. Plan Scenario Variants
+
+When a behavior has multiple data variants, decide whether variants should be:
+
+- separate scenarios;
+- parameterized cases inside one scenario;
+- dataset-driven cases;
+- postponed;
+- not automated.
+
+Use separate scenarios only when each variant verifies a distinct risk or behavior.
+
+Use parameterized cases or datasets when variants verify the same behavior with different inputs.
+
+Do not create one standalone scenario per data value unless each value has unique product risk.
+
+Good separate scenarios:
+
+- invalid email feedback;
+- required field feedback;
+- successful submit;
+- duplicate email feedback.
+
+Good parameterized or dataset cases:
+
+- subject option values;
+- sort options;
+- filter values;
+- supported dropdown values;
+- simple validation field permutations.
+
+Bad:
+
+- scenario A: subject customer-service works;
+- scenario B: subject webmaster works;
+- scenario C: subject payments works.
+
+Good:
+
+- scenario: supported subject options can be selected;
+- scenario data: customer-service, webmaster, payments, return, warranty.
+
+For each variant group, specify:
+
+- behavior being verified;
+- variant values;
+- whether implementation should use local cases, dataset, or builder;
+- why variants are separate scenarios or grouped cases.
 
 ---
 
@@ -253,9 +403,13 @@ Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metad
 
 - name:
 - scope:
+- source of truth:
+- in scope:
+- out of scope:
 - UI target:
 - API contract source:
 - requirements/specs:
+
 
 ### Coverage Matrix
 
@@ -303,6 +457,7 @@ For each API scenario:
 - method:
 - tags:
 - payload source:
+- scenario data strategy:
 - expected status:
 - response assertions:
 - builder decision:
@@ -334,6 +489,7 @@ For each UI scenario:
 - tags:
 - preconditions:
 - test data:
+- scenario data strategy:
 - user steps:
 - expected visible outcome:
 - recommended Page Object:
@@ -389,10 +545,10 @@ List the next commands to run manually.
 
 Examples:
 
-- `/implement-api-batch`
-- `/implement-ui-batch`
-- `/implement-visual-checkpoint`
-- `/create-builder`
+- `/implement-api-batch`;
+- `/implement-ui-batch`;
+- `/implement-visual-checkpoint`;
+- `/create-builder`.
 
 Recommended commands are output only.
 
@@ -416,6 +572,8 @@ This skill is complete when:
 - visual checkpoints are planned or explicitly postponed;
 - schema/contract checks are planned or explicitly postponed;
 - implementation details are not listed as standalone scenarios;
+- scenario variants are grouped or separated intentionally;
+- scenario data strategy is specified for non-trivial variants;
 - API Implementation Brief is actionable, if API coverage exists;
 - UI Implementation Brief is actionable, if UI coverage exists;
 - blockers and missing contract details are documented.
@@ -423,66 +581,3 @@ This skill is complete when:
 The goal is to choose the right test level for each behavior before implementation.
 
 Do not implement tests during this skill.
-
-The goal is to choose the right test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.
-
-The plan must describe the full coverage picture, not only the first small batch.
-
-Do not implement tests during this skill.
-
----
-
-## Related Rules
-
-Follow these rules:
-
-- Test Strategy and Test Pyramid Rules
-- API Architecture Rules
-- Visual Testing Rules
-- Project Map Rules
-- Agent Workflow
-- Examples Policy
-
-If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
-
----
-
-## When To Use
-
-Use this skill when:
-
-- creating a new feature test plan;
-- deciding whether behavior should be covered by UI, API, visual, schema, or not automated;
-- reviewing too many proposed UI tests;
-- splitting smoke and regression coverage;
-- avoiding duplicate coverage across layers;
-- creating API and UI implementation briefs before coding.
-
----
-
-## When NOT To Use
-
-Do not use this skill when:
-
-- the task is a small locator fix;
-- test level is already clear;
-- a failing test needs healing;
-- implementation has already been approved and scoped;
-- the task is only to implement tests from an existing plan.
-
----
-
-## Workflow
-
-### 1. Identify Behaviors
-
-List the behaviors or requirements to cover.
-
-Do not start from test cases.
-
-Start from:
-
-- user-facing risks;
-- backend/API risks;
-- validation rules;
-- integration points;

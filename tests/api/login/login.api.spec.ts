@@ -7,7 +7,7 @@ const REGISTER_ENDPOINT = '/users/register';
 const LOGIN_ENDPOINT = '/users/login';
 const CURRENT_USER_ENDPOINT = '/users/me';
 
-test.describe('Login API | POST /users/login', () => {
+test.describe('Login API | POST /users/login', { tag: ['@login', '@auth'] }, () => {
   test('returns documented token payload for valid credentials', { tag: ['@api', '@smoke'] }, async ({ request }) => {
     const userPayload = registrationUserRequestBuilder.build();
     const registerResponse = await request.post(REGISTER_ENDPOINT, { data: userPayload });

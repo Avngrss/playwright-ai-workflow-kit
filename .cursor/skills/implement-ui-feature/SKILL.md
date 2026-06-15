@@ -186,7 +186,9 @@ Do not invent folders, aliases, commands, or naming conventions.
 ---
 
 
-### Optional UI Inspection With Playwright MCP### Optional UI Inspection With feature plan are not enough to identify stable locators or actual UI behavior.
+### Optional UI Inspection With Playwright MCP
+
+Use Playwright MCP only when repository files, existing specs, existing Page Objects, and the feature plan are not enough to identify stable locators or actual UI behavior.
 
 Good reasons to use Playwright MCP:
 
@@ -236,7 +238,7 @@ Do not create data fixtures for one-off values.
 Before writing UI tests:
 
 - identify whether the scenario needs structured form data;
-- reuse an existing builder, generator, or dataset when available;
+- reuse an existing builder, generator, dataset, or local scenario cases when available;
 - create or update a dedicated test data builder only if reusable structured data is needed;
 - do not define reusable buildData, buildFormData, buildRegistrationData, or similar factory functions inside specs;
 - do not export form data types from Page Objects or Component Objects.
@@ -262,6 +264,40 @@ Page Objects and Component Objects should not own:
 
 ---
 
+#### Scenario Data Implementation Check
+
+Before writing UI tests, decide how scenario data should be represented.
+
+Use inline values when:
+
+- the value is one-off;
+- the value is specific to one assertion;
+- the value does not need reuse or uniqueness.
+
+Use local scenario cases when:
+
+- multiple values verify the same UI behavior;
+- variants are small and specific to one spec.
+
+Use datasets when:
+
+- static UI scenario cases are reused;
+- dropdown, filter, sort, or option values are tested as a group;
+- the same case list is useful across specs.
+
+Use builders when:
+
+- structured form data is reused;
+- valid defaults and overrides are needed;
+- unique or formatted values are required;
+- the same data shape is shared with API setup or API tests.
+
+Do not create one standalone UI test per simple value unless each value has distinct user-facing risk.
+
+Do not create builders for one-off deterministic form data.
+
+---
+
 ### 5. Identify Required Page Objects
 
 Identify.Identify affected Page Objects.
@@ -276,6 +312,8 @@ Page Objects should represent:
 Do not create a new Page Object for a UI block that belongs inside an existing page layout.
 
 Do not add speculative methods for future tests.
+
+---
 
 #### Locator Declaration Style Check
 
@@ -362,6 +400,17 @@ Access components through the owning Page Object.
 
 ---
 
+### Scope Boundary Check
+
+Before writing, visual states, or edge cases unless they are explicitly in scope.Before writing UI tests, verify the selected implementation scope against the feature plan and user request.
+
+If related UI behavior is visible on the same page but not part of the selected scope, report it as out of scope or future coverage instead of implementing it.
+
+If scope is ambiguous, stop and report the ambiguity instead of broadening the test suite.
+
+Implement only UI behavior that belongs to the selected scope.
+
+---
 ### 7. Implement Tests
 
 Implement tests for the selected batch only.
@@ -467,7 +516,46 @@ Setup code must not:
 
 ---
 
-## Assertion Policy## Assertion Policy assertion helpers may be used for reusable or non-trivial assertions.
+#### Spec Helper And Assertion Logic Check
+
+Before writing UI specs, keep specs focused on scenario flow.
+
+Specs may contain:
+
+- scenario data cases;
+- test.step blocks;
+- calls to Page Object or Component actions/readers;
+- direct scenario assertions.
+
+Specs must not accumulate reusable technical helper logic.
+
+Move reusable or non-trivial logic to dedicated helpers when it includes:
+
+- sorting/comparison algorithms;
+- normalization logic;
+- parsing logic used by assertions;
+- repeated predicate checks;
+- field-specific assertion branching;
+- reusable validation of arrays, tables, lists, cards, or API-like structures.
+
+Preferred destinations:
+
+- assertion helpers for reusable/non-trivial assertions;
+- test data datasets for reusable scenario cases;
+- generators for unique primitive values;
+- builders for reusable structured data.
+
+Do not create helper files for one-line one-off logic.
+
+Do not hide the user action under test inside helpers.
+
+Scenario data may stay in the spec when it is local to that spec and improves readability.
+
+---
+
+## Assertion Policy
+
+Dedicated assertion helpers may be used for reusable or non-trivial assertions.
 
 Page Objects and Component Objects must not use Playwright expect.
 
@@ -710,6 +798,7 @@ This skill is complete when:
 - quality gate was run or documented as not run.
 
 ---
+
 ## Optional UI Discovery
 
 Use Playwright generator/codegen/MCP only when repository files and existing Page Objects are not enough to identify stable locators or actual UI behavior.

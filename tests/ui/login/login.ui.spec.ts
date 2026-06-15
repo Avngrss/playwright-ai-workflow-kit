@@ -9,7 +9,7 @@ const LOGIN_UI_METADATA = {
   owner: "qa",
 } as const;
 
-test.describe("Login UI", { tag: ["@ui"] }, () => {
+test.describe("Login UI", { tag: ["@ui", "@login", "@auth"] }, () => {
   test(
     "shows login page controls",
     { tag: ["@smoke"] },

@@ -11,7 +11,7 @@ function buildEmailLongerThanMaxLength(maxLength: number): string {
   return `${'a'.repeat(maxLength)}@example.test`;
 }
 
-test.describe('Registration API | POST /users/register', () => {
+test.describe('Registration API | POST /users/register', { tag: ['@registration', '@auth'] }, () => {
   test('creates user with valid required payload', { tag: ['@api', '@smoke'] }, async ({ request }) => {
     const payload = registrationUserRequestBuilder.build();
 

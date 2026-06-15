@@ -1,0 +1,1753 @@
+# AI Skills and Commands Playbook
+
+## Purpose
+
+This playbook explains how to use the project AI skills and Cursor slash commands for the Playwright + TypeScript test automation framework.
+
+Use this document to decide:
+
+- which skill fits the task;
+- which command to run;
+- what to put into the command placeholders;
+- what the agent is allowed to change;
+- how to verify the result.
+
+The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the framework architecture.
+
+---
+
+## Core Model
+
+```text
+Project Map = where things live
+Rules = what must never be violated
+Skills = how to do a specific task
+Commands = short launchers for common tasks
+Your added context = concrete task details
+Verification = proof that the result works
+```
+
+Use one main skill per task.
+
+Do not use generic "write code" prompts.
+
+Choose the smallest skill that matches the task.
+
+---
+
+## Commands vs Skills
+
+### Skill
+
+A skill is the procedure.
+
+Examples:
+
+- how to implement UI feature tests;
+- how to implement API tests;
+- how to heal a failing UI test;
+- how to review generated code;
+- how to plan coverage.
+
+### Command
+
+A command is a short launcher for a skill.
+
+Examples:
+
+- `/plan-feature`
+- `/implement-api-batch`
+- `/implement-ui-batch`
+- `/review-generated`
+
+Commands should stay short. Do not copy full rules or full skills into commands.
+
+Good command structure:
+
+```text
+Use Skill: <skill path>
+
+Target / Feature plan:
+<placeholder>
+
+Implementation scope / Task:
+<placeholder>
+
+Context:
+<placeholder>
+
+Report:
+<short report fields>
+```
+
+---
+
+## Golden Workflow For New Features
+
+```text
+/plan-feature
+→ /create-builder, only if needed
+→ /implement-api-batch, if API coverage exists
+→ /implement-ui-batch, if UI coverage exists
+→ /implement-visual-checkpoint, only if planned/requested
+→ /review-generated
+→ /run-verification
+→ /refactor-overengineering or /heal-ui-test only if needed
+```
+
+Planning creates the full coverage picture.
+
+Implementation executes explicit scope from the plan.
+
+Do not implement API and UI in one run unless explicitly approved.
+
+---
+
+## Execution Mode Guidance
+
+### `/plan-feature`
+
+Use Agent mode when the expected output is a `specs/<feature>.md` file.
+
+Do not use Cursor Plan mode `Build` for planning-only tasks.
+
+Reason:
+
+```text
+Build can start implementation.
+```
+
+Expected result:
+
+```text
+Only specs/<feature>.md is created or updated.
+```
+
+### Implementation commands
+
+Use Agent mode.
+
+Examples:
+
+- `/implement-api-batch`
+- `/implement-ui-batch`
+- `/create-builder`
+- `/implement-visual-checkpoint`
+- `/refactor-overengineering`
+- `/heal-ui-test`
+
+### Review commands
+
+Use review-only mode/intent.
+
+The agent must not modify files when running review commands.
+
+---
+
+# Command Catalog
+
+## `/plan-feature`
+
+### Purpose
+
+Create a complete feature coverage plan.
+
+The plan should classify coverage as:
+
+- ready to implement now;
+- blocked;
+- postponed;
+- not automated.
+
+### Skill
+
+```text
+@.cursor/skills/plan-test-coverage/SKILL.md
+```
+
+### Use When
+
+- starting a new feature;
+- deciding API/UI/visual/schema coverage;
+- creating or updating `specs/<feature>.md`;
+- avoiding duplicate coverage across layers.
+
+### Do Not Use When
+
+- implementation has already been approved and scoped;
+- only a locator fix is needed;
+- a test is failing and needs healing.
+
+### Template
+
+```md
+Use Playwright Planner.
+Use Skill: @.cursor/skills/plan-test-coverage/SKILL.md
+
+Feature:
+<feature name>
+
+Targets:
+- UI: <route/page>
+- API contract: <swagger/openapi/docs link>
+- requirements/specs: <path/link if any>
+
+Task:
+Create a full feature coverage plan.
+
+Scope:
+- planning only
+- allowed change: create/update only specs/<feature>.md
+
+Output:
+- coverage matrix
+- smoke/regression split
+- API coverage ready to implement now
+- API coverage blocked/postponed
+- UI coverage ready to implement now
+- UI coverage blocked/postponed
+- visual checkpoints planned now
+- visual checkpoints postponed
+- schema/contract checks
+- not automated / blockers
+- API Implementation Brief
+- UI Implementation Brief
+- recommended next commands to run manually
+
+Coverage grouping rule:
+- do not split coverage into first/later batches by default
+- put all safe and unblocked coverage into ready to implement now
+- put only genuinely blocked, unstable, unclear, or intentionally deferred coverage into blocked/postponed
+- implementation details such as helpers, builders, clients, Page Objects, fixtures, and metadata helpers are not scenarios
+
+Stop condition:
+- stop after creating or updating the feature coverage plan
+- do not start implementation
+- do not implement API tests
+- do not implement UI tests
+- do not create builders, fixtures, Page Objects, API clients, or visual checkpoints
+- do not add Allure metadata
+- do not run implementation verification
+- recommended next commands are output only, not permission to execute
+
+Execution mode guidance:
+- prefer Agent mode for this command when the expected output is a specs/<feature>.md file
+- do not use Cursor Plan mode Build for planning-only tasks
+- do not require a separate Build step or follow-up implementation step to write the plan file
+```
+
+---
+
+## `/implement-api-batch`
+
+### Purpose
+
+Implement API coverage from an existing feature plan.
+
+The command name says batch, but the scope does not have to be tiny. Prefer:
+
+```text
+all API coverage ready to implement now
+```
+
+unless there is a reason to narrow the scope.
+
+### Skill
+
+```text
+@.cursor/skills/implement-api-feature/SKILL.md
+```
+
+### Use When
+
+- API coverage exists in a feature plan;
+- API tests need to be implemented;
+- API helper/client/builder decisions are needed.
+
+### Do Not Use When
+
+- the task is UI-only;
+- API behavior is not planned;
+- contract details are missing and no safe scope exists.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
+
+Feature plan:
+<path to feature plan>
+
+Implementation scope:
+<what API coverage to implement from the plan>
+
+Input:
+- API contract: <swagger/openapi/docs link>
+- existing builder/client/helpers: <if any>
+
+Context:
+<any important constraints, blockers, known contract risks, or setup constraints>
+
+After changes:
+run impacted API spec and quality gate from project map.
+
+Report:
+- files changed
+- API coverage implemented
+- API coverage blocked/postponed
+- builder/client/helper decisions
+- verification results
+- remaining risks
+```
+
+### Example
+
+```text
+/implement-api-batch
+
+Feature plan:
+@specs/contact.md
+
+Implementation scope:
+Implement all Contact API coverage from the plan that is currently safe and unblocked.
+
+Input:
+- API contract: https://api.practicesoftwaretesting.com/api/documentation#/Contact
+- existing builder/client/helpers: check existing project first
+
+Context:
+If authenticated Contact endpoints require missing role-capable auth/setup, report them as blocked instead of inventing setup architecture.
+```
+
+---
+
+## `/implement-ui-batch`
+
+### Purpose
+
+Implement UI coverage from an existing feature plan.
+
+Prefer:
+
+```text
+all UI coverage ready to implement now
+```
+
+Do not artificially split safe UI coverage into tiny pieces.
+
+### Skill
+
+```text
+@.cursor/skills/implement-ui-feature/SKILL.md
+```
+
+### Use When
+
+- UI coverage exists in a feature plan;
+- UI specs and Page Objects need to be added or updated;
+- data/setup/page ownership needs to be handled.
+
+### Do Not Use When
+
+- the task is API-only;
+- the task is visual-only;
+- Page Object vs Component ownership is unclear and needs discovery first.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
+
+Feature plan:
+<path to feature plan>
+
+Implementation scope:
+<what UI coverage to implement from the plan>
+
+Context:
+<any important setup/data/page/component/locator constraints>
+
+After changes:
+run impacted UI spec and quality gate from project map.
+
+Report:
+- files changed
+- UI coverage implemented
+- UI coverage blocked/postponed
+- Page Object/component decisions
+- data/setup strategy
+- verification results
+- remaining risks
+```
+
+### Example
+
+```text
+/implement-ui-batch
+
+Feature plan:
+@specs/contact.md
+
+Implementation scope:
+Implement all Contact UI coverage from the plan that is currently safe and unblocked.
+
+Context:
+No visual screenshots in this step.
+If signed-in Contact scenario requires missing approved auth/setup, report it as blocked instead of inventing setup architecture.
+```
+
+---
+
+## `/implement-visual-checkpoint`
+
+### Purpose
+
+Add, verify, or approve a visual checkpoint.
+
+### Skill
+
+```text
+@.cursor/skills/implement-visual-test/SKILL.md
+```
+
+### Use When
+
+- a visual checkpoint is planned or explicitly requested;
+- an existing checkpoint must be verified;
+- a baseline must be approved intentionally.
+
+### Do Not Use When
+
+- the task is functional UI automation only;
+- baseline approval is not intended;
+- the UI state cannot be stabilized.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/implement-visual-test/SKILL.md
+
+Target:
+<spec/page/component>
+
+Scenario/state:
+<scenario or visual state>
+
+Task:
+<add visual checkpoint | verify existing checkpoint | approve existing baseline>
+
+Approve baseline:
+<yes | no>
+
+Context:
+<any dynamic content, masking, baseline, environment, or stability notes>
+
+Rules:
+- visual assertion must stay in spec
+- functional assertion first
+- screenshot assertion after stable UI state
+- use @visual tag
+- use @regression by default for visual checks
+- do not add @smoke to visual checks unless explicitly requested
+- do not create standalone visual spec by default
+- do not put screenshot assertions in Page Objects or Components
+- check dynamic content before screenshot
+- mask only dynamic content that is not relevant to the visual risk
+- do not update baselines unless Approve baseline is yes
+
+If Approve baseline is no:
+- run impacted visual test once
+- if baseline is missing, report that baseline approval is required
+- do not update or commit baseline snapshots
+- keep Playwright failure artifacts or actual screenshots for review if generated
+- report artifact paths when available
+
+If Approve baseline is yes:
+- run impacted visual test with snapshot update enabled
+- run the same impacted visual test again without snapshot update
+- report created or updated snapshot files
+- report both command results
+
+Report:
+- files changed
+- screenshot name
+- masking strategy
+- baseline status
+- verification commands/results
+- remaining risks
+```
+
+---
+
+## `/create-builder`
+
+### Purpose
+
+Create or update reusable test data builders, generators, and types.
+
+### Skill
+
+```text
+@.cursor/skills/create-test-data-builder/SKILL.md
+```
+
+### Use When
+
+- structured data is reused;
+- valid defaults and overrides are needed;
+- unique/formatted primitive values are needed;
+- UI and API share the same data shape.
+
+### Do Not Use When
+
+- the payload is small, deterministic, and used once;
+- local constants in the spec are enough;
+- there are no variants or overrides.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/create-test-data-builder/SKILL.md
+
+Feature plan:
+<path to feature plan>
+
+Target data/entity/payload:
+<target>
+
+Task:
+Create or update only the reusable test data needed by the planned implementation scope.
+
+Context:
+<any required fields, uniqueness needs, existing data files, or contract notes>
+
+After changes:
+run impacted checks from project map.
+
+Report:
+- files changed
+- builder capabilities
+- generator decisions
+- verification results
+- remaining risks
+```
+
+---
+
+## `/discover-ui-components`
+
+### Purpose
+
+Decide whether a UI block should stay inside a Page Object or become a Component Object.
+
+### Skill
+
+```text
+@.cursor/skills/discover-ui-components/SKILL.md
+```
+
+### Use When
+
+- ownership is unclear;
+- Page Object is growing;
+- UI block is reused;
+- agent proposes a component and justification is uncertain;
+- a block has many related locators/actions and a clear semantic boundary.
+
+### Do Not Use When
+
+- a simple page-specific form can stay in the Page Object;
+- no ownership question exists;
+- the task is just implementing a spec.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/discover-ui-components/SKILL.md
+
+Target page/screen/flow:
+<target>
+
+Question:
+Should <UI block> stay inside the Page Object or become a Component Object?
+
+Scope:
+- discovery only
+- do not modify files
+
+Context:
+<any existing specs/pages/components/reuse concerns>
+
+Report:
+- component candidates
+- recommendation for each
+- reasoning
+- suggested ownership
+- files that would be affected if extraction is justified
+```
+
+---
+
+## `/create-page-object`
+
+### Purpose
+
+Create a minimal Page Object for a real page, route, screen, or navigation boundary.
+
+### Skill
+
+```text
+@.cursor/skills/create-page-object/SKILL.md
+```
+
+### Use When
+
+- a current UI test needs a new page abstraction;
+- route/screen ownership is clear;
+- no existing Page Object covers the target.
+
+### Do Not Use When
+
+- the target is only a UI block inside an existing page;
+- the Page Object is speculative;
+- a Component Object would be more appropriate.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/create-page-object/SKILL.md
+
+Target route/screen:
+<route/screen>
+
+Task:
+Create a minimal Page Object only if needed by current tests.
+
+Context:
+<any current spec/fixture/project map details>
+
+After changes:
+run impacted spec/checks if usage is added.
+
+Report:
+- files changed
+- Page Object created/updated
+- fixture exposure decision
+- verification results
+- remaining risks
+```
+
+---
+
+## `/create-api-client`
+
+### Purpose
+
+Create a thin API client for endpoint calls only when reuse or request composition justifies it.
+
+### Skill
+
+```text
+@.cursor/skills/create-api-client/SKILL.md
+```
+
+### Use When
+
+- the same endpoint group is reused;
+- request composition is duplicated;
+- a thin wrapper improves clarity.
+
+### Do Not Use When
+
+- a single request in one spec is enough;
+- the client would hide assertions;
+- the client would become a service hierarchy.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/create-api-client/SKILL.md
+
+Endpoint group:
+<group/resource>
+
+Task:
+Create a thin API client only if reuse or request composition is justified.
+
+Context:
+<where calls are duplicated and existing client/helper status>
+
+After changes:
+run impacted API specs and quality gate.
+
+Report:
+- files changed
+- why client is justified
+- client responsibilities
+- verification results
+- remaining risks
+```
+
+---
+
+## `/create-fixture`
+
+### Purpose
+
+Create or update a fixture only when reuse and layer ownership justify it.
+
+### Skill
+
+```text
+@.cursor/skills/create-fixture/SKILL.md
+```
+
+### Use When
+
+- repeated setup belongs in a fixture;
+- final fixture entry point needs to expose a project object;
+- fixture is thin and does not hide the action under test.
+
+### Do Not Use When
+
+- a one-off value is enough;
+- fixture hides business flow;
+- fixture exposes components by default;
+- specs would import intermediate fixture layers.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/create-fixture/SKILL.md
+
+Fixture need:
+<describe need>
+
+Task:
+Create or update fixture only if reuse and ownership justify it.
+
+Context:
+<any existing fixture entry points, project map rules, or reuse examples>
+
+After changes:
+run impacted specs/checks and quality gate.
+
+Report:
+- files changed
+- fixture created/updated
+- why fixture is justified
+- verification results
+- remaining risks
+```
+
+---
+
+## `/refactor-page-object-to-components`
+
+### Purpose
+
+Extract justified UI blocks from a Page Object into Component Objects.
+
+### Skill
+
+```text
+@.cursor/skills/refactor-page-object-to-components/SKILL.md
+```
+
+### Use When
+
+- component extraction was justified;
+- Page Object is too large;
+- repeated UI block needs component ownership.
+
+### Do Not Use When
+
+- ownership is unclear;
+- no reuse/complexity exists;
+- extraction is speculative.
+
+Use `Discover UI Components` first when ownership is unclear.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/refactor-page-object-to-components/SKILL.md
+
+Target Page Object:
+<file/class>
+
+Reason:
+<why extraction is justified>
+
+Context:
+<any discovery result or repeated usage evidence>
+
+After changes:
+run impacted specs/checks and quality gate.
+
+Report:
+- files changed
+- components created/updated
+- behavior preserved: yes/no
+- verification results
+- remaining risks
+```
+
+---
+
+## `/review-generated`
+
+### Purpose
+
+Review AI-generated or modified code.
+
+### Skill
+
+```text
+@.cursor/skills/review-generated-code-quality/SKILL.md
+```
+
+### Use When
+
+- before accepting AI-generated changes;
+- after implementation;
+- after refactor/heal.
+
+### Do Not Use When
+
+- code changes are needed immediately;
+- a failing UI test needs healing;
+- the task is verification only.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/review-generated-code-quality/SKILL.md
+
+Review changes in:
+<files/diff/current working tree>
+
+Context:
+<any important scope, intentional cleanup, known risks, or verification results>
+
+Scope:
+- review only
+- do not modify files
+- do not run broad refactoring
+- do not suggest unrelated architecture changes
+
+Focus:
+- critical or major issues
+- broken imports
+- failing or missing verification evidence
+- rule violations that can cause false positives or false negatives
+- unnecessary abstractions
+- duplicated reusable logic
+- local helper misuse
+- fixture misuse
+- builder/generator misuse
+- API client necessity
+- assertion ownership
+- Page Object/Component ownership
+- raw selector mechanics in specs
+- inline random data
+- process.env usage outside allowed config layer
+- Allure/reporting ownership
+- visual baseline/snapshot misuse, if visual changes exist
+
+Do not focus on:
+- cosmetic naming preferences
+- optional future improvements
+- tiny metadata duplication
+- minor style issues unless they create real maintenance risk
+
+Output findings by severity:
+- critical
+- major
+- minor
+
+For each finding include:
+- file
+- issue
+- why it matters
+- minimal suggested fix
+
+Recommended next step must be one of:
+- accept changes
+- accept after minor cleanup
+- run refactor-overengineering
+- run heal-ui-test
+- update rule/skill/project map
+- request changes
+```
+
+---
+
+## `/review-ui-suite`
+
+### Purpose
+
+Review an existing UI test suite for architecture, flakiness, ownership, and maintainability.
+
+### Skill
+
+```text
+@.cursor/skills/review-ui-suite/SKILL.md
+```
+
+### Use When
+
+- reviewing a UI folder/spec area;
+- checking Page Object and fixture usage;
+- identifying flakiness or raw selector risks.
+
+### Do Not Use When
+
+- generated code review is enough;
+- framework/core changes need review;
+- code changes should be made immediately.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/review-ui-suite/SKILL.md
+
+Review area:
+<spec folder/files>
+
+Scope:
+- review only
+- do not modify files
+
+Context:
+<any known risks, failures, or focus areas>
+
+Report:
+- critical findings
+- major findings
+- minor findings only if worth fixing
+- minimal suggested fixes
+- recommended next step
+```
+
+---
+
+## `/review-framework-change`
+
+### Purpose
+
+Review framework-level changes.
+
+### Skill
+
+```text
+@.cursor/skills/review-framework-change/SKILL.md
+```
+
+### Use When
+
+- fixtures changed;
+- config changed;
+- project map changed;
+- reporting/auth/API infrastructure changed;
+- rules or skills changed.
+
+### Do Not Use When
+
+- only feature tests changed;
+- generated feature code review is enough.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/review-framework-change/SKILL.md
+
+Review changes in:
+<files/diff/current working tree>
+
+Scope:
+- review only
+- do not modify files
+
+Context:
+<any framework-level intent, known risks, or verification evidence>
+
+Report:
+- critical findings
+- major findings
+- minor findings only if worth fixing
+- minimal suggested fixes
+- recommended next step
+```
+
+---
+
+## `/refactor-overengineering`
+
+### Purpose
+
+Simplify working code without changing behavior.
+
+### Skill
+
+```text
+@.cursor/skills/refactor-overengineering/SKILL.md
+```
+
+### Use When
+
+- review found concrete issues;
+- duplicate tests/helpers exist;
+- abstraction is unjustified;
+- ownership is wrong.
+
+### Do Not Use When
+
+- test is failing and needs healing;
+- new coverage is needed;
+- issue is only speculative preference.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/refactor-overengineering/SKILL.md
+
+Target:
+<component/helper/fixture/flow/client/spec>
+
+Problem:
+<why current code is too noisy, duplicated, brittle, or overengineered>
+
+Task:
+Simplify or clean up with minimal behavior-preserving changes.
+
+Context:
+<any important scope, known risks, verification state, or intentional cleanup>
+
+Scope:
+- keep behavior unchanged
+- keep test intent unchanged
+- minimal changes only
+- do not add new coverage
+- do not refactor unrelated files
+- do not broaden refactor scope
+
+After changes:
+run impacted specs/checks and quality gate from project map.
+
+Report:
+- files changed
+- what was simplified
+- behavior preserved: yes/no
+- verification results
+- remaining risks
+```
+
+---
+
+## `/heal-ui-test`
+
+### Purpose
+
+Investigate and fix a failing UI test.
+
+### Skill
+
+```text
+@.cursor/skills/heal-ui-test/SKILL.md
+```
+
+### Use When
+
+- a UI spec fails;
+- locator/navigation/timing/data/setup issue must be diagnosed;
+- trace/screenshot/video/MCP inspection may be needed.
+
+### Do Not Use When
+
+- no test is failing;
+- the task is cleanup/refactor;
+- expected behavior is unknown and needs product clarification.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/heal-ui-test/SKILL.md
+
+Failing test output:
+<insert failure output>
+
+Task:
+Heal only the failing UI test.
+
+Scope:
+- minimal fix only
+- do not refactor unrelated files
+- do not change expected behavior without evidence
+- do not use waitForTimeout
+
+Context:
+<any important environment/setup/details>
+
+After fix:
+run impacted spec.
+
+Report:
+- root cause
+- files changed
+- minimal fix applied
+- verification result
+- remaining risks
+```
+
+---
+
+## `/run-verification`
+
+### Purpose
+
+Run the smallest sufficient verification.
+
+### Skill
+
+```text
+@.cursor/skills/run-verification/SKILL.md
+```
+
+### Use When
+
+- after implementation;
+- after refactor/heal;
+- before final acceptance.
+
+### Do Not Use When
+
+- code review is needed instead;
+- failure investigation is required first.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/run-verification/SKILL.md
+
+Changed files:
+<files/current working tree>
+
+Task:
+Run the smallest sufficient verification.
+
+Context:
+<any known risks, intentional deletions, or excluded checks>
+
+Check:
+<targeted checks/specs if known>
+
+Report:
+- commands run/results
+- pass/fail summary
+- blockers only
+- known non-blocking risks
+- final accept/reject recommendation
+```
+
+---
+
+## `/update-project-map`
+
+### Purpose
+
+Update project map after structural or convention changes.
+
+### Skill
+
+```text
+@.cursor/skills/update-project-map/SKILL.md
+```
+
+### Use When
+
+- files/folders changed structurally;
+- fixture entry point changed;
+- path aliases/scripts/tags changed;
+- rules/skills/conventions changed.
+
+### Do Not Use When
+
+- only feature tests changed and generated tree update is not needed;
+- no project map impact exists.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/update-project-map/SKILL.md
+
+Change requiring project map update:
+<describe change>
+
+Task:
+Update only relevant project map sections.
+
+Context:
+<any structural changes, deleted files, new commands, scripts, or conventions>
+
+After changes:
+run project map update/check commands from project map if applicable.
+
+Report:
+- files changed
+- sections updated
+- commands run/results
+- remaining risks
+```
+
+---
+
+## `/harden-rules`
+
+### Purpose
+
+Decide whether rules, skills, commands, or project map need hardening after repeated mistakes.
+
+### Skill
+
+```text
+@.cursor/skills/harden-rules-from-failure/SKILL.md
+```
+
+### Use When
+
+- same AI mistake repeats;
+- review finds missing guardrail;
+- skill/command is unclear;
+- convention check should be added later.
+
+### Do Not Use When
+
+- issue is one-off;
+- current code can be fixed directly;
+- there is no repeated pattern.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/harden-rules-from-failure/SKILL.md
+
+Trigger:
+<failure/review finding/repeated AI mistake>
+
+Task:
+Decide whether rules, skills, commands, or project map need hardening.
+
+Scope:
+- update only existing guidance if needed
+- do not create new rule files unless no existing owner fits
+- do not modify tests or production code
+- keep changes minimal
+
+Expected output:
+- hardening needed: yes/no
+- target files to update
+- minimal proposed change
+- remaining risks
+```
+
+---
+
+## `/add-allure-metadata`
+
+### Purpose
+
+Add or normalize Allure metadata in specs.
+
+### Skill
+
+```text
+@.cursor/skills/configure-allure-reporting/SKILL.md
+```
+
+### Use When
+
+- specs need feature/story/severity/owner/tms/issue metadata;
+- metadata is inconsistent;
+- reporting metadata should be normalized.
+
+### Do Not Use When
+
+- behavior should change;
+- Page Objects/API clients/builders need changes;
+- attachments are requested without clear scope.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/configure-allure-reporting/SKILL.md
+
+Target:
+<spec file or feature area>
+
+Task:
+Add or normalize Allure metadata for the target specs.
+
+Context:
+<any feature name, owner, severity convention, TMS/issue links, or existing metadata pattern>
+
+Scope:
+- metadata only
+- no test behavior changes
+- no Page Object changes
+- no Component Object changes
+- no API client changes
+- no builder/generator changes
+- no fixture changes unless reporting fixture is explicitly in scope
+
+After changes:
+run impacted spec or quality gate from project map.
+
+Report:
+- files changed
+- metadata added/updated
+- helper usage
+- verification result
+- remaining risks
+```
+
+---
+
+# Skill Catalog
+
+## configure-allure-reporting
+
+### Purpose
+
+Configure or normalize Allure reporting usage.
+
+### Use When
+
+- adding metadata helper usage;
+- normalizing feature/story/severity/owner labels;
+- updating reporting conventions;
+- adding safe reporting artifacts when explicitly requested.
+
+### Do Not Use When
+
+- test behavior needs to change;
+- Page Objects, API clients, builders, or generators are the target;
+- attachments would include secrets or sensitive data.
+
+---
+
+## create-api-client
+
+### Purpose
+
+Create a thin API client only when endpoint call reuse or request composition duplication justifies it.
+
+### Use When
+
+- multiple tests call the same endpoint group;
+- request composition is duplicated;
+- a thin client improves readability.
+
+### Do Not Use When
+
+- one direct `request` call is enough;
+- the client would hide assertions;
+- the client would become a service hierarchy.
+
+---
+
+## create-fixture
+
+### Purpose
+
+Create or update fixtures.
+
+### Use When
+
+- reuse is meaningful;
+- fixture is thin;
+- fixture belongs to the correct layer;
+- final fixture entry point remains the spec entry point.
+
+### Do Not Use When
+
+- one-off value is enough;
+- fixture hides business flow or action under test;
+- component is being exposed by default without justification.
+
+---
+
+## create-page-object
+
+### Purpose
+
+Create minimal Page Object for a real page, route, screen, or navigation boundary.
+
+### Use When
+
+- current tests need a page abstraction;
+- no existing Page Object covers the route/screen.
+
+### Do Not Use When
+
+- target is a UI block inside an existing page;
+- methods are speculative;
+- a component ownership decision is needed first.
+
+---
+
+## create-test-data-builder
+
+### Purpose
+
+Create reusable structured test data.
+
+### Use When
+
+- data is reused;
+- variants/overrides are needed;
+- unique/formatted values are needed.
+
+### Do Not Use When
+
+- small deterministic local constant is enough.
+
+---
+
+## discover-ui-components
+
+### Purpose
+
+Decide Page Object vs Component Object ownership.
+
+### Use When
+
+- ownership is unclear;
+- block is reused;
+- Page Object is too large;
+- component extraction is proposed but not justified.
+
+### Do Not Use When
+
+- simple page-specific form can stay in Page Object.
+
+---
+
+## harden-rules-from-failure
+
+### Purpose
+
+Decide whether guidance should be hardened after repeated mistakes.
+
+### Use When
+
+- same issue appears repeatedly;
+- rules/skills/commands are missing a guardrail.
+
+### Do Not Use When
+
+- issue is one-off.
+
+---
+
+## heal-ui-test
+
+### Purpose
+
+Fix failing UI tests.
+
+### Use When
+
+- UI test fails;
+- root cause must be classified;
+- locator/timing/navigation/data/setup issue is suspected.
+
+### Do Not Use When
+
+- the task is planned implementation;
+- the task is architecture cleanup only.
+
+---
+
+## implement-api-feature
+
+### Purpose
+
+Implement API tests from a feature plan.
+
+### Use When
+
+- API implementation scope is selected;
+- endpoint behavior or contract should be tested.
+
+### Do Not Use When
+
+- task is UI-only;
+- contract is too unclear to implement safely.
+
+### Key Rule
+
+Do not create separate tests just to exercise helpers, builders, or clients.
+
+---
+
+## implement-ui-feature
+
+### Purpose
+
+Implement UI tests and minimal Page Object updates from a feature plan.
+
+### Use When
+
+- UI implementation scope is selected;
+- planned UI scenarios need automation.
+
+### Do Not Use When
+
+- task is API-only;
+- component discovery is the only task;
+- failing test needs healing.
+
+### MCP Rule
+
+Playwright MCP/codegen is optional discovery only. It is not used by default.
+
+---
+
+## implement-visual-test
+
+### Purpose
+
+Add, verify, or approve visual checkpoints.
+
+### Use When
+
+- visual checkpoint is planned or requested;
+- baseline needs explicit approval.
+
+### Do Not Use When
+
+- UI functional tests are the only task.
+
+---
+
+## plan-test-coverage
+
+### Purpose
+
+Create a complete feature coverage plan.
+
+### Use When
+
+- new feature needs coverage strategy;
+- choosing API/UI/visual/schema/not automated levels.
+
+### Do Not Use When
+
+- implementation already has an approved plan.
+
+### Key Rule
+
+Implementation details are not scenarios.
+
+---
+
+## refactor-overengineering
+
+### Purpose
+
+Simplify working code without changing behavior.
+
+### Use When
+
+- review found concrete cleanup issue;
+- duplication/over-abstraction exists.
+
+### Do Not Use When
+
+- test is failing and needs healing.
+
+---
+
+## refactor-page-object-to-components
+
+### Purpose
+
+Extract justified Component Objects from Page Objects.
+
+### Use When
+
+- component extraction is justified by reuse/complexity/ownership.
+
+### Do Not Use When
+
+- extraction is speculative.
+
+---
+
+## review-framework-change
+
+### Purpose
+
+Review framework-level changes.
+
+### Use When
+
+- fixture/config/project map/reporting/rules/skills/core changed.
+
+### Do Not Use When
+
+- only feature tests changed.
+
+---
+
+## review-generated-code-quality
+
+### Purpose
+
+Review generated code for architecture and correctness risks.
+
+### Use When
+
+- before accepting generated implementation;
+- after implementation/refactor/heal.
+
+### Do Not Use When
+
+- files should be modified during the same task.
+
+---
+
+## review-ui-suite
+
+### Purpose
+
+Review UI suite quality.
+
+### Use When
+
+- checking existing UI specs/Page Objects/fixtures for quality and flakiness risks.
+
+### Do Not Use When
+
+- framework-level review is needed instead.
+
+---
+
+## run-verification
+
+### Purpose
+
+Run smallest sufficient verification.
+
+### Use When
+
+- after changes;
+- before acceptance.
+
+### Do Not Use When
+
+- root cause is unknown and needs healing first.
+
+---
+
+## update-project-map
+
+### Purpose
+
+Update project map after structure/convention changes.
+
+### Use When
+
+- files/folders/scripts/tags/fixture entry points/conventions changed.
+
+### Do Not Use When
+
+- no project map impact exists.
+
+---
+
+# Playwright MCP Usage
+
+Playwright MCP is optional.
+
+Use MCP only when repository files and existing Page Objects are not enough to understand:
+
+- actual UI structure;
+- stable locators;
+- visible page state;
+- validation messages;
+- route changes;
+- behavior after an action.
+
+Do not use MCP by default for every UI task.
+
+Do not commit raw generated/codegen output.
+
+MCP discoveries must be converted into project architecture:
+
+- locators in Page Objects or Components;
+- assertions in specs;
+- no raw selector mechanics in specs.
+
+---
+
+# API Setup For UI Preconditions
+
+When UI tests need backend preconditions:
+
+- prefer approved API setup if it exists;
+- do not derive API host from UI host;
+- do not build API URLs manually in specs;
+- do not read `process.env` in specs;
+- do not validate full API contracts in UI setup;
+- verify only that the precondition was created successfully;
+- avoid shared static credentials when fresh data is possible.
+
+If approved API setup does not exist:
+
+- use explicit UI setup temporarily;
+- or report a setup architecture gap;
+- do not invent host rewriting.
+
+---
+
+# Visual Baseline Workflow
+
+```text
+Approve baseline: no
+→ run visual test once
+→ do not update snapshots
+→ report missing baseline or diff
+
+Approve baseline: yes
+→ run with --update-snapshots
+→ run same test again without update
+→ report created/updated baseline files
+```
+
+---
+
+# Final Checklist Before Sending A Command
+
+```text
+1. Which command am I using?
+2. Which feature plan or files are the input?
+3. What implementation scope is allowed?
+4. What context is important for this run?
+5. What verification should be run?
+```
+
+---
+
+# Golden Rule
+
+```text
+Plan full coverage.
+Implement clear scope.
+Review generated code.
+Refactor only real issues.
+Heal failing tests at the correct layer.
+Harden rules only for repeated mistakes.
+Verify before accepting.
+```

@@ -197,6 +197,24 @@ Verify:
 
 ---
 
+### Spec Readability And Helper Extraction
+
+When reviewing generated specs, check whether the spec is overloaded with technical helper logic.
+
+Flag as major when specs contain non-trivial reusable logic such as:
+
+- sorting/comparison algorithms;
+- parsing/normalization helpers;
+- repeated assertion predicates;
+- large field-specific branching;
+- helper functions that obscure the scenario.
+
+Prefer moving such logic to dedicated assertion helpers or data utilities.
+
+Do not flag small local scenario constants or simple one-off values as issues.
+
+---
+
 ## Severity
 
 ### Critical

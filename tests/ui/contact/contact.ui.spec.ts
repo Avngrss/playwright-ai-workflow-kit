@@ -22,7 +22,7 @@ const CONTACT_SUBJECT_OPTIONS = [
   "status-of-order",
 ] as const;
 
-test.describe("Contact UI", { tag: ["@ui"] }, () => {
+test.describe("Contact UI", { tag: ["@ui", "@contact"] }, () => {
   test(
     "shows contact page controls",
     { tag: ["@smoke"] },

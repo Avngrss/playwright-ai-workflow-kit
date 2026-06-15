@@ -10,7 +10,7 @@ const registrationUiMetadata = {
   owner: "qa",
 } as const;
 
-test.describe("Registration UI", { tag: ["@ui"] }, () => {
+test.describe("Registration UI", { tag: ["@ui", "@registration", "@auth"] }, () => {
   test(
     "registers a user and redirects to login",
     { tag: ["@regression", "@visual"] },

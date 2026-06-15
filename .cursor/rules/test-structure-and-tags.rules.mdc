@@ -1,0 +1,576 @@
+---
+description: UI spec structure, hooks, steps, tags, and spec helper policy
+always sortingalwaysApply: true
+Filter products by brand
+Submit checkout form
+Verify order confirmation is shown
+```
+
+### Bad step names
+
+```text
+Click button
+Fill input
+Wait for table
+Check element
+Call method
+```
+
+### Rule
+
+If a step name would not make sense to a product owner, QA reviewer, or support engineer, it is probably too technical.
+
+---
+
+## Hooks
+
+- `beforeEach` may only perform safe navigation and page-loaded checks.
+- `beforeEach` must not perform the action under test.
+- `beforeEach` must not hide business flows.
+- `beforeEach` must not silently change application state unless the state is generic setup required for every test in the suite.
+- Do not repeat navigation already done in `beforeEach`.
+- Keep navigation-path tests in a separate `describe` block when needed.
+- Hook logic must stay small, explicit, and easy to reason about.
+
+### Good
+
+```ts
+test.describe("Product sorting", { tag: ["@ui", "@regression", "@sorting"] }, () => {
+  test.beforeEach(async ({ homePage }) => {
+    await homePage.open();
+    await homePage.expectLoaded();
+  });
+
+  test("sorts products by price", async ({ homePage }) => {
+    await test.step("Apply ascending price sorting", async () => {
+      await homePage.sorting.applySort("price,asc");
+    });
+
+    await test.step("Verify products are sorted by price", async () => {
+      await expectSortedByPrice(await homePage.productList.getVisiblePrices(), "asc");
+    });
+  });
+});
+```
+
+### Bad
+
+```ts
+test.describe("Product sorting", { tag: ["@ui", "@regression", "@sorting"] }, () => {
+  test.beforeEach(async ({ homePage }) => {
+    await homePage.open();
+    await homePage.sorting.applySort("price,asc");
+  });
+
+  test("sorts products by price", async ({ homePage }) => {
+    await expect(homePage.productList.items).toBeVisible();
+  });
+});
+```
+
+### Why this is bad
+
+The sorting action is the behavior under test, but it is hidden inside `beforeEach`.
+
+The test body no longer clearly shows what scenario is being verified.
+
+---
+
+## Authentication Setup
+
+- Do not perform UI login in `beforeEach` unless the suite explicitly tests login or navigation behavior.
+- For pre-authenticated UI tests, prefer storage state, API setup, or a project-level authenticated context.
+- Core framework may provide authentication mechanisms.
+- Concrete users, roles, credentials, and login flows must stay in the project layer.
+
+### Bad
+
+```ts
+test.beforeEach(async ({ loginPage, user }) => {
+  await loginPage.open();
+  await loginPage.login(user);
+});
+```
+
+This is bad when the suite does not test login behavior.
+
+### Better
+
+```ts
+test.describe("Authenticated product area", { tag: ["@ui", "@regression", "@auth"] }, () => {
+  test.use({ storageState: "state/authenticated-user.json" });
+
+  test("shows user-specific products", async ({ homePage }) => {
+    await test.step("Open product catalog", async () => {
+      await homePage.open();
+      await homePage.expectLoaded();
+    });
+  });
+});
+```
+
+---
+
+## Navigation Rules
+
+- If `beforeEach` opens a page, tests in that `describe` block should not repeat the same navigation.
+- If a test verifies navigation itself, it should not reuse a `beforeEach` that already navigates to the destination.
+- Navigation-path tests should be grouped separately.
+
+### Good
+
+```ts
+test.describe("Product page content", { tag: ["@ui", "@regression", "@catalog"] }, () => {
+  test.beforeEach(async ({ productPage }) => {
+    await productPage.open();
+    await productPage.expectLoaded();
+  });
+
+  test("shows product title", async ({ productPage }) => {
+    await test.step("Verify product title is shown", async () => {
+      await expect(productPage.title).toBeVisible();
+    });
+  });
+});
+```
+
+### Good for navigation behavior
+
+```ts
+test.describe("Product navigation", { tag: ["@ui", "@regression", "@catalog"] }, () => {
+  test("opens product details from catalog", async ({ catalogPage, productPage }) => {
+    await test.step("Open product catalog", async () => {
+      await catalogPage.open();
+      await catalogPage.expectLoaded();
+    });
+
+    await test.step("Open first product details", async () => {
+      await catalogPage.productList.openFirstProduct();
+    });
+
+    await test.step("Verify product details page is shown", async () => {
+      await expect(productPage.title).toBeVisible();
+    });
+  });
+});
+```
+
+---
+
+## Spec Helper And Assertion Logic Policy
+
+Specs should describe test scenarios, not host reusable technical logic.
+
+Specs may contain:
+
+- scenario data that is local to the spec;
+- small deterministic constants;
+- table-driven scenario cases;
+- `test.step` blocks;
+- calls to Page Object, Component Object, API client, builder, generator, or assertion helper APIs;
+- direct scenario-specific assertions.
+
+Specs must not accumulate non-trivial reusable technical logic.
+
+Move technical logic out of specs when it includes:
+
+- sorting or comparison algorithms;
+- parsing logic used by assertions;
+- normalization logic used by assertions;
+- reusable predicate checks;
+- reusable array, table, list, card, or response validation;
+- large field-specific assertion branching;
+- repeated helper functions used by multiple tests;
+- logic that makes the scenario hard to read.
+
+Preferred destinations:
+
+- assertion helpers for reusable or non-trivial assertions;
+- test data datasets for reusable scenario cases;
+- generators for unique primitive values;
+- builders for reusable structured data;
+- API clients only for reusable request composition;
+- Page Objects or Components only for UI locators, actions, and state readers.
+
+Assertion helpers may contain Playwright `expect`.
+
+Page Objects and Component Objects must not contain Playwright `expect`.
+
+Do not create helper files for one-line one-off logic.
+
+Do not hide the user action under test inside helpers.
+
+Do not move scenario data out of the spec when it is small, local, and improves readability.
+
+Examples of logic that should usually move out of specs:
+
+- monotonic sorting checks;
+- price, name, date, or rating comparison helpers;
+- text normalization used by assertions;
+- parsing visible prices, dates, quantities, or ratings for assertion purposes;
+- repeated validation of product cards, table rows, list items, or paginated responses;
+- large `if/else` branching that chooses assertion behavior by field type.
+
+### Good spec shape
+
+```ts
+test("sorts products by price", { tag: ["@ui", "@smoke", "@sorting"] }, async ({ productsPage }) => {
+  await test.step("Open product catalog", async () => {
+    await productsPage.open();
+    await productsPage.waitForReady();
+  });
+
+  await test.step("Apply price ascending sorting", async () => {
+    await productsPage.selectSort("price,asc");
+  });
+
+  await test.step("Verify visible products are sorted by price", async () => {
+    await expectNumericValuesSorted(await productsPage.getVisibleProductPrices(), "asc");
+  });
+});
+```
+
+### Bad spec shape
+
+```ts
+function normalizeName(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function isMonotonicAscending<T>(values: T[], compare: (left: T, right: T) => number): boolean {
+  for (let index = 1; index < values.length; index += 1) {
+    if (compare(values[index - 1], values[index]) > 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+test("sorts products by name", { tag: ["@ui", "@regression", "@sorting"] }, async ({ productsPage }) => {
+  const names = await productsPage.getVisibleProductNames();
+  const normalizedNames = names.map(normalizeName);
+
+  expect(isMonotonicAscending(normalizedNames, (left, right) => left.localeCompare(right))).toBeTruthy();
+});
+```
+
+### Why this is bad
+
+The spec contains reusable normalization and comparison algorithms.
+
+The test scenario is harder to read and the helper logic is harder to reuse or review.
+
+---
+
+## Tagging
+
+- Use Playwright details-object tags.
+- Do not put tags inside test title strings.
+- Every UI test must be covered by `@ui`.
+- Every UI test must be classified with an execution-scope tag: `@smoke` or `@regression`.
+- Tags may be applied at `describe` level when they apply to all tests inside the suite.
+- Test-level tags may add more specific classification.
+- Do not introduce new tags without adding them to the tag registry or project map.
+
+### Good
+
+```ts
+test.describe("Product sorting", { tag: ["@ui", "@regression", "@sorting"] }, () => {
+  test("sorts products by price", async ({ homePage }) => {
+    await test.step("Apply ascending price sorting", async () => {
+      await homePage.sorting.applySort("price,asc");
+    });
+  });
+});
+```
+
+### Good
+
+```ts
+test("shows login page for guest user", { tag: ["@ui", "@smoke", "@login"] }, async ({ loginPage }) => {
+  await test.step("Open login page", async () => {
+    await loginPage.open();
+    await loginPage.waitForReady();
+  });
+});
+```
+
+### Bad
+
+```ts
+test("shows login page @ui @smoke @login", async ({ loginPage }) => {
+  await loginPage.open();
+});
+```
+
+### Why this is bad
+
+Tags inside title strings mix metadata with human-readable test names.
+
+Structured tags are easier to validate, filter, and report.
+
+---
+
+## Tag Taxonomy
+
+Use tags consistently by category.
+
+### Required layer tag
+
+Every UI test must have:
+
+```text
+@ui
+```
+
+### Required execution-scope tag
+
+Every UI test must have one of:
+
+```text
+@smoke
+@regression
+```
+
+### Optional quality/type tags
+
+Allowed examples:
+
+```text
+@visual
+@a11y
+@flaky
+@wip
+```
+
+### Optional feature/domain tags
+
+Feature/domain tags describe the product area, feature, or behavior under test.
+
+Examples:
+
+```text
+@sorting
+@filtering
+@login
+@register
+@registration
+@catalog
+@contact
+@checkout
+@cart
+@profile
+@auth
+```
+
+Feature/domain tags are project-specific.
+
+They are allowed only if defined in the tag registry or project map.
+
+Use feature/domain tags when they add useful filtering, reporting, ownership, or traceability value.
+
+Do not create feature/domain tags ad hoc in specs.
+
+Do not use feature/domain tags as a replacement for required layer and execution-scope tags.
+
+### Tag category examples
+
+```ts
+export const tags = {
+  layer: ["@ui", "@api"],
+  execution: ["@smoke", "@regression"],
+  quality: ["@visual", "@a11y", "@flaky", "@wip"],
+  feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
+  domain: ["@catalog", "@contact", "@checkout", "@cart", "@profile", "@auth"],
+} as const;
+```
+
+These examples are illustrative.
+
+The actual allowed tags must be documented by the project tag registry or project map.
+
+---
+
+## Smoke vs Regression Policy
+
+- `@smoke` identifies a small, high-value subset for fast validation.
+- `@regression` identifies broader coverage.
+- A test should not be tagged with both `@smoke` and `@regression` unless the project explicitly requires duplicated classification.
+- If smoke tests should also run during regression, configure the regression pipeline to include both `@smoke` and `@regression`.
+
+### Recommended CI filtering idea
+
+```text
+Smoke run:
+@ui AND @smoke
+
+Regression run:
+@ui AND (@smoke OR @regression)
+```
+
+---
+
+## Tag Registry Rule
+
+Allowed tags must be documented in a tag registry or project map.
+
+The registry should define:
+
+- tag name;
+- tag category;
+- meaning;
+- whether it is required or optional;
+- whether it is universal or project-specific.
+
+### Example registry
+
+```ts
+export const tags = {
+  layer: ["@ui", "@api"],
+  execution: ["@smoke", "@regression"],
+  quality: ["@visual", "@a11y", "@flaky", "@wip"],
+  feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
+  domain: ["@catalog", "@contact", "@checkout", "@cart", "@profile", "@auth"],
+} as const;
+```
+
+Do not create ad-hoc tags in specs.
+
+When a new feature/domain tag is needed:
+
+- add it to the tag registry or project map first;
+- explain its purpose;
+- use it consistently across related specs.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- UI tests without `test.step`;
+- one huge step wrapping the entire test;
+- a separate step for every single click;
+- technical step names such as `Click button` or `Fill input`;
+- business actions hidden inside `beforeEach`;
+- UI login in `beforeEach` for non-login tests;
+- repeating navigation already performed by `beforeEach`;
+- tags inside test title strings;
+- untagged UI tests;
+- UI tests without `@smoke` or `@regression`;
+- random project-specific tags not defined in the tag registry;
+- mixing setup, action, and assertion in unclear steps;
+- long helper functions inside specs;
+- reusable parsing, normalization, sorting, comparison, or predicate logic inside specs;
+- large assertion branching inside specs;
+- feature/domain tags used without being registered;
+- feature/domain tags used instead of required `@ui` and `@smoke` or `@regression`.
+
+---
+
+## Main Principle
+
+A UI spec should read like a clear user scenario.
+
+Hooks prepare safe context.
+
+Steps describe user intent.
+
+Tags describe execution and reporting metadata.
+
+Scenario data may stay in the spec when it is local and readable.
+
+Reusable technical helper logic belongs in assertion helpers, datasets, builders, generators, or other proper support layers.
+
+Feature/domain tags may be used for reporting and filtering, but only when registered.
+
+The test body must clearly show the behavior being verified.
+---
+
+# Test Structure and Tags
+
+## Purpose
+
+These rules define how UI specs must be structured in a universal Playwright + TypeScript testing framework.
+
+The main goals are:
+
+- keep UI tests readable;
+- make reports and traces easy to analyze;
+- prevent hidden behavior in hooks;
+- keep test scenarios explicit;
+- standardize tags for CI filtering and reporting;
+- avoid project-specific tag chaos;
+- keep reusable technical helper logic out of specs.
+
+---
+
+## Steps
+
+- UI tests must use `test.step` for meaningful user-level phases.
+- Step names must describe user intent.
+- Step names must not describe low-level implementation details.
+- Do not wrap every single Playwright action into a separate step.
+- Do not put the whole test body into one generic step.
+- Prefer 2-5 meaningful steps per UI test.
+- Steps should normally represent phases such as navigation, user action, and verification.
+- Steps should call Page Object or Component Object methods instead of exposing raw selector mechanics.
+
+### Good
+
+```ts
+test("sorts products by price", { tag: ["@ui", "@smoke", "@sorting"] }, async ({ homePage }) => {
+  await test.step("Open product catalog", async () => {
+    await homePage.open();
+    await homePage.expectLoaded();
+  });
+
+  await test.step("Apply ascending price sorting", async () => {
+    await homePage.sorting.applySort("price,asc");
+  });
+
+  await test.step("Verify products are sorted by price", async () => {
+    await expectSortedByPrice(await homePage.productList.getVisiblePrices(), "asc");
+  });
+});
+```
+
+### Bad
+
+```ts
+test("sorts products by price", { tag: ["@ui", "@smoke"] }, async ({ page }) => {
+  await test.step("Click sort dropdown", async () => {
+    await page.locator(".sort").click();
+  });
+
+  await test.step("Click price", async () => {
+    await page.locator(".price").click();
+  });
+
+  await test.step("Click asc", async () => {
+    await page.locator(".asc").click();
+  });
+
+  await test.step("Wait", async () => {
+    await page.waitForTimeout(1000);
+  });
+});
+```
+
+### Why this is bad
+
+This structure exposes implementation details instead of user intent.
+
+It creates noisy reports and encourages low-level selector usage in specs.
+
+---
+
+## Step Naming Rules
+
+Step names should be written from the user's perspective.
+
+### Good step names
+
+```text
+Open product catalog

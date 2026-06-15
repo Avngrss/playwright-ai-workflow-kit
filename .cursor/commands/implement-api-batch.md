@@ -1,4 +1,4 @@
-Use Skill: @.cursor/skills/implement-api-feature/SKILL.mdUse Skill: @.cursor/skills:
+Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
 <API coverage items from the feature plan to implement now>
 
 Task:
