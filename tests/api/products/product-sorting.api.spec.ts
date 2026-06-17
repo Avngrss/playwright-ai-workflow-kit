@@ -24,10 +24,9 @@ test.describe('Products API | GET /products sort options', { tag: ['@sorting', '
         const response = await request.get(PRODUCTS_ENDPOINT, {
           params: { sort: sortCase.sort },
         });
-        const body = await response.json();
 
         expect(response.status()).toBe(200);
-        expectPaginatedProductSortingResponse(body);
+        const body = expectPaginatedProductSortingResponse(await response.json());
 
         test.skip(
           body.data.length < 2,

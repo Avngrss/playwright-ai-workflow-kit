@@ -2,9 +2,7 @@
 
 ## Goal
 
-Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
-
-The goal is to choose the right test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.
+Use this skill when planning test coverage for a feature, endpoint test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
 
 The plan must describe the full coverage picture, not only the first small batch.
 
@@ -18,6 +16,7 @@ Follow these rules:
 
 - Test Strategy and Test Pyramid Rules;
 - API Architecture Rules;
+- API Schema Validation Rules;
 - Visual Testing Rules;
 - Project Map Rules;
 - Agent Workflow;
@@ -74,47 +73,7 @@ Each behavior should describe something meaningful that the product or system mu
 
 ---
 
-### 2. Classify Risk
-
-For each behavior, classify the main risk:
-
-- backend contract;
-- frontend interaction;
-- user journey;
-- validation;
-- authorization;
-- visual layout;
-- data transformation;
-- integration;
-- configuration;
-- error handling.
-
-The risk classification should explain why the behavior needs automated coverage.
-
----
-
-### 3. Choose Test Level
-
-For each behavior, choose one primary test level:
-
-- static/typecheck;
-- API;
-- UI;
-- visual checkpoint;
-- schema/contract;
-- not automated.
-
-Use the lowest reliable level that proves the behavior.
-
-Do not default everything to UI.
-
-UI coverage is justified only when the risk is user-facing, browser-visible, or frontend-integration specific.
-
-API coverage is preferred for backend contract, validation, data, and status behavior when UI behavior is not the main risk.
-
----
-
-### 4. Define Scope Boundary
+### 2. Define Scope Boundary
 
 Before recommending coverage, define the exact feature scope.
 
@@ -147,6 +106,46 @@ Implementation briefs must not ask implementation agents to cover adjacent funct
 
 ---
 
+### 3. Classify Risk
+
+For each behavior, classify the main risk:
+
+- backend contract;
+- frontend interaction;
+- user journey;
+- validation;
+- authorization;
+- visual layout;
+- data transformation;
+- integration;
+- configuration;
+- error handling.
+
+The risk classification should explain why the behavior needs automated coverage.
+
+---
+
+### 4. Choose Test Level
+
+For each behavior, choose one primary test level:
+
+- static/typecheck;
+- API;
+- UI;
+- visual checkpoint;
+- schema/contract;
+- not automated.
+
+Use the lowest reliable level that proves the behavior.
+
+Do not default everything to UI.
+
+UI coverage is justified only when the risk is user-facing, browser-visible, or frontend-integration specific.
+
+API coverage is preferred for backend contract, validation, data, status behavior, authorization contract, authentication token contract, filtering/sorting predicates, and response shape when UI behavior is not the main risk.
+
+---
+
 ### 5. Avoid Duplicate Coverage
 
 Check whether the behavior is already covered or better covered at another layer.
@@ -174,7 +173,55 @@ Bad duplicate coverage example:
 
 ---
 
-### 6. Define Smoke vs Regression
+### 6. UI Value And Test Pyramid Check
+
+Before recommending UI coverage, verify that each UI scenario has distinct user-facing value.
+
+A UI test is justified when it verifies one or more of:
+
+- user journey;
+- browser interaction;
+- visible validation feedback;
+- visible success or error state;
+- navigation;
+- frontend/backend integration visible to the user;
+- behavior that cannot be reliably proven at API or schema level.
+
+Prefer API or schema/contract coverage when the risk is:
+
+- backend validation;
+- request/response status;
+- response body shape;
+- authentication token contract;
+- authorization contract;
+- data filtering or sorting predicate;
+- business rule exposed by API;
+- persistence or data transformation.
+
+Do not recommend UI tests only because the behavior exists on a page.
+
+Do not duplicate backend behavior in UI unless the UI adds visible user-facing risk.
+
+For each UI scenario, include:
+
+- unique UI risk;
+- why API/schema is not sufficient;
+- duplicate coverage risk.
+
+For each API behavior with documented error handling, include either:
+
+- negative API scenario;
+- or blocked/postponed reason if the negative contract is unclear.
+
+Avoid UI-heavy plans where multiple UI tests verify backend behavior without unique UI value.
+
+Do not require a fixed API:UI ratio per feature.
+
+Use the pyramid as a decision model, not as a numeric quota.
+
+---
+
+### 7. Define Smoke vs Regression
 
 Mark each automated scenario as:
 
@@ -191,7 +238,7 @@ Do not put every test into smoke.
 
 ---
 
-### 7. Decide Visual Checkpoints
+### 8. Decide Visual Checkpoints
 
 Recommend visual checkpoints only for meaningful visual risks.
 
@@ -222,7 +269,7 @@ If baseline approval is not requested, visual checkpoints should normally be mar
 
 ---
 
-### 8. Recommend Implementation Scope
+### 9. Recommend Implementation Scope
 
 Recommend implementation scope by level.
 
@@ -267,7 +314,7 @@ Implementation commands should later select a level-specific implementation scop
 
 ---
 
-### 9. Create Implementation Briefs
+### 10. Create Implementation Briefs
 
 Create implementation briefs that are actionable for implementation agents.
 
@@ -280,6 +327,8 @@ API Implementation Brief should include:
 - scenario data strategy;
 - expected status;
 - response assertions;
+- schema validation decision;
+- negative coverage decision;
 - API client decision;
 - assertion helper decision;
 - contract gaps or blockers.
@@ -292,6 +341,8 @@ UI Implementation Brief should include:
 - preconditions and test data;
 - scenario data strategy;
 - expected visible outcome;
+- unique UI risk;
+- why API/schema is not sufficient;
 - recommended Page Object;
 - likely Page Object actions or readers;
 - Component Object decision;
@@ -303,7 +354,7 @@ Implementation briefs should describe how to implement the coverage safely, but 
 
 ---
 
-### 10. Validate Scenarios vs Implementation Decisions
+### 11. Validate Scenarios vs Implementation Decisions
 
 Before finalizing the plan, verify that planned scenarios represent real coverage items.
 
@@ -346,7 +397,7 @@ Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metad
 
 ---
 
-### 11. Plan Scenario Variants
+### 12. Plan Scenario Variants
 
 When a behavior has multiple data variants, decide whether variants should be:
 
@@ -410,7 +461,6 @@ For each variant group, specify:
 - API contract source:
 - requirements/specs:
 
-
 ### Coverage Matrix
 
 For each behavior:
@@ -460,6 +510,8 @@ For each API scenario:
 - scenario data strategy:
 - expected status:
 - response assertions:
+- schema validation decision:
+- negative coverage decision:
 - builder decision:
 - API client decision:
 - assertion helper decision:
@@ -492,6 +544,8 @@ For each UI scenario:
 - scenario data strategy:
 - user steps:
 - expected visible outcome:
+- unique UI risk:
+- why API/schema is not sufficient:
 - recommended Page Object:
 - Page Object actions/readers:
 - Component Object decision:
@@ -561,8 +615,10 @@ They are not permission to start implementation during planning.
 This skill is complete when:
 
 - each behavior has a recommended primary test level;
-- UI tests are justified by user-facing value;
+- UI tests are justified by distinct user-facing value;
+- UI scenarios include unique UI risk and why API/schema is not sufficient;
 - API tests cover contract or backend risks;
+- documented API negative/error behavior is planned or blocked/postponed with reason;
 - visual checkpoints cover visual risks only;
 - duplicate coverage is avoided;
 - smoke and regression split is clear;
@@ -574,6 +630,8 @@ This skill is complete when:
 - implementation details are not listed as standalone scenarios;
 - scenario variants are grouped or separated intentionally;
 - scenario data strategy is specified for non-trivial variants;
+- schema validation decision is specified for non-trivial API response shapes;
+- negative coverage decision is specified for API behaviors with documented errors;
 - API Implementation Brief is actionable, if API coverage exists;
 - UI Implementation Brief is actionable, if UI coverage exists;
 - blockers and missing contract details are documented.
@@ -581,3 +639,4 @@ This skill is complete when:
 The goal is to choose the right test level for each behavior before implementation.
 
 Do not implement tests during this skill.
+

@@ -1,0 +1,569 @@
+---
+description: API schema validation and Zod usage rules
+alwaysApply: true
+---
+
+# API Schema Validation Rules
+
+## Purpose
+
+These rules define how API response schemas and runtime contract validation should be implemented in the Playwright + TypeScript test automation framework.
+
+The goals are:
+
+- reduce repetitive manual response type assertions;
+- keep API specs readable;
+- separate schema validation from behavior assertions;
+- provide reusable runtime validation for non-trivial API contracts;
+- avoid duplicated TypeScript types and runtime validation logic;
+- keep Zod usage consistent across API tests.
+
+---
+
+## Core Principle
+
+Use Zod schema validation for API response shape.
+
+Use Playwright `expect` for API behavior.
+
+Zod schemas validate structure and types.
+
+Assertion helpers connect Zod validation to Playwright assertions.
+
+Specs should remain focused on:
+
+- request;
+- status code;
+- behavior;
+- business expectations;
+- contract-relevant assertions.
+
+---
+
+## Responsibility Split
+
+### Zod Schema Owns
+
+Zod schemas should validate API response structure:
+
+- object shape;
+- required fields;
+- optional fields;
+- nullable fields;
+- primitive types;
+- enum values;
+- nested objects;
+- arrays;
+- pagination envelopes;
+- reusable contract models.
+
+### Shared Zod Assertion Helper Owns
+
+The shared Zod assertion helper should:
+
+- call `schema.safeParse`;
+- convert schema validation failures into readable Playwright assertion failures;
+- return parsed typed data;
+- contain reusable schema-validation plumbing only.
+
+### Feature-Specific Assertion Helper Owns
+
+Feature-specific API assertion helpers should:
+
+- expose domain-readable assertion names;
+- call the shared Zod assertion helper;
+- return parsed typed data when useful;
+- contain reusable behavior assertions only when those assertions belong to the feature.
+
+### Spec Owns
+
+API specs should:
+
+- send the request;
+- assert status code;
+- call feature-specific assertion helpers;
+- assert scenario-specific behavior;
+- keep test intent visible.
+
+---
+
+## When To Use Zod
+
+Use Zod schemas when API responses are:
+
+- reused across multiple tests;
+- nested;
+- paginated;
+- contract-critical;
+- used by multiple assertion helpers;
+- large enough that manual type checks reduce readability;
+- shared across API tests and UI setup checks;
+- likely to evolve and benefit from centralized schema ownership.
+
+Good candidates:
+
+- login response;
+- registration response;
+- product response;
+- paginated product list;
+- contact message response;
+- user profile response;
+- order response;
+- cart response.
+
+---
+
+## When Not To Use Zod
+
+Do not create Zod schemas for every trivial one-off response.
+
+Manual assertions are acceptable for small one-off responses when:
+
+- the body has one or two fields;
+- the shape is not reused;
+- schema extraction would add more noise than value;
+- the response is not contract-critical;
+- behavior assertion is more important than reusable shape validation.
+
+Example where manual assertion may be enough:
+
+    expect(body.success).toBe(true);
+
+---
+
+## Schema Location
+
+Reusable API schemas belong in `src/test/schemas/api/`.
+
+Examples:
+
+- `src/test/schemas/api/contact.schema.ts`
+- `src/test/schemas/api/product.schema.ts`
+- `src/test/schemas/api/pagination.schema.ts`
+- `src/test/schemas/api/user.schema.ts`
+
+Do not define reusable Zod schemas inside specs.
+
+Do not define API schemas in:
+
+- Page Objects;
+- Component Objects;
+- builders;
+- generators;
+- API clients;
+- fixtures;
+- domain flows.
+
+---
+
+## Assertion Helper Location
+
+API assertion helpers belong in `src/test/assertions/api/`.
+
+Examples:
+
+- `src/test/assertions/api/contact-response.assertion.ts`
+- `src/test/assertions/api/product-response.assertion.ts`
+- `src/test/assertions/api/login-response.assertion.ts`
+
+Assertion helpers may import schemas from `src/test/schemas/api/`.
+
+Specs should import feature-specific assertion helpers, not raw schemas, when a reusable assertion helper exists.
+
+---
+
+## Shared Zod Assertion Helper
+
+Use a shared Zod assertion helper for the repeated `safeParse` plus Playwright `expect` pattern.
+
+The shared helper should live in `src/test/assertions/api/`.
+
+Recommended file name: `src/test/assertions/api/zod-schema.assertion.ts`.
+
+The shared helper should:
+
+- accept a Zod schema;
+- accept an unknown value;
+- call `schema.safeParse`;
+- fail through Playwright `expect` with useful Zod error details;
+- return parsed typed data.
+
+Feature-specific API assertion helpers should import the shared Zod assertion helper.
+
+Do not duplicate the same `safeParse` plus `expect` wrapper logic in every response assertion helper.
+
+Specs should normally import feature-specific assertion helpers instead of raw schemas or the generic Zod helper.
+
+Good spec usage:
+
+    const body = expectContactSendMessageResponse(await response.json());
+
+Avoid this in specs when a feature-specific helper exists:
+
+    const body = expectToMatchSchema(
+      contactSendMessageResponseSchema,
+      await response.json(),
+    );
+
+The shared Zod assertion helper must not contain behavior assertions.
+
+Behavior assertions belong in specs or dedicated behavior assertion helpers.
+
+Good responsibility split:
+
+- Zod schema validates response shape;
+- shared Zod assertion helper owns `safeParse` plus Playwright `expect`;
+- feature-specific response helper owns domain-readable assertion name;
+- spec owns request, status code, and behavior assertions.
+
+Feature-specific response helpers should stay thin unless they also own reusable behavior assertions.
+
+Example responsibility:
+
+- `expectContactSendMessageResponse` validates Contact response shape through the shared helper;
+- `expectPaginatedProductSortingResponse` validates Product response shape through the shared helper;
+- `expectProductsSorted` validates sorting behavior separately.
+
+Do not call the shared Zod assertion helper directly from specs when a feature-specific helper exists.
+
+Do not put behavior checks into the shared Zod assertion helper.
+
+Do not put response-specific field expectations into the shared Zod assertion helper.
+
+Do not put API request logic into the shared Zod assertion helper.
+
+---
+
+## Preferred Zod Schema Pattern
+
+Use named exported schemas.
+
+Infer TypeScript types from schemas.
+
+Preferred shape:
+
+    import { z } from 'zod';
+
+    export const contactSendMessageResponseSchema = z.object({
+      id: z.string().min(1),
+      name: z.string(),
+      email: z.string(),
+      subject: z.string(),
+      message: z.string(),
+      status: z.string().min(1),
+      created_at: z.string().min(1),
+    });
+
+    export type ContactSendMessageResponse = z.infer<
+      typeof contactSendMessageResponseSchema
+    >;
+
+Avoid maintaining a separate manual interface for the same response shape unless there is a clear reason.
+
+Bad shape:
+
+    type ContactSendMessageResponse = {
+      id: string;
+      name: string;
+    };
+
+    export const contactSendMessageResponseSchema = z.object({
+      id: z.string(),
+      name: z.string(),
+    });
+
+This duplicates type ownership.
+
+---
+
+## Preferred Assertion Helper Pattern
+
+Use feature-specific assertion helpers to expose readable domain names.
+
+Feature-specific assertion helpers should normally delegate schema validation to the shared Zod assertion helper.
+
+Preferred shape:
+
+    import {
+      contactSendMessageResponseSchema,
+      type ContactSendMessageResponse,
+    } from '../../schemas/api/contact.schema';
+    import { expectToMatchSchema } from './zod-schema.assertion';
+
+    export function expectContactSendMessageResponse(
+      body: unknown,
+    ): ContactSendMessageResponse {
+      return expectToMatchSchema(
+        contactSendMessageResponseSchema,
+        body,
+        'Contact send-message response schema validation failed',
+      );
+    }
+
+Specs can then use the typed parsed value:
+
+    const body = expectContactSendMessageResponse(await response.json());
+
+    expect(body.status).toBe('NEW');
+
+---
+
+## Schema Validation vs Behavior Assertions
+
+Do not hide behavior assertions inside Zod schemas.
+
+Zod schemas should not validate behavior such as:
+
+- sorted order;
+- filtered result predicates;
+- token usability;
+- authorization workflow;
+- business process outcomes;
+- navigation outcomes;
+- visual state.
+
+Behavior assertions belong in specs or dedicated assertion helpers.
+
+Good split:
+
+    const body = expectPaginatedProductsResponse(await response.json());
+
+    expectProductsSorted(body.data, 'price', 'asc');
+
+Here:
+
+- `expectPaginatedProductsResponse` validates response shape;
+- `expectProductsSorted` validates behavior.
+
+---
+
+## Pagination Schemas
+
+Reusable pagination envelopes should be modeled once when multiple endpoints use the same structure.
+
+Preferred shape:
+
+    import { z } from 'zod';
+
+    export function paginatedResponseSchema<TItem extends z.ZodTypeAny>(
+      itemSchema: TItem,
+    ) {
+      return z.object({
+        current_page: z.number(),
+        data: z.array(itemSchema),
+        per_page: z.number(),
+        total: z.number(),
+      });
+    }
+
+Use generic pagination schemas only when they reduce duplication.
+
+Do not introduce complex schema factories for one-off responses.
+
+---
+
+## Enum And Literal Values
+
+Use Zod enums or literal unions for documented enum values.
+
+Preferred shape:
+
+    export const contactStatusSchema = z.enum([
+      'NEW',
+      'ON_HOLD',
+      'IN_PROGRESS',
+      'RESOLVED',
+    ]);
+
+Do not assert undocumented enum values.
+
+If live behavior differs from the contract, document the contract gap instead of silently widening the schema.
+
+---
+
+## Optional And Nullable Fields
+
+Schema optionality must match the API contract.
+
+Use `z.string().optional()` only when the field may be omitted.
+
+Use `z.string().nullable()` only when the field may be present with `null`.
+
+Use `z.string().nullish()` only when both omitted and `null` are valid.
+
+Do not mark fields optional or nullable only to make failing tests pass.
+
+If the contract is unclear, report a contract gap.
+
+---
+
+## Strictness Policy
+
+Schema strictness must match the API contract.
+
+Use `.strict()` only when the contract explicitly forbids additional fields.
+
+Prefer non-strict object schemas when the API may return additional fields.
+
+Do not fail tests because of harmless undocumented additional fields unless strict shape is part of the contract.
+
+Do not assert undocumented fields unless they are required by the behavior under test.
+
+---
+
+## Date And Timestamp Fields
+
+For timestamp fields, prefer validating that the value is a non-empty string unless the contract explicitly defines a date format.
+
+Example:
+
+    created_at: z.string().min(1)
+
+Use stricter datetime validation only when the API contract requires it.
+
+Example:
+
+    created_at: z.string().datetime()
+
+Do not guess timestamp format requirements.
+
+---
+
+## API Client Rule
+
+API clients must not contain schema assertions.
+
+API clients may:
+
+- compose requests;
+- send requests;
+- return responses or parsed JSON only if that is the project convention.
+
+API clients must not:
+
+- call Playwright `expect`;
+- call Zod schema validation as an assertion;
+- hide behavior checks.
+
+Schema validation belongs in assertion helpers or specs.
+
+---
+
+## Spec Usage Rule
+
+Specs should not call `schema.parse()` directly when a reusable assertion helper exists.
+
+Prefer:
+
+    const body = expectContactSendMessageResponse(await response.json());
+
+Avoid:
+
+    const body = contactSendMessageResponseSchema.parse(await response.json());
+
+Reason:
+
+- direct `parse()` throws Zod errors instead of Playwright assertion failures;
+- assertion helpers provide consistent reporting;
+- helpers keep spec intent clearer.
+
+Direct schema usage in specs is acceptable only for very small local experiments or when no reusable helper exists yet.
+
+---
+
+## Error Reporting
+
+Schema validation failures should produce useful output.
+
+Assertion helpers should include Zod error details in the Playwright assertion message when practical.
+
+Preferred shared helper behavior:
+
+- format failing Zod issues;
+- include field path and message;
+- fail through Playwright `expect`;
+- return parsed data on success.
+
+Do not swallow schema errors.
+
+Do not replace schema errors with vague messages such as `Invalid response` unless detailed schema output is also available.
+
+---
+
+## Migration Policy
+
+Do not migrate every existing API helper to Zod in one large change.
+
+Introduce Zod incrementally.
+
+Good migration candidates:
+
+- response helpers with many manual type checks;
+- paginated responses;
+- nested responses;
+- response shapes reused across multiple specs.
+
+Avoid mass rewrites that mix:
+
+- schema migration;
+- new test coverage;
+- API client refactor;
+- builder refactor;
+- unrelated cleanup.
+
+Preferred migration flow:
+
+1. Add schema for one response family.
+2. Update assertion helper to use the shared Zod assertion helper.
+3. Keep existing behavior assertions unchanged.
+4. Run impacted API specs and quality gate.
+5. Review.
+
+---
+
+## Dependency Policy
+
+Do not add `zod` dependency silently.
+
+If `zod` is not already installed:
+
+- propose adding it explicitly;
+- explain why it is justified;
+- keep the initial migration small;
+- update package files only as part of an approved dependency change.
+
+Do not add alternative schema libraries unless explicitly requested.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- large manual `typeof` assertion blocks for reusable response shapes;
+- Zod schemas inside specs;
+- Zod schemas inside Page Objects or Components;
+- Zod schemas inside builders or generators;
+- API clients that perform assertions;
+- behavior checks hidden inside schemas;
+- schema validation that guesses undocumented fields;
+- `.strict()` without contract support;
+- separate TypeScript interfaces duplicating Zod-inferred types;
+- migrating all API assertions at once;
+- creating schemas for trivial one-off responses;
+- duplicating `safeParse` plus `expect` wrapper logic in every assertion helper;
+- calling the shared Zod assertion helper directly from specs when a feature-specific helper exists.
+
+---
+
+## Main Principle
+
+Schema validation proves response shape.
+
+Behavior assertions prove API behavior.
+
+The shared Zod assertion helper connects schema validation to Playwright reporting.
+
+Feature-specific assertion helpers provide readable domain names.
+
+Specs stay focused on readable API scenarios.

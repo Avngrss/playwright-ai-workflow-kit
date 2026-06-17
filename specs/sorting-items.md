@@ -27,31 +27,15 @@
   - duplicate coverage risk: medium
   - notes: UI verifies visible order; API verifies backend sort contract
 
-- behavior: sorting by `price,desc` orders visible product prices in non-increasing order
-  - risk: user-facing ranking logic
+- behavior: each visible sort option can be selected and maps to expected sort request/value
+  - risk: user-facing control integration regression
   - recommended level: UI
   - priority: regression
-  - reason: alternate direction is meaningful user behavior beyond smoke baseline
-  - duplicate coverage risk: medium
-  - notes: invariant-based check, no fixed product names/counts
+  - reason: UI should prove dropdown interaction and browser request/value mapping without duplicating backend predicate matrix
+  - duplicate coverage risk: low
+  - notes: assert select value and matching `sort` query for each visible option
 
-- behavior: sorting by `name,asc` orders visible product names alphabetically ascending
-  - risk: user-facing ranking logic
-  - recommended level: UI
-  - priority: regression
-  - reason: verifies documented string sorting mode from user perspective
-  - duplicate coverage risk: medium
-  - notes: normalize strings before comparison
-
-- behavior: sorting by `name,desc` orders visible product names alphabetically descending
-  - risk: user-facing ranking logic
-  - recommended level: UI
-  - priority: regression
-  - reason: complementary documented mode; catches reverse-sort regressions
-  - duplicate coverage risk: medium
-  - notes: use monotonic descending invariant
-
-- behavior: `GET /products` supports documented `sort` values (`name,asc`, `name,desc`, `price,asc`, `price,desc`)
+- behavior: `GET /products` supports documented `sort` values (`name,asc`, `name,desc`, `price,asc`, `price,desc`, `co2_rating,asc`, `co2_rating,desc`)
   - risk: backend contract and query behavior drift
   - recommended level: API
   - priority: smoke
@@ -100,9 +84,7 @@
   - schema-contract: sorted response keeps paginated product response shape
 
 - regression:
-  - UI: `price,desc` ordering
-  - UI: `name,asc` ordering
-  - UI: `name,desc` ordering
+  - UI: each visible sort option is selectable and maps to expected request/value
   - API: sorting combined with filter/query parameters
   - visual checkpoint candidates for sort states
   - not automated: invalid `sort` behavior until contract clarification
@@ -114,7 +96,7 @@
 - scenarios:
   - `GET /products?sort=price,asc` monotonic ascending `price` in `data[]`
   - `GET /products?sort=name,asc` monotonic ascending `name` in `data[]`
-  - parameterized extension in same suite for `price,desc` and `name,desc`
+  - parameterized extension in same suite for `price,desc`, `name,desc`, `co2_rating,asc`, and `co2_rating,desc`
 - reason: highest-value documented sort contract with minimal setup
 - dependencies:
   - stable API base URL from config
@@ -155,7 +137,7 @@
 - scenarios:
   - scenario 1 (`@ui`, `@smoke`): sorting control visible and enabled on catalog page
   - scenario 2 (`@ui`, `@smoke`): apply `price,asc` and verify visible product prices are monotonic ascending
-  - scenario 3 (`@ui`, `@regression`): parameterized sort variants `price,desc`, `name,asc`, `name,desc` with invariant assertions
+  - scenario 3 (`@ui`, `@regression`): each visible sort option is selectable and maps to expected selected value/request
 - reason: best user-facing confidence for sorting with moderate implementation cost
 - dependencies:
   - page object support for selecting sort option and reading visible names/prices
@@ -261,7 +243,7 @@
   - assertion helper decision: reuse string monotonic helper
   - contract gaps/blockers: none for success path
 
-- scenario C: documented sort variants parameterized (`price,desc`, `name,desc`)
+- scenario C: documented sort variants parameterized (`price,desc`, `name,desc`, `co2_rating,asc`, `co2_rating,desc`)
   - endpoint: `/products`
   - method: `GET`
   - tags: `@api`, `@regression`
@@ -269,7 +251,7 @@
   - scenario data strategy: single table-driven suite
   - expected status: `200`
   - response assertions:
-    - descending monotonic invariant by selected sortable field
+    - monotonic invariant by selected sortable field and direction (asc/desc)
   - builder decision: none
   - API client decision: same as first batch
   - assertion helper decision: shared comparator dispatcher by sort key
@@ -332,23 +314,23 @@
   - assertions in spec: `prices.length > 1` and monotonic ascending
   - not covered in UI: API contract for query params and status codes
 
-- scenario 3: parameterized UI sort variants (`price,desc`, `name,asc`, `name,desc`)
+- scenario 3: verify each visible sort option selection and request/value mapping
   - route/page: `/`
   - tags: `@ui`, `@regression`
-  - preconditions: enough visible items after each selection
-  - test data: table-driven sort values and comparator type
-  - scenario data strategy: one parameterized scenario for same behavior class
+  - preconditions: catalog and sort dropdown are ready
+  - test data: table-driven visible sort option values
+  - scenario data strategy: one parameterized scenario for selectability + mapping behavior
   - user steps:
     - select sort option
-    - read visible comparable values
-    - verify corresponding monotonic direction
-  - expected visible outcome: order changes according to selected sort mode
+    - wait for matching products request with expected `sort` query value
+    - verify selected sort control value
+  - expected visible outcome: dropdown remains usable and selected option maps to expected backend query
   - recommended Page Object: same catalog page object
-  - Page Object actions/readers: `selectSort`, `getVisiblePrices`, `getVisibleNames`
+  - Page Object actions/readers: `selectSort`
   - Component Object decision: `SortComponent` + `ProductListComponent` if page object grows too large
-  - locator discovery notes: normalize text and currency before compare
-  - assertions in spec: invariant assertions only; no hardcoded product order
-  - not covered in UI: query composition guarantees owned by API tests
+  - locator discovery notes: prefer stable sort control locator and deterministic request matching
+  - assertions in spec: selected value + matching request mapping only
+  - not covered in UI: per-option sorted-order predicate guarantees owned by API tests
 
 - scenario 4: sorting with pagination/filter interaction (later batch)
   - route/page: `/`

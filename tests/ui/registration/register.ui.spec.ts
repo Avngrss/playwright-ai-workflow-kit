@@ -1,5 +1,4 @@
 import { registrationFormDataBuilder } from "../../../src/test/data/builders/registration-form-data.builder";
-import { registrationUserRequestBuilder } from "../../../src/test/data/builders/registration-user-request.builder";
 import { expect, test } from "../../../src/test/fixtures/test";
 import { applyAllureMetadata } from "../../../src/test/reporting/allure-metadata.helper";
 
@@ -85,26 +84,23 @@ test.describe("Registration UI", { tag: ["@ui", "@registration", "@auth"] }, () 
   test(
     "shows duplicate email feedback and stays on registration page",
     { tag: ["@regression"] },
-    async ({ page, loginPage, registerPage }) => {
-      const existingUser = registrationUserRequestBuilder.build();
-      const duplicateData = registrationFormDataBuilder.build({
-        email: existingUser.email,
-        password: existingUser.password,
-      });
+    async ({ page, registerPage, registrationApiPreconditionSetup }) => {
       await applyAllureMetadata({
         ...registrationUiMetadata,
         story: "Duplicate email feedback",
         severity: "normal",
       });
 
-      await test.step("Create existing user through UI precondition setup", async () => {
-        await registerPage.open();
-        await registerPage.waitForReady();
-        await registerPage.fillRegistrationForm(duplicateData);
-        await registerPage.submit();
+      const existingUser = await test.step(
+        "Create existing user through API precondition setup",
+        async () => {
+          return registrationApiPreconditionSetup.createRegisteredUser();
+        },
+      );
 
-        await expect(page).toHaveURL(/\/auth\/login$/);
-        await expect(loginPage.emailInput).toBeVisible();
+      const duplicateData = registrationFormDataBuilder.build({
+        email: existingUser.email,
+        password: existingUser.password,
       });
 
       await test.step("Submit registration form with duplicate email", async () => {

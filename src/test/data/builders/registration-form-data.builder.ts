@@ -1,5 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { generateUniqueEmail } from "../generators/unique-email.generator";
 import type { RegistrationFormData } from "../types/registration-form-data.type";
+
+function buildStrongPassword(): string {
+  return `E2E!Aa${Date.now()}#${randomUUID().slice(0, 8)}`;
+}
 
 const DEFAULT_REGISTRATION_FORM_DATA: RegistrationFormData = {
   firstName: "John",
@@ -13,7 +18,7 @@ const DEFAULT_REGISTRATION_FORM_DATA: RegistrationFormData = {
   state: "Noord-Holland",
   phone: "0612345678",
   email: "",
-  password: "SuperSecure@123",
+  password: "",
 };
 
 export const registrationFormDataBuilder = {
@@ -21,6 +26,7 @@ export const registrationFormDataBuilder = {
     return {
       ...DEFAULT_REGISTRATION_FORM_DATA,
       email: generateUniqueEmail("registration.ui"),
+      password: buildStrongPassword(),
       ...overrides,
     };
   },

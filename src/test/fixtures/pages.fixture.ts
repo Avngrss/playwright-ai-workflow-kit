@@ -1,4 +1,4 @@
-import { base, expect } from "./base.fixture";
+import { test as base, expect } from "./api-preconditions.fixture";
 import { AccountPage } from "../pages/account.page";
 import { ContactPage } from "../pages/contact.page";
 import { LoginPage } from "../pages/login.page";

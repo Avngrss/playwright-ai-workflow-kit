@@ -1,17 +1,33 @@
-import { expect } from "@playwright/test";
+import {
+  loginErrorResponseSchema,
+  loginTokenResponseSchema,
+  unauthorizedResponseSchema,
+  type LoginErrorResponse,
+  type LoginTokenResponse,
+  type UnauthorizedResponse,
+} from '../../schemas/api/login.schema';
+import { expectToMatchSchema } from './zod-schema.assertion';
 
-export function expectLoginTokenResponse(body: unknown): asserts body is {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-} {
-  expect(typeof body).toBe("object");
-  expect(body).not.toBeNull();
+export function expectLoginTokenResponse(body: unknown): LoginTokenResponse {
+  return expectToMatchSchema(
+    loginTokenResponseSchema,
+    body,
+    'Login token response schema validation failed.',
+  );
+}
 
-  const tokenResponse = body as Record<string, unknown>;
+export function expectLoginErrorResponse(body: unknown): LoginErrorResponse {
+  return expectToMatchSchema(
+    loginErrorResponseSchema,
+    body,
+    'Login error response schema validation failed.',
+  );
+}
 
-  expect(typeof tokenResponse.access_token).toBe("string");
-  expect(tokenResponse.access_token).not.toHaveLength(0);
-  expect(typeof tokenResponse.token_type).toBe("string");
-  expect(typeof tokenResponse.expires_in).toBe("number");
+export function expectUnauthorizedResponse(body: unknown): UnauthorizedResponse {
+  return expectToMatchSchema(
+    unauthorizedResponseSchema,
+    body,
+    'Unauthorized response schema validation failed.',
+  );
 }

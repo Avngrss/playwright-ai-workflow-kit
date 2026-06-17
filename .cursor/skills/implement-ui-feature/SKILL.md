@@ -4,13 +4,17 @@
 
 Use this skill when a UI feature plan already exists and UI automation must be implemented.
 
-The goal is to implement UI automation in small, reviewable batches while keeping architecture consistent, stable, and easy to maintain.
+The goal is to implement selected UI coverage from the approved feature plan while keeping architecture consistent, stable, readable, and aligned with the test pyramid.
 
 This skill does not replace the Playwright planner.
 
 The planner creates or validates the feature plan.
 
-This skill implements the approved plan.
+This skill implements the selected UI scope from the approved plan.
+
+Do not implement API tests with this skill.
+
+Do not implement visual checkpoints with this skill unless the selected scope explicitly says so.
 
 ---
 
@@ -20,6 +24,7 @@ Follow these rules:
 
 - Agent Workflow;
 - UI Feature Implementation Lifecycle;
+- Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
 - Fixtures and Test Data Rules;
 - Page Object and Component Object Core Rules;
@@ -43,14 +48,14 @@ Use this skill as an implementation workflow for Playwright agents.
 
 Expected agent flow:
 
-- Planner defines the feature plan and batch scope;
-- Generator implements the batch using this skill;
+- Planner defines the feature plan and selected UI scope;
+- Generator implements the selected UI scope using this skill;
 - Discover UI Components skill is used when Page Object or Component ownership is unclear;
-- Create Test Data Builder skill is used when reusable test data is needed;
-- Heal UI Test skill is used when implemented tests fail;
-- Reviewer checks architecture, minimality, and rule compliance.
+- Create Test Data Builder skill is used when reusable structured test data is needed;
+- Heal UI Test skill is used when implemented UI tests fail;
+- Reviewer checks architecture, minimality, test pyramid alignment, and rule compliance.
 
-This skill coordinates implementation.
+This skill coordinates UI implementation.
 
 It does not replace specialized skills.
 
@@ -61,8 +66,8 @@ It does not replace specialized skills.
 Use this skill when:
 
 - a feature test plan exists;
-- UI automation must be implemented for planned scenarios;
-- a batch of UI tests needs to be added;
+- UI automation must be implemented for planned UI scenarios;
+- UI coverage marked as ready to implement now must be added;
 - existing Page Objects or Components need minimal updates for planned tests;
 - reusable test data may be needed;
 - the implementation must follow repository architecture.
@@ -74,15 +79,25 @@ Use this skill when:
 Do not use this skill when:
 
 - no feature plan exists;
+- the task is only to plan coverage;
 - the task is only to heal a failing test;
 - the task is only to discover UI component ownership;
 - the task is only to create a data builder;
 - the task is API-only;
+- the task is visual-only;
 - the task is a broad refactor without feature implementation.
 
 If no feature plan exists, invoke or request planning first.
 
 Do not invent missing requirements.
+
+Use Heal UI Test when an existing UI test is failing.
+
+Use Discover UI Components when Page Object or Component ownership is unclear.
+
+Use Create Test Data Builder when reusable structured data is the only task.
+
+Use Refactor Overengineering when behavior-preserving cleanup is the only task.
 
 ---
 
@@ -91,7 +106,7 @@ Do not invent missing requirements.
 Use relevant available context:
 
 - feature plan;
-- target scenarios;
+- selected UI implementation scope;
 - project map;
 - existing specs;
 - existing Page Objects;
@@ -107,39 +122,48 @@ Default feature plan location may be:
 
 Use the project map as the source of truth.
 
-Do not invent paths.
+Do not invent paths, aliases, commands, tags, or naming conventions.
 
 ---
 
-## Batch Scope
+## Implementation Scope
 
-Implement in small batches.
+Implement only the selected UI scope.
 
-Preferred batch size:
+Preferred implementation scope is:
 
-- 3 to 5 scenarios.
+- all UI coverage marked as ready to implement now in the feature plan.
 
-Use smaller batches when:
+Do not implement:
 
-- the feature is complex;
-- Page Object ownership is unclear;
-- test data is not ready;
-- UI structure is unstable;
-- multiple layers are affected.
+- API coverage;
+- visual checkpoints unless explicitly selected;
+- blocked or postponed scenarios;
+- adjacent page controls;
+- adjacent flows;
+- adjacent filters, modals, tabs, or navigation paths;
+- edge cases not explicitly in scope;
+- helper-only scenarios.
 
-Do not implement a large feature in one uncontrolled change.
+If the selected scope is ambiguous, stop and report the ambiguity.
 
 ---
 
 ## Workflow
 
-### 1. Read and Validate the Feature Plan
+### 1. Read And Validate The Feature Plan
 
 Read the feature plan and identify:
 
 - feature scope;
-- selected batch scenarios;
-- expected behavior;
+- source of truth;
+- in-scope UI behaviors;
+- out-of-scope behaviors;
+- UI scenarios ready to implement now;
+- blocked or postponed UI scenarios;
+- expected visible outcomes;
+- unique UI risk for each UI scenario;
+- why API or schema coverage is not sufficient;
 - required tags;
 - required test data;
 - affected pages;
@@ -149,26 +173,15 @@ Read the feature plan and identify:
 
 Do not implement scenarios that are unclear.
 
+Do not implement blocked or postponed scenarios.
+
+Do not implement implementation details as scenarios.
+
 If expected behavior is ambiguous, stop and report the ambiguity.
 
 ---
 
-### 2. Select Batch Scope
-
-Select a small implementation batch.
-
-The batch should be:
-
-- coherent;
-- reviewable;
-- independently verifiable;
-- not mixed with unrelated scenarios.
-
-Do not combine unrelated UI areas in one batch.
-
----
-
-### 3. Check Project Map
+### 2. Check Project Map
 
 Before creating or modifying files, check the project map for:
 
@@ -177,16 +190,61 @@ Before creating or modifying files, check the project map for:
 - Component Object locations;
 - fixture entry point;
 - data locations;
+- assertion helper locations;
 - path aliases;
 - tags;
 - quality gate command.
 
-Do not invent folders, aliases, commands, or naming conventions.
+Do not invent folders, aliases, commands, tags, or naming conventions.
 
 ---
 
+### 3. Scope Boundary Check
 
-### Optional UI Inspection With Playwright MCP
+Before writing UI tests, verify the selected implementation scope against the feature plan and user request.
+
+Implement only UI behavior that belongs to the selected scope.
+
+Do not expand UI tests to adjacent controls, filters, navigation paths, modals, tabs, visual states, API behavior, or edge cases unless they are explicitly in scope.
+
+If related UI behavior is visible on the same page but not part of the selected scope, report it as out of scope or future coverage instead of implementing it.
+
+If scope is ambiguous, stop and report the ambiguity instead of broadening the test suite.
+
+Examples:
+
+- if scope is UI coverage for a Sort dropdown, do not add search, filter, pagination, product details, or visual screenshot coverage unless explicitly listed;
+- if scope is Login UI, do not add registration UI coverage except as approved setup or explicitly selected scenario;
+- if scope is Brand filter UI, do not add sorting, category, price range, or search coverage unless explicitly listed.
+
+---
+
+### 4. UI Scenario Value Check
+
+Before implementing UI tests, confirm that each selected UI scenario has unique user-facing value.
+
+A UI scenario should verify at least one of:
+
+- visible control or state;
+- user action;
+- browser interaction;
+- navigation;
+- visible validation feedback;
+- visible success or error feedback;
+- frontend integration visible to the user;
+- behavior that cannot be reliably proven at API or schema level.
+
+Do not implement UI tests that only duplicate API/schema behavior unless the UI adds visible behavior or interaction risk.
+
+If a planned UI scenario appears to duplicate lower-level coverage without UI value, report it as questionable instead of blindly implementing it.
+
+If a page-level smoke test and a journey test verify the same controls, keep the smoke test only when it adds clear value as a fast availability/default-state check.
+
+Do not expand UI coverage just because related controls or states exist on the page.
+
+---
+
+### 5. Optional UI Inspection With Playwright MCP
 
 Use Playwright MCP only when repository files, existing specs, existing Page Objects, and the feature plan are not enough to identify stable locators or actual UI behavior.
 
@@ -215,7 +273,7 @@ If Playwright MCP is used:
 
 ---
 
-### 4. Identify Required Test Data
+### 6. Identify Required Test Data
 
 Before writing tests, identify required data.
 
@@ -240,7 +298,7 @@ Before writing UI tests:
 - identify whether the scenario needs structured form data;
 - reuse an existing builder, generator, dataset, or local scenario cases when available;
 - create or update a dedicated test data builder only if reusable structured data is needed;
-- do not define reusable buildData, buildFormData, buildRegistrationData, or similar factory functions inside specs;
+- do not define reusable `buildData`, `buildFormData`, `buildRegistrationData`, or similar factory functions inside specs;
 - do not export form data types from Page Objects or Component Objects.
 
 If a Page Object action method needs typed data, import the type from the test data layer.
@@ -261,8 +319,6 @@ Page Objects and Component Objects should not own:
 - generators;
 - default values;
 - random or unique data creation.
-
----
 
 #### Scenario Data Implementation Check
 
@@ -292,15 +348,25 @@ Use builders when:
 - unique or formatted values are required;
 - the same data shape is shared with API setup or API tests.
 
+Use generators when:
+
+- unique primitive values are required;
+- formatted primitive values are required;
+- freshness prevents collisions or backend validation failures.
+
 Do not create one standalone UI test per simple value unless each value has distinct user-facing risk.
 
 Do not create builders for one-off deterministic form data.
 
+Builder defaults must be valid by default.
+
+Invalid or negative data must be explicit through overrides.
+
 ---
 
-### 5. Identify Required Page Objects
+### 7. Identify Required Page Objects
 
-Identify.Identify affected Page Objects.
+Identify affected Page Objects.
 
 Page Objects should represent:
 
@@ -313,39 +379,38 @@ Do not create a new Page Object for a UI block that belongs inside an existing p
 
 Do not add speculative methods for future tests.
 
----
-
 #### Locator Declaration Style Check
 
-When creating or updatingators as readonly fields;When creating or updating Page Objects or Component Objects:
+When creating or updating Page Objects or Component Objects:
+
+- declare locator fields as readonly fields;
 - initialize locator fields inside the constructor;
 - do not use getter-based locators by default;
 - do not mix getter locators and constructor-initialized locator fields in the same file;
 - keep locator initialization simple and side-effect free;
-- ensure locator property names match the assigned selector or test id.
+- ensure locator property names match the assigned selector or test id;
+- use the project-preferred locator declaration style.
 
 Preferred style:
 
-- readonly emailInput: Locator;
-- readonly passwordInput: Locator;
-- readonly submitButton: Locator;
+- `readonly emailInput: Locator;`
+- `readonly passwordInput: Locator;`
+- `readonly submitButton: Locator;`
 
 Constructor initialization:
 
-- this.emailInput = page.getByTestId("email");
-- this.passwordInput = page.getByTestId("password");
-- this.submitButton = page.getByTestId("register-submit");
+- `this.emailInput = page.getByTestId("email");`
+- `this.passwordInput = page.getByTestId("password");`
+- `this.submitButton = page.getByTestId("register-submit");`
 
 Avoid by default:
 
-- get emailInput(): Locator { return this.page.getByTestId("email"); }
+- `get emailInput(): Locator { return this.page.getByTestId("email"); }`
 
 Getter-based locators are allowed only when:
 
 - the existing Page Object already consistently uses getter style;
 - or there is a specific technical reason documented in the implementation report.
-
-- use the project-preferred locator declaration style;
 
 #### Page Object Boundary Check
 
@@ -354,7 +419,7 @@ When creating or updating Page Objects:
 - keep Page Objects focused on locators, actions, state readers, and structural markers;
 - do not put test data types, builders, generators, or default values into Page Objects;
 - do not add assertions to Page Objects;
-- do not add test.step to Page Objects;
+- do not add `test.step` to Page Objects;
 - do not make one Page Object own locators from another page, route, or screen;
 - use clear method names that describe the actual UI action.
 
@@ -362,9 +427,9 @@ Method names must match behavior.
 
 Examples:
 
-- use fillRegistrationForm(data) when the method fills the full registration form;
-- use fillRequiredFields(data) only when the method fills strictly required fields;
-- use submit() only when the method clicks the submit action and does not hide extra workflow.
+- use `fillRegistrationForm(data)` when the method fills the full registration form;
+- use `fillRequiredFields(data)` only when the method fills strictly required fields;
+- use `submit()` only when the method clicks the submit action and does not hide extra workflow.
 
 Do not hide in Page Object methods:
 
@@ -377,7 +442,7 @@ Do not hide in Page Object methods:
 
 ---
 
-### 6. Decide Whether Components Are Needed
+### 8. Decide Whether Components Are Needed
 
 Prefer Page Object first.
 
@@ -400,69 +465,7 @@ Access components through the owning Page Object.
 
 ---
 
-### Scope Boundary Check
-
-Before writing, visual states, or edge cases unless they are explicitly in scope.Before writing UI tests, verify the selected implementation scope against the feature plan and user request.
-
-If related UI behavior is visible on the same page but not part of the selected scope, report it as out of scope or future coverage instead of implementing it.
-
-If scope is ambiguous, stop and report the ambiguity instead of broadening the test suite.
-
-Implement only UI behavior that belongs to the selected scope.
-
----
-### 7. Implement Tests
-
-Implement tests for the selected batch only.
-
-Tests must:
-
-- use `test.step` for meaningful user-level phases;
-- keep the main action under test explicit;
-- use stable Page Object or Component Object methods;
-- avoid raw selector mechanics in specs;
-- use required tags;
-- avoid hidden behavior in hooks or fixtures;
-- avoid inline random data;
-- remain readable and minimal.
-
-`beforeEach` may perform only safe navigation and page-loaded checks.
-
-Do not perform the action under test in `beforeEach`.
-
-Do not repeat navigation already done in `beforeEach`.
-
----
-
-#### Cross-Page Navigation Check
-
-When a UI scenario redirects from one page to another:
-
-- assert the URL if relevant;
-- use the destination Page Object for visible destination markers;
-- do not use raw page.locator(...) in specs for destination page elements;
-- do not use direct page.getByTestId(...), page.getByRole(...), page.getByText(...), or page.getByLabel(...) in specs for destination page elements;
-- do not put destination page locators into the source Page Object.
-
-Example:
-
-Registration redirects to Login page.
-
-Correct approach:
-
-- RegisterPage owns registration page locators and actions;
-- LoginPage owns login page markers and locators;
-- the spec asserts navigation using URL and LoginPage marker.
-
-Avoid:
-
-- asserting Login page elements with raw selectors in the Registration spec;
-- adding Login page locators to RegisterPage;
-- using RegisterPage to verify Login page state.
-
----
-
-#### Preconditions And Setup
+### 9. Preconditions And Setup
 
 Use the lowest reliable setup layer for preconditions.
 
@@ -490,16 +493,6 @@ When UI tests need backend preconditions:
 - avoid shared static credentials when fresh test data can be created safely;
 - if no approved API setup mechanism exists, use explicit UI setup temporarily or report a setup architecture gap.
 
-Example:
-
-For duplicate registration email feedback:
-
-- create the existing user through API or approved setup if reliable;
-- otherwise create the existing user through the UI flow as an explicit temporary setup;
-- open the registration page;
-- submit the registration form with the same email;
-- assert visible duplicate email feedback.
-
 Do not repeat a long UI journey as setup unless:
 
 - no approved reliable lower-level setup exists;
@@ -516,22 +509,79 @@ Setup code must not:
 
 ---
 
-#### Spec Helper And Assertion Logic Check
+### 10. Implement Tests
+
+Implement tests for the selected UI scope only.
+
+Tests must:
+
+- use `test.step` for meaningful user-level phases;
+- keep the main action under test explicit;
+- use stable Page Object or Component Object methods;
+- avoid raw selector mechanics in specs;
+- use required tags;
+- avoid hidden behavior in hooks or fixtures;
+- avoid inline random data;
+- remain readable and minimal.
+
+`beforeEach` may perform only safe navigation and page-loaded checks.
+
+Do not perform the action under test in `beforeEach`.
+
+Do not repeat navigation already done in `beforeEach`.
+
+Do not create one UI test per simple value unless each value has distinct user-facing risk.
+
+Use table-driven tests only when multiple values verify the same UI behavior.
+
+Do not create a full interaction matrix unless the feature plan explicitly requires it.
+
+#### Cross-Page Navigation Check
+
+When a UI scenario redirects from one page to another:
+
+- assert the URL if relevant;
+- use the destination Page Object for visible destination markers;
+- do not use raw `page.locator(...)` in specs for destination page elements;
+- do not use direct `page.getByTestId(...)`, `page.getByRole(...)`, `page.getByText(...)`, or `page.getByLabel(...)` in specs for destination page elements;
+- do not put destination page locators into the source Page Object.
+
+Example:
+
+Registration redirects to Login page.
+
+Correct approach:
+
+- RegisterPage owns registration page locators and actions;
+- LoginPage owns login page markers and locators;
+- the spec asserts navigation using URL and LoginPage marker.
+
+Avoid:
+
+- asserting Login page elements with raw selectors in the Registration spec;
+- adding Login page locators to RegisterPage;
+- using RegisterPage to verify Login page state.
+
+---
+
+### 11. Spec Helper And Assertion Logic Check
 
 Before writing UI specs, keep specs focused on scenario flow.
 
 Specs may contain:
 
 - scenario data cases;
-- test.step blocks;
+- small deterministic constants;
+- `test.step` blocks;
 - calls to Page Object or Component actions/readers;
+- calls to assertion helpers;
 - direct scenario assertions.
 
 Specs must not accumulate reusable technical helper logic.
 
 Move reusable or non-trivial logic to dedicated helpers when it includes:
 
-- sorting/comparison algorithms;
+- sorting or comparison algorithms;
 - normalization logic;
 - parsing logic used by assertions;
 - repeated predicate checks;
@@ -540,7 +590,7 @@ Move reusable or non-trivial logic to dedicated helpers when it includes:
 
 Preferred destinations:
 
-- assertion helpers for reusable/non-trivial assertions;
+- assertion helpers for reusable or non-trivial assertions;
 - test data datasets for reusable scenario cases;
 - generators for unique primitive values;
 - builders for reusable structured data.
@@ -557,7 +607,7 @@ Scenario data may stay in the spec when it is local to that spec and improves re
 
 Dedicated assertion helpers may be used for reusable or non-trivial assertions.
 
-Page Objects and Component Objects must not use Playwright expect.
+Page Objects and Component Objects must not use Playwright `expect`.
 
 Page Objects and Component Objects may expose:
 
@@ -569,21 +619,21 @@ Page Objects and Component Objects may expose:
 
 Allowed Page Object or Component Object methods:
 
-- open();
-- submit();
-- fillRegistrationForm(data);
-- getVisibleItems();
-- getValidationMessageText();
-- isLoaded();
-- waitForReady();
+- `open()`;
+- `submit()`;
+- `fillRegistrationForm(data)`;
+- `getVisibleItems()`;
+- `getValidationMessageText()`;
+- `isLoaded()`;
+- `waitForReady()`.
 
 Not allowed in Page Objects or Component Objects:
 
-- expect;
-- test.step;
-- toHaveScreenshot;
+- `expect`;
+- `test.step`;
+- `toHaveScreenshot`;
 - Allure;
-- process.env;
+- `process.env`;
 - inline random data;
 - business assertions;
 - screenshot assertions.
@@ -594,10 +644,10 @@ Do not use methods that combine action and verification.
 
 Avoid method patterns such as:
 
-- sortAndVerify;
-- loginAndExpectSuccess;
-- submitAndValidate;
-- createAndCheck.
+- `sortAndVerify`;
+- `loginAndExpectSuccess`;
+- `submitAndValidate`;
+- `createAndCheck`.
 
 Keep action and verification explicit in the spec.
 
@@ -658,7 +708,7 @@ Follow existing project naming.
 After changes:
 
 1. run impacted spec or specs;
-2. run related specs if shared Page Objects, Components, fixtures, or builders were changed;
+2. run related specs if shared Page Objects, Components, fixtures, builders, generators, datasets, or assertion helpers were changed;
 3. run the repository quality gate command defined by the project map.
 
 Default examples:
@@ -718,11 +768,15 @@ Do not add rules or abstractions for one-off cases.
 Do not:
 
 - implement without reading the feature plan;
-- implement too many scenarios in one batch;
+- implement blocked or postponed scenarios;
+- implement unrelated UI behavior;
+- implement API tests;
+- implement visual checkpoints unless explicitly selected;
 - modify unrelated files;
 - create speculative abstractions;
 - create components just in case;
 - create fixtures for one-off values;
+- create builders for one-off deterministic data;
 - use `waitForTimeout`;
 - use fake assertions;
 - hide action under test in hooks;
@@ -738,17 +792,21 @@ Do not:
 
 When reporting implementation, use this structure:
 
-### 1. Batch Scope
+### 1. UI Scope
 
 - feature:
 - scenarios implemented:
-- scenarios postponed:
+- scenarios blocked/postponed:
+- out-of-scope items:
 
 ### 2. Data
 
 - reused data:
-- new or updated builders:
-- new or updated generators:
+- local constants:
+- local scenario cases:
+- datasets:
+- builders updated:
+- generators updated:
 - fixture changes:
 
 ### 3. UI Structure
@@ -763,6 +821,8 @@ When reporting implementation, use this structure:
 - specs added or updated:
 - tags used:
 - hooks used:
+- unique UI value covered:
+- API/schema behavior intentionally not duplicated:
 
 ### 5. Verification
 
@@ -784,14 +844,18 @@ When reporting implementation, use this structure:
 This skill is complete when:
 
 - feature plan was read;
-- batch scope was selected;
+- selected UI scope was validated;
 - project map was followed;
+- scope did not expand to adjacent behavior;
+- each implemented UI scenario has distinct user-facing value;
+- UI tests do not duplicate API/schema behavior without UI-specific risk;
 - required data was identified before tests;
 - Page Objects were updated minimally;
 - Component Objects were created only when justified;
 - tests use meaningful `test.step`;
 - hooks do not hide the action under test;
 - scenario-specific assertions remain explicit in specs;
+- reusable technical helper logic is not accumulated in specs;
 - fixtures are used through the final fixture entry point;
 - no speculative abstractions were added;
 - impacted specs were run or documented as not run;
@@ -799,28 +863,15 @@ This skill is complete when:
 
 ---
 
-## Optional UI Discovery
-
-Use Playwright generator/codegen/MCP only when repository files and existing Page Objects are not enough to identify stable locators or actual UI behavior.
-
-Do not treat generated code as final implementation.
-
-Generated code must be converted into the project architecture:
-- selectors/actions in Page Objects or Components;
-- specs remain scenario-focused;
-- no raw selector mechanics in specs;
-- required tags and test.step are added;
-- no speculative components or fixtures.
-
-Do not run a separate discovery step unless locator ownership or UI behavior is unclear.
-
----
-
 ## Main Principle
 
 Planner creates the plan.
 
-This skill implements the plan.
+This skill implements the selected UI scope from the plan.
+
+UI tests prove distinct user-facing browser behavior.
+
+API and schema tests own backend contract and data predicates.
 
 Data comes before tests.
 
@@ -830,7 +881,7 @@ Components are extracted only when justified.
 
 Specs show the scenario.
 
-Verification proves the batch.
+Verification proves the implementation.
 
 Healing fixes root causes.
 

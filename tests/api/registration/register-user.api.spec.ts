@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { expectDuplicateConflictResponse, expectUserResponseSchema } from '../../../src/test/assertions/api/registration-response.assertion';
+import {
+  expectDuplicateConflictResponse,
+  expectRegistrationValidationErrorsForField,
+  expectUserResponseSchema,
+} from '../../../src/test/assertions/api/registration-response.assertion';
 import { registrationUserRequestBuilder } from '../../../src/test/data/builders/registration-user-request.builder';
 
 const REGISTER_ENDPOINT = '/users/register';
@@ -54,7 +58,7 @@ test.describe('Registration API | POST /users/register', { tag: ['@registration'
     const body = await response.json();
 
     expect(response.status()).toBe(422);
-    expect(Array.isArray((body as Record<string, unknown>).email)).toBeTruthy();
+    expectRegistrationValidationErrorsForField(body, 'email');
   });
 
   const invalidConstraintCases = [
@@ -88,11 +92,7 @@ test.describe('Registration API | POST /users/register', { tag: ['@registration'
       const body = await response.json();
 
       expect(response.status()).toBe(422);
-      expect(
-        Array.isArray(
-          (body as Record<string, unknown>)[invalidCase.expectedErrorField],
-        ),
-      ).toBeTruthy();
+      expectRegistrationValidationErrorsForField(body, invalidCase.expectedErrorField);
     });
   }
 

@@ -1,27 +1,41 @@
 import { expect } from '@playwright/test';
+import {
+  contactValidationErrorResponseSchema,
+  contactSendMessageResponseSchema,
+  type ContactValidationErrorResponse,
+  type ContactSendMessageResponse,
+} from '../../schemas/api/contact.schema';
+import { expectToMatchSchema } from './zod-schema.assertion';
 
-export function expectContactSendMessageResponse(body: unknown): asserts body is {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  status: string;
-  created_at: string;
-} {
-  expect(typeof body).toBe('object');
-  expect(body).not.toBeNull();
+export function expectContactSendMessageResponse(body: unknown): ContactSendMessageResponse {
+  return expectToMatchSchema(
+    contactSendMessageResponseSchema,
+    body,
+    'Contact send-message response schema validation failed.',
+  );
+}
 
-  const response = body as Record<string, unknown>;
+export function expectContactValidationErrorResponse(
+  body: unknown,
+): ContactValidationErrorResponse {
+  return expectToMatchSchema(
+    contactValidationErrorResponseSchema,
+    body,
+    'Contact validation-error response schema validation failed.',
+  );
+}
 
-  expect(typeof response.id).toBe('string');
-  expect(response.id).not.toHaveLength(0);
-  expect(typeof response.name).toBe('string');
-  expect(typeof response.email).toBe('string');
-  expect(typeof response.subject).toBe('string');
-  expect(typeof response.message).toBe('string');
-  expect(typeof response.status).toBe('string');
-  expect(response.status).not.toHaveLength(0);
-  expect(typeof response.created_at).toBe('string');
-  expect(response.created_at).not.toHaveLength(0);
+export function expectContactValidationErrorsForField(
+  body: unknown,
+  field: string,
+): string[] {
+  const validationErrors = expectContactValidationErrorResponse(body);
+  const fieldErrors = validationErrors[field];
+
+  expect(
+    fieldErrors,
+    `Contact validation-error response is missing field errors for "${field}".`,
+  ).toBeDefined();
+
+  return fieldErrors as string[];
 }

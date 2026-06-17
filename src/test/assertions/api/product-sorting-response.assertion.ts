@@ -1,30 +1,13 @@
 import { expect } from '@playwright/test';
+import {
+  paginatedProductSortingResponseSchema,
+  type PaginatedProductSortingResponse,
+  type ProductSortingItem,
+} from '../../schemas/api/product-sorting.schema';
+import { expectToMatchSchema } from './zod-schema.assertion';
 
 type SortField = 'price' | 'name' | 'co2_rating';
 type SortDirection = 'asc' | 'desc';
-
-type ProductSortingItem = {
-  name: string;
-  price: number;
-  co2_rating?: string;
-};
-
-type PaginatedProductResponse = {
-  current_page?: number;
-  data: ProductSortingItem[];
-  per_page?: number;
-  total?: number;
-  from?: number;
-  to?: number;
-  last_page?: number;
-};
-
-function expectIntegerIfDefined(value: unknown): void {
-  if (value !== undefined) {
-    expect(typeof value).toBe('number');
-    expect(Number.isInteger(value)).toBeTruthy();
-  }
-}
 
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
@@ -54,30 +37,12 @@ function isMonotonicDescending<T>(values: T[], compare: (a: T, b: T) => number):
   return true;
 }
 
-export function expectPaginatedProductSortingResponse(body: unknown): asserts body is PaginatedProductResponse {
-  expect(typeof body).toBe('object');
-  expect(body).not.toBeNull();
-
-  const response = body as Record<string, unknown>;
-
-  expect(Array.isArray(response.data)).toBeTruthy();
-  expectIntegerIfDefined(response.current_page);
-  expectIntegerIfDefined(response.per_page);
-  expectIntegerIfDefined(response.total);
-  expectIntegerIfDefined(response.from);
-  expectIntegerIfDefined(response.to);
-  expectIntegerIfDefined(response.last_page);
-
-  for (const item of response.data as unknown[]) {
-    expect(typeof item).toBe('object');
-    expect(item).not.toBeNull();
-
-    const product = item as Record<string, unknown>;
-
-    expect(typeof product.name).toBe('string');
-    expect(typeof product.price).toBe('number');
-    expect(Number.isFinite(product.price)).toBeTruthy();
-  }
+export function expectPaginatedProductSortingResponse(body: unknown): PaginatedProductSortingResponse {
+  return expectToMatchSchema(
+    paginatedProductSortingResponseSchema,
+    body,
+    'Product sorting response schema validation failed.',
+  );
 }
 
 export function expectProductsSorted(

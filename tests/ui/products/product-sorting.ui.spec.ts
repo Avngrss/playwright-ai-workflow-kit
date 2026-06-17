@@ -1,24 +1,8 @@
 import { expect, test } from "../../../src/test/fixtures/test";
 import {
-  expectCo2RatingsSorted,
-  expectNamesSorted,
   expectPricesSorted,
-  getCo2SortComparabilityIssue,
-  getNameSortComparabilityIssue,
-  getPriceSortComparabilityIssue,
 } from "../../../src/test/assertions/ui/product-sorting-ui.assertion";
 import { applyAllureMetadata } from "../../../src/test/reporting/allure-metadata.helper";
-
-type SortField = "name" | "price" | "co2";
-type SortDirection = "asc" | "desc";
-
-type SortCase = {
-  label: string;
-  value: string;
-  field: SortField;
-  direction: SortDirection;
-  tags: ("@smoke" | "@regression")[];
-};
 
 const EXPECTED_SORT_OPTIONS = [
   { value: "name,asc", label: "Name (A - Z)" },
@@ -28,51 +12,6 @@ const EXPECTED_SORT_OPTIONS = [
   { value: "co2_rating,asc", label: "CO₂ Rating (A - E)" },
   { value: "co2_rating,desc", label: "CO₂ Rating (E - A)" },
 ] as const;
-
-const SORT_CASES: SortCase[] = [
-  {
-    label: "Name (A - Z)",
-    value: "name,asc",
-    field: "name",
-    direction: "asc",
-    tags: ["@regression"],
-  },
-  {
-    label: "Name (Z - A)",
-    value: "name,desc",
-    field: "name",
-    direction: "desc",
-    tags: ["@regression"],
-  },
-  {
-    label: "Price (High - Low)",
-    value: "price,desc",
-    field: "price",
-    direction: "desc",
-    tags: ["@regression"],
-  },
-  {
-    label: "Price (Low - High)",
-    value: "price,asc",
-    field: "price",
-    direction: "asc",
-    tags: ["@smoke"],
-  },
-  {
-    label: "CO₂ Rating (A - E)",
-    value: "co2_rating,asc",
-    field: "co2",
-    direction: "asc",
-    tags: ["@regression"],
-  },
-  {
-    label: "CO₂ Rating (E - A)",
-    value: "co2_rating,desc",
-    field: "co2",
-    direction: "desc",
-    tags: ["@regression"],
-  },
-];
 
 const PRODUCT_SORTING_UI_METADATA = {
   parentSuite: "UI",
@@ -110,63 +49,79 @@ test.describe("Product sorting UI", { tag: ["@ui", "@sorting", "@catalog"] }, ()
     },
   );
 
-  for (const sortCase of SORT_CASES) {
-    test(
-      `orders visible product cards by ${sortCase.label}`,
-      { tag: sortCase.tags },
-      async ({ page, productsPage }) => {
-        await applyAllureMetadata({
-          ...PRODUCT_SORTING_UI_METADATA,
-          story: `Sort option: ${sortCase.label}`,
-          severity: sortCase.tags.includes("@smoke") ? "critical" : "normal",
+  test(
+    "orders visible product cards by Price (Low - High)",
+    { tag: ["@smoke"] },
+    async ({ page, productsPage }) => {
+      await applyAllureMetadata({
+        ...PRODUCT_SORTING_UI_METADATA,
+        story: "Sort option: Price (Low - High)",
+        severity: "critical",
+      });
+
+      await test.step("Open catalog page", async () => {
+        await productsPage.open();
+        await productsPage.waitForReady();
+      });
+
+      await test.step("Apply sort option Price (Low - High)", async () => {
+        const productsResponsePromise = page.waitForResponse((response) => {
+          if (response.request().method() !== "GET" || !response.url().includes("/products")) {
+            return false;
+          }
+
+          const responseUrl = new URL(response.url());
+          return responseUrl.searchParams.get("sort") === "price,asc";
         });
 
-        await test.step("Open catalog page", async () => {
-          await productsPage.open();
-          await productsPage.waitForReady();
-        });
+        await productsPage.selectSort("price,asc");
+        await productsResponsePromise;
 
-        await test.step(`Apply sort option ${sortCase.label}`, async () => {
+        await expect(productsPage.sortSelect).toHaveValue("price,asc");
+      });
+
+      await test.step("Verify visible product prices are in ascending order", async () => {
+        const prices = await productsPage.getVisibleProductPrices();
+
+        expect(prices.length).toBeGreaterThan(1);
+        expect(prices.some((price) => Number.isNaN(price))).toBeFalsy();
+        expectPricesSorted(prices, "asc");
+      });
+    },
+  );
+
+  test(
+    "allows selecting each supported sort option and maps to matching sort request",
+    { tag: ["@regression"] },
+    async ({ page, productsPage }) => {
+      await applyAllureMetadata({
+        ...PRODUCT_SORTING_UI_METADATA,
+        story: "Sort option mapping coverage",
+        severity: "normal",
+      });
+
+      await test.step("Open catalog page", async () => {
+        await productsPage.open();
+        await productsPage.waitForReady();
+      });
+
+      for (const sortOption of EXPECTED_SORT_OPTIONS) {
+        await test.step(`Select ${sortOption.label} and verify request mapping`, async () => {
           const productsResponsePromise = page.waitForResponse((response) => {
-            return (
-              response.request().method() === "GET" &&
-              response.url().includes("/products") &&
-              response.url().includes(`sort=${sortCase.value}`)
-            );
+            if (response.request().method() !== "GET" || !response.url().includes("/products")) {
+              return false;
+            }
+
+            const responseUrl = new URL(response.url());
+            return responseUrl.searchParams.get("sort") === sortOption.value;
           });
 
-          await productsPage.selectSort(sortCase.value);
+          await productsPage.selectSort(sortOption.value);
           await productsResponsePromise;
 
-          await expect(productsPage.sortSelect).toHaveValue(sortCase.value);
+          await expect(productsPage.sortSelect).toHaveValue(sortOption.value);
         });
-
-        await test.step("Verify visible product cards are ordered for comparable values", async () => {
-          if (sortCase.field === "name") {
-            const names = await productsPage.getVisibleProductNames();
-            const comparabilityIssue = getNameSortComparabilityIssue(names);
-
-            test.skip(comparabilityIssue !== null, comparabilityIssue ?? "");
-            expectNamesSorted(names, sortCase.direction);
-            return;
-          }
-
-          if (sortCase.field === "price") {
-            const prices = await productsPage.getVisibleProductPrices();
-            const comparabilityIssue = getPriceSortComparabilityIssue(prices);
-
-            test.skip(comparabilityIssue !== null, comparabilityIssue ?? "");
-            expectPricesSorted(prices, sortCase.direction);
-            return;
-          }
-
-          const ratings = await productsPage.getVisibleProductCo2Ratings();
-          const comparabilityIssue = getCo2SortComparabilityIssue(ratings);
-
-          test.skip(comparabilityIssue !== null, comparabilityIssue ?? "");
-          expectCo2RatingsSorted(ratings, sortCase.direction);
-        });
-      },
-    );
-  }
+      }
+    },
+  );
 });

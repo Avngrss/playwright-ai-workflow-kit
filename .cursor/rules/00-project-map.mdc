@@ -245,6 +245,22 @@ API base URL:
 
 - `https://api.practicesoftwaretesting.com`
 
+Environment variables:
+
+- `API_BASE_URL` is used only by the Playwright `api` project and API tests;
+- `UI_PRECONDITION_API_BASE_URL` is used by `src/test/fixtures/api-preconditions.fixture.ts` for UI API precondition setup;
+- `UI_API_BASE_URL` is an optional fallback for UI API precondition setup when `UI_PRECONDITION_API_BASE_URL` is not provided;
+- UI precondition API base must point to the same backend used by UI runtime API calls.
+
+UI precondition fixture ownership and usage:
+
+- `registrationApiPreconditionSetup` is owned by `src/test/fixtures/api-preconditions.fixture.ts`;
+- fixture exposure follows `api-preconditions.fixture.ts` -> `pages.fixture.ts` -> `test.ts`;
+- UI specs must use the fixture for API setup and keep UI action under test explicit in spec steps;
+- setup through `registrationApiPreconditionSetup` verifies only required precondition creation success and returns created user credentials;
+- UI specs must not read environment variables directly;
+- UI specs must not derive API host from UI host.
+
 API documentation / contract source:
 
 - `https://api.practicesoftwaretesting.com/api/documentation`

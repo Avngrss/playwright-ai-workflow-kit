@@ -1,12 +1,16 @@
-# Skill: Plan Test Coverage
+# Skill: Implement API Feature From Plan
 
 ## Goal
 
-Use this skill when planning test coverage and produce a complete feature coverage plan that is directly actionable for implementation agents.Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
+Use this skill when an API.Use this skill when an API feature plan already exists and API automation must be implemented.
 
-The plan must describe the full coverage picture, not only the first small batch.
+The planner creates or validates the feature plan.
 
-Do not implement tests during this skill.
+This skill implements the selected API scope from the approved plan.
+
+Do not implement UI tests with this skill.
+
+Do not implement visual checks with this skill.
 
 ---
 
@@ -14,11 +18,14 @@ Do not implement tests during this skill.
 
 Follow these rules:
 
+- Agent Workflow;
 - Test Strategy and Test Pyramid Rules;
 - API Architecture Rules;
-- Visual Testing Rules;
+- API Schema Validation Rules;
+- Fixtures and Test Data Rules;
 - Project Map Rules;
-- Agent Workflow;
+- Configuration and Secrets Rules;
+- Test Isolation, Flakiness, and Diagnostics Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -29,12 +36,13 @@ If this skill conflicts with a rule or the project map, follow the project map a
 
 Use this skill when:
 
-- creating a new feature test plan;
-- deciding whether behavior should be covered by UI, API, visual, schema, or not automated;
-- reviewing too many proposed UI tests;
-- splitting smoke and regression coverage;
-- avoiding duplicate coverage across layers;
-- creating API and UI implementation briefs before coding.
+- a feature test plan exists;
+- API automation must be implemented for planned scenarios;
+- API coverage ready to implement now must be added;
+- existing API assertion helpers need minimal updates;
+- existing API schemas need minimal updates;
+- reusable test data may be needed;
+- the implementation must follow repository architecture.
 
 ---
 
@@ -42,494 +50,563 @@ Use this skill when:
 
 Do not use this skill when:
 
-- the task is a small locator fix;
-- test level is already clear;
-- a failing test needs healing;
-- implementation has already been approved and scoped;
-- the task is only to implement tests from an existing plan.
+- no feature plan exists;
+- the task is only to plan coverage;
+- the task is only to heal a failing API test;
+- the task is only UI automation;
+- the task is only visual testing;
+- the task is only to create a data builder;
+- the task is a broad refactor without API feature implementation.
+
+If no feature plan exists, invoke or request planning first.
+
+Do not invent missing requirements.
+
+Use Heal API Test when an existing API test is failing.
+
+Use Create Test Data Builder when reusable structured data is the only task.
+
+Use Refactor Overengineering when behavior-preserving cleanup is the only task.
+
+---
+
+## Inputs
+
+Use relevant available context:
+
+- feature plan;
+- selected API implementation scope;
+- API contract or OpenAPI/Swagger documentation;
+- project map;
+- existing API specs;
+- existing assertion helpers;
+- existing Zod schemas;
+- existing API clients or request helpers;
+- existing builders, generators, datasets, and fixtures;
+- relevant rules;
+- quality gate command from the project map.
+
+Use the project map as the source of truth for:
+
+- spec locations;
+- assertion helper locations;
+- schema locations;
+- data locations;
+- fixture entry points;
+- path aliases;
+- tags;
+- verification commands.
+
+Do not invent paths, aliases, commands, or naming conventions.
+
+---
+
+## Implementation Scope
+
+Implement only the selected API scope.
+
+Preferred implementation scope is:
+
+- all API coverage marked as ready to implement now in the feature plan.
+
+Do not implement:
+
+- UI coverage;
+- visual checkpoints;
+- schema checks not selected for this API task;
+- blocked or postponed scenarios;
+- adjacent endpoint capabilities;
+- adjacent query parameters;
+- unrelated negative cases;
+- helper-only scenarios.
+
+If the selected scope is ambiguous, stop and report the ambiguity.
 
 ---
 
 ## Workflow
 
-### 1. Identify Behaviors
+### 1. Read And Validate The Feature Plan
 
-List the behaviors or requirements to cover.
+Read the feature plan and identify:
 
-Do not start from test cases.
+- feature scope;
+- source of truth;
+- in-scope API behaviors;
+- out-of-scope behaviors;
+- API scenarios ready to implement now;
+- blocked or postponed API scenarios;
+- expected status codes;
+- expected response assertions;
+- schema validation decisions;
+- negative coverage decisions;
+- required tags;
+- required test data;
+- contract gaps or blockers;
+- verification command.
 
-Start from:
+Do not implement scenarios that are unclear.
 
-- user-facing risks;
-- backend/API risks;
-- validation rules;
-- integration points;
-- visual risks;
-- error handling;
-- contract/schema risks.
+Do not implement blocked or postponed scenarios.
 
-Each behavior should describe something meaningful that the product or system must do.
-
----
-
-### 2. Classify Risk
-
-For each behavior, classify the main risk:
-
-- backend contract;
-- frontend interaction;
-- user journey;
-- validation;
-- authorization;
-- visual layout;
-- data transformation;
-- integration;
-- configuration;
-- error handling.
-
-The risk classification should explain why the behavior needs automated coverage.
+Do not implement implementation details as scenarios.
 
 ---
 
-### 3. Choose Test Level
+### 2. Check Project Map
 
-For each behavior, choose one primary test level:
+Before creating or modifying files, check the project map for:
 
-- static/typecheck;
-- API;
-- UI;
-- visual checkpoint;
-- schema/contract;
-- not automated.
-
-Use the lowest reliable level that proves the behavior.
-
-Do not default everything to UI.
-
-UI coverage is justified only when the risk is user-facing, browser-visible, or frontend-integration specific.
-
-API coverage is preferred for backend contract, validation, data, and status behavior when UI behavior is not the main risk.
-
----
-
-### 4. Avoid Duplicate Coverage
-
-Check whether the behavior is already covered or better covered at another layer.
-
-Avoid UI tests for backend behavior already covered by API tests unless the UI adds a distinct user-facing risk.
-
-Avoid duplicating the same risk across:
-
-- API;
-- UI;
-- schema/contract;
-- visual checkpoints.
-
-Good layered coverage example:
-
-- API test verifies validation contract;
-- UI test verifies visible validation feedback;
-- visual checkpoint verifies validation layout.
-
-Bad duplicate coverage example:
-
-- API test verifies required email validation;
-- UI test repeats the same backend validation without checking unique UI behavior;
-- visual test screenshots the same state without visual value.
-
----
-
-### 5. Define Smoke vs Regression
-
-Mark each automated scenario as:
-
-- smoke;
-- regression.
-
-Smoke should be small, critical, and fast.
-
-Regression may cover broader behavior and edge cases.
-
-Visual checks should default to regression unless the feature plan explicitly requires a critical visual smoke checkpoint.
-
-Do not put every test into smoke.
-
----
-
-### 6. Decide Visual Checkpoints
-
-Recommend visual checkpoints only for meaningful visual risks.
-
-Good visual checkpoint candidates:
-
-- default form state;
-- filled form state;
-- validation error state;
-- success state;
-- modal open state;
-- empty state;
-- complex component layout.
-
-Do not recommend visual checkpoints for every page by default.
-
-Do not use visual checks to replace functional assertions.
-
-For each recommended visual checkpoint, specify:
-
-- target UI state;
-- screenshot scope;
-- reason visual coverage is useful;
-- planned now or postponed;
-- dynamic content risks;
-- recommended tag: `@visual` with `@regression` by default.
-
-If baseline approval is not requested, visual checkpoints should normally be marked as postponed.
-
----
-
-### 7. Recommend Implementation Scope
-
-Recommend implementation scope by level.
-
-The plan should provide the full coverage picture, but implementation must still be executed later through separate implementation commands.
-
-Group coverage by:
-
-- API coverage;
-- UI coverage;
-- visual checkpoints;
-- schema/contract checks;
-- not automated or blocked items.
-
-For each group, classify items as:
-
-- ready to implement now;
-- blocked;
-- postponed;
-- not automated.
-
-Ready to implement now should include all safe, stable, and unblocked coverage for that level.
-
-Do not split coverage into first/later batches by default.
-
-Use blocked or postponed only when there is a real reason, such as:
-
-- missing contract details;
-- unstable live behavior;
-- missing approved setup mechanism;
-- unclear auth or role requirements;
-- unclear visual baseline strategy;
-- high flakiness risk;
-- explicitly deferred product scope.
-
-Do not ask one implementation agent to implement API, UI, visual, and schema coverage in the same run.
-
-Implementation commands should later select a level-specific implementation scope, for example:
-
-- all API coverage ready to implement now;
-- all UI coverage ready to implement now;
-- visual checkpoints planned now.
-
----
-
-### 8. Create Implementation Briefs
-
-Create implementation briefs that are actionable for implementation agents.
-
-The plan must not leave API or UI details for implementation agents to invent.
-
-API Implementation Brief should include:
-
-- endpoint and method per scenario;
-- payload source or builder need;
-- scenario data strategy;
-- expected status;
-- response assertions;
-- API client decision;
-- assertion helper decision;
-- contract gaps or blockers.
-
-UI Implementation Brief should include:
-
-- route or page;
-- scenario steps;
+- API spec locations;
+- assertion helper locations;
+- schema locations;
+- builder/generator/dataset locations;
+- API client/helper locations;
+- fixture entry point;
+- path aliases;
 - tags;
-- preconditions and test data;
-- scenario data strategy;
-- expected visible outcome;
-- recommended Page Object;
-- likely Page Object actions or readers;
-- Component Object decision;
-- locator discovery notes if available;
-- assertions in spec;
-- what API/schema owns instead of UI.
+- quality gate command.
 
-Implementation briefs should describe how to implement the coverage safely, but they must not implement the code.
+Do not invent folders, aliases, commands, or naming conventions.
 
 ---
 
-### Scope Boundary Check
+### 3. Scope Boundary Check
 
 Before writing API tests, verify the selected implementation scope against the feature plan and user request.
 
 Implement only API coverage that belongs to the selected scope.
 
-Do not expand API tests to adjacent endpoint capabilities, query parameters, filters, states, or negative cases unless they are explicitly in scope.
+Do not expand API tests to adjacent endpoint capabilities, query parameters, filters, states, flows, or negative cases unless they are explicitly in scope.
 
-If the selected scope is derived from UI behavior, map only the specified UI behavior/options/states to API requests.
+If the selected API scope is derived from UI behavior, map only the specified UI behavior, option, or state to confirmed API requests.
 
 Do not guess undocumented API parameters or values.
 
 If a related API behavior is useful but outside the selected scope, report it as out of scope or future coverage instead of implementing it.
 
----
+Examples:
 
-### 9. Validate Scenarios vs Implementation Decisions
-
-Before finalizing the plan, verify that planned scenarios represent real coverage items.
-
-A scenario must represent one of:
-
-- user behavior;
-- API behavior;
-- contract behavior;
-- visual state;
-- error or validation behavior;
-- integration risk;
-- not automated risk.
-
-Do not list implementation details as standalone scenarios.
-
-Implementation details include:
-
-- assertion helpers;
-- builders;
-- generators;
-- API clients;
-- fixtures;
-- Page Objects;
-- Component Objects;
-- metadata helpers;
-- reporting helpers.
-
-Bad:
-
-- scenario A: POST /messages happy path;
-- scenario B: response contract assertion helper.
-
-Good:
-
-- scenario: POST /messages happy path;
-- response assertions: status 200 and documented response shape;
-- assertion helper decision: use helper only if response assertion is non-trivial.
-
-Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metadata helpers belong in implementation briefs as decisions, not in coverage backlog as scenarios.
+- if scope is API coverage for visible Sort dropdown options, do not add filter, search, category, brand, rental, or filter-plus-sort interaction coverage unless explicitly listed;
+- if scope is Brand filter API coverage, do not add sorting, category, search, or price range coverage unless explicitly listed;
+- if scope is Login API coverage, do not add registration API coverage except as approved setup/precondition.
 
 ---
 
-### 10. Plan Scenario Variants
+### 4. Validate API Contract And Expected Behavior
 
-When a behavior has multiple data variants, decide whether variants should be:
+For each selected API scenario, identify:
 
-- separate scenarios;
-- parameterized cases inside one scenario;
-- dataset-driven cases;
-- postponed;
-- not automated.
+- endpoint;
+- method;
+- query parameters or request body;
+- expected status code;
+- expected response shape;
+- documented error behavior;
+- authentication or authorization requirements;
+- contract gaps.
 
-Use separate scenarios only when each variant verifies a distinct risk or behavior.
+Use the API contract as the source of truth when available.
 
-Use parameterized cases or datasets when variants verify the same behavior with different inputs.
+Do not guess expected status codes.
 
-Do not create one standalone scenario per data value unless each value has unique product risk.
+Do not assert undocumented response fields unless they are required by the behavior under test and already accepted by the project.
 
-Good separate scenarios:
+If contract and live behavior differ, report the gap.
 
-- invalid email feedback;
-- required field feedback;
-- successful submit;
-- duplicate email feedback.
+---
 
-Good parameterized or dataset cases:
+### 5. Scenario Deduplication Check
 
-- subject option values;
-- sort options;
-- filter values;
-- supported dropdown values;
-- simple validation field permutations.
+Before writing API tests, check whether selected coverage items are distinct API behaviors or contract risks.
 
-Bad:
+Do not create a separate test only to exercise:
 
-- scenario A: subject customer-service works;
-- scenario B: subject webmaster works;
-- scenario C: subject payments works.
+- assertion helper;
+- Zod schema;
+- builder;
+- generator;
+- API client;
+- fixture;
+- metadata helper;
+- reporting helper.
 
-Good:
+These are implementation details, not standalone API scenarios.
 
-- scenario: supported subject options can be selected;
-- scenario data: customer-service, webmaster, payments, return, warranty.
+If a response contract assertion belongs to the same API behavior, include it in the same scenario test unless the plan explicitly identifies a distinct contract risk.
 
-For each variant group, specify:
+Avoid duplicate tests that:
 
-- behavior being verified;
-- variant values;
-- whether implementation should use local cases, dataset, or builder;
-- why variants are separate scenarios or grouped cases.
+- send the same request;
+- use the same payload;
+- assert the same status;
+- differ only by whether an assertion helper or schema helper is called.
+
+If the plan lists an implementation detail as a scenario, treat it as an implementation decision and report the correction.
+
+---
+
+### 6. Negative Coverage Decision Check
+
+Before writing API tests, check whether the selected API behavior has documented negative or error cases.
+
+For documented error behavior, implement negative API coverage at API level when it is safe and stable.
+
+Good API negative candidates include:
+
+- invalid credentials;
+- missing required fields;
+- invalid formats;
+- unauthorized request;
+- forbidden role;
+- duplicate entity;
+- invalid token;
+- unsupported documented enum value;
+- documented validation error.
+
+If status code, response body, auth setup, validation contract, or required data is unclear, do not guess.
+
+Report unclear negative cases as blocked or postponed with the missing contract or setup detail.
+
+Do not replace API negative coverage with UI tests unless the UI-specific risk is visible user feedback.
+
+Do not add negative tests for undocumented behavior just because they seem useful.
+
+---
+
+### 7. Scenario Data Implementation Check
+
+Before writing API tests, decide how scenario data should be represented.
+
+Use local constants when:
+
+- data is deterministic;
+- data is small;
+- data is used by one spec or one scenario;
+- no variants or overrides are needed.
+
+Use local scenario cases when:
+
+- multiple values verify the same behavior;
+- variants are small and specific to one spec.
+
+Use datasets when:
+
+- static scenario cases are reused;
+- variants are meaningful across multiple tests or specs.
+
+Use builders when:
+
+- structured data is reused;
+- valid defaults and `Partial<T>` overrides are needed;
+- negative variants modify one or more fields;
+- unique or formatted values are required;
+- the same data shape is shared across API and UI tests.
+
+Use generators when:
+
+- unique primitive values are required;
+- formatted primitive values are required;
+- freshness prevents collisions or backend validation failures.
+
+Builder defaults must be valid by default.
+
+Invalid or negative data must be explicit through overrides.
+
+Do not define reusable `buildData`, `buildPayload`, `buildFormData`, or similar factory functions inside specs.
+
+Do not create a builder for one-off deterministic payloads.
+
+Do not create a separate test only because a helper, builder, dataset, or schema exists.
+
+---
+
+### 8. Schema Validation Decision
+
+Before writing manual response shape assertions, decide whether a Zod schema is justified.
+
+Use Zod schema validation when the response shape is:
+
+- reused across multiple tests;
+- nested;
+- paginated;
+- contract-critical;
+- large enough that manual type checks reduce readability;
+- used by multiple assertion helpers;
+- shared across API tests and UI setup checks.
+
+Do not create Zod schemas for trivial one-off responses.
+
+If using Zod:
+
+- place reusable schemas under `src/test/schemas/api/`;
+- infer response types from schemas with `z.infer`;
+- use the shared Zod assertion helper for `safeParse` plus Playwright `expect`;
+- create the shared Zod assertion helper if it does not exist yet;
+- do not duplicate `safeParse` plus `expect` wrapper logic in every response assertion helper;
+- keep feature-specific response helpers as thin wrappers with domain-readable names;
+- keep behavior assertions separate from schema validation;
+- do not define reusable schemas inside specs.
+
+Assertion helpers may contain Playwright `expect`.
+
+API clients must not contain schema assertions.
+
+Specs should normally import feature-specific assertion helpers, not raw schemas or the generic Zod helper, when a feature-specific helper exists.
+
+Do not migrate unrelated response helpers while implementing a feature.
+
+---
+
+### 9. API Client Decision
+
+Use direct Playwright `request` calls when:
+
+- the endpoint is used only once or twice;
+- request composition is simple;
+- no reusable authentication or request setup is needed.
+
+Create or update a thin API client only when:
+
+- endpoint calls are reused across multiple specs;
+- request composition is duplicated;
+- authentication/header setup is repeated;
+- a client improves clarity without hiding assertions.
+
+API clients may compose and send requests.
+
+API clients must not:
+
+- contain Playwright `expect`;
+- contain Zod schema assertion logic;
+- hide behavior assertions;
+- validate full response contracts;
+- own test data defaults.
+
+Do not create API clients speculatively.
+
+---
+
+### 10. Assertion Helper Decision
+
+Use assertion helpers for:
+
+- reusable response shape validation;
+- Zod schema validation wrappers;
+- reusable behavior assertions;
+- non-trivial response predicates;
+- sorting/filtering/list/table/pagination invariants.
+
+Keep scenario-specific assertions in specs when they are simple and readable.
+
+Assertion helpers may use Playwright `expect`.
+
+Do not hide the main behavior under test inside overly broad helpers.
+
+Avoid helper names that combine action and verification.
+
+Good helper responsibilities:
+
+- validate response shape;
+- validate sorted order;
+- validate filtered result predicate;
+- validate token response shape;
+- validate conflict error shape.
+
+Bad helper responsibilities:
+
+- send request and assert response;
+- create entity and verify full workflow;
+- hide setup, action, and assertion together.
+
+---
+
+### 11. Implement API Tests
+
+Implement tests for the selected API scope only.
+
+API tests must:
+
+- use the final fixture entry point or project-approved API fixture;
+- use required tags;
+- keep request, status assertion, schema/shape assertion, and behavior assertion readable;
+- avoid unrelated setup;
+- avoid shared static data when fresh data is possible;
+- avoid inline random data;
+- avoid process.env access in specs;
+- avoid full API contract validation in setup steps;
+- avoid over-abstracting early.
+
+Use one test per distinct API behavior or contract risk.
+
+Use table-driven tests when multiple values verify the same behavior.
+
+Do not create a full Cartesian matrix unless the feature plan explicitly requires it.
+
+Do not add `test.fixme` placeholders for postponed API scenarios unless the project convention explicitly requires visible skipped tests.
+
+Prefer documenting blocked/postponed cases in the feature plan and implementation report.
+
+---
+
+### 12. Preconditions And Setup
+
+Use the lowest reliable setup layer for API preconditions.
+
+If a test needs an existing backend entity, use approved API setup, builders, generators, or fixtures.
+
+Do not derive API host from UI host.
+
+Do not build API URLs manually in specs when project config provides the base URL.
+
+Do not read secrets or environment variables directly in specs.
+
+Do not use shared static credentials when fresh data can be created safely.
+
+If setup fails, inspect the setup response before blaming assertions or schemas.
+
+If reusable default test data becomes invalid due to backend validation, fix the builder or generator default.
+
+Do not weaken expected behavior to hide setup failures.
+
+---
+
+### 13. Verification
+
+After changes:
+
+1. run the impacted API spec or specs;
+2. run related API specs if shared builders, generators, schemas, assertion helpers, API clients, or fixtures were changed;
+3. run the repository quality gate command defined by the project map.
+
+Default examples:
+
+- impacted API spec command may use `npx playwright test <spec-path> --project=api`;
+- quality gate may be `npm run qa:gate`.
+
+Use the project map as the source of truth.
+
+If verification cannot be run, state:
+
+- what changed;
+- what should be run;
+- why it was not run.
+
+---
+
+### 14. Healing
+
+If implemented API tests fail, do not patch blindly.
+
+Use Heal API Test skill.
+
+Do not:
+
+- weaken assertions;
+- remove schema validation to pass;
+- change expected status without contract evidence;
+- add skips for failures that should be investigated;
+- silently widen schemas;
+- mark fields optional or nullable only to make tests pass;
+- blame Zod if the failure happens before schema validation.
+
+Fix root cause at the correct layer.
+
+---
+
+### 15. Hardening
+
+After implementation, harden only reusable learnings.
+
+Consider hardening when the work reveals:
+
+- missing rule;
+- missing skill;
+- repeated data issue;
+- repeated schema validation issue;
+- repeated scope creep;
+- repeated helper misuse;
+- fixture boundary problem;
+- diagnostics gap.
+
+Do not add rules or abstractions for one-off cases.
+
+---
+
+## Guardrails
+
+Do not:
+
+- implement without reading the feature plan;
+- implement blocked or postponed scenarios;
+- implement UI tests;
+- implement visual checkpoints;
+- modify unrelated files;
+- create speculative API clients;
+- create builders for one-off values;
+- create schemas for trivial one-off responses;
+- migrate unrelated helpers;
+- use undocumented status codes as expected behavior;
+- guess undocumented response fields;
+- hide behavior assertions inside schemas;
+- put schema validation into API clients;
+- put reusable schemas inside specs;
+- create one test per data value when a parameterized case is enough;
+- add helper-only tests;
+- bypass the project fixture entry point;
+- change expected behavior unless the requirement or contract changed.
 
 ---
 
 ## Output Format
 
-### Feature / Area
+When reporting implementation, use this structure:
 
-- name:
-- scope:
-- UI target:
-- API contract source:
-- requirements/specs:
+### 1. API Scope
 
-### Coverage Matrix
+- feature:
+- scenarios implemented:
+- scenarios blocked/postponed:
+- out-of-scope items:
 
-For each behavior:
+### 2. Data
 
-- behavior:
-- risk:
-- recommended level:
-- priority: smoke or regression:
-- reason:
-- duplicate coverage risk:
-- notes:
+- reused data:
+- local constants:
+- local scenario cases:
+- datasets:
+- builders updated:
+- generators updated:
+- fixture changes:
 
-### Smoke / Regression Split
+### 3. API Structure
 
-Smoke:
-
-- ...
-
-Regression:
-
-- ...
-
-### API Coverage
-
-Ready to implement now:
-
-- scenarios:
-- reason:
-- dependencies:
-- blockers:
-- implementation decisions:
-
-Blocked or postponed:
-
-- scenarios:
-- reason:
-- blocker or clarification needed:
-
-### API Implementation Brief
-
-For each API scenario:
-
-- endpoint:
-- method:
-- tags:
-- payload source:
-- scenario data strategy:
-- expected status:
-- response assertions:
-- builder decision:
+- specs added or updated:
+- schemas added or updated:
+- assertion helpers added or updated:
+- API clients added or updated:
 - API client decision:
-- assertion helper decision:
-- contract gaps/blockers:
 
-### UI Coverage
+### 4. Tests
 
-Ready to implement now:
+- tags used:
+- positive coverage:
+- negative coverage:
+- schema/contract checks:
+- behavior assertions:
 
-- scenarios:
+### 5. Verification
+
+- impacted specs run:
+- related specs run:
+- quality gate:
+- not run reason, if any:
+
+### 6. Hardening
+
+- needed: yes or no;
+- action taken or postponed;
 - reason:
-- dependencies:
-- blockers:
-- implementation decisions:
-
-Blocked or postponed:
-
-- scenarios:
-- reason:
-- blocker or clarification needed:
-
-### UI Implementation Brief
-
-For each UI scenario:
-
-- route/page:
-- tags:
-- preconditions:
-- test data:
-- scenario data strategy:
-- user steps:
-- expected visible outcome:
-- recommended Page Object:
-- Page Object actions/readers:
-- Component Object decision:
-- locator discovery notes:
-- assertions in spec:
-- not covered in UI:
-
-### Visual Checkpoints
-
-Planned now:
-
-- target UI state:
-- screenshot scope:
-- reason:
-- dynamic content risks:
-- recommended tags:
-
-Postponed:
-
-- target UI state:
-- reason postponed:
-
-### Schema / Contract Checks
-
-Planned now:
-
-- checks:
-- reason:
-- dependencies:
-
-Postponed:
-
-- checks:
-- reason postponed:
-
-### Not Automated / Blockers
-
-List anything not recommended for automation and why.
-
-Examples:
-
-- unstable behavior;
-- unclear contract;
-- missing auth/setup mechanism;
-- missing product requirement;
-- automation cost higher than value.
-
-### Recommended Next Commands
-
-List the next commands to run manually.
-
-Examples:
-
-- `/implement-api-batch`;
-- `/implement-ui-batch`;
-- `/implement-visual-checkpoint`;
-- `/create-builder`.
-
-Recommended commands are output only.
-
-They are not permission to start implementation during planning.
 
 ---
 
@@ -537,25 +614,45 @@ They are not permission to start implementation during planning.
 
 This skill is complete when:
 
-- each behavior has a recommended primary test level;
-- UI tests are justified by user-facing value;
-- API tests cover contract or backend risks;
-- visual checkpoints cover visual risks only;
-- duplicate coverage is avoided;
-- smoke and regression split is clear;
-- API coverage ready to implement now is clear, if applicable;
-- UI coverage ready to implement now is clear, if applicable;
-- blocked and postponed API/UI coverage is clearly explained;
-- visual checkpoints are planned or explicitly postponed;
-- schema/contract checks are planned or explicitly postponed;
-- implementation details are not listed as standalone scenarios;
-- scenario variants are grouped or separated intentionally;
-- scenario data strategy is specified for non-trivial variants;
-- API Implementation Brief is actionable, if API coverage exists;
-- UI Implementation Brief is actionable, if UI coverage exists;
-- blockers and missing contract details are documented.
+- feature plan was read;
+- selected API scope was validated;
+- project map was followed;
+- scope did not expand to adjacent behavior;
+- required test data was identified before tests;
+- documented negative/error coverage was implemented or blocked/postponed with reason;
+- schema validation decision was made for non-trivial responses;
+- Zod schemas were used only when justified;
+- shared Zod assertion helper was used when Zod schema validation was implemented;
+- behavior assertions remained separate from schema validation;
+- API clients were created only when justified;
+- tests use required tags;
+- implementation details are not standalone tests;
+- no speculative abstractions were added;
+- impacted API specs were run or documented as not run;
+- quality gate was run or documented as not run.
 
-The goal is to choose the right test level for each behavior before implementation.
+---
 
-Do not implement tests during this skill.
+## Main Principle
+
+Planner creates the plan.
+
+This skill implements the selected API scope from the plan.
+
+API tests own backend contract and behavior risks.
+
+Zod validates response shape.
+
+Assertion helpers connect validation and reusable behavior checks to Playwright reporting.
+
+Builders and generators own reusable test data.
+
+Specs show the API scenario.
+
+Verification proves the implementation.
+
+Healing fixes root causes at the correct layer.
+
+
+The goal is to implement API automation from the approved feature plan while keeping tests readable, maintainable, contract-aware, and aligned with the test pyramid.
 

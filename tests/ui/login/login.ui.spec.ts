@@ -1,4 +1,3 @@
-import { registrationFormDataBuilder } from "../../../src/test/data/builders/registration-form-data.builder";
 import { expect, test } from "../../../src/test/fixtures/test";
 import { applyAllureMetadata } from "../../../src/test/reporting/allure-metadata.helper";
 
@@ -38,27 +37,27 @@ test.describe("Login UI", { tag: ["@ui", "@login", "@auth"] }, () => {
   test(
     "logs in successfully and opens account page",
     { tag: ["@smoke"] },
-    async ({ accountPage, loginPage, page, registerPage }) => {
-      const registrationData = registrationFormDataBuilder.build();
+    async ({ accountPage, loginPage, page, registrationApiPreconditionSetup }) => {
       await applyAllureMetadata({
         ...LOGIN_UI_METADATA,
         story: "Successful login journey",
         severity: "critical",
       });
 
-      await test.step("Create fresh user precondition through registration flow", async () => {
-        await registerPage.open();
-        await registerPage.waitForReady();
-        await registerPage.fillRegistrationForm(registrationData);
-        await registerPage.submit();
+      const registeredUser = await test.step(
+        "Create fresh user precondition through API setup",
+        async () => {
+          return registrationApiPreconditionSetup.createRegisteredUser();
+        },
+      );
 
-        await expect(page).toHaveURL(/\/auth\/login$/);
+      await test.step("Open login page", async () => {
+        await loginPage.open();
+        await loginPage.waitForReady();
       });
 
       await test.step("Submit valid credentials", async () => {
-        await loginPage.open();
-        await loginPage.waitForReady();
-        await loginPage.login(registrationData.email, registrationData.password);
+        await loginPage.login(registeredUser.email, registeredUser.password);
       });
 
       await test.step("Verify authenticated account area is opened", async () => {
