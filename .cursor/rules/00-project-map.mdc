@@ -7,6 +7,7 @@
   - 📁 .cursor/
     - 📁 commands/
       - 📄 add-allure-metadata.md
+      - 📄 heal-api-test.md
       - 📄 implement-api-batch.md
       - 📄 implement-ui-batch.md
       - 📄 implement-visual-checkpoint.md
@@ -25,6 +26,7 @@
       - 📄 00-project-map.mdc
       - 📄 agent-workflow.mdc
       - 📄 api-architecture.mdc
+      - 📄 api-schema-validation.rules.mdc
       - 📄 code-quality-cleanliness.mdc
       - 📄 configuration-secrets.rules.mdc
       - 📄 core-playwright.mdc
@@ -39,7 +41,7 @@
       - 📄 sorting-filtering.mdc
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
-      - 📄 test-structure-tags.mdc
+      - 📄 test-structure-and-tags.rules.mdc
       - 📄 visual-testing.mdc
     - 📁 skills/
       - 📁 configure-allure-reporting/
@@ -55,6 +57,8 @@
       - 📁 discover-ui-components/
         - 📄 SKILL.md
       - 📁 harden-rules-from-failure/
+        - 📄 SKILL.md
+      - 📁 heal-api-test/
         - 📄 SKILL.md
       - 📁 heal-ui-test/
         - 📄 SKILL.md
@@ -89,36 +93,31 @@
     - 📁 workflows/
       - 📄 playwright.yml
   - 📁 docs/
-    - 📁 ENG/
-      - 📁 reference/
-        - 📄 AI_AGENT_PROMPTS.md
-        - 📄 AI_WORKFLOW_MAP.md
-        - 📄 HOW_TO_USE_AI_AUTOMATION.md
-    - 📁 RU/
-      - 📁 reference/
-        - 📄 AI_AGENT_PROMPTS_RU.md
-        - 📄 AI_WORKFLOW_MAP_RU.md
-        - 📄 HOW_TO_USE_AI_AUTOMATION_RU.md
-        - 📄 HOW_TO_USE_PROJECT_MAP_RU.md
-      - 📄 AI_DAILY_GUIDE_RU.md
-      - 📄 AI_PROMPT_CHEATSHEET_RU.md
-    - 📄 prompt-playbook.md
+    - 📁 reference/
+      - 📄 AI_AGENT_PROMPTS.md
+      - 📄 AI_WORKFLOW_MAP.md
+      - 📄 HOW_TO_USE_AI_AUTOMATION.md
+    - 📄 AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
     - 📄 project-cartographer.mjs
   - 📁 specs/
     - 📄 contact.md
     - 📄 login.md
+    - 📄 product-price-range.md
     - 📄 registration.md
+    - 📄 sorting-items.md
   - 📁 src/
     - 📁 test/
       - 📁 assertions/
         - 📁 api/
+        - 📁 ui/
       - 📁 data/
         - 📁 builders/
         - 📁 generators/
         - 📁 types/
       - 📁 fixtures/
+        - 📄 api-preconditions.fixture.ts
         - 📄 base.fixture.ts
         - 📄 pages.fixture.ts
         - 📄 test.ts
@@ -126,15 +125,21 @@
         - 📄 account.page.ts
         - 📄 contact.page.ts
         - 📄 login.page.ts
+        - 📄 products.page.ts
         - 📄 register.page.ts
       - 📁 reporting/
         - 📄 allure-metadata.helper.ts
+      - 📁 schemas/
+        - 📁 api/
   - 📁 tests/
     - 📁 api/
       - 📁 contact/
         - 📄 contact.api.spec.ts
       - 📁 login/
         - 📄 login.api.spec.ts
+      - 📁 products/
+        - 📄 product-price-range.api.spec.ts
+        - 📄 product-sorting.api.spec.ts
       - 📁 registration/
         - 📄 register-user.api.spec.ts
     - 📁 ui/
@@ -142,6 +147,9 @@
         - 📄 contact.ui.spec.ts
       - 📁 login/
         - 📄 login.ui.spec.ts
+      - 📁 products/
+        - 📄 product-price-range.ui.spec.ts
+        - 📄 product-sorting.ui.spec.ts
       - 📁 registration/
         - 📁 register.ui.spec.ts-snapshots/
         - 📄 register.ui.spec.ts

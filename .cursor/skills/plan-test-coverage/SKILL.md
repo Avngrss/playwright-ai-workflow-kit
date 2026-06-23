@@ -2,7 +2,9 @@
 
 ## Goal
 
-Use this skill when planning test coverage for a feature, endpoint test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
+Use this skill when planning test coverage for a feature, endpoint, page, or user flow.
+
+The goal is to choose the right test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.
 
 The plan must describe the full coverage picture, not only the first small batch.
 
@@ -64,6 +66,7 @@ Start from:
 - user-facing risks;
 - backend/API risks;
 - validation rules;
+- boundary rules;
 - integration points;
 - visual risks;
 - error handling;
@@ -114,6 +117,7 @@ For each behavior, classify the main risk:
 - frontend interaction;
 - user journey;
 - validation;
+- boundary validation;
 - authorization;
 - visual layout;
 - data transformation;
@@ -221,7 +225,49 @@ Use the pyramid as a decision model, not as a numeric quota.
 
 ---
 
-### 7. Define Smoke vs Regression
+### 7. Boundary And Negative Coverage Check
+
+Before finalizing coverage, check whether the contract or requirement defines boundary or negative behavior.
+
+Review documented limits and constraints such as:
+
+- minimum string length;
+- maximum string length;
+- numeric ranges;
+- date or timestamp formats;
+- required fields;
+- optional fields;
+- nullable fields;
+- allowed enum values;
+- unsupported enum values;
+- file size limits;
+- file type limits;
+- pagination limits;
+- filter ranges;
+- sorting allowed values;
+- authentication boundaries;
+- authorization boundaries;
+- uniqueness constraints;
+- duplicate entity behavior.
+
+For each documented boundary or negative behavior, the plan must include one of:
+
+- ready API scenario;
+- ready UI scenario only when the risk is visible user feedback;
+- schema/contract check;
+- blocked/postponed item with reason;
+- not automated item with reason.
+
+Rules:
+
+- do not guess undocumented status codes, response bodies, validation messages, or boundary limits;
+- if boundary behavior is not documented but appears important, mark it as blocked/postponed and describe the missing contract detail;
+- prefer API coverage for backend validation, request/response contract, auth, data predicates, status behavior, and schema behavior;
+- use UI coverage only when the boundary or negative behavior has distinct visible user-facing value.
+
+---
+
+### 8. Define Smoke vs Regression
 
 Mark each automated scenario as:
 
@@ -238,7 +284,7 @@ Do not put every test into smoke.
 
 ---
 
-### 8. Decide Visual Checkpoints
+### 9. Decide Visual Checkpoints
 
 Recommend visual checkpoints only for meaningful visual risks.
 
@@ -269,7 +315,7 @@ If baseline approval is not requested, visual checkpoints should normally be mar
 
 ---
 
-### 9. Recommend Implementation Scope
+### 10. Recommend Implementation Scope
 
 Recommend implementation scope by level.
 
@@ -314,7 +360,7 @@ Implementation commands should later select a level-specific implementation scop
 
 ---
 
-### 10. Create Implementation Briefs
+### 11. Create Implementation Briefs
 
 Create implementation briefs that are actionable for implementation agents.
 
@@ -329,6 +375,7 @@ API Implementation Brief should include:
 - response assertions;
 - schema validation decision;
 - negative coverage decision;
+- boundary coverage decision;
 - API client decision;
 - assertion helper decision;
 - contract gaps or blockers.
@@ -354,7 +401,7 @@ Implementation briefs should describe how to implement the coverage safely, but 
 
 ---
 
-### 11. Validate Scenarios vs Implementation Decisions
+### 12. Validate Scenarios vs Implementation Decisions
 
 Before finalizing the plan, verify that planned scenarios represent real coverage items.
 
@@ -397,7 +444,7 @@ Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metad
 
 ---
 
-### 12. Plan Scenario Variants
+### 13. Plan Scenario Variants
 
 When a behavior has multiple data variants, decide whether variants should be:
 
@@ -512,6 +559,7 @@ For each API scenario:
 - response assertions:
 - schema validation decision:
 - negative coverage decision:
+- boundary coverage decision:
 - builder decision:
 - API client decision:
 - assertion helper decision:
@@ -619,6 +667,8 @@ This skill is complete when:
 - UI scenarios include unique UI risk and why API/schema is not sufficient;
 - API tests cover contract or backend risks;
 - documented API negative/error behavior is planned or blocked/postponed with reason;
+- documented boundary behavior is planned or blocked/postponed with reason;
+- boundary coverage decision is specified when the contract defines limits, ranges, formats, enums, required fields, or other boundaries;
 - visual checkpoints cover visual risks only;
 - duplicate coverage is avoided;
 - smoke and regression split is clear;

@@ -2,26 +2,11 @@
 
 ## Purpose
 
-Reusable prompt templates for working with AI agents in the Playwright + TypeScript test automation framework.
-
-Use this file to choose the correct workflow, skill, task boundary, and expected output.
-
----
-
-## Mental Model
-
-```text
-Project Map = where things live
-Rules = what must never be violated
-Skills = how to perform a task
-Prompt = the current task ticket
-```
-
-A prompt should not repeat all rules.
+Reusable prompt templates for working rules.Reusable prompt templates for working with AI agents in the Playwright + TypeScript test automation framework.
 
 A good prompt defines:
 
-- skill / agent;
+- skill or command;
 - task;
 - inputs;
 - scope;
@@ -29,26 +14,41 @@ A good prompt defines:
 - expected output;
 - verification.
 
+Keep prompts short.
+
+Put methodology into skills.
+
+Put permanent constraints into rules.
+
+Put project-specific structure into the project map.
+
 ---
 
 ## Default Workflow For A New Feature
 
 ```text
 1. Plan Feature Coverage
-2. Create or validate Test Data Builder, if needed
-3. Implement first API batch, if present
-4. Implement first UI batch, if present
-5. Add visual checkpoints later, if planned
-6. Review Generated Code Quality
-7. Refactor / Heal / Harden only if needed
+2. Review the feature plan if the feature is broad, risky, or has API/UI overlap
+3. Create or validate Test Data Builder, if needed
+4. Implement selected API coverage marked ready to implement now, if present
+5. Implement selected UI coverage marked ready to implement now, if present
+6. Add visual checkpoints later, if planned and explicitly selected
+7. Review Generated Code Quality
+8. Refactor / Heal / Harden only if needed
 ```
 
 Rules of thumb:
 
 - Do not implement API and UI in one agent run.
 - Use one main skill per task.
-- Do not create builders, clients, fixtures, or components speculatively.
+- Do not create builders, clients, fixtures, schemas, components, or helpers speculatively.
+- Use ready to implement now / blocked-postponed, not first batch / later batch.
+- API should own backend contract, schema, negative, boundary, auth, filtering, sorting, and data predicate risks.
+- UI should own distinct user-facing browser behavior.
+- Visual checks should cover visual risk only.
 - If the plan is too vague for UI or API implementation, refine the relevant implementation brief before coding.
+- If a test fails, use healing before refactoring.
+- If the framework reveals a repeated failure pattern, harden rules or skills only after confirming it is not a one-off.
 
 ---
 
@@ -82,6 +82,10 @@ If required information is missing, do not invent architecture or behavior. Repo
 
 Use this as the main entry point for a new feature.
 
+Use **Agent mode** when the expected output is a `specs/<feature>.md` file.
+
+Do not use Cursor Plan mode Build for planning-only tasks that must write the plan file.
+
 ```text
 Use Playwright Planner.
 Use Skill: @.cursor/skills/plan-test-coverage/SKILL.md
@@ -95,58 +99,91 @@ Targets:
 - requirements/specs: <path/link if any>
 
 Task:
-Create a feature coverage plan that is directly actionable for implementation agents.
+Create a full feature coverage plan.
 
 Scope:
 - planning only
-- no test implementation
-- no production code changes
 - allowed change: create/update only specs/<feature>.md
 
-Coverage rules:
-- follow test pyramid
-- choose one primary level per behavior: API / UI / visual checkpoint / schema / not automated
-- prefer the lowest reliable level
-- do not duplicate the same risk across UI, API, schema, and visual
-- UI only for user-facing/browser-visible risks
-- API/schema strictly from contract; do not guess missing fields, statuses, bodies, or messages
-- visual checkpoints only inside UI flows and postpone them unless explicitly requested
+Optional scope boundary:
+- source of truth: <fill only if needed>
+- in scope: <fill only if needed>
+- out of scope: <fill only if needed>
 
-Required output:
-- coverage matrix
-- smoke/regression split
-- first API batch
-- first UI batch
-- API Implementation Brief
-- UI Implementation Brief
-- visual checkpoints / postponed visual items
-- not automated / blockers
-- recommended implementation order
+Output:
+- create or update specs/<feature>.md
+- include coverage matrix
+- include ready to implement now vs blocked/postponed coverage
+- include API/UI/visual/schema/not automated decisions
+- include API Implementation Brief
+- include UI Implementation Brief
+- include recommended next commands
 
-API Implementation Brief must include:
-- endpoint/method per scenario
-- payload source or builder need
-- expected status
-- response assertions
-- API client decision
-- assertion helper decision
-- contract gaps/blockers
+Stop condition:
+- stop after creating or updating specs/<feature>.md
+- do not start implementation
+- do not run recommended next commands
+- recommended next commands are informational only
 
-UI Implementation Brief must include:
-- route/page
-- scenario steps
-- tags
-- preconditions/test data
-- expected visible outcome
-- recommended Page Object
-- likely Page Object actions/readers
-- Component Object decision
-- locator discovery notes if available
-- assertions in spec
-- what API/schema owns instead of UI
+Execution mode:
+- use Agent mode when the expected output is a specs/<feature>.md file
+- do not use Cursor Plan mode Build for planning-only tasks
+```
 
-Important:
-The plan must not leave UI/API implementation details for implementation agents to invent.
+### When To Fill Optional Scope Boundary
+
+Fill optional scope boundary when the feature can easily expand into adjacent behavior.
+
+Good examples:
+
+- catalog sorting near filters/search/pagination;
+- checkout near cart/payment/shipping/confirmation;
+- login near registration/forgot password/profile/current user;
+- product filters near sorting/search/pagination;
+- endpoint with many query parameters.
+
+For simple targeted features, leave the optional scope boundary brief or unspecified.
+
+The generated feature plan must still include:
+
+- source of truth;
+- in scope;
+- out of scope.
+
+---
+
+## Prompt: Review Feature Coverage Plan
+
+Use this before implementation when the feature is broad, risky, or has API/UI overlap.
+
+```text
+/review-generated
+
+Review changes in:
+specs/<feature>.md
+
+Context:
+This is a feature coverage plan review before implementation.
+
+Focus:
+- source of truth is clear
+- in scope / out of scope is clear
+- API positive coverage is present where applicable
+- documented API negative coverage is included or blocked/postponed with reason
+- documented boundary cases are included or blocked/postponed with reason
+- schema validation decision is present for non-trivial API response shapes
+- UI scenarios have unique user-facing value
+- UI does not duplicate API/schema coverage without visible UI risk
+- ready now vs blocked/postponed is clear
+- implementation details are not listed as scenarios
+- recommended next commands are informational only
+
+Output:
+- accept / request changes
+- critical findings
+- major findings
+- minor findings only if worth fixing now
+- recommended next step
 ```
 
 ---
@@ -174,12 +211,15 @@ Add or improve:
 - preconditions/test data
 - user steps
 - expected visible outcomes
+- unique UI risk
+- why API/schema is not sufficient
 - recommended Page Object
 - likely Page Object actions/readers
 - Component Object decision
 - locator discovery notes if available
 - assertions in spec
-- what must not be tested in UI because API/schema owns it
+- what API/schema owns instead of UI
+- blocked/postponed UI items with reason
 
 Constraints:
 - planning only
@@ -217,8 +257,12 @@ Use contract source:
 Add or improve:
 - endpoint/method per scenario
 - request payload source
+- scenario data strategy
 - expected status
 - response assertions
+- schema validation decision
+- negative coverage decision
+- boundary coverage decision
 - builder need
 - API client decision
 - assertion helper decision
@@ -229,8 +273,8 @@ Constraints:
 - planning only
 - no implementation
 - no file changes except updating the feature plan
-- rely strictly on the API contract
-- do not guess payload fields, status codes, response bodies, or error messages
+- rely on the API contract or documented accepted behavior
+- do not guess payload fields, status codes, response bodies, validation messages, or boundary limits
 
 Output:
 updated API Implementation Brief that is actionable for Implement API Feature.
@@ -254,7 +298,7 @@ Target data/entity/payload:
 <target>
 
 Task:
-Create or update only the test data builder needed by the planned batches.
+Create or update only the test data builder needed by the planned implementation scope.
 
 Use this only if reusable structured data is needed.
 
@@ -268,6 +312,7 @@ Identify:
 Rules:
 - builder must return valid data by default
 - builder must support Partial<T> overrides
+- invalid or negative data must be explicit through overrides
 - no inline random data in specs
 - use existing generators if available
 - create generator only for unique/formatted primitive values if needed
@@ -281,6 +326,7 @@ stop and report missing contract or data details.
 Report:
 - files changed
 - builder capabilities
+- verification results, if applicable
 - remaining risks
 ```
 
@@ -290,7 +336,7 @@ Report:
 
 ## Prompt: Implement API Feature From Plan
 
-Use this after the feature plan and required builder are ready.
+Use this after the feature plan is ready.
 
 ```text
 Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
@@ -298,44 +344,78 @@ Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
 Feature plan:
 <path to feature plan>
 
-Task:
-Implement only the first API batch from the API Implementation Brief.
+Implementation scope:
+Implement all API coverage marked as ready to implement now.
 
 Input:
 - API contract: <swagger/openapi/docs link>
-- existing builder/client/helpers if any
+- existing builder/client/helpers: check existing project first
 
-Scope:
-- API tests only
-- no UI tests
-- minimal changes
-- do not create new builder/client/helper unless required by the plan or clearly justified
+Context:
+<any important constraints, blockers, setup notes, or contract risks>
 
 Rules:
-- rely strictly on the API contract
-- do not guess payload fields, status codes, response body, or error messages
-- use request/response model only
-- do not use Page Objects or Components
-- do not call login directly in tests
+- API tests only
+- do not implement UI or visual tests
+- do not expand to adjacent endpoints, query params, filters, states, or negative cases unless explicitly in scope
+- implement documented negative/boundary cases marked ready
+- if negative/boundary behavior is unclear, report it as blocked/postponed instead of guessing
+- use Zod for non-trivial/reused response shapes
+- use shared Zod assertion helper when using Zod
+- do not create API client unless request composition reuse justifies it
+- do not use login as hidden setup unless approved by the plan/setup layer
 - do not hardcode tokens or credentials
-- no process.env outside config layer
+- no process.env outside config/fixture layer
 - no inline random data in specs
-- create API client only if request composition is duplicated or reuse is justified
-- API client must not contain assertions
-- use dedicated assertion helper for non-trivial response contract/schema assertions
-
-If blocked:
-stop and report missing contract, builder, auth, or response details.
 
 After changes:
 run impacted API spec and quality gate from project map.
 
 Report:
-- skill used
 - files changed
-- tests added
-- builder/client/helper decisions
-- verification commands/results
+- API coverage implemented
+- API coverage blocked/postponed
+- schema/helper/client/builder decisions
+- verification results
+- remaining risks
+```
+
+---
+
+## Prompt: Add Targeted API Negative Or Boundary Coverage
+
+Use when review finds missing documented API negative or boundary coverage.
+
+```text
+Use Skill: @.cursor/skills/implement-api-feature/SKILL.md
+
+Feature plan:
+<path to feature plan or relevant spec reference>
+
+Implementation scope:
+Implement only documented API negative/boundary coverage that is marked ready or clearly supported by the contract.
+
+Context:
+<contract notes, endpoint docs, current gaps>
+
+Rules:
+- API tests only
+- do not add UI tests
+- do not guess undocumented status codes, response bodies, messages, or boundary limits
+- if behavior is unclear, report it as blocked/postponed
+- do not create a full error matrix unless the contract requires it
+- keep positive coverage unchanged
+- use Zod only when response shape is non-trivial or reused
+- keep behavior assertions separate from schema validation
+
+After changes:
+run impacted API specs and quality gate.
+
+Report:
+- negative/boundary coverage added
+- cases blocked/postponed with reason
+- files changed
+- verification results
 - remaining risks
 ```
 
@@ -358,14 +438,16 @@ Check existing clients first.
 
 Client may:
 - compose requests
-- return response or typed data
+- send requests
+- return response or parsed data if project convention allows it
 
 Client must not:
 - hide assertions
 - hide workflows
-- call login directly
+- call login as hidden setup
 - hardcode tokens
 - duplicate auth logic
+- perform Zod schema assertions
 - become a service hierarchy
 - live in framework core if endpoint-specific
 
@@ -393,56 +475,37 @@ Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
 Feature plan:
 <path to feature plan>
 
-Task:
-Implement only the first UI batch from the UI Implementation Brief.
+Implementation scope:
+Implement all UI coverage marked as ready to implement now.
 
-Scope:
+Context:
+<any important setup/data/page/component/locator constraints>
+
+Rules:
 - UI tests only
 - no API tests
 - no visual screenshots unless explicitly requested
-- minimal changes
-
-Use:
-- existing builders/generators/datasets when suitable
-- existing fixture entry point from project map
-- existing Page Object conventions from project map
-
-Architecture:
-- create/update minimal Page Object only if needed
-- prefer Page Object first
-- keep simple one-page UI blocks inside the Page Object
-- do not create Component Object by default
-- use Discover UI Components only if ownership is unclear
-- do not create new fixture unless required
-- do not hide the action under test in fixtures/hooks
-
-Locator discovery:
-- use locator notes from the plan if available
-- use Playwright generator/codegen/MCP only if stable locators or actual UI behavior are unclear
-- do not commit raw generated/codegen output
-- convert discovered locators/actions into Page Object methods and clean specs
-
-Tests must:
-- use meaningful test.step
-- keep the main action under test explicit
-- use required tags from the plan
-- avoid raw selector mechanics in specs
-- avoid inline random data
+- do not expand to adjacent controls, flows, filters, states, or pages unless explicitly in scope
+- each UI scenario must have distinct user-facing value
+- do not duplicate API/schema coverage without visible UI risk
+- use approved API precondition setup when backend preconditions are needed and available
+- specs must not read env variables
+- specs must not derive API host from UI host
+- keep Page Objects as actions/readers only
 - keep assertions in specs or dedicated assertion helpers
-
-If blocked:
-stop and report missing locator, data, fixture, or behavior details.
+- no raw selector mechanics in specs
+- no inline random data in specs
 
 After changes:
 run impacted UI spec and quality gate from project map.
 
 Report:
-- skill used
 - files changed
-- tests added
+- UI coverage implemented
+- UI coverage blocked/postponed
+- setup strategy
 - Page Object/component decisions
-- whether generator/MCP was used and why
-- verification commands/results
+- verification results
 - remaining risks
 ```
 
@@ -467,6 +530,7 @@ Scope:
 - minimal changes
 - do not add API tests
 - do not add visual screenshots unless explicitly requested
+- do not expand to adjacent controls or flows
 
 Check existing:
 - specs
@@ -477,6 +541,8 @@ Check existing:
 - tags
 
 Rules:
+- scenario must have distinct user-facing value
+- do not duplicate API/schema coverage without visible UI risk
 - do not create new components, fixtures, or builders unless justified
 - no raw selector mechanics in specs
 - no inline random data
@@ -487,6 +553,47 @@ run impacted spec and quality gate from project map.
 
 Report:
 - files changed
+- verification results
+- remaining risks
+```
+
+---
+
+## Prompt: Use API Precondition Setup In UI Test
+
+Use only when an approved API precondition fixture exists and the UI runtime backend is aligned.
+
+```text
+Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
+
+Target:
+<UI spec or scenario>
+
+Task:
+Use approved API precondition setup for backend preconditions.
+
+Approved setup:
+registrationApiPreconditionSetup.createRegisteredUser(...)
+
+Context:
+UI_PRECONDITION_API_BASE_URL must point to the same API backend used by the UI runtime.
+API_BASE_URL is for API project/tests and must not be used for UI preconditions unless it is intentionally the same backend.
+
+Rules:
+- do not read env variables in specs
+- do not derive API host from UI host
+- do not validate full API contract in UI setup
+- setup should verify only required precondition creation
+- keep UI action under test visible in the spec
+- do not move action under test into fixture or beforeEach
+- do not weaken UI assertions
+
+After changes:
+run impacted UI spec and quality gate.
+
+Report:
+- files changed
+- setup strategy
 - verification results
 - remaining risks
 ```
@@ -505,7 +612,7 @@ Use Skill: @.cursor/skills/implement-visual-test/SKILL.md
 Feature/scenario:
 <scenario>
 
-Existing UI spec or planned UI batch:
+Existing UI spec or planned UI scope:
 <path/details>
 
 Task:
@@ -515,6 +622,7 @@ Rules:
 - functional assertion first
 - screenshot assertion after stable UI state
 - add @visual tag
+- default to @regression unless explicitly planned otherwise
 - do not create standalone visual spec by default
 - do not put screenshot assertions in Page Objects or Components
 - do not update baselines unless explicitly requested
@@ -682,6 +790,8 @@ Rules:
 - do not create fixtures for one-off values
 - do not put business flows inside fixtures
 - do not import intermediate fixture layers from specs
+- do not read env variables in specs
+- config/env access belongs in approved config or fixture layer
 
 After changes:
 run impacted specs and quality gate from project map.
@@ -689,6 +799,52 @@ run impacted specs and quality gate from project map.
 Report:
 - files changed
 - why fixture is justified
+- verification results
+- remaining risks
+```
+
+---
+
+## Prompt: Create UI API Precondition Fixture
+
+Use only when UI specs need reusable backend preconditions.
+
+```text
+Use Skill: @.cursor/skills/create-fixture/SKILL.md
+
+Fixture need:
+UI specs need an approved way to create backend preconditions through API.
+
+Task:
+Create or update a minimal UI-consumable API precondition fixture.
+
+Context:
+UI specs must not read API env variables directly.
+UI specs must not derive API host from UI host.
+Setup should verify only required precondition creation.
+Setup must not validate full API contracts.
+Setup must not hide UI action under test.
+
+Expected config:
+- API_BASE_URL is for API project/tests
+- UI_PRECONDITION_API_BASE_URL is for UI API preconditions
+- UI_API_BASE_URL may be used as documented fallback if project convention allows it
+
+Rules:
+- use project map for fixture layer
+- keep fixture thin
+- do not create broad API client unless reuse justifies it
+- keep final fixture entry point intact
+- do not modify UI specs unless explicitly requested
+
+After changes:
+run quality gate from project map.
+
+Report:
+- files changed
+- fixture layer used
+- config variable used
+- how specs consume it
 - verification results
 - remaining risks
 ```
@@ -705,14 +861,18 @@ Use after AI generated or modified code.
 Use Skill: @.cursor/skills/review-generated-code-quality/SKILL.md
 
 Review changes in:
-<files/diff/branch>
+<files/diff/branch/current working tree>
 
 Scope:
 - review only
 - do not modify files
 
 Focus:
-- readability
+- scope alignment with requested task
+- test pyramid and UI value
+- API positive/negative/boundary coverage
+- Zod/schema ownership
+- shared Zod assertion helper usage
 - duplicated logic
 - unnecessary abstractions
 - local helper misuse
@@ -731,7 +891,7 @@ Focus:
 Output findings by severity:
 - critical
 - major
-- minor
+- minor only if worth fixing now
 
 For each finding include:
 - file
@@ -746,6 +906,7 @@ Recommended next step must be one of:
 - accept after minor cleanup
 - run refactor-overengineering
 - run heal-ui-test
+- run heal-api-test
 - update rule/skill/project map
 - request changes
 ```
@@ -763,7 +924,7 @@ Target:
 <component/helper/fixture/flow/client/spec>
 
 Problem:
-<why current code is too noisy, duplicated, or overengineered>
+<why current code is too noisy, duplicated, out of sync, or overengineered>
 
 Task:
 Simplify architecture without changing behavior.
@@ -802,6 +963,9 @@ Use Skill: @.cursor/skills/heal-ui-test/SKILL.md
 Failing test output:
 <insert output>
 
+Target:
+<spec/page/component/fixture/data files involved>
+
 Task:
 Investigate and apply the minimal fix at the correct layer.
 
@@ -826,7 +990,7 @@ Classify root cause:
 Rules:
 - do not use waitForTimeout
 - do not weaken assertions
-- do not change expected behavior unless requirement is wrong
+- do not change expected behavior unless product behavior is confirmed changed
 - do not hide action under test in hooks or fixtures
 
 After fix:
@@ -835,6 +999,47 @@ run impacted spec and quality gate from project map.
 Report:
 - root cause
 - files changed
+- fix applied
+- verification results
+- remaining risks
+```
+
+---
+
+## Prompt: Heal Failing API Test
+
+```text
+Use Skill: @.cursor/skills/heal-api-test/SKILL.md
+
+Failing test output:
+<insert output, status/body, stack trace, or error summary>
+
+Target:
+<spec/helper/schema/builder/client/config files involved>
+
+Task:
+Diagnose and heal the failing API test with the smallest correct fix.
+
+Context:
+<any important contract, setup, environment, schema, builder, auth, or recent-change details>
+
+Scope:
+- API test healing only
+- minimal fix
+- do not add new coverage
+- do not refactor unrelated files
+- do not weaken assertions to force pass
+- do not change expected behavior without contract evidence
+- do not modify schemas unless schema mismatch is proven
+
+After fix:
+run impacted API spec, related specs if shared code changed, and quality gate from project map.
+
+Report:
+- root cause
+- files changed
+- fix applied
+- whether schema/Zod was involved
 - verification results
 - remaining risks
 ```
@@ -875,6 +1080,46 @@ Output:
 
 ---
 
+## Prompt: Investigate API Environment Or Setup Mismatch
+
+Use when API-created data is not visible to UI or another API runtime.
+
+```text
+Use Skill: @.cursor/skills/heal-api-test/SKILL.md
+
+Mode:
+investigation only
+
+Failing behavior:
+<describe mismatch>
+
+Target:
+<fixtures/config/specs involved>
+
+Task:
+Diagnose whether API setup, UI runtime, and API tests point to the same backend/state.
+
+Scope:
+- do not modify files unless a minimal confirmed config fix is explicitly requested
+- inspect configured API_BASE_URL
+- inspect configured UI_PRECONDITION_API_BASE_URL or UI_API_BASE_URL
+- inspect UI network API endpoints if needed
+- compare API-created data visibility across API and UI paths
+- do not derive API host from UI host
+- do not read env variables in specs
+
+Report:
+- API fixture endpoint used
+- UI runtime API endpoint used
+- API-created data API result
+- API-created data UI result
+- UI-created data API result, if checked
+- root cause or strongest evidence
+- recommended next step
+```
+
+---
+
 # 10. Architecture Maintenance Prompts
 
 ## Prompt: Update Project Map
@@ -904,12 +1149,14 @@ Rules:
 - manual sections may be updated only for convention changes
 - do not document experimental structure as stable convention
 - do not duplicate existing entries
+- keep changes scoped to the current feature/refactor
 
 After changes:
 run project map update/check commands from project map if applicable.
 
 Report:
 - files changed
+- sections updated
 - commands run/results
 - remaining risks
 ```
@@ -972,11 +1219,15 @@ Identify affected layer:
 - fixture
 - builder
 - generator
+- dataset
 - API client
+- schema
+- assertion helper
 - config
 - core
 - rule
 - skill
+- command
 - project map
 
 Choose verification in this order:
@@ -1007,3 +1258,18 @@ At the end, report:
 - remaining risks
 - next recommended step
 ```
+
+Use this file to choose the correct workflow, skill, task boundary, and expected output.
+
+---
+
+## Mental Model
+
+```text
+Project Map = where things live
+Rules = what must never be violated
+Skills = how to perform a task
+Command = reusable task launcher
+Prompt = the current task ticket
+```
+
