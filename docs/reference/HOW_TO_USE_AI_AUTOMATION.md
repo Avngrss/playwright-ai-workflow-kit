@@ -67,7 +67,8 @@ Use a skill when the task matches the skill purpose.
 
 Examples:
 
-- new feature coverage planning -> `Plan Test Coverage`;
+- new feature coverage planning -> `Plan Test Coverage` or `Plan From TMS` (TMS-first);
+- TMS plan alignment -> `Align Feature Plan With TMS`;
 - API implementation -> `Implement API Feature From Plan`;
 - UI implementation -> `Implement UI Feature From Plan`;
 - failing API test -> `Heal API Test`;
@@ -92,6 +93,8 @@ Commands are reusable task launchers.
 Examples:
 
 - `/plan-feature`;
+- `/plan-from-tms`;
+- `/align-plan-with-tms`;
 - `/implement-api-batch`;
 - `/implement-ui-batch`;
 - `/review-generated`;
@@ -277,6 +280,39 @@ Planning must not implement tests.
 Planning must not create builders, fixtures, Page Objects, API clients, schemas, assertion helpers, or visual checkpoints.
 
 Recommended next commands are informational only.
+
+---
+
+## 8a. Typical Workflow: TMS Planning
+
+Use Qase MCP in **read-only** mode (`qase` server; project `TOOLSSHOP`).
+
+TMS cases are planning input and traceability — not a 1:1 mapping to Playwright tests.
+
+TMS Source and TMS Mapping live in `specs/<feature>.md`.
+
+Qase reporter/result publishing is not configured. Do not add reporter integration by default.
+
+### No existing plan
+
+```text
+/plan-from-tms
+→ review generated plan
+→ implement selected ready API/UI coverage
+```
+
+### Existing plan
+
+```text
+/plan-feature (or plan already exists)
+→ /align-plan-with-tms
+→ review aligned plan
+→ implement selected ready API/UI coverage
+```
+
+Do not implement directly from TMS cases.
+
+Do not implement blocked/postponed coverage without contract or product clarification.
 
 ---
 
@@ -649,6 +685,8 @@ Review should check:
 Review is read-only.
 
 Do not modify files during review.
+
+`/review-generated` is the primary post-implementation review. Use `Review UI Suite` only for broader UI suite audits.
 
 ---
 

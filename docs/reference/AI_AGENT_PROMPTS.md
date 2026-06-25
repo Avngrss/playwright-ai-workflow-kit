@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Reusable prompt templates for working rules.Reusable prompt templates for working with AI agents in the Playwright + TypeScript test automation framework.
+Reusable prompt templates for working with AI agents in the Playwright + TypeScript test automation framework.
 
 A good prompt defines:
 
@@ -149,6 +149,61 @@ The generated feature plan must still include:
 - source of truth;
 - in scope;
 - out of scope.
+
+---
+
+## Prompt: Plan From TMS (No Existing Plan)
+
+Use when Qase/TMS cases are the primary input and `specs/<feature>.md` does not exist.
+
+```text
+/plan-from-tms
+
+Feature:
+<feature name>
+
+TMS:
+- provider: Qase
+- project code: TOOLSSHOP
+- suite id: <suite id>
+- suite title/path: <suite title/path>
+- cases: <all cases in suite / selected ids>
+
+Scope:
+- planning only
+- TMS read-only
+- allowed change: create/update only specs/<feature>.md
+```
+
+Stop after creating/updating the feature plan. Do not implement tests or modify Qase entities.
+
+---
+
+## Prompt: Align Plan With TMS (Existing Plan)
+
+Use when `specs/<feature>.md` exists and must be aligned with Qase cases.
+
+```text
+/align-plan-with-tms
+
+Feature plan:
+specs/<feature>.md
+
+TMS:
+- provider: Qase
+- project code: TOOLSSHOP
+- suite id: <suite id>
+- suite title/path: <suite title/path>
+- cases: <all cases in suite / selected ids>
+```
+
+Update TMS Source and TMS Mapping only in the feature plan. Do not implement tests or modify Qase entities.
+
+TMS rules:
+
+- TMS cases are intent/traceability, not 1:1 Playwright tests.
+- Map cases by risk: API / UI / schema-contract / visual / not automated / blocked / postponed.
+- Do not guess undocumented status codes, bodies, messages, or boundary limits.
 
 ---
 

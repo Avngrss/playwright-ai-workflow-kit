@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  expectEmptyProductList,
   expectPaginatedProductPriceRangeResponse,
   expectProductsWithinPriceRange,
 } from '../../../src/test/assertions/api/product-price-range-response.assertion';
@@ -9,6 +10,11 @@ const PRODUCTS_ENDPOINT = '/products';
 const PRICE_RANGE_CASES = [
   { between: 'price,10,100', minPrice: 10, maxPrice: 100, scopeTag: '@smoke' },
   { between: 'price,20,80', minPrice: 20, maxPrice: 80, scopeTag: '@regression' },
+] as const;
+
+const EMPTY_PRICE_RANGE_CASES = [
+  { between: 'price,0,1', scopeTag: '@regression' },
+  { between: 'price,200,200', scopeTag: '@regression' },
 ] as const;
 
 test.describe('Products API | GET /products price range', { tag: ['@filtering', '@catalog'] }, () => {
@@ -30,6 +36,22 @@ test.describe('Products API | GET /products price range', { tag: ['@filtering', 
         );
 
         expectProductsWithinPriceRange(body.data, rangeCase.minPrice, rangeCase.maxPrice);
+      },
+    );
+  }
+
+  for (const rangeCase of EMPTY_PRICE_RANGE_CASES) {
+    test(
+      `returns empty product list for ${rangeCase.between}`,
+      { tag: ['@api', rangeCase.scopeTag] },
+      async ({ request }) => {
+        const response = await request.get(PRODUCTS_ENDPOINT, {
+          params: { between: rangeCase.between },
+        });
+
+        expect(response.status()).toBe(200);
+        const body = expectPaginatedProductPriceRangeResponse(await response.json());
+        expectEmptyProductList(body.data);
       },
     );
   }

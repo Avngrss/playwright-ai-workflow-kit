@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document explains how to use project rules, Mental ModelThis document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted Playwright + TypeScript automation work.
+This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted Playwright + TypeScript automation work.
 
 ```text
 Project Map = source of truth for structure, commands, aliases, tags, environment ownership, fixture entry points, and file ownership
@@ -98,6 +98,8 @@ How do I perform this specific task correctly?
 Examples:
 
 - Plan Test Coverage.
+- Plan From TMS.
+- Align Feature Plan With TMS.
 - Implement API Feature From Plan.
 - Implement UI Feature From Plan.
 - Heal API Test.
@@ -122,6 +124,8 @@ How do I start a repeatable workflow quickly?
 Examples:
 
 - `/plan-feature`
+- `/plan-from-tms`
+- `/align-plan-with-tms`
 - `/implement-api-batch`
 - `/implement-ui-batch`
 - `/review-generated`
@@ -246,6 +250,51 @@ Plan Feature Coverage
 - UI should own distinct user-facing browser behavior.
 - Visual should own visual layout risk only.
 - If the plan is too vague, refine the relevant implementation brief before coding.
+
+---
+
+## TMS Planning Workflows
+
+Qase is the current TMS provider (`TOOLSSHOP`; MCP server `qase`). Default mode is **read-only**.
+
+TMS cases are planning input and traceability — **do not assume 1 TMS case = 1 Playwright test**.
+
+TMS Source and TMS Mapping belong in `specs/<feature>.md`.
+
+Qase reporter/result publishing is not configured. TMS writes require explicit user approval.
+
+Never commit real Qase tokens into docs, rules, skills, commands, or specs.
+
+### No existing feature plan (TMS-first)
+
+```text
+/plan-from-tms
+-> review generated plan
+-> implement selected ready API/UI coverage
+```
+
+Use when `specs/<feature>.md` does not exist and Qase cases are the main input.
+
+### Existing feature plan + TMS alignment
+
+```text
+/plan-feature (or plan already exists)
+-> /align-plan-with-tms
+-> review aligned plan
+-> implement selected ready API/UI coverage
+```
+
+Use when a plan exists and must be aligned with Qase suite/cases.
+
+### Normal planning (not TMS-first)
+
+```text
+/plan-feature
+-> review plan (optional)
+-> implement selected ready API/UI coverage
+```
+
+Do not implement directly from TMS cases. Do not implement blocked/postponed coverage without clarification.
 
 ---
 

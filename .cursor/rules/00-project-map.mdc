@@ -7,11 +7,13 @@
   - 📁 .cursor/
     - 📁 commands/
       - 📄 add-allure-metadata.md
+      - 📄 align-plan-with-tms.md
       - 📄 heal-api-test.md
       - 📄 implement-api-batch.md
       - 📄 implement-ui-batch.md
       - 📄 implement-visual-checkpoint.md
       - 📄 plan-feature.md
+      - 📄 plan-from-tms.md
       - 📄 refactor-overengineering.md
       - 📄 review-generated.md
     - 📁 rules/
@@ -42,8 +44,11 @@
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
       - 📄 test-structure-and-tags.rules.mdc
+      - 📄 tms-integration.rules.mdc
       - 📄 visual-testing.mdc
     - 📁 skills/
+      - 📁 align-plan-with-tms/
+        - 📄 SKILL.md
       - 📁 configure-allure-reporting/
         - 📄 SKILL.md
       - 📁 create-api-client/
@@ -67,6 +72,8 @@
       - 📁 implement-ui-feature/
         - 📄 SKILL.md
       - 📁 implement-visual-test/
+        - 📄 SKILL.md
+      - 📁 plan-from-tms/
         - 📄 SKILL.md
       - 📁 plan-test-coverage/
         - 📄 SKILL.md
@@ -324,3 +331,82 @@ Rules:
 Skill:
 
 - `.cursor/skills/plan-test-coverage/SKILL.md`
+
+---
+
+## TMS Integration
+
+Rule:
+
+- `.cursor/rules/tms-integration.rules.mdc`
+
+Provider:
+
+- Qase
+
+Stable project code:
+
+- `TOOLSSHOP`
+
+MCP server:
+
+- `qase` (configured in `.cursor/mcp.json`)
+
+Default mode:
+
+- read-only
+
+Feature plan mapping location:
+
+- `specs/<feature>.md`
+
+Required TMS sections in feature plans:
+
+- TMS Source
+- TMS Mapping
+
+Plan from TMS:
+
+- skill: `.cursor/skills/plan-from-tms/SKILL.md`
+- command: `.cursor/commands/plan-from-tms.md`
+
+Align plan with TMS:
+
+- skill: `.cursor/skills/align-plan-with-tms/SKILL.md`
+- command: `.cursor/commands/align-plan-with-tms.md`
+
+No-existing-plan workflow:
+
+1. `/plan-from-tms`
+2. review generated plan
+3. implement selected ready API/UI coverage
+
+Existing-plan workflow:
+
+1. `/plan-feature`
+2. `/align-plan-with-tms`
+3. review aligned plan
+4. implement selected ready API/UI coverage
+
+Principles:
+
+- TMS cases are planning input and traceability source
+- do not assume 1 TMS case equals 1 Playwright test
+- align TMS intent with feature plans; do not replace plans blindly
+- API owns backend contract and data predicates
+- UI owns distinct user-facing browser behavior
+- undocumented negative/boundary behavior must be blocked/postponed, not guessed
+
+TMS writes:
+
+- require explicit user approval
+- no create/update/delete/reorder/run/result publishing by default
+
+Secrets:
+
+- real Qase tokens must not be committed
+- real Qase tokens must not be stored in docs, rules, skills, commands, specs, or committed MCP config
+
+Reporter status:
+
+- Qase reporter/result publishing is not configured yet

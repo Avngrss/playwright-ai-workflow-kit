@@ -56,9 +56,12 @@ A command is a short launcher for a skill.
 Examples:
 
 - `/plan-feature`
+- `/plan-from-tms`
+- `/align-plan-with-tms`
 - `/implement-api-batch`
 - `/implement-ui-batch`
 - `/review-generated`
+- `/heal-api-test`
 
 Commands should stay short. Do not copy full rules or full skills into commands.
 
@@ -84,22 +87,63 @@ Report:
 
 ## Golden Workflow For New Features
 
+### Normal planning (UI/API/requirements)
+
 ```text
 /plan-feature
+→ review plan (optional, use /review-generated on specs/<feature>.md)
 → /create-builder, only if needed
-→ /implement-api-batch, if API coverage exists
-→ /implement-ui-batch, if UI coverage exists
+→ /implement-api-batch (all API coverage ready to implement now)
+→ /implement-ui-batch (all UI coverage ready to implement now)
 → /implement-visual-checkpoint, only if planned/requested
 → /review-generated
 → /run-verification
-→ /refactor-overengineering or /heal-ui-test only if needed
+→ /refactor-overengineering or /heal-api-test / /heal-ui-test only if needed
+```
+
+### No existing feature plan (TMS is primary input)
+
+```text
+/plan-from-tms
+→ review generated plan
+→ implement selected ready API/UI coverage (same implementation commands as above)
+```
+
+### Existing feature plan + TMS alignment
+
+```text
+/plan-feature (or plan already exists)
+→ /align-plan-with-tms
+→ review aligned plan
+→ implement selected ready API/UI coverage
 ```
 
 Planning creates the full coverage picture.
 
-Implementation executes explicit scope from the plan.
+Implementation executes **ready to implement now** scope from the plan.
+
+Do not implement **blocked/postponed** coverage without contract or product clarification.
 
 Do not implement API and UI in one run unless explicitly approved.
+
+Do not implement directly from TMS cases — use feature plans and selected ready coverage.
+
+---
+
+## TMS Planning Conventions
+
+- Provider: Qase (`TOOLSSHOP` project code; MCP server `qase` in `.cursor/mcp.json`).
+- Default mode: **read-only** (list/read cases; no writes, runs, or result publishing without explicit approval).
+- TMS cases are **planning input and traceability** — do not assume 1 TMS case = 1 Playwright test.
+- TMS Source and TMS Mapping live in `specs/<feature>.md` (TMS-aligned plan).
+- Qase reporter/result publishing is **not configured** — do not add reporter integration in planning docs or agents by default.
+- Never commit or document real Qase tokens in repo files.
+
+| Command | When |
+|---|---|
+| `/plan-from-tms` | No `specs/<feature>.md` yet; TMS cases are main input |
+| `/align-plan-with-tms` | Plan exists; align with Qase suite/cases |
+| `/plan-feature` | Plan from UI/API/requirements (not TMS-first) |
 
 ---
 
@@ -134,6 +178,7 @@ Examples:
 - `/create-builder`
 - `/implement-visual-checkpoint`
 - `/refactor-overengineering`
+- `/heal-api-test`
 - `/heal-ui-test`
 
 ### Review commands
@@ -238,6 +283,105 @@ Execution mode guidance:
 
 ---
 
+## `/plan-from-tms`
+
+### Purpose
+
+Create `specs/<feature>.md` from Qase/TMS cases when **no feature plan exists**.
+
+### Skill
+
+```text
+@.cursor/skills/plan-from-tms/SKILL.md
+```
+
+### Use When
+
+- Qase suite/cases are the primary planning input;
+- `specs/<feature>.md` does not exist yet.
+
+### Do Not Use When
+
+- `specs/<feature>.md` already exists (use `/align-plan-with-tms`);
+- implementing tests or modifying Qase entities.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/plan-from-tms/SKILL.md
+
+Feature:
+<feature name>
+
+TMS:
+- provider: Qase
+- project code: TOOLSSHOP
+- suite id: <suite id>
+- suite title/path: <suite title/path>
+- cases: <all cases in suite / selected ids>
+
+Scope:
+- planning only
+- TMS read-only
+- allowed change: create/update only specs/<feature>.md
+
+Stop condition:
+- stop after creating/updating specs/<feature>.md
+- do not implement tests
+- do not create/update Qase entities, runs, or publish results
+```
+
+---
+
+## `/align-plan-with-tms`
+
+### Purpose
+
+Align an **existing** `specs/<feature>.md` with Qase/TMS cases.
+
+### Skill
+
+```text
+@.cursor/skills/align-plan-with-tms/SKILL.md
+```
+
+### Use When
+
+- feature plan exists and needs TMS traceability or gap analysis;
+- comparing TMS intent with planned or existing automation.
+
+### Do Not Use When
+
+- no plan exists (use `/plan-from-tms`);
+- implementing tests or modifying Qase entities.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/align-plan-with-tms/SKILL.md
+
+Feature plan:
+specs/<feature>.md
+
+TMS:
+- provider: Qase
+- project code: TOOLSSHOP
+- suite id: <suite id>
+- suite title/path: <suite title/path>
+- cases: <all cases in suite / selected ids>
+
+Scope:
+- planning/alignment only
+- TMS read-only
+- allowed change: update only the feature plan file
+
+Stop condition:
+- stop after updating the feature plan
+- do not start implementation
+```
+
+---
+
 ## `/implement-api-batch`
 
 ### Purpose
@@ -284,6 +428,14 @@ Implementation scope:
 Input:
 - API contract: <swagger/openapi/docs link>
 - existing builder/client/helpers: <if any>
+
+Scope:
+- API tests only
+- implement only coverage marked ready to implement now in the feature plan
+- do not implement blocked/postponed scenarios
+- do not guess undocumented status codes, bodies, validation messages, or boundary limits
+- use Zod + shared assertion helper for non-trivial/reused/paginated response shapes
+- keep behavior assertions separate from schema validation; no assertions in API clients
 
 Context:
 <any important constraints, blockers, known contract risks, or setup constraints>
@@ -876,10 +1028,13 @@ Recommended next step must be one of:
 - accept changes
 - accept after minor cleanup
 - run refactor-overengineering
+- run heal-api-test
 - run heal-ui-test
 - update rule/skill/project map
 - request changes
 ```
+
+**Note:** `/review-generated` (Review Generated Code Quality) is the **primary** post-implementation review. Use `/review-ui-suite` only for broader UI suite audits.
 
 ---
 
@@ -887,7 +1042,7 @@ Recommended next step must be one of:
 
 ### Purpose
 
-Review an existing UI test suite for architecture, flakiness, ownership, and maintainability.
+Review an existing **UI test suite area** for architecture, flakiness, ownership, and maintainability.
 
 ### Skill
 
@@ -897,13 +1052,13 @@ Review an existing UI test suite for architecture, flakiness, ownership, and mai
 
 ### Use When
 
-- reviewing a UI folder/spec area;
-- checking Page Object and fixture usage;
-- identifying flakiness or raw selector risks.
+- reviewing a UI folder/spec area holistically;
+- checking Page Object and fixture usage across multiple specs;
+- identifying flakiness or raw selector risks in a suite.
 
 ### Do Not Use When
 
-- generated code review is enough;
+- reviewing recently generated or modified code (use `/review-generated` first);
 - framework/core changes need review;
 - code changes should be made immediately.
 
@@ -1039,6 +1194,66 @@ Report:
 - files changed
 - what was simplified
 - behavior preserved: yes/no
+- verification results
+- remaining risks
+```
+
+---
+
+## `/heal-api-test`
+
+### Purpose
+
+Investigate and fix a failing API test.
+
+### Skill
+
+```text
+@.cursor/skills/heal-api-test/SKILL.md
+```
+
+### Use When
+
+- an API spec fails;
+- request/response/status/schema/assertion/setup issue must be diagnosed.
+
+### Do Not Use When
+
+- no test is failing;
+- the task is cleanup/refactor;
+- expected contract behavior is unknown without API owner confirmation.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/heal-api-test/SKILL.md
+
+Failing test output:
+<insert failure output, status/body, stack trace>
+
+Target:
+<spec/helper/schema/builder/client files involved>
+
+Task:
+Heal only the failing API test with the smallest correct fix.
+
+Scope:
+- minimal fix only
+- do not weaken assertions
+- do not change expected behavior without contract evidence
+- do not add new coverage
+
+Context:
+<any contract, setup, environment, or schema details>
+
+After fix:
+run impacted API spec and quality gate from project map.
+
+Report:
+- root cause
+- files changed
+- fix applied
+- whether schema/Zod was involved
 - verification results
 - remaining risks
 ```

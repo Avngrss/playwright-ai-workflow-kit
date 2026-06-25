@@ -1,7 +1,12 @@
-Use Skill: @.cursor/skills/implement-ui-feature/SKILL.mdUse Skill: @.cursor coverage items from the feature plan to implement now>
+Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
+<UI coverage items from the feature plan to implement now>
 
 Task:
 Implement only the selected UI implementation scope from the UI Implementation Brief.
+
+Input:
+- Feature plan with UI Implementation Brief
+- existing Page Objects / Components / builders if any
 
 Scope:
 - UI tests only
@@ -51,5 +56,3 @@ Report:
 
 Feature plan:
 <path to feature plan>
-
-Implementation scope:

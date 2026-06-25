@@ -1,0 +1,387 @@
+---
+description: TMS and Qase MCP integration rules for read-only planning and plan alignment
+alwaysApply: true
+---
+
+# TMS Integration Rules
+
+## Purpose
+
+These rules define how the automation framework interacts with Test Management Systems.
+
+Current supported TMS integration target:
+
+- Qase through MCP.
+
+The goal is to use TMS cases as planning input, traceability source, and review context without blindly converting every TMS case into an automated test.
+
+---
+
+## Core Principle
+
+TMS cases describe test intent and traceability.
+
+Feature plans in `specs/<feature>.md` decide how that intent should be automated.
+
+Automated tests implement only the selected ready coverage.
+
+Do not assume:
+
+- one TMS case equals one Playwright test;
+- every manual TMS step must become UI automation;
+- every TMS case should be automated;
+- TMS structure should override project architecture.
+
+Use TMS for traceability and planning context.
+
+Use feature plans to decide automation ownership.
+
+Use API for backend contract and data predicates.
+
+Use UI for distinct user-facing browser behavior.
+
+Use schema validation for response shape.
+
+Use TMS alignment to compare intent against planned or existing automation.
+
+Do not let TMS structure force poor automation design.
+
+---
+
+## Recommended Workflow
+
+When TMS cases exist, prefer this workflow:
+
+1. Create or update the normal feature coverage plan in `specs/<feature>.md`.
+2. Align that feature plan with TMS cases.
+3. Review the aligned feature plan.
+4. Implement selected API coverage marked ready to implement now.
+5. Implement selected UI coverage marked ready to implement now.
+6. Review generated code.
+
+Standard workflow: create or update the normal feature plan, then align that feature plan with TMS cases, then review, then implement selected ready coverage.
+
+Future commands may automate the alignment step, but this rule must not depend on a command that is not yet created.
+
+Do not implement directly from TMS cases unless explicitly requested.
+
+---
+
+## Default TMS Access Mode
+
+Use TMS in read-only mode by default.
+
+Allowed by default:
+
+- list projects;
+- list suites;
+- read test cases;
+- search or filter cases;
+- read case metadata;
+- use cases as planning input.
+
+Not allowed unless explicitly requested:
+
+- create test cases;
+- update test cases;
+- delete test cases;
+- reorder suites or cases;
+- create test runs;
+- update test runs;
+- publish test results;
+- create defects;
+- update defects;
+- modify milestones, environments, custom fields, shared steps, or attachments.
+
+If a prompt does not explicitly request TMS writes, use read-only mode.
+
+---
+
+## Qase MCP Usage
+
+Use Qase MCP as the preferred mechanism for reading Qase data.
+
+Required context for Qase tasks:
+
+- provider: Qase;
+- project code;
+- suite id or suite path/name;
+- case ids or filter, when needed;
+- access mode.
+
+If project code is missing and multiple projects exist, do not guess.
+
+List projects and ask the user to choose, or report the blocker.
+
+If suite is missing, list suites for the selected project and ask the user to choose, or report the blocker.
+
+If Qase MCP is unavailable, report that MCP is unavailable and list available MCP servers.
+
+When the task explicitly says Qase MCP only, do not use direct Qase API fallback.
+
+When access mode is read-only MCP only, record that in the feature plan TMS Source section instead of using fallback API access.
+
+---
+
+## TMS Source In Feature Plans
+
+When a feature plan uses TMS cases, include a TMS Source section in `specs/<feature>.md`.
+
+The feature plan should document:
+
+- provider;
+- project code;
+- suite id;
+- suite title or path;
+- case ids reviewed;
+- QQL/filter if used;
+- access mode;
+- source type when relevant, such as UI/manual or risk-based;
+- whether MCP or fallback API was used, when applicable.
+
+Example fields:
+
+- provider:
+- project code:
+- suite id:
+- suite title:
+- cases reviewed:
+- filter:
+- access mode:
+- source type:
+
+---
+
+## TMS Mapping In Feature Plans
+
+When using TMS as planning input, add TMS Mapping to `specs/<feature>.md`.
+
+For each reviewed TMS case, capture:
+
+- case id;
+- title;
+- source risk or intent;
+- automation decision;
+- target level;
+- reason;
+- planned automated scenario, if any;
+- status.
+
+Allowed automation decisions:
+
+- API;
+- UI;
+- schema/contract;
+- visual checkpoint;
+- not automated;
+- blocked;
+- postponed.
+
+Do not treat implementation details as TMS mapping decisions.
+
+Helpers, builders, fixtures, clients, schemas, Page Objects, Component Objects, and assertion helpers are implementation decisions, not TMS cases.
+
+---
+
+## TMS Cases Written As UI Cases
+
+TMS cases may be written as UI/manual scenarios.
+
+Do not blindly preserve the TMS case level as the automation level.
+
+A UI/manual TMS case may represent:
+
+- backend contract risk;
+- API predicate risk;
+- UI interaction risk;
+- visible feedback risk;
+- schema/contract risk;
+- data setup risk;
+- visual risk.
+
+Choose automation level by risk and available source of truth.
+
+UI/manual TMS cases may map to API, schema/contract, UI, visual checkpoint, not automated, blocked, or postponed depending on risk and available source of truth.
+
+If a TMS case describes backend behavior but no API contract/source is available, mark API coverage as blocked or postponed instead of inventing API assertions.
+
+---
+
+## Automation Decision Rules
+
+Prefer API or schema/contract coverage when the TMS case describes:
+
+- backend validation;
+- request/response status;
+- response body shape;
+- authentication token behavior;
+- authorization behavior;
+- filtering predicate;
+- sorting predicate;
+- data transformation;
+- persistence behavior;
+- boundary behavior;
+- documented negative behavior.
+
+Prefer UI coverage when the TMS case describes:
+
+- visible user journey;
+- browser interaction;
+- visible validation feedback;
+- visible success or error state;
+- navigation;
+- frontend/backend integration visible to the user.
+
+Prefer visual checkpoint only when the TMS case describes meaningful visual layout risk.
+
+Use not automated when:
+
+- automation cost is higher than value;
+- behavior is better verified manually;
+- observation is not reliable;
+- requirement is unclear;
+- product behavior is unstable.
+
+Use blocked or postponed when:
+
+- contract details are missing;
+- status/body expectations are unclear;
+- setup mechanism is missing;
+- auth/role requirements are unclear;
+- test data cannot be created safely;
+- environment is unstable.
+
+---
+
+## Negative And Boundary Cases
+
+TMS cases may include negative and boundary behavior.
+
+Implement negative or boundary automation only when the contract or accepted source of truth defines expected behavior.
+
+Do not guess:
+
+- status codes;
+- response bodies;
+- validation messages;
+- boundary limits;
+- unsupported enum behavior;
+- malformed request behavior.
+
+If the TMS case describes a useful negative or boundary idea but the contract is unclear, mark it as blocked or postponed with reason.
+
+---
+
+## Alignment With Existing Feature Plans
+
+When a feature plan already exists in `specs/<feature>.md`, do not replace it blindly with TMS cases.
+
+Instead:
+
+- read the existing feature plan;
+- read relevant TMS cases;
+- compare TMS intent with planned coverage;
+- add TMS Source and TMS Mapping;
+- identify already covered cases;
+- identify missing ready coverage;
+- identify blocked or postponed cases;
+- identify not automated cases;
+- avoid duplicating existing coverage.
+
+The result should be an aligned feature plan, not a direct copy of TMS cases.
+
+---
+
+## Existing Automation Comparison
+
+When tests already exist, TMS alignment should identify:
+
+- TMS cases already covered fully;
+- TMS cases covered conceptually but not with exact TMS values;
+- TMS cases partially covered;
+- TMS cases not covered;
+- TMS cases blocked by missing contract/setup;
+- TMS cases intentionally not automated.
+
+Do not add duplicate tests only to match exact TMS steps unless traceability requires exact values or behavior.
+
+Prefer mapping existing automation to TMS intent when behavior is equivalent.
+
+---
+
+## Linking Automated Tests To TMS
+
+TMS IDs may be added to specs or tests only after TMS mapping has been reviewed in `specs/<feature>.md`.
+
+Adding TMS IDs should follow project-approved metadata and reporting conventions.
+
+Do not add reporter dependencies or result publishing without explicit approval.
+
+When adding TMS IDs:
+
+- keep scenario intent readable;
+- avoid embedding TMS details in test titles unless project convention requires it;
+- prefer project-approved metadata/reporting helpers when available.
+
+Qase reporter integration and result publishing are separate from Qase MCP planning and TMS alignment.
+
+Do not introduce reporter integration during planning or alignment unless explicitly requested.
+
+---
+
+## TMS Writes
+
+TMS write operations require explicit user approval.
+
+Before creating or updating TMS entities, the agent must report:
+
+- target project;
+- target suite;
+- entities to create/update;
+- exact fields to change;
+- reason for change;
+- dry-run summary.
+
+Do not perform TMS writes during planning unless the user explicitly asks for TMS mutation.
+
+---
+
+## Security
+
+Never commit real TMS tokens.
+
+Do not store real Qase API tokens in repository files.
+
+Do not print real tokens in reports.
+
+Do not place real tokens in:
+
+- specs;
+- rules;
+- skills;
+- commands;
+- project map;
+- docs;
+- test files;
+- committed MCP config.
+
+Use local Cursor MCP settings, environment variables, or secret storage for real tokens.
+
+If a token is exposed in chat, logs, or git history, rotate it.
+
+---
+
+## Project Map
+
+Project Map should document stable TMS conventions only.
+
+Document:
+
+- supported TMS provider;
+- stable project code if appropriate;
+- MCP server name;
+- read-only default;
+- where TMS mapping appears in feature plans;
+- whether reporter integration is configured.
+
+Do not document experimental TMS structure as stable convention.

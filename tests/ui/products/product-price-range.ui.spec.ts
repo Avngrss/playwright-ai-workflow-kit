@@ -16,6 +16,10 @@ const TARGET_PRICE_RANGE = {
   betweenQueryValue: 'price,20,80',
 } as const;
 
+const EMPTY_PRICE_RANGE_UI_CASES = [
+  { min: 0, max: 1, betweenQueryValue: 'price,0,1', tms: 'TOOLSSHOP-12' },
+] as const;
+
 function waitForProductsBetweenResponse(page: Page, betweenQueryValue: string): Promise<Response> {
   return page.waitForResponse((response) => {
     if (response.request().method() !== 'GET' || !response.url().includes('/products')) {
@@ -132,4 +136,52 @@ test.describe('Product price range UI', { tag: ['@ui', '@filtering', '@catalog']
       });
     },
   );
+
+  for (const rangeCase of EMPTY_PRICE_RANGE_UI_CASES) {
+    test(
+      `shows no visible products for empty price range ${rangeCase.min}-${rangeCase.max}`,
+      { tag: ['@regression'] },
+      async ({ page, productsPage }) => {
+        await applyAllureMetadata({
+          ...PRODUCT_PRICE_RANGE_UI_METADATA,
+          story: 'Empty price range results',
+          severity: 'normal',
+          tms: rangeCase.tms,
+        });
+
+        await test.step('Open catalog page', async () => {
+          await productsPage.open();
+          await productsPage.waitForReady();
+        });
+
+        await test.step('Apply empty price range', async () => {
+          const productsResponsePromise = page.waitForResponse(
+            (response) => {
+              if (response.request().method() !== 'GET' || !response.url().includes('/products')) {
+                return false;
+              }
+
+              const responseUrl = new URL(response.url());
+              return responseUrl.searchParams.get('between') === rangeCase.betweenQueryValue;
+            },
+            { timeout: 60000 },
+          );
+
+          await productsPage.setPriceRange(rangeCase.min, rangeCase.max);
+          const productsResponse = await productsResponsePromise;
+          expect(productsResponse.ok()).toBeTruthy();
+
+          const values = await productsPage.getPriceRangeValues();
+          expect(values).toEqual({
+            min: rangeCase.min,
+            max: rangeCase.max,
+          });
+        });
+
+        await test.step('Verify no products are visible', async () => {
+          await expect(productsPage.productCards).toHaveCount(0);
+        });
+      },
+    );
+  }
 });

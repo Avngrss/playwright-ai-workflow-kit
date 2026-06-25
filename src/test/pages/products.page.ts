@@ -12,6 +12,7 @@ export class ProductsPage {
   readonly priceRangeMinHandle: Locator;
   readonly priceRangeMaxHandle: Locator;
   readonly productCards: Locator;
+  readonly searchInput: Locator;
 
   constructor(private readonly page: Page) {
     this.filtersPanel = page.locator('div[data-test="filters"]');
@@ -26,6 +27,11 @@ export class ProductsPage {
     this.productCards = page.locator(
       '[data-test^="product-"]:not([data-test="product-name"]):not([data-test="product-price"])',
     );
+    // Search control inside the filters panel. Prefers placeholder/role; falls back to first text input in filters if needed.
+    this.searchInput = this.filtersPanel
+      .getByPlaceholder(/search/i)
+      .or(this.filtersPanel.getByRole("textbox"))
+      .or(this.filtersPanel.locator("input[type='text'], input:not([type])").first());
   }
 
   async open(): Promise<void> {
@@ -120,6 +126,20 @@ export class ProductsPage {
     }
 
     return ratings;
+  }
+
+  async enterSearchQuery(query: string): Promise<void> {
+    await this.searchInput.waitFor({ state: "visible", timeout: 10000 });
+    await this.searchInput.fill(query);
+  }
+
+  async submitSearch(): Promise<void> {
+    await this.searchInput.press("Enter");
+  }
+
+  async searchFor(query: string): Promise<void> {
+    await this.enterSearchQuery(query);
+    await this.submitSearch();
   }
 
   private async getSliderHandleValue(handle: Locator, handleName: string): Promise<number> {
