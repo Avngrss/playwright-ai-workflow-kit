@@ -78,6 +78,14 @@ If required information is missing, do not invent architecture or behavior. Repo
 
 # 1. Planning Prompts
 
+## MCP ownership (planning with Qase)
+
+- project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
+- Qase MCP — server name `qase`; user/global Cursor MCP settings (not project `.cursor/mcp.json`)
+- requires `QASE_API_TOKEN` in user/global MCP config; never commit real tokens to repo
+
+---
+
 ## Prompt: Plan Feature Coverage
 
 Use this as the main entry point for a new feature.

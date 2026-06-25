@@ -35,7 +35,7 @@
 
 - provider: Qase (read-only)
 - project code: `TOOLSSHOP`
-- MCP server: `qase` (via `.cursor/mcp.json`)
+- MCP server: `qase` (user/global Cursor MCP settings; requires `QASE_API_TOKEN`; not in project `.cursor/mcp.json`)
 - access mode: read-only
 - parent suite: **Products** (suite id 20)
 - suite: **Search field** (suite id 6)

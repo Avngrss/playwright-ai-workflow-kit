@@ -348,9 +348,15 @@ Stable project code:
 
 - `TOOLSSHOP`
 
-MCP server:
+Project MCP (`.cursor/mcp.json`):
 
-- `qase` (configured in `.cursor/mcp.json`)
+- `playwright` — project-level MCP; safe to commit in repo
+
+Qase MCP:
+
+- server name: `qase`
+- configured in user/global Cursor MCP settings (not in project `.cursor/mcp.json`)
+- requires `QASE_API_TOKEN` in user/global MCP config; never commit real tokens to repo
 
 Default mode:
 

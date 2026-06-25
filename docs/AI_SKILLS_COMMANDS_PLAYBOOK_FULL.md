@@ -132,7 +132,9 @@ Do not implement directly from TMS cases — use feature plans and selected read
 
 ## TMS Planning Conventions
 
-- Provider: Qase (`TOOLSSHOP` project code; MCP server `qase` in `.cursor/mcp.json`).
+- Provider: Qase (`TOOLSSHOP` project code; MCP server name `qase`).
+- Qase MCP: user/global Cursor MCP settings (not project `.cursor/mcp.json`); requires `QASE_API_TOKEN` in user config.
+- Project MCP (`.cursor/mcp.json`): `playwright` only — project-level; safe to commit.
 - Default mode: **read-only** (list/read cases; no writes, runs, or result publishing without explicit approval).
 - TMS cases are **planning input and traceability** — do not assume 1 TMS case = 1 Playwright test.
 - TMS Source and TMS Mapping live in `specs/<feature>.md` (TMS-aligned plan).

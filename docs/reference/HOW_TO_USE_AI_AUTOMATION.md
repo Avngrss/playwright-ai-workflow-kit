@@ -113,6 +113,11 @@ Rules contain permanent constraints.
 
 Project Map contains project-specific structure and commands.
 
+MCP ownership:
+
+- project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
+- Qase MCP — server name `qase`; user/global Cursor MCP settings; requires `QASE_API_TOKEN`; not in project `.cursor/mcp.json`
+
 ---
 
 ## 5. Scripts
@@ -285,7 +290,11 @@ Recommended next commands are informational only.
 
 ## 8a. Typical Workflow: TMS Planning
 
-Use Qase MCP in **read-only** mode (`qase` server; project `TOOLSSHOP`).
+Use Qase MCP in **read-only** mode (server name `qase`; project `TOOLSSHOP`).
+
+Qase MCP is configured in **user/global** Cursor MCP settings (not project `.cursor/mcp.json`). Requires `QASE_API_TOKEN` in user config. Never commit real Qase tokens.
+
+Project `.cursor/mcp.json` contains project-level MCP only (`playwright`).
 
 TMS cases are planning input and traceability — not a 1:1 mapping to Playwright tests.
 

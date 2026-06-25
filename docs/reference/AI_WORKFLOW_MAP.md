@@ -255,7 +255,12 @@ Plan Feature Coverage
 
 ## TMS Planning Workflows
 
-Qase is the current TMS provider (`TOOLSSHOP`; MCP server `qase`). Default mode is **read-only**.
+Qase is the current TMS provider (`TOOLSSHOP`; MCP server name `qase`). Default mode is **read-only**.
+
+MCP ownership:
+
+- project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
+- Qase MCP — user/global Cursor MCP settings (not project `.cursor/mcp.json`); requires `QASE_API_TOKEN` in user config; never commit real tokens
 
 TMS cases are planning input and traceability — **do not assume 1 TMS case = 1 Playwright test**.
 
