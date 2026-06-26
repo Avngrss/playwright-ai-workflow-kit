@@ -35,6 +35,49 @@ Choose the smallest skill that matches the task.
 
 ---
 
+## Planning Layers
+
+Two planning layers exist. Do not mix them.
+
+### Feature coverage plans
+
+- location: `specs/<feature>.md`
+- levels: API, UI, schema/contract, visual, not automated
+- do **not** include E2E
+
+### E2E journey plans
+
+- location: `specs/e2e/<journey>.md`
+- full user or business flows only
+- may reuse API/UI capabilities but must not duplicate their coverage
+
+---
+
+## Test Levels
+
+Use the lowest reliable level that proves the behavior.
+
+- **API** — backend contract, validation, auth, data predicates, negative and boundary behavior
+- **UI** — focused user-facing browser behavior, visible feedback, page/form/control interaction
+- **E2E** — critical full user or business journeys crossing multiple states, pages, or system boundaries; planned separately in `specs/e2e/<journey>.md`
+- **visual** — meaningful layout or appearance regression inside stable UI states
+- **schema/contract** — response or payload shape validation
+- **not automated** — manual, unstable, duplicate, or low-value automation
+
+Not every UI test is E2E.
+
+Feature plans use ready to implement now / blocked-postponed for API, UI, schema, visual, and not automated levels.
+
+E2E journey plans use the same readiness classification for full-journey scenarios.
+
+Recommended next commands are informational only during planning.
+
+Feature plans should recommend `/plan-e2e-journey` (not `/implement-e2e-flow`) when a full journey candidate exists.
+
+Recommend `/implement-e2e-flow` only from an approved E2E journey plan at `specs/e2e/<journey>.md` with at least one ready-to-implement-now scenario.
+
+---
+
 ## Commands vs Skills
 
 ### Skill
@@ -44,6 +87,7 @@ A skill is the procedure.
 Examples:
 
 - how to implement UI feature tests;
+- how to implement E2E flow tests;
 - how to implement API tests;
 - how to heal a failing UI test;
 - how to review generated code;
@@ -60,6 +104,8 @@ Examples:
 - `/align-plan-with-tms`
 - `/implement-api-batch`
 - `/implement-ui-batch`
+- `/plan-e2e-journey`
+- `/implement-e2e-flow`
 - `/review-generated`
 - `/heal-api-test`
 
@@ -101,12 +147,25 @@ Report:
 → /refactor-overengineering or /heal-api-test / /heal-ui-test only if needed
 ```
 
+### E2E journey planning (separate from feature coverage)
+
+```text
+/plan-e2e-journey
+→ review journey plan (optional)
+→ /implement-e2e-flow specs/e2e/<journey>.md (only when journey plan has ready-to-implement-now scenarios)
+→ /review-generated
+→ /run-verification
+```
+
+E2E is **not** part of `/plan-feature` output. Plan full journeys separately when a critical cross-boundary flow needs automation beyond API and UI coverage.
+
 ### No existing feature plan (TMS is primary input)
 
 ```text
 /plan-from-tms
 → review generated plan
 → implement selected ready API/UI coverage (same implementation commands as above)
+→ plan E2E journeys separately in specs/e2e/ when needed
 ```
 
 ### Existing feature plan + TMS alignment
@@ -116,6 +175,7 @@ Report:
 → /align-plan-with-tms
 → review aligned plan
 → implement selected ready API/UI coverage
+→ plan E2E journeys separately in specs/e2e/ when needed
 ```
 
 Planning creates the full coverage picture.
@@ -126,7 +186,11 @@ Do not implement **blocked/postponed** coverage without contract or product clar
 
 Do not implement API and UI in one run unless explicitly approved.
 
+Do not implement E2E together with API or UI in one run unless explicitly approved.
+
 Do not implement directly from TMS cases — use feature plans and selected ready coverage.
+
+Do not add E2E scenarios to feature plans — use `specs/e2e/<journey>.md` instead.
 
 ---
 
@@ -177,6 +241,7 @@ Examples:
 
 - `/implement-api-batch`
 - `/implement-ui-batch`
+- `/implement-e2e-flow`
 - `/create-builder`
 - `/implement-visual-checkpoint`
 - `/refactor-overengineering`
@@ -245,6 +310,7 @@ Create a full feature coverage plan.
 Scope:
 - planning only
 - allowed change: create/update only specs/<feature>.md
+- do not include E2E — E2E journeys are planned separately in specs/e2e/<journey>.md
 
 Output:
 - coverage matrix
@@ -259,6 +325,7 @@ Output:
 - not automated / blockers
 - API Implementation Brief
 - UI Implementation Brief
+- note that E2E is planned separately when a full journey may be needed later
 - recommended next commands to run manually
 
 Coverage grouping rule:
@@ -548,6 +615,172 @@ Implement all Contact UI coverage from the plan that is currently safe and unblo
 Context:
 No visual screenshots in this step.
 If signed-in Contact scenario requires missing approved auth/setup, report it as blocked instead of inventing setup architecture.
+```
+
+---
+
+## `/plan-e2e-journey`
+
+### Purpose
+
+Create or update a dedicated E2E journey plan in `specs/e2e/<journey>.md`.
+
+### Skill
+
+```text
+@.cursor/skills/plan-e2e-journey/SKILL.md
+```
+
+### Use When
+
+- a critical full user/business journey needs E2E planning;
+- lower-level API/UI/schema/visual coverage is not enough;
+- E2E implementation must be prepared before coding.
+
+### Do Not Use When
+
+- task is feature-level planning in `specs/<feature>.md`;
+- task is a short UI functional check;
+- task is E2E implementation.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/plan-e2e-journey/SKILL.md
+
+E2E journey plan:
+specs/e2e/<journey>.md
+
+Task:
+Create or update the E2E journey plan only.
+
+Scope:
+- planning only
+- no Playwright code
+- no implementation
+- do not duplicate API/UI/schema/visual feature coverage
+
+Output:
+- business goal and journey summary
+- E2E boundary (covered/not covered)
+- data/setup/cleanup strategy
+- external dependencies and blockers
+- implementation target under tests/e2e/... with @e2e tag
+```
+
+---
+
+## `/implement-e2e-flow`
+
+### Purpose
+
+Implement approved full-journey E2E coverage from an existing E2E journey plan.
+
+Prefer:
+
+```text
+one exact E2E scenario marked ready to implement now
+```
+
+Do not convert short UI functional tests into E2E.
+
+### Skill
+
+```text
+@.cursor/skills/implement-e2e-flow/SKILL.md
+```
+
+### Use When
+
+- `specs/e2e/<journey>.md` exists and includes a ready-to-implement-now scenario;
+- setup, data, cleanup or isolation, and final assertion are documented;
+- the scenario is a critical full user or business journey.
+
+### Do Not Use When
+
+- the scenario is a short UI functional test;
+- the scenario is blocked or postponed;
+- mailbox, reset-link, reset-token, payment, or other required external dependency is missing;
+- cleanup or isolation strategy is unclear;
+- no Playwright runner matches `tests/e2e/**/*.e2e.spec.ts` and config update is not approved.
+
+### Location And Tags
+
+```text
+tests/e2e/**/*.e2e.spec.ts
+@e2e + @smoke or @regression
+@e2e replaces @ui by default for full-journey E2E specs
+```
+
+### API Usage In E2E
+
+Allowed:
+
+- backend preconditions;
+- cleanup;
+- minimal setup-success verification.
+
+Not allowed:
+
+- replacing the UI journey under test;
+- hiding the journey in fixtures, hooks, Page Objects, helpers, or workflow wrappers;
+- full API contract validation;
+- duplicated API schema, negative, or boundary coverage.
+
+Use disposable or isolated data.
+
+Destructive flows require cleanup or safe isolation.
+
+### Examples
+
+Forgot password (feature plan — API + UI only):
+
+- API: reset request contract;
+- UI: page render, empty-email validation feedback, valid-email submit confirmation.
+
+Full forgot-password reset plus login with a new password belongs in a separate E2E journey plan (`specs/e2e/forgot-password-reset.md` or similar) and remains blocked or postponed without mailbox/reset-link access and safe disposable-user or cleanup strategy.
+
+Checkout or onboarding (E2E journey plan examples):
+
+- registration followed by login and authenticated account access;
+- product selection followed by cart state and checkout completion.
+
+### Playwright Runner Note
+
+A dedicated E2E Playwright project is configured in `playwright.config.ts`.
+
+If no runner matches the intended E2E spec path or pattern, stop and report the config gap.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/implement-e2e-flow/SKILL.md
+
+E2E journey plan:
+<path to specs/e2e/<journey>.md>
+
+Implementation scope:
+Implement only E2E coverage marked ready to implement now.
+
+Scenario:
+<exact E2E scenario name from the journey plan>
+
+Context:
+<any important setup/data/cleanup/external dependency constraints>
+
+After changes:
+run impacted E2E spec using the browser project defined by the project map and quality gate from project map.
+
+Report:
+- files changed
+- E2E scenario implemented
+- setup strategy
+- data strategy
+- cleanup/isolation strategy
+- final assertions
+- tags used
+- verification results
+- remaining risks
 ```
 
 ---
@@ -1722,12 +1955,68 @@ Implement UI tests and minimal Page Object updates from a feature plan.
 ### Do Not Use When
 
 - task is API-only;
+- task is E2E-only;
 - component discovery is the only task;
 - failing test needs healing.
 
 ### MCP Rule
 
 Playwright MCP/codegen is optional discovery only. It is not used by default.
+
+---
+
+## plan-e2e-journey
+
+### Purpose
+
+Plan a full user/business E2E journey in `specs/e2e/<journey>.md`.
+
+### Use When
+
+- E2E planning is needed for a true cross-boundary journey;
+- lower-level API/UI/schema/visual coverage is insufficient.
+
+### Do Not Use When
+
+- feature-level planning in `specs/<feature>.md` is the task;
+- candidate is a short UI functional check.
+
+### Key Rules
+
+- planning only; no Playwright code;
+- define setup/data/cleanup/blockers;
+- define implementation target under `tests/e2e/...` with `@e2e` tag;
+- do not duplicate feature-level API/UI/schema/visual coverage.
+
+---
+
+## implement-e2e-flow
+
+### Purpose
+
+Implement approved full-journey E2E coverage from an E2E journey plan at `specs/e2e/<journey>.md`.
+
+### Use When
+
+- an E2E journey plan exists with a scenario marked ready to implement now;
+- the scenario crosses multiple states, pages, or system boundaries;
+- setup, data, cleanup, and final assertion are documented.
+
+### Do Not Use When
+
+- task is short UI functional coverage;
+- task is API contract coverage;
+- scenario is blocked or postponed;
+- external dependency or runner/config support is missing.
+
+### Key Rules
+
+- location: `tests/e2e/**/*.e2e.spec.ts`
+- tags: `@e2e` plus `@smoke` or `@regression`
+- `@e2e` replaces `@ui` by default for full-journey E2E specs
+- keep journey steps visible in the spec
+- API setup is for preconditions or cleanup only
+- do not validate full API contracts inside E2E
 
 ---
 
@@ -1752,7 +2041,9 @@ Add, verify, or approve visual checkpoints.
 
 ### Purpose
 
-Create a complete feature coverage plan.
+Create a complete feature coverage plan for API, UI, schema, visual, and not automated levels.
+
+E2E is **not** part of feature coverage plans. Plan full journeys separately in `specs/e2e/<journey>.md`.
 
 ### Use When
 
@@ -1761,7 +2052,8 @@ Create a complete feature coverage plan.
 
 ### Do Not Use When
 
-- implementation already has an approved plan.
+- implementation already has an approved plan;
+- the task is to plan a full E2E journey (create or update `specs/e2e/<journey>.md` instead).
 
 ### Key Rule
 

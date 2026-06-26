@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This quality gate should be run.This file explains how to use the project AI automation system in daily work.
+This file explains how to use the project AI automation system in daily work.
 
 Main file:
 
@@ -59,6 +59,44 @@ Cursor/AI agents use rules as background constraints.
 
 ---
 
+## 2a. Test Levels
+
+Choose the lowest reliable level that proves the behavior.
+
+Levels:
+
+- **API** — backend contract, validation, auth, data predicates, negative and boundary behavior;
+- **UI** — focused user-facing browser behavior, visible feedback, page/form/control interaction;
+- **E2E** — critical full user or business journeys crossing multiple states, pages, or system boundaries; planned separately in `specs/e2e/<journey>.md`;
+- **visual** — meaningful layout or appearance regression inside stable UI states;
+- **schema/contract** — response or payload shape validation;
+- **not automated** — manual, unstable, duplicate, or low-value automation.
+
+Not every UI test is E2E.
+
+Short page render checks, field visibility checks, one-form validation checks, and simple submit feedback checks remain UI coverage.
+
+Feature plans use ready to implement now / blocked-postponed for API, UI, schema, visual, and not automated levels.
+
+E2E journey plans use the same readiness classification for full-journey scenarios.
+
+Do not use first batch / later batch terminology.
+
+---
+
+## 2b. Planning Layers
+
+```text
+specs/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
+specs/e2e/<journey>.md = E2E journey plans (full user/business flows only)
+```
+
+Feature coverage plans do **not** include E2E.
+
+E2E journey plans may reuse API/UI capabilities but must not duplicate their coverage.
+
+---
+
 ## 3. Skills
 
 Skills are task-specific workflows.
@@ -71,6 +109,8 @@ Examples:
 - TMS plan alignment -> `Align Feature Plan With TMS`;
 - API implementation -> `Implement API Feature From Plan`;
 - UI implementation -> `Implement UI Feature From Plan`;
+- E2E journey planning -> `Plan E2E Journey` (output: `specs/e2e/<journey>.md`);
+- E2E implementation -> `Implement E2E Flow From Journey Plan` (input: `specs/e2e/<journey>.md`);
 - failing API test -> `Heal API Test`;
 - failing UI test -> `Heal UI Test`;
 - reusable test data -> `Create Test Data Builder`;
@@ -97,6 +137,8 @@ Examples:
 - `/align-plan-with-tms`;
 - `/implement-api-batch`;
 - `/implement-ui-batch`;
+- `/plan-e2e-journey`;
+- `/implement-e2e-flow`;
 - `/review-generated`;
 - `/refactor-overengineering`;
 - `/heal-api-test`;
@@ -240,15 +282,28 @@ Use this flow for a new feature, endpoint, page, or user flow.
 8. Refactor / Heal / Harden only if needed
 ```
 
+For critical full journeys, plan and implement separately:
+
+```text
+1. Run /plan-e2e-journey
+2. Review the E2E journey plan
+3. Run /implement-e2e-flow specs/e2e/<journey>.md
+4. Review Generated Code Quality
+5. Run Verification
+```
+
 Practical notes:
 
 - Planning comes before implementation.
 - Do not implement API and UI in one agent run.
+- Do not implement E2E together with API or UI in one agent run unless explicitly approved.
+- Feature plans cover API, UI, schema, visual, and not automated only — not E2E.
 - Use `ready to implement now / blocked-postponed`.
 - Do not use `first batch / later batch`.
 - Do not create builders, clients, fixtures, schemas, components, or helpers speculatively.
 - API should own backend contract, schema, negative, boundary, auth, filtering, sorting, and data predicate risks.
 - UI should own distinct user-facing browser behavior.
+- E2E should own critical full journeys with safe setup, data, cleanup, and meaningful final assertions.
 - Visual checks should own visual layout risk only.
 
 ---
@@ -274,7 +329,10 @@ Expected result:
 - include ready to implement now vs blocked/postponed;
 - include API Implementation Brief;
 - include UI Implementation Brief;
+- note that E2E is planned separately in `specs/e2e/<journey>.md` when a full journey may be needed later;
 - include recommended next commands.
+
+Do **not** include E2E Coverage in feature plans.
 
 Use Agent mode when the output must be saved to `specs/<feature>.md`.
 
@@ -310,6 +368,8 @@ Qase reporter/result publishing is not configured. Do not add reporter integrati
 → implement selected ready API/UI coverage
 ```
 
+Plan E2E journeys separately in `specs/e2e/` when a full cross-boundary flow is needed.
+
 ### Existing plan
 
 ```text
@@ -318,6 +378,8 @@ Qase reporter/result publishing is not configured. Do not add reporter integrati
 → review aligned plan
 → implement selected ready API/UI coverage
 ```
+
+Plan E2E journeys separately in `specs/e2e/` when needed.
 
 Do not implement directly from TMS cases.
 
@@ -414,9 +476,96 @@ Page Objects and Components must not own:
 
 ---
 
+## 10a. Typical Workflow: E2E Implementation
+
+Use when E2E coverage is selected from an approved E2E journey plan at `specs/e2e/<journey>.md`.
+
+Use:
+
+```text
+/implement-e2e-flow specs/e2e/<journey>.md
+```
+
+Expected scope:
+
+- implement only E2E coverage marked ready to implement now from the E2E journey plan;
+- do not implement API, focused UI, or visual coverage in the same run;
+- do not implement blocked or postponed E2E scenarios;
+- do not expand to adjacent journeys unless explicitly in scope.
+
+E2E is for critical full user or business journeys only.
+
+Do not use E2E for:
+
+- page render checks;
+- field visibility checks;
+- one-form validation checks;
+- simple submit feedback checks;
+- isolated API contract tests;
+- visual-only checks.
+
+Location and tags:
+
+- `tests/e2e/**/*.e2e.spec.ts`
+- `@e2e` plus `@smoke` or `@regression`
+- `@e2e` replaces `@ui` as the layer tag for full-journey E2E specs by default
+
+Keep the full user journey visible in the spec.
+
+Do not hide journey steps in fixtures, hooks, Page Objects, helpers, or workflow wrappers.
+
+### API Usage In E2E
+
+API setup in E2E is allowed only for:
+
+- backend preconditions;
+- cleanup;
+- minimal setup-success verification.
+
+API setup in E2E must not:
+
+- replace the UI action under test;
+- hide the full user journey;
+- validate full API contracts;
+- duplicate API schema, negative, or boundary coverage.
+
+Use disposable or isolated data.
+
+Destructive flows require cleanup or safe isolation.
+
+Block or postpone E2E when cleanup, mailbox/reset-link/token access, payment access, unstable external dependency, safe disposable data, or Playwright runner support is missing.
+
+### Forgot Password Example
+
+Feature plan (API + UI only):
+
+- forgot-password page render;
+- empty-email validation feedback;
+- valid-email submit confirmation;
+- API reset-request contract.
+
+Full forgot-password reset plus login with a new password belongs in a separate E2E journey plan and requires reset-link or token retrieval, password reset, login with the new password, and cleanup/isolation.
+
+Full Forgot Password E2E remains blocked or postponed until required setup exists.
+
+### Checkout / Onboarding E2E Examples
+
+Good E2E journey plan candidates:
+
+- registration followed by login and authenticated account access;
+- product selection followed by cart state and checkout completion.
+
+### Playwright Runner Note
+
+A dedicated E2E Playwright project is configured in `playwright.config.ts`.
+
+If no runner matches `tests/e2e/**/*.e2e.spec.ts`, stop and report the config gap.
+
+---
+
 ## 11. Typical Workflow: UI API Preconditions
 
-Use when a UI test needs backend state before the UI action under test.
+Use when a UI or E2E test needs backend state before the UI action under test.
 
 Preferred approach:
 
@@ -766,9 +915,11 @@ For simple targeted tasks, keep the prompt short.
 
 Use this decision model:
 
-- Need new feature coverage -> `Plan Feature Coverage`.
+- Need new feature coverage -> `Plan Feature Coverage` (API, UI, schema, visual only).
+- Need E2E journey plan -> `/plan-e2e-journey`.
 - Need API implementation from plan -> `Implement API Feature From Plan`.
 - Need UI implementation from plan -> `Implement UI Feature From Plan`.
+- Need E2E implementation from journey plan -> `Implement E2E Flow From Journey Plan`.
 - API test failed -> `Heal API Test`.
 - UI test failed -> `Heal UI Test`.
 - Need reusable data -> `Create Test Data Builder`.
@@ -796,11 +947,15 @@ Rules always apply.
 
 Project Map decides structure, commands, tags, environment ownership, and fixture entry points.
 
-Feature plan defines selected implementation scope.
+Feature plan defines selected API/UI implementation scope.
+
+E2E journey plan at `specs/e2e/<journey>.md` defines selected E2E implementation scope.
 
 API owns backend contract, schema, negative, boundary, auth, filtering, sorting, and data predicate risks.
 
 UI owns distinct user-facing browser behavior.
+
+E2E owns critical full journeys with safe setup, data, cleanup, and meaningful final outcomes.
 
 Scripts enforce basic conventions.
 

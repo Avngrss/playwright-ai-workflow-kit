@@ -10,8 +10,10 @@
       - 📄 align-plan-with-tms.md
       - 📄 heal-api-test.md
       - 📄 implement-api-batch.md
+      - 📄 implement-e2e-flow.md
       - 📄 implement-ui-batch.md
       - 📄 implement-visual-checkpoint.md
+      - 📄 plan-e2e-journey.md
       - 📄 plan-feature.md
       - 📄 plan-from-tms.md
       - 📄 refactor-overengineering.md
@@ -34,6 +36,7 @@
       - 📄 core-playwright.mdc
       - 📄 core-project-boundary-and-structure.rules.mdc
       - 📄 diagnostics-reporting.rules.mdc
+      - 📄 e2e-testing.rules.mdc
       - 📄 examples-policy.mdc
       - 📄 feature-lifecycle.mdc
       - 📄 fixtures-data.mdc
@@ -69,11 +72,15 @@
         - 📄 SKILL.md
       - 📁 implement-api-feature/
         - 📄 SKILL.md
+      - 📁 implement-e2e-flow/
+        - 📄 SKILL.md
       - 📁 implement-ui-feature/
         - 📄 SKILL.md
       - 📁 implement-visual-test/
         - 📄 SKILL.md
       - 📁 plan-from-tms/
+        - 📄 SKILL.md
+      - 📁 plan-e2e-journey/
         - 📄 SKILL.md
       - 📁 plan-test-coverage/
         - 📄 SKILL.md
@@ -109,6 +116,8 @@
     - 📄 check-conventions.mjs
     - 📄 project-cartographer.mjs
   - 📁 specs/
+    - 📁 e2e/
+      - 📄 user-onboarding.md
     - 📄 contact.md
     - 📄 login.md
     - 📄 product-price-range.md
@@ -149,6 +158,7 @@
         - 📄 product-sorting.api.spec.ts
       - 📁 registration/
         - 📄 register-user.api.spec.ts
+    - 📁 e2e/
     - 📁 ui/
       - 📁 contact/
         - 📄 contact.ui.spec.ts
@@ -326,11 +336,135 @@ Rules:
 - use the lowest reliable test level;
 - do not default to UI tests;
 - feature plans must include recommended test level per scenario;
-- avoid duplicate coverage across UI, API, visual, and schema tests.
+- avoid duplicate coverage across API, UI, schema, visual, and E2E tests;
+- E2E is a separate planning layer for critical full user/business journeys, not focused UI functional coverage;
+- feature coverage plans do not include E2E.
+
+Planning layers:
+
+```text
+specs/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
+specs/e2e/<journey>.md = E2E journey plans (full user/business flows only)
+```
+
+Workflow split:
+
+- feature workflow: `/plan-feature` -> `/implement-api-batch` -> `/implement-ui-batch` -> `/implement-visual-checkpoint`
+- E2E workflow: `/plan-e2e-journey` -> `specs/e2e/<journey>.md` -> `/implement-e2e-flow specs/e2e/<journey>.md` -> `tests/e2e/.../*.e2e.spec.ts`
 
 Skill:
 
-- `.cursor/skills/plan-test-coverage/SKILL.md`
+- `.cursor/skills/plan-test-coverage/SKILL.md` (feature coverage only)
+
+---
+
+## E2E Testing
+
+Rule:
+
+- `.cursor/rules/e2e-testing.rules.mdc`
+
+Intended E2E spec location:
+
+- `tests/e2e/**/*.e2e.spec.ts`
+- no E2E specs implemented yet
+- create only the minimal directory path needed when the first approved E2E spec is implemented
+
+E2E journey plan location:
+
+- `specs/e2e/<journey>.md`
+- E2E is **not** part of feature coverage plans at `specs/<feature>.md`
+
+Planning separation:
+
+- `specs/<feature>.md` = API, UI, schema, visual, not automated coverage
+- `specs/e2e/<journey>.md` = full user/business journey plans only
+
+E2E journey plan content must include:
+
+- business value;
+- user journey steps;
+- setup strategy;
+- data strategy;
+- cleanup or isolation strategy;
+- final outcome/assertion;
+- why API/UI/schema coverage is not sufficient;
+- flakiness risks;
+- blocked or postponed reason when setup, cleanup, or external dependencies are unsafe.
+
+Implementation policy:
+
+- implement only E2E coverage marked ready to implement now in the E2E journey plan;
+- do not implement blocked or postponed E2E scenarios;
+- do not create E2E scenarios from scratch during implementation;
+- do not convert short UI functional tests into E2E;
+- E2E journey plans may reuse API/UI capabilities but must not duplicate their coverage.
+
+Layer tag:
+
+- `@e2e`
+
+Required execution-scope tags:
+
+- `@smoke` or `@regression` (every E2E test must also have one of these)
+
+Layer tag policy:
+
+- `@e2e` replaces `@ui` as the layer tag for full-journey E2E specs by default;
+- focused UI functional tests keep `@ui`;
+- browser-based E2E may run in existing browser projects but must be tagged `@e2e` for reporting and filtering.
+
+What E2E covers:
+
+- full user or business flows crossing multiple states, pages, or system boundaries;
+- not short page, form, control, or validation-only UI tests.
+
+Planning requirements for E2E scenarios:
+
+- documented in `specs/e2e/<journey>.md`, not in feature coverage plans;
+- business value;
+- user journey;
+- systems or states crossed;
+- setup strategy;
+- test data strategy;
+- cleanup or isolation strategy;
+- final assertion;
+- why API/UI/schema coverage is not sufficient;
+- flakiness risks;
+- blocked or postponed reason when setup, cleanup, or external dependencies are unsafe.
+
+Planning skill for feature coverage:
+
+- `.cursor/skills/plan-test-coverage/SKILL.md` (does not include E2E)
+
+E2E journey planning:
+
+- skill: `.cursor/skills/plan-e2e-journey/SKILL.md`
+- command: `.cursor/commands/plan-e2e-journey.md`
+- output: `specs/e2e/<journey>.md`
+
+Implementation skill:
+
+- `.cursor/skills/implement-e2e-flow/SKILL.md`
+
+Implementation command:
+
+- `.cursor/commands/implement-e2e-flow.md`
+
+Playwright project status:
+
+- dedicated Playwright `e2e` project is configured in `playwright.config.ts`;
+- E2E project targets `tests/e2e/**/*.e2e.spec.ts`;
+- E2E project retains trace/screenshots/videos on failure;
+- E2E retries are CI-aware (`CI ? 1 : 0`);
+- if no runner matches the intended E2E spec path or pattern, stop and report the config gap.
+
+User-facing workflow docs:
+
+- `docs/reference/AI_WORKFLOW_MAP.md`
+- `docs/reference/HOW_TO_USE_AI_AUTOMATION.md`
+- `docs/reference/AI_AGENT_PROMPTS.md`
+- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md`
 
 ---
 

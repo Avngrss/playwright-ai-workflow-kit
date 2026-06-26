@@ -101,10 +101,12 @@
 - dependencies:
   - stable API base URL from config
   - invariant helpers for numeric/string monotonic assertions
-- blockers: none for documented success paths
+- blockers:
+  - OpenAPI `ProductResponse` models `co2_rating` as optional (present in `properties`, no `required` list), so ordering semantics for missing/empty `co2_rating` values are contract-unclear.
 - implementation decisions:
   - direct `request.get` in API specs is acceptable first
   - avoid asserting fixed products/counts from uncontrolled dataset
+  - for `co2_rating` sort variants, mark the case as inconclusive (skip) when any returned item has missing/empty `co2_rating`
 
 ### Later Batch
 
@@ -210,6 +212,7 @@
 - invalid `sort` negative behavior is not automated until API contract explicitly defines status/body for unsupported values.
 - cross-page "global sorting guarantee" is not automated yet because API/UI docs do not explicitly define expected global semantics beyond current response/page.
 - some filter+sort variants may be postponed per environment if result size is insufficient to prove monotonic order.
+- `sort=co2_rating,*` is treated as inconclusive when response data includes missing/empty `co2_rating`, because the Product contract does not define missing-value ordering semantics.
 
 ## API Implementation Brief
 
@@ -255,7 +258,8 @@
   - builder decision: none
   - API client decision: same as first batch
   - assertion helper decision: shared comparator dispatcher by sort key
-  - contract gaps/blockers: none
+  - contract gaps/blockers:
+    - `co2_rating` is optional in published `ProductResponse`; missing-value ordering for `sort=co2_rating,*` is not documented
 
 - scenario D: composed query sort + filters
   - endpoint: `/products`

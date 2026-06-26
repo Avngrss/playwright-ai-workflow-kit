@@ -1,6 +1,7 @@
 import { test as base, expect } from "./api-preconditions.fixture";
 import { AccountPage } from "../pages/account.page";
 import { ContactPage } from "../pages/contact.page";
+import { ForgotPasswordPage } from "../pages/forgot-password.page";
 import { LoginPage } from "../pages/login.page";
 import { ProductsPage } from "../pages/products.page";
 import { RegisterPage } from "../pages/register.page";
@@ -8,6 +9,7 @@ import { RegisterPage } from "../pages/register.page";
 type PageFixtures = {
   accountPage: AccountPage;
   contactPage: ContactPage;
+  forgotPasswordPage: ForgotPasswordPage;
   loginPage: LoginPage;
   productsPage: ProductsPage;
   registerPage: RegisterPage;
@@ -19,6 +21,9 @@ const test = base.extend<PageFixtures>({
   },
   contactPage: async ({ page }, use) => {
     await use(new ContactPage(page));
+  },
+  forgotPasswordPage: async ({ page }, use) => {
+    await use(new ForgotPasswordPage(page));
   },
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));

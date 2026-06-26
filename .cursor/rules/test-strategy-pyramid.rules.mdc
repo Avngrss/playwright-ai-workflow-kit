@@ -19,7 +19,13 @@ Use the lowest reliable test level that proves the behavior.
 
 Do not default to UI tests.
 
-Do not duplicate the same behavior across UI, API, visual, and schema tests unless each level verifies a different risk.
+Do not duplicate the same behavior across UI, API, visual, schema, and E2E tests unless each level verifies a different risk.
+
+Not every UI test is an E2E test.
+
+Short page, form, control, and validation tests remain focused UI coverage.
+
+E2E is for critical full user or business journeys that cross multiple states or system boundaries.
 
 ---
 
@@ -63,16 +69,42 @@ API tests should be preferred over UI tests when UI behavior is not the main ris
 
 Use for:
 
-- user journeys;
-- navigation flows;
-- form interaction;
+- focused user-facing browser behavior;
+- page, form, and control interaction;
+- navigation to a page or screen;
+- visible validation, success, or error feedback;
 - browser behavior;
-- integration between frontend and backend;
-- critical user-facing paths;
-- accessibility of visible controls when relevant;
+- frontend integration visible on one page or short flow;
 - flows that cannot be validated through API alone.
 
 UI tests should be fewer, higher-value, and scenario-focused.
+
+Short functional UI tests are not E2E.
+
+Do not label page render checks, single-form validation, or one-click feedback checks as E2E.
+
+---
+
+### E2E Tests
+
+Use for:
+
+- critical full user or business journeys;
+- flows crossing multiple pages, states, or system boundaries;
+- persisted state changes with a meaningful final user-visible outcome;
+- integration value that API, UI, schema, and visual coverage cannot prove alone.
+
+E2E tests should be few, high-value, stable, and safe.
+
+Prefer API, UI, schema, and visual coverage for broad coverage.
+
+Do not create E2E for every feature or TMS manual UI flow.
+
+Do not use E2E to replace API contract checks, schema validation, focused UI functional tests, or visual checkpoints.
+
+Rule reference:
+
+- `.cursor/rules/e2e-testing.rules.mdc`
 
 ---
 
@@ -113,6 +145,7 @@ Before creating a test, decide:
 - whether this behavior is already covered elsewhere;
 - whether a UI test would duplicate API or schema coverage;
 - whether visual coverage adds unique value;
+- whether E2E adds distinct journey value beyond focused UI coverage;
 - whether the test belongs in smoke or regression.
 
 ---
@@ -180,6 +213,45 @@ Do not use UI tests when API tests prove the same backend behavior more directly
 
 ---
 
+## E2E Test Selection
+
+Create E2E tests only when the scenario proves a critical full user or business journey.
+
+Good E2E candidates:
+
+- registration followed by login and authenticated account access;
+- product selection followed by cart state and checkout completion;
+- full password reset followed by login with the new password when safe setup and cleanup exist.
+
+Avoid E2E for:
+
+- page render checks;
+- field visibility checks;
+- one-form validation checks;
+- one-click UI feedback checks;
+- simple navigation checks;
+- backend contract checks;
+- response schema checks;
+- visual-only checks;
+- behavior already covered by lower-level tests without additional journey value.
+
+Block or postpone E2E when:
+
+- test data cannot be created safely;
+- cleanup is unavailable for destructive state;
+- mailbox, reset-link, reset-token, payment, or other external dependencies are missing or unstable;
+- required setup mechanism is not approved;
+- the scenario cannot be made stable.
+
+Example:
+
+- forgot-password page render, empty-email validation, and valid-email submit confirmation remain UI coverage;
+- full forgot-password reset plus login with a new password remains blocked or postponed without mailbox/reset-link access and a safe disposable-user or cleanup strategy.
+
+Use one representative E2E scenario when lower-level tests already cover variants.
+
+---
+
 ## Visual Test Selection
 
 Create visual checkpoints only for meaningful UI states.
@@ -209,11 +281,14 @@ For each scenario, specify one of:
 - static/typecheck;
 - API;
 - UI;
+- E2E;
 - visual checkpoint;
 - schema/contract;
 - not automated.
 
 Each recommendation must include a short reason.
+
+E2E recommendations must also document setup, data, cleanup or isolation, final assertion, and why lower-level coverage is not sufficient.
 
 ---
 
@@ -251,7 +326,9 @@ Do not put every test into smoke.
 
 ---
 
-## UI Preconditions## UI Preconditions the precondition can be created at a lower reliable layer.
+## UI Preconditions
+
+Prefer API or approved data setup for preconditions when the precondition can be created at a lower reliable layer.
 
 Prefer API or approved data setup for preconditions such as:
 
@@ -260,15 +337,15 @@ Prefer API or approved data setup for preconditions such as:
 - existing order;
 - existing duplicate entity.
 
-The UI test should focus on the user-facing behavior under test.
+The UI or E2E test should focus on the user-facing behavior under test.
 
-API setup in UI tests must be used only to create required preconditions.
+API setup in UI or E2E tests must be used only to create required preconditions.
 
-API setup in UI tests must not validate the full API contract.
+API setup in UI or E2E tests must not validate the full API contract.
 
 API setup should verify only that the required precondition was created successfully.
 
-Examples of valid UI preconditions:
+Examples of valid preconditions:
 
 - existing user;
 - existing product;
@@ -314,48 +391,26 @@ Do not repeat a long UI journey as setup unless:
 Setup code must not:
 
 - validate the full API contract;
-- hide the UI action under test;
+- hide the UI or E2E action under test;
 - introduce API client abstractions unless reuse justifies it;
 - make the test depend on unrelated UI journeys;
 - use shared static credentials when fresh data is possible.
 
----
-
-UI tests should not use long UI flows as setup when the precondition can be created at a lower reliable layer.
-
-Prefer API or approved data setup for preconditions such as:
-
-- existing user;
-- existing product;
-- existing order;
-- existing duplicate entity.
-
-The UI test should focus on the user-facing behavior under test.
-
-Example:
-
-For duplicate registration email feedback:
-
-- create the existing user through API or approved setup;
-- submit registration form through UI with the same email;
-- assert visible duplicate email feedback.
-
 Do not repeat the successful registration UI journey inside the duplicate-email test unless that repeated journey is the behavior under test.
 
-Setup code must not:
+For E2E, generic open or wait-for-ready setup in `beforeEach` is allowed, but journey steps must remain visible in the spec and must not be hidden in hooks, fixtures, Page Objects, or workflow wrappers.
 
-- validate the full API contract;
-- hide the UI action under test;
-- introduce API client abstractions unless reuse justifies it;
-- make the test depend on unrelated UI journeys.
 ---
+
 ## Main Principle
 
 Balanced coverage is better than more tests.
 
 Prefer fast, stable, low-level tests for contracts and logic.
 
-Use UI tests for user-facing confidence.
+Use focused UI tests for user-facing browser confidence.
+
+Use E2E sparingly for critical full journeys.
 
 Use visual tests only for meaningful appearance risks.
 

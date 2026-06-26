@@ -67,9 +67,17 @@ export function expectProductsSorted(
   const comparator = (left: string, right: string): number => left.localeCompare(right);
 
   if (field === 'co2_rating') {
+    // ProductResponse models co2_rating as optional. This invariant is valid only for
+    // comparable datasets where each returned item has a non-empty co2_rating.
     const ratings = products.map((product) => {
-      expect(typeof product.co2_rating).toBe('string');
-      expect(product.co2_rating).not.toHaveLength(0);
+      expect(
+        typeof product.co2_rating === 'string',
+        'Cannot assert co2_rating sorting: encountered item without co2_rating value.',
+      ).toBeTruthy();
+      expect(
+        product.co2_rating,
+        'Cannot assert co2_rating sorting: encountered empty co2_rating value.',
+      ).not.toHaveLength(0);
 
       return normalizeCo2Rating(product.co2_rating as string);
     });

@@ -1,6 +1,96 @@
 ---
-description: UI spec structure, hooks, steps, tags, and spec helper policy
-always sortingalwaysApply: true
+description: UI and E2E spec structure, hooks, steps, tags, and spec helper policy
+alwaysApply: true
+---
+
+# Test Structure and Tags
+
+## Purpose
+
+These rules define how UI and E2E specs must be structured in a universal Playwright + TypeScript testing framework.
+
+The main goals are:
+
+- keep UI and E2E tests readable;
+- make reports and traces easy to analyze;
+- prevent hidden behavior in hooks;
+- keep test scenarios explicit;
+- standardize tags for CI filtering and reporting;
+- avoid project-specific tag chaos;
+- keep reusable technical helper logic out of specs.
+
+---
+
+## Steps
+
+- UI and E2E tests must use `test.step` for meaningful user-level phases.
+- Step names must describe user intent.
+- Step names must not describe low-level implementation details.
+- Do not wrap every single Playwright action into a separate step.
+- Do not put the whole test body into one generic step.
+- Prefer 2-5 meaningful steps per UI or E2E test.
+- Steps should normally represent phases such as navigation, user action, and verification.
+- Steps should call Page Object or Component Object methods instead of exposing raw selector mechanics.
+
+### Good
+
+```ts
+test("sorts products by price", { tag: ["@ui", "@smoke", "@sorting"] }, async ({ homePage }) => {
+  await test.step("Open product catalog", async () => {
+    await homePage.open();
+    await homePage.expectLoaded();
+  });
+
+  await test.step("Apply ascending price sorting", async () => {
+    await homePage.sorting.applySort("price,asc");
+  });
+
+  await test.step("Verify products are sorted by price", async () => {
+    await expectSortedByPrice(await homePage.productList.getVisiblePrices(), "asc");
+  });
+});
+```
+
+### Bad
+
+```ts
+test("sorts products by price", { tag: ["@ui", "@smoke"] }, async ({ page }) => {
+  await test.step("Click sort dropdown", async () => {
+    await page.locator(".sort").click();
+  });
+
+  await test.step("Click price", async () => {
+    await page.locator(".price").click();
+  });
+
+  await test.step("Click asc", async () => {
+    await page.locator(".asc").click();
+  });
+
+  await test.step("Wait", async () => {
+    await page.waitForTimeout(1000);
+  });
+});
+```
+
+### Why this is bad
+
+This structure exposes implementation details instead of user intent.
+
+It creates noisy reports and encourages low-level selector usage in specs.
+
+---
+
+## Step Naming Rules
+
+Step names should be written from the user's perspective.
+
+### Good step names
+
+```text
+Open product catalog
+Apply ascending price sorting
+Verify products are sorted by price
 Filter products by brand
 Submit checkout form
 Verify order confirmation is shown
@@ -26,11 +116,15 @@ If a step name would not make sense to a product owner, QA reviewer, or support 
 
 - `beforeEach` may only perform safe navigation and page-loaded checks.
 - `beforeEach` must not perform the action under test.
-- `beforeEach` must not hide business flows.
+- `beforeEach` must not hide business flows or E2E journey steps.
 - `beforeEach` must not silently change application state unless the state is generic setup required for every test in the suite.
 - Do not repeat navigation already done in `beforeEach`.
 - Keep navigation-path tests in a separate `describe` block when needed.
 - Hook logic must stay small, explicit, and easy to reason about.
+
+For E2E specs, generic open or wait-for-ready setup in `beforeEach` is allowed.
+
+Journey steps must remain visible in the spec and must not be hidden in `beforeEach`, other hooks, fixtures, Page Objects, or workflow wrappers.
 
 ### Good
 
@@ -73,6 +167,22 @@ test.describe("Product sorting", { tag: ["@ui", "@regression", "@sorting"] }, ()
 The sorting action is the behavior under test, but it is hidden inside `beforeEach`.
 
 The test body no longer clearly shows what scenario is being verified.
+
+---
+
+## E2E Spec Structure
+
+E2E specs follow the same step and hook rules as UI specs, with additional constraints:
+
+- the full user or business journey must remain visible in the spec;
+- API or fixture setup may create preconditions only;
+- setup must not replace the UI journey under test;
+- final assertions must prove a meaningful journey outcome;
+- do not hide the E2E flow inside fixtures, hooks, Page Object full-flow methods, API clients, helpers, or domain workflow wrappers.
+
+Rule reference:
+
+- `.cursor/rules/e2e-testing.rules.mdc`
 
 ---
 
@@ -267,8 +377,12 @@ The test scenario is harder to read and the helper logic is harder to reuse or r
 
 - Use Playwright details-object tags.
 - Do not put tags inside test title strings.
-- Every UI test must be covered by `@ui`.
-- Every UI test must be classified with an execution-scope tag: `@smoke` or `@regression`.
+- Every focused UI test must be covered by `@ui`.
+- Every E2E test must be covered by `@e2e`.
+- Every UI and E2E test must be classified with an execution-scope tag: `@smoke` or `@regression`.
+- `@e2e` replaces `@ui` as the layer tag for full-journey E2E specs by default.
+- Do not tag full-journey E2E specs with `@ui` unless the project map explicitly requires both.
+- Browser-based E2E may run in existing browser projects but must be tagged `@e2e` for reporting and filtering.
 - Tags may be applied at `describe` level when they apply to all tests inside the suite.
 - Test-level tags may add more specific classification.
 - Do not introduce new tags without adding them to the tag registry or project map.
@@ -296,6 +410,18 @@ test("shows login page for guest user", { tag: ["@ui", "@smoke", "@login"] }, as
 });
 ```
 
+### Good E2E
+
+```ts
+test(
+  "completes registration and reaches authenticated account area",
+  { tag: ["@e2e", "@regression", "@registration"] },
+  async ({ registerPage, loginPage, accountPage }) => {
+    // journey steps remain visible in the spec
+  },
+);
+```
+
 ### Bad
 
 ```ts
@@ -318,15 +444,23 @@ Use tags consistently by category.
 
 ### Required layer tag
 
-Every UI test must have:
+Every focused UI test must have:
 
 ```text
 @ui
 ```
 
+Every full-journey E2E test must have:
+
+```text
+@e2e
+```
+
+Do not use both `@ui` and `@e2e` on the same full-journey E2E spec by default.
+
 ### Required execution-scope tag
 
-Every UI test must have one of:
+Every UI and E2E test must have one of:
 
 ```text
 @smoke
@@ -378,7 +512,7 @@ Do not use feature/domain tags as a replacement for required layer and execution
 
 ```ts
 export const tags = {
-  layer: ["@ui", "@api"],
+  layer: ["@ui", "@api", "@e2e"],
   execution: ["@smoke", "@regression"],
   quality: ["@visual", "@a11y", "@flaky", "@wip"],
   feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
@@ -402,11 +536,17 @@ The actual allowed tags must be documented by the project tag registry or projec
 ### Recommended CI filtering idea
 
 ```text
-Smoke run:
+UI smoke run:
 @ui AND @smoke
 
-Regression run:
+UI regression run:
 @ui AND (@smoke OR @regression)
+
+E2E smoke run:
+@e2e AND @smoke
+
+E2E regression run:
+@e2e AND (@smoke OR @regression)
 ```
 
 ---
@@ -427,7 +567,7 @@ The registry should define:
 
 ```ts
 export const tags = {
-  layer: ["@ui", "@api"],
+  layer: ["@ui", "@api", "@e2e"],
   execution: ["@smoke", "@regression"],
   quality: ["@visual", "@a11y", "@flaky", "@wip"],
   feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
@@ -449,29 +589,33 @@ When a new feature/domain tag is needed:
 
 Avoid:
 
-- UI tests without `test.step`;
+- UI or E2E tests without `test.step`;
 - one huge step wrapping the entire test;
 - a separate step for every single click;
 - technical step names such as `Click button` or `Fill input`;
 - business actions hidden inside `beforeEach`;
+- E2E journey steps hidden inside hooks, fixtures, or workflow wrappers;
 - UI login in `beforeEach` for non-login tests;
 - repeating navigation already performed by `beforeEach`;
 - tags inside test title strings;
-- untagged UI tests;
+- untagged UI or E2E tests;
 - UI tests without `@smoke` or `@regression`;
+- E2E tests without `@e2e`;
+- E2E tests without `@smoke` or `@regression`;
+- tagging full-journey E2E specs with `@ui` by default;
 - random project-specific tags not defined in the tag registry;
 - mixing setup, action, and assertion in unclear steps;
 - long helper functions inside specs;
 - reusable parsing, normalization, sorting, comparison, or predicate logic inside specs;
 - large assertion branching inside specs;
 - feature/domain tags used without being registered;
-- feature/domain tags used instead of required `@ui` and `@smoke` or `@regression`.
+- feature/domain tags used instead of required layer and execution-scope tags.
 
 ---
 
 ## Main Principle
 
-A UI spec should read like a clear user scenario.
+A UI or E2E spec should read like a clear user scenario.
 
 Hooks prepare safe context.
 
@@ -486,91 +630,3 @@ Reusable technical helper logic belongs in assertion helpers, datasets, builders
 Feature/domain tags may be used for reporting and filtering, but only when registered.
 
 The test body must clearly show the behavior being verified.
----
-
-# Test Structure and Tags
-
-## Purpose
-
-These rules define how UI specs must be structured in a universal Playwright + TypeScript testing framework.
-
-The main goals are:
-
-- keep UI tests readable;
-- make reports and traces easy to analyze;
-- prevent hidden behavior in hooks;
-- keep test scenarios explicit;
-- standardize tags for CI filtering and reporting;
-- avoid project-specific tag chaos;
-- keep reusable technical helper logic out of specs.
-
----
-
-## Steps
-
-- UI tests must use `test.step` for meaningful user-level phases.
-- Step names must describe user intent.
-- Step names must not describe low-level implementation details.
-- Do not wrap every single Playwright action into a separate step.
-- Do not put the whole test body into one generic step.
-- Prefer 2-5 meaningful steps per UI test.
-- Steps should normally represent phases such as navigation, user action, and verification.
-- Steps should call Page Object or Component Object methods instead of exposing raw selector mechanics.
-
-### Good
-
-```ts
-test("sorts products by price", { tag: ["@ui", "@smoke", "@sorting"] }, async ({ homePage }) => {
-  await test.step("Open product catalog", async () => {
-    await homePage.open();
-    await homePage.expectLoaded();
-  });
-
-  await test.step("Apply ascending price sorting", async () => {
-    await homePage.sorting.applySort("price,asc");
-  });
-
-  await test.step("Verify products are sorted by price", async () => {
-    await expectSortedByPrice(await homePage.productList.getVisiblePrices(), "asc");
-  });
-});
-```
-
-### Bad
-
-```ts
-test("sorts products by price", { tag: ["@ui", "@smoke"] }, async ({ page }) => {
-  await test.step("Click sort dropdown", async () => {
-    await page.locator(".sort").click();
-  });
-
-  await test.step("Click price", async () => {
-    await page.locator(".price").click();
-  });
-
-  await test.step("Click asc", async () => {
-    await page.locator(".asc").click();
-  });
-
-  await test.step("Wait", async () => {
-    await page.waitForTimeout(1000);
-  });
-});
-```
-
-### Why this is bad
-
-This structure exposes implementation details instead of user intent.
-
-It creates noisy reports and encourages low-level selector usage in specs.
-
----
-
-## Step Naming Rules
-
-Step names should be written from the user's perspective.
-
-### Good step names
-
-```text
-Open product catalog

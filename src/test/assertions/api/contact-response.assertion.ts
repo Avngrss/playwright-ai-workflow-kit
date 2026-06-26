@@ -15,7 +15,7 @@ export function expectContactSendMessageResponse(body: unknown): ContactSendMess
   );
 }
 
-export function expectContactValidationErrorResponse(
+function expectContactValidationErrorResponse(
   body: unknown,
 ): ContactValidationErrorResponse {
   return expectToMatchSchema(

@@ -15,6 +15,7 @@ Do not modify files.
 Follow these rules:
 
 - Code Quality and Cleanliness Rules;
+- Test Abstraction Hygiene Rules;
 - Agent Workflow;
 - Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
@@ -254,6 +255,28 @@ Do not flag abstractions that clearly reduce repeated logic or enforce correct o
 
 ---
 
+### 7A. Check Abstraction Hygiene
+
+Run an explicit abstraction hygiene pass across changed files.
+
+Check that:
+
+- single-use wrappers are justified; if a helper only wraps an obvious `expect`, inline may be clearer;
+- exported helpers are actually imported outside their own module;
+- stale helpers are not left behind after coverage reduction or scenario removal;
+- shared contracts do not live in feature-specific modules;
+- API/UI/shared assertion helper ownership is correct;
+- helper logic does not hide the main action under test or the main assertion;
+- schema optionality and behavior assertions do not conflict;
+- schema validation does not bypass the shared Zod assertion helper with repeated raw `safeParse` plus `expect` logic;
+- speculative abstractions were not introduced for builders, fixtures, API clients, Components, or Page Object methods;
+- API clients do not contain assertions or schema validation;
+- Page Objects and Components do not contain assertions.
+
+Keep useful reusable abstractions when they improve readability, ownership, correctness, diagnostics, or consistency.
+
+---
+
 ### 8. Check Layer Ownership
 
 Verify:
@@ -450,6 +473,7 @@ Examples:
 
 - fake assertion;
 - `waitForTimeout`;
+- schema says a field is optional but a behavior assertion requires it without contract evidence;
 - assertion hidden in API client;
 - assertion hidden in Page Object;
 - project-specific logic in framework core;
@@ -464,6 +488,8 @@ Examples:
 
 - UI test duplicates API/schema behavior without UI value;
 - documented API negative coverage is ignored;
+- shared user schema or assertion lives only in a registration-specific module;
+- exported helper is not used outside its own module;
 - reusable data inline in specs;
 - unnecessary component;
 - workaround in spec;
@@ -480,6 +506,7 @@ Examples:
 
 - unclear name;
 - small repeated constant;
+- single-use wrapper only wraps an obvious `expect`;
 - step name could be clearer;
 - ordering issue;
 - minor import cleanup.

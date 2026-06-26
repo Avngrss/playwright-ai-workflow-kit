@@ -2,7 +2,6 @@ import { expect } from '@playwright/test';
 import { z } from 'zod';
 import {
   paginatedProductSortingResponseSchema,
-  type PaginatedProductSortingResponse,
   type ProductSortingItem,
 } from '../../schemas/api/product-sorting.schema';
 import { expectToMatchSchema } from './zod-schema.assertion';
@@ -14,9 +13,11 @@ const paginatedProductPriceRangeResponseSchema = paginatedProductSortingResponse
     to: z.number().int().nullish(),
   });
 
+type PaginatedProductPriceRangeResponse = z.infer<typeof paginatedProductPriceRangeResponseSchema>;
+
 export function expectPaginatedProductPriceRangeResponse(
   body: unknown,
-): PaginatedProductSortingResponse {
+): PaginatedProductPriceRangeResponse {
   return expectToMatchSchema(
     paginatedProductPriceRangeResponseSchema,
     body,

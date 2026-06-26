@@ -1,0 +1,483 @@
+---
+description: Test abstraction hygiene rules for helpers, assertions, schemas, builders, fixtures, clients, page objects, and components
+alwaysApply: true
+---
+
+# Test Abstraction Hygiene Rules
+
+## Purpose
+
+These rules prevent AI-generated automation code from accumulating unnecessary, stale, duplicated, or poorly owned abstractions.
+
+The goal is not to forbid abstractions.
+
+The goal is to make every abstraction earn its cost and live in the correct layer.
+
+These rules apply to:
+
+- helper functions;
+- assertion helpers;
+- Zod schemas;
+- builders;
+- generators;
+- datasets;
+- fixtures;
+- API clients;
+- Page Objects;
+- Component Objects;
+- shared utilities.
+
+---
+
+## Core Principle
+
+Inline simple one-off logic.
+
+Create an abstraction only when it improves at least one of:
+
+- readability;
+- reuse;
+- ownership;
+- correctness;
+- diagnostic quality;
+- consistency.
+
+An abstraction must not hide:
+
+- the action under test;
+- the main assertion;
+- important scenario behavior;
+- setup risk;
+- contract uncertainty;
+- product behavior uncertainty.
+
+Do not create abstractions speculatively for future scenarios.
+
+---
+
+## Helper Creation Rules
+
+Do not create a helper for:
+
+- one trivial line;
+- one obvious `expect`;
+- one-off deterministic values;
+- one-off local scenario data;
+- simple constants;
+- speculative future reuse.
+
+A helper is justified when:
+
+- the logic is reused;
+- the logic is non-trivial;
+- the logic includes parsing, normalization, sorting, filtering, or comparison;
+- the logic gives meaningful domain vocabulary;
+- the helper makes the spec easier to read;
+- the helper centralizes a contract-sensitive assertion;
+- the helper reduces repeated technical noise.
+
+A helper used once may be acceptable when it hides complex technical logic and preserves readable scenario intent.
+
+A helper used once is suspicious when it only wraps obvious assertions.
+
+---
+
+## Assertion Helper Rules
+
+Assertion helpers may use Playwright `expect`.
+
+Assertion helpers should be used for:
+
+- reusable contract assertions;
+- non-trivial response assertions;
+- repeated UI list/table/card assertions;
+- domain-readable assertions;
+- schema validation wrappers;
+- complex parsing or comparison assertions.
+
+Assertion helpers must not:
+
+- perform user actions;
+- send API requests;
+- create setup data;
+- hide the action under test;
+- combine action and verification;
+- silently weaken assertions;
+- contain unrelated workflow logic.
+
+Avoid helper names that combine action and verification, such as:
+
+- `sortAndVerify`;
+- `loginAndExpectSuccess`;
+- `submitAndValidate`;
+- `createAndCheck`.
+
+Keep action and assertion separate.
+
+---
+
+## Export Rules
+
+Do not export helpers unless external use is intended.
+
+Internal helpers should remain unexported.
+
+If a helper is exported but not imported outside its own module, either:
+
+- remove the export;
+- or document why it is intentionally public.
+
+Stale exported helpers should be removed or internalized when:
+
+- coverage was reduced;
+- tests were refactored;
+- a helper is no longer imported externally;
+- a helper no longer represents a useful public assertion API.
+
+Public assertion helper APIs should stay small, domain-readable, and intentional.
+
+---
+
+## Ownership Rules
+
+Shared domain contracts belong in neutral shared/domain files.
+
+Feature-specific helpers should stay feature-specific.
+
+Do not place shared contracts in feature-specific modules.
+
+Examples:
+
+- user response schema used by registration and login should not live only in a registration-specific schema file;
+- product list assertion used by multiple product features should not live only in a sorting-specific helper;
+- contact form helper should remain contact-specific if used only by contact tests.
+
+API assertion helpers belong in the API assertion layer.
+
+UI assertion helpers belong in the UI assertion layer.
+
+Shared helpers must be genuinely shared.
+
+Do not create shared helpers for speculative future reuse.
+
+Helper names should describe actual domain behavior, not technical implementation only.
+
+---
+
+## Schema Rules
+
+Use Zod schemas for non-trivial, reused, nested, paginated, or contract-critical API response shapes.
+
+Do not create Zod schemas for trivial one-off responses.
+
+Reusable schemas belong in the schema layer.
+
+Do not define reusable schemas in specs.
+
+Do not put reusable schemas in assertion files.
+
+A schema may be locally composed in an assertion file only when:
+
+- it is clearly local;
+- it is not reused;
+- it does not become a shared contract.
+
+If local schema composition becomes reused, move it to the schema layer.
+
+Schema validation must remain separate from behavior assertions.
+
+Schemas validate shape.
+
+Specs or assertion helpers validate behavior.
+
+Do not hide behavior assertions inside schemas.
+
+Use the shared Zod assertion helper for schema validation when Zod is used.
+
+Do not bypass the shared Zod assertion helper with repeated raw `safeParse` plus `expect` logic.
+
+Do not call raw `schema.parse()` in specs when an assertion helper exists.
+
+---
+
+## Schema And Behavior Consistency
+
+Schema optionality and behavior assertions must not conflict.
+
+If a schema says a field is optional, behavior assertions must not require that field for every item unless the contract or scenario requires it.
+
+If a behavior assertion requires an optional field, one of the following must be true:
+
+- the contract says the field is required for that endpoint/scenario;
+- the scenario explicitly requires only items with that field;
+- missing values are handled explicitly;
+- the feature plan documents a contract gap or blocker.
+
+Do not make optional fields required only because current live data happens to include them.
+
+Do not silently filter out missing values unless the expected behavior supports that.
+
+A schema/assertion mismatch that can produce false positives or false negatives is a critical issue.
+
+---
+
+## Page Object And Component Rules
+
+Page Objects and Component Objects must not use Playwright `expect`.
+
+Page Objects and Component Objects should expose:
+
+- locators;
+- actions;
+- state readers;
+- parsed values;
+- structural markers.
+
+Page Objects and Component Objects must not own:
+
+- assertions;
+- builders;
+- generators;
+- default test data;
+- random data creation;
+- API setup;
+- reporting metadata;
+- business workflow assertions.
+
+Do not add speculative Page Object or Component Object methods.
+
+Do not create a Component Object just because a UI block exists.
+
+Create or extract a Component Object only when justified by:
+
+- reuse;
+- meaningful UI boundary;
+- multiple related locators/actions;
+- real complexity;
+- Page Object growth;
+- meaningful reduction of duplication.
+
+---
+
+## Builder And Generator Rules
+
+Builders are for reusable structured data.
+
+Builder defaults must be valid by default.
+
+Invalid or negative data must be explicit through overrides.
+
+Do not create builders for:
+
+- one-off deterministic payloads;
+- simple constants;
+- test mechanics values;
+- speculative future scenarios.
+
+Generators are for unique or formatted primitive values.
+
+Do not generate random or unique data inline in specs.
+
+Do not put builders, generators, or default data into Page Objects or Component Objects.
+
+---
+
+## Fixture Rules
+
+Fixtures are for thin dependency wiring, setup, and teardown.
+
+Fixtures must not:
+
+- hide the action under test;
+- perform business flows by default;
+- perform scenario assertions;
+- silently change app state;
+- generate one-off values;
+- become orchestration layers.
+
+Do not create fixtures for one-off values.
+
+Do not expose Component Objects as fixtures by default.
+
+Specs must use the final fixture entry point defined by the project map.
+
+Do not import intermediate fixture layers from specs unless explicitly allowed by the project map.
+
+---
+
+## API Client Rules
+
+API clients are optional.
+
+Create an API client only when:
+
+- request composition is reused;
+- endpoint grouping improves clarity;
+- the project plan or architecture justifies it.
+
+API clients may:
+
+- compose requests;
+- send requests;
+- return responses or parsed data if project convention allows it.
+
+API clients must not:
+
+- contain Playwright `expect`;
+- perform schema assertions;
+- hide behavior assertions;
+- hide business workflows;
+- call login as hidden setup;
+- hardcode tokens or credentials;
+- become a service hierarchy without need.
+
+Do not create an API client for one one-off request.
+
+---
+
+## Spec Readability Rules
+
+Specs should show:
+
+- setup;
+- action under test;
+- expected result;
+- scenario-specific assertions.
+
+Specs may contain:
+
+- small constants;
+- local scenario cases;
+- simple one-off assertions;
+- `test.step` blocks;
+- calls to Page Object actions/readers;
+- calls to assertion helpers.
+
+Specs should not accumulate:
+
+- reusable parsing logic;
+- sorting/comparison algorithms;
+- normalization helpers;
+- repeated predicate checks;
+- reusable response validation logic;
+- generic helper functions;
+- data builders;
+- random data creation.
+
+Move reusable non-trivial logic to the correct layer.
+
+Keep simple one-off assertions inline when that is clearer.
+
+---
+
+## Duplication Rules
+
+Not all duplication is bad.
+
+Accept small duplication when it preserves clarity and avoids premature generic utilities.
+
+Consider extracting or sharing logic when duplication causes:
+
+- inconsistent behavior;
+- repeated complex parsing;
+- repeated comparison algorithms;
+- repeated schema assertion wrappers;
+- maintenance risk;
+- false-positive or false-negative risk.
+
+Do not create generic shared utilities just to remove two clear lines of code.
+
+API and UI layers may have similar assertions if each layer verifies a different risk.
+
+Do not force API and UI assertions into one shared helper when that hides layer-specific intent.
+
+---
+
+## Cleanup Triggers
+
+Review or cleanup is needed when any of these appear:
+
+- helper exported but not externally imported;
+- helper left after coverage reduction;
+- helper used once and obscuring the scenario;
+- shared contract living in feature-specific module;
+- duplicated predicate logic causing maintenance risk;
+- schema optionality conflicting with behavior assertion;
+- assertion helper performing setup or action;
+- API client containing assertions;
+- Page Object or Component containing assertions;
+- fixture hiding the action under test;
+- builder created for one-off data;
+- Component Object created for a simple one-off UI block;
+- Page Object methods created for future tests only.
+
+---
+
+## Severity Guidance
+
+Use critical severity for issues that can cause false positives or false negatives.
+
+Examples:
+
+- schema says field is optional but behavior assertion requires it without contract evidence;
+- helper hides the main assertion and allows test to pass without verifying intended behavior;
+- API client performs assertions internally;
+- Page Object performs assertions internally;
+- fake assertion;
+- `waitForTimeout`.
+
+Use major severity for maintainability or architecture issues.
+
+Examples:
+
+- shared contract helper in feature-specific module;
+- exported helper unused outside its own module;
+- stale helper after coverage reduction;
+- unnecessary Component Object;
+- fixture for one-off value;
+- API client for one one-off request;
+- reusable schema defined in spec.
+
+Use minor severity for readability issues worth fixing now.
+
+Examples:
+
+- unclear helper name;
+- small ordering issue;
+- simple wrapper that could be inlined;
+- minor import cleanup.
+
+Do not report speculative issues without evidence.
+
+---
+
+## Review Expectations
+
+When reviewing generated code, check abstraction hygiene.
+
+Review should identify:
+
+- helpers to keep;
+- helpers to remove;
+- helpers to internalize;
+- helpers to move;
+- helpers to inline;
+- wrong-layer abstractions;
+- schema/assertion mismatches;
+- stale public API;
+- speculative abstractions;
+- false-positive or false-negative risks.
+
+Review should recommend small cleanup batches.
+
+Do not recommend mass refactors unless the architecture is clearly broken.
+
+---
+
+## Main Principle
+
+Abstractions should make tests easier to understand, safer to maintain, or more correct.
+
+If an abstraction does not improve readability, reuse, ownership, or correctness, do not create it.
+
+If an abstraction no longer earns its cost, remove it, internalize it, inline it, or move it to the correct layer.

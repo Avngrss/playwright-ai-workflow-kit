@@ -1,0 +1,427 @@
+---
+description: E2E testing rules for full user/business flows
+alwaysApply: true
+---
+
+# E2E Testing Rules
+
+## Purpose
+
+These rules define how full end-to-end tests should be planned, implemented, reviewed, and maintained.
+
+The goal is to prevent short UI functional tests from being mislabeled as E2E and to keep E2E coverage small, valuable, stable, and safe.
+
+E2E tests are not a replacement for API, UI, schema, or visual coverage.
+
+E2E tests verify high-value user or business journeys that cross multiple states, pages, or system boundaries.
+
+---
+
+## Core Principle
+
+Not every UI test is an E2E test.
+
+A UI test verifies a page, control, form, validation message, navigation, or visible browser behavior.
+
+An E2E test verifies a full user or business flow with meaningful integration value.
+
+An E2E test should prove that a user can complete a real journey, not just interact with one control.
+
+---
+
+## What Counts As E2E
+
+A scenario may be E2E when it crosses multiple meaningful boundaries, such as:
+
+- registration followed by login;
+- login followed by authenticated account access;
+- product selection followed by cart state;
+- cart followed by checkout/order creation;
+- forgot password followed by reset-link retrieval, password reset, and login with the new password;
+- user journey that requires frontend, backend, persisted state, and final user-visible confirmation.
+
+An E2E scenario should usually include:
+
+- setup or precondition;
+- one or more UI actions;
+- backend or persisted state change;
+- user-visible final outcome;
+- isolation or cleanup strategy.
+
+---
+
+## What Is Not E2E
+
+Do not label these as E2E:
+
+- page render checks;
+- field visibility checks;
+- one-form validation checks;
+- one-click UI feedback checks;
+- simple navigation checks;
+- isolated component behavior;
+- backend contract checks;
+- response schema checks;
+- API negative or boundary tests;
+- visual-only checks.
+
+Examples that should remain UI tests:
+
+- forgot-password page renders;
+- empty forgot-password submit shows required-email feedback;
+- valid forgot-password submit shows confirmation message;
+- login form shows invalid-credentials error;
+- product sort dropdown options are visible.
+
+These may be valuable UI tests, but they are not full E2E flows.
+
+---
+
+## What Counts As E2E
+
+A scenario may be E2E when it verifies a complete user or business journey and crosses meaningful page, state, data, or system boundaries.
+
+Examples include:
+
+- registration followed by login;
+- login followed by authenticated account access;
+- product selection followed by cart state;
+- cart followed by checkout/order creation;
+- forgot password followed by reset-link retrieval, password reset, and login with the new password;
+- another journey that requires frontend, backend, persisted state, and final user-visible confirmation.
+
+These examples are not exhaustive.
+
+An E2E scenario should normally document:
+
+- setup or precondition;
+- user journey steps;
+- systems or states crossed;
+- backend or persisted state change, when applicable;
+- user-visible final outcome;
+- isolation or cleanup strategy.
+
+---
+
+## E2E Must Be Few And High Value
+
+E2E tests should be limited.
+
+Prefer API, schema, and focused UI tests for broad coverage.
+
+Use E2E for critical journeys only.
+
+Avoid large E2E matrices.
+
+Avoid testing every data variant through E2E.
+
+Use one representative E2E scenario when lower-level tests already cover variants.
+
+---
+
+## Required E2E Scenario Information
+
+Every planned E2E scenario must document:
+
+- business value;
+- user journey;
+- systems or states crossed;
+- preconditions;
+- setup strategy;
+- test data strategy;
+- cleanup or isolation strategy;
+- final assertion;
+- why API/UI/schema coverage is not sufficient;
+- flakiness risks;
+- external dependencies;
+- blocked or postponed reasons, if any.
+
+If any of this is unclear, mark the E2E scenario blocked or postponed.
+
+---
+
+## Setup Strategy
+
+E2E setup may use API or fixtures only for preconditions.
+
+API setup is allowed when it creates backend state needed before the user journey starts.
+
+Examples:
+
+- create a registered user before testing UI login;
+- create product/cart preconditions before testing checkout;
+- create disposable data needed by the flow.
+
+API setup must not:
+
+- replace the UI action under test;
+- validate full API contracts;
+- hide the main user journey;
+- perform the whole flow before the test starts;
+- make the E2E test pass without proving the UI journey.
+
+Setup must verify only required setup success.
+
+---
+
+## Action Under Test Must Stay Visible
+
+The main E2E user journey must remain visible in the spec.
+
+Do not hide the E2E flow inside:
+
+- fixtures;
+- beforeEach hooks;
+- Page Object “full flow” methods;
+- API clients;
+- helper methods;
+- domain workflow wrappers.
+
+Page Objects may expose page actions and state readers.
+
+Page Objects must not hide the entire E2E scenario.
+
+---
+
+## Data Strategy
+
+E2E tests must use safe and isolated data.
+
+Prefer:
+
+- disposable users;
+- unique emails;
+- unique generated entities;
+- API preconditions with clear ownership;
+- data that does not affect shared accounts;
+- cleanup when available.
+
+Avoid:
+
+- shared users with mutable state;
+- destructive changes to stable test accounts;
+- fixed global entities that parallel runs can modify;
+- test data that depends on previous test order;
+- assumptions about existing mutable live data.
+
+If safe data cannot be created, mark the E2E scenario blocked or postponed.
+
+---
+
+## Cleanup And Isolation
+
+Every E2E test must have a cleanup or isolation decision.
+
+Allowed strategies:
+
+- cleanup through API;
+- disposable data that does not need cleanup;
+- isolated test user;
+- isolated test environment;
+- explicit blocked/postponed status when cleanup is not possible.
+
+Do not implement destructive E2E flows without cleanup or isolation.
+
+Examples of destructive flows:
+
+- password reset;
+- password change;
+- profile update;
+- checkout/order creation;
+- account deletion;
+- payment flow;
+- email verification flow.
+
+---
+
+## External Dependencies
+
+External dependencies make E2E riskier.
+
+Examples:
+
+- email inbox;
+- reset links;
+- payment provider;
+- third-party auth;
+- captcha;
+- external files;
+- external notification services.
+
+If an external dependency is unavailable or unstable, mark the E2E scenario blocked or postponed.
+
+Do not fake external dependency success unless the scenario is explicitly scoped as a mocked or partial integration test.
+
+---
+
+## Forgot Password E2E Rule
+
+Forgot Password UI tests are not automatically E2E.
+
+The following are UI tests, not full E2E:
+
+- forgot-password page render;
+- empty email validation;
+- valid email submit confirmation.
+
+Full Forgot Password E2E requires:
+
+- requesting password reset;
+- retrieving reset link or reset token;
+- opening reset flow;
+- setting a new password;
+- logging in with the new password;
+- safe disposable user or cleanup strategy.
+
+If mailbox, reset-link, reset-token, or safe user cleanup strategy is missing, full Forgot Password E2E must be blocked or postponed.
+
+---
+
+## Tagging
+
+E2E tests must use:
+
+- `@e2e`;
+- `@smoke` or `@regression`.
+
+Use `@smoke` only for the smallest critical E2E journeys.
+
+Most E2E tests should be `@regression`.
+
+Do not use `@e2e` for simple UI tests.
+
+---
+
+## Location
+
+E2E tests should live separately from focused UI and API tests.
+
+Preferred location:
+
+- `tests/e2e/...`
+
+Do not place full E2E flows into `tests/api`.
+
+Avoid placing full E2E flows into focused `tests/ui` specs unless the project map explicitly allows it.
+
+If `tests/e2e` does not exist yet, update the project map before treating it as a stable convention.
+
+---
+
+## Assertions
+
+E2E assertions should verify meaningful final outcomes.
+
+Good E2E final assertions:
+
+- account page is visible after registration and login;
+- cart contains expected product after add-to-cart flow;
+- order confirmation is visible after checkout;
+- user can log in with the newly reset password;
+- authenticated page state is visible after login.
+
+Do not rely only on weak assertions such as:
+
+- URL changed;
+- button was clicked;
+- request was sent;
+- no error appeared;
+- page did not crash.
+
+URL assertions may be useful, but they should not be the only proof of completed E2E behavior.
+
+---
+
+## API Assertions Inside E2E
+
+Do not validate full API contracts inside E2E tests.
+
+E2E tests may use API calls for setup or cleanup.
+
+E2E tests may use limited API checks only when they verify final persisted state and this is explicitly part of the E2E value.
+
+Do not duplicate API schema validation in E2E tests.
+
+Do not assert detailed response bodies in E2E setup calls.
+
+API contract coverage belongs in API tests.
+
+---
+
+## Visual Checks Inside E2E
+
+Do not add visual checkpoints to E2E tests by default.
+
+Visual checkpoints require explicit planning and baseline approval.
+
+If visual coverage is needed, prefer a focused UI visual checkpoint instead of adding screenshot assertions to a long E2E flow.
+
+---
+
+## Flakiness Control
+
+E2E tests must avoid unnecessary flakiness.
+
+Do not use `waitForTimeout`.
+
+Use stable state-based waits.
+
+Avoid depending on:
+
+- external email delivery timing;
+- uncontrolled third-party services;
+- mutable shared data;
+- exact product counts in dynamic catalogs;
+- exact product ordering unless that is the tested behavior;
+- test execution order.
+
+If the scenario cannot be made stable, mark it blocked or postponed.
+
+---
+
+## Review Requirements
+
+E2E review must check:
+
+- scenario is truly E2E, not short UI functional coverage;
+- business value is clear;
+- setup strategy is safe;
+- data strategy is isolated;
+- cleanup strategy is defined or intentionally unnecessary;
+- action under test is visible in the spec;
+- API setup does not replace the UI journey;
+- assertions prove meaningful final outcome;
+- no full API contract validation is hidden in E2E;
+- no `waitForTimeout`;
+- no weakened assertions;
+- no broad one-test-does-everything scenario;
+- tags include `@e2e` and smoke/regression tag.
+
+---
+
+## Block Or Postpone E2E When Needed
+
+E2E should be blocked or postponed when:
+
+- test data cannot be created safely;
+- cleanup is unavailable for destructive state;
+- reset-link or mailbox access is missing;
+- payment provider is unavailable;
+- external dependency is unstable;
+- required API setup is not approved;
+- final outcome cannot be observed reliably;
+- scenario would duplicate existing UI/API coverage without additional E2E value.
+
+Blocked E2E scenarios should include a clear reason and required unblocker.
+
+---
+
+## Main Principle
+
+E2E tests are expensive.
+
+Use them to prove critical user journeys, not to replace API, UI, schema, or visual coverage.
+
+If a scenario does not cross meaningful system or state boundaries, keep it as a UI or API test.
+
+If a scenario cannot be isolated or cleaned up safely, block or postpone it.

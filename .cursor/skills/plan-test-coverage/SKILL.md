@@ -6,7 +6,9 @@ Use this skill when planning test coverage for a feature, endpoint, page, or use
 
 The goal is to choose the right test level before implementation and produce a complete feature coverage plan that is directly actionable for implementation agents.
 
-The plan must describe the full coverage picture, not only the first small batch.
+The plan must describe the full coverage picture for API, UI, schema, visual, and not automated levels — not E2E.
+
+E2E is a separate planning layer. Full user or business journeys are planned in `specs/e2e/<journey>.md`, not in feature coverage plans.
 
 Do not implement tests during this skill.
 
@@ -17,6 +19,7 @@ Do not implement tests during this skill.
 Follow these rules:
 
 - Test Strategy and Test Pyramid Rules;
+- E2E Testing Rules;
 - API Architecture Rules;
 - API Schema Validation Rules;
 - Visual Testing Rules;
@@ -38,6 +41,8 @@ Use this skill when:
 - splitting smoke and regression coverage;
 - avoiding duplicate coverage across layers;
 - creating API and UI implementation briefs before coding.
+
+Do **not** use this skill to plan E2E journeys. E2E belongs in `specs/e2e/<journey>.md`.
 
 ---
 
@@ -140,11 +145,26 @@ For each behavior, choose one primary test level:
 - schema/contract;
 - not automated.
 
+Do **not** assign E2E in feature coverage plans. If a behavior requires a critical full user or business journey, note that it may need a separate E2E journey plan in `specs/e2e/<journey>.md` later.
+
 Use the lowest reliable level that proves the behavior.
 
 Do not default everything to UI.
 
+Do not recommend E2E for short UI functional tests such as page render checks, single-form validation, or one-click feedback checks.
+
 UI coverage is justified only when the risk is user-facing, browser-visible, or frontend-integration specific.
+
+Prefer API, UI, schema, and visual coverage for broad coverage.
+
+Use E2E sparingly for high-value journeys — but plan E2E separately in `specs/e2e/<journey>.md`, not in this feature plan.
+
+Block or postpone E2E journey planning when mailbox, reset-link, reset-token, payment, or other external dependencies are missing, unstable, or lack safe cleanup.
+
+Example:
+
+- forgot-password page render, empty-email validation, and valid-email submit confirmation should remain UI coverage in the feature plan;
+- full forgot-password reset plus login with a new password should be noted as a candidate for a separate E2E journey plan and remain blocked or postponed without mailbox/reset-link access and a safe disposable-user or cleanup strategy.
 
 API coverage is preferred for backend contract, validation, data, status behavior, authorization contract, authentication token contract, filtering/sorting predicates, and response shape when UI behavior is not the main risk.
 
@@ -161,7 +181,8 @@ Avoid duplicating the same risk across:
 - API;
 - UI;
 - schema/contract;
-- visual checkpoints.
+- visual checkpoints;
+- E2E journey plans (planned separately in `specs/e2e/`).
 
 Good layered coverage example:
 
@@ -258,6 +279,8 @@ For each documented boundary or negative behavior, the plan must include one of:
 - blocked/postponed item with reason;
 - not automated item with reason.
 
+If a boundary requires a critical full journey, note it as a candidate for a separate E2E journey plan — do not add E2E scenarios to the feature plan.
+
 Rules:
 
 - do not guess undocumented status codes, response bodies, validation messages, or boundary limits;
@@ -329,6 +352,8 @@ Group coverage by:
 - schema/contract checks;
 - not automated or blocked items.
 
+Do **not** group E2E coverage in feature plans. E2E is planned separately in `specs/e2e/<journey>.md`.
+
 For each group, classify items as:
 
 - ready to implement now;
@@ -358,13 +383,19 @@ Implementation commands should later select a level-specific implementation scop
 - all UI coverage ready to implement now;
 - visual checkpoints planned now.
 
----
+E2E is planned separately via `/plan-e2e-journey` at `specs/e2e/<journey>.md`.
 
-### 11. Create Implementation Briefs
+Recommended implementation commands are informational only during planning.
+
+Do **not** recommend `/implement-e2e-flow` from feature coverage plans.
+
+If E2E is relevant, recommend `/plan-e2e-journey` first.
 
 Create implementation briefs that are actionable for implementation agents.
 
 The plan must not leave API or UI details for implementation agents to invent.
+
+If a full journey may need E2E later, add a short note pointing to a future `specs/e2e/<journey>.md` — do not include E2E scenarios or E2E Implementation Brief in the feature plan.
 
 API Implementation Brief should include:
 
@@ -401,7 +432,7 @@ Implementation briefs should describe how to implement the coverage safely, but 
 
 ---
 
-### 12. Validate Scenarios vs Implementation Decisions
+### 11. Validate Scenarios vs Implementation Decisions
 
 Before finalizing the plan, verify that planned scenarios represent real coverage items.
 
@@ -414,6 +445,8 @@ A scenario must represent one of:
 - error or validation behavior;
 - integration risk;
 - not automated risk.
+
+Do not list E2E journeys in feature coverage plans. E2E belongs in `specs/e2e/<journey>.md`.
 
 Do not list implementation details as standalone scenarios.
 
@@ -444,7 +477,7 @@ Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metad
 
 ---
 
-### 13. Plan Scenario Variants
+### 12. Plan Scenario Variants
 
 When a behavior has multiple data variants, decide whether variants should be:
 
@@ -601,6 +634,27 @@ For each UI scenario:
 - assertions in spec:
 - not covered in UI:
 
+### E2E Note
+
+E2E is **not** part of feature coverage plans.
+
+When a critical full journey may need automation beyond API and UI coverage, use this exact note format:
+
+Potential E2E journey candidate:
+- <journey name>
+
+Suggested journey plan path:
+- specs/e2e/<journey>.md
+
+Reason:
+- <why lower-level coverage is not enough>
+
+Important:
+- do not implement E2E from this feature plan;
+- create a separate E2E journey plan first.
+
+Do not include E2E Coverage or E2E Implementation Brief sections in feature plans.
+
 ### Visual Checkpoints
 
 Planned now:
@@ -638,6 +692,7 @@ Examples:
 - unstable behavior;
 - unclear contract;
 - missing auth/setup mechanism;
+- missing E2E mailbox, reset-link, reset-token, payment, or cleanup strategy (note as E2E journey plan blocker, not feature plan E2E coverage);
 - missing product requirement;
 - automation cost higher than value.
 
@@ -649,8 +704,11 @@ Examples:
 
 - `/implement-api-batch`;
 - `/implement-ui-batch`;
+- `/plan-e2e-journey` (only when an E2E Note exists);
 - `/implement-visual-checkpoint`;
 - `/create-builder`.
+
+Do **not** recommend `/implement-e2e-flow` from feature coverage plans. E2E requires a separate journey plan at `specs/e2e/<journey>.md`.
 
 Recommended commands are output only.
 
@@ -664,6 +722,8 @@ This skill is complete when:
 
 - each behavior has a recommended primary test level;
 - UI tests are justified by distinct user-facing value;
+- E2E is **not** included in the feature plan;
+- potential E2E journey candidates are noted with path to `specs/e2e/<journey>.md` when applicable;
 - UI scenarios include unique UI risk and why API/schema is not sufficient;
 - API tests cover contract or backend risks;
 - documented API negative/error behavior is planned or blocked/postponed with reason;
@@ -675,6 +735,7 @@ This skill is complete when:
 - API coverage ready to implement now is clear, if applicable;
 - UI coverage ready to implement now is clear, if applicable;
 - blocked and postponed API/UI coverage is clearly explained;
+- full forgot-password E2E is noted as a separate journey plan candidate and remains blocked or postponed without mailbox/reset-link access and safe disposable-user or cleanup strategy;
 - visual checkpoints are planned or explicitly postponed;
 - schema/contract checks are planned or explicitly postponed;
 - implementation details are not listed as standalone scenarios;
@@ -685,8 +746,3 @@ This skill is complete when:
 - API Implementation Brief is actionable, if API coverage exists;
 - UI Implementation Brief is actionable, if UI coverage exists;
 - blockers and missing contract details are documented.
-
-The goal is to choose the right test level for each behavior before implementation.
-
-Do not implement tests during this skill.
-

@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import {
   expectDuplicateConflictResponse,
   expectRegistrationValidationErrorsForField,
-  expectUserResponseSchema,
 } from '../../../src/test/assertions/api/registration-response.assertion';
+import { expectUserResponseSchema } from '../../../src/test/assertions/api/user-response.assertion';
 import { registrationUserRequestBuilder } from '../../../src/test/data/builders/registration-user-request.builder';
 
 const REGISTER_ENDPOINT = '/users/register';

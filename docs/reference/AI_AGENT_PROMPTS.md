@@ -37,14 +37,34 @@ Put project-specific structure into the project map.
 8. Refactor / Heal / Harden only if needed
 ```
 
+For critical full journeys, plan and implement separately:
+
+```text
+1. /plan-e2e-journey
+2. Review the E2E journey plan
+3. Implement selected E2E coverage marked ready to implement now, if present
+4. Review Generated Code Quality
+5. Run Verification
+```
+
+Planning separation:
+
+```text
+specs/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
+specs/e2e/<journey>.md = E2E journey plans (full user/business flows only)
+```
+
 Rules of thumb:
 
 - Do not implement API and UI in one agent run.
+- Do not implement E2E together with API or UI in one agent run unless explicitly approved.
+- Feature coverage plans do not include E2E.
 - Use one main skill per task.
 - Do not create builders, clients, fixtures, schemas, components, or helpers speculatively.
 - Use ready to implement now / blocked-postponed, not first batch / later batch.
 - API should own backend contract, schema, negative, boundary, auth, filtering, sorting, and data predicate risks.
 - UI should own distinct user-facing browser behavior.
+- E2E should own critical full journeys with safe setup, data, cleanup, and meaningful final assertions.
 - Visual checks should cover visual risk only.
 - If the plan is too vague for UI or API implementation, refine the relevant implementation brief before coding.
 - If a test fails, use healing before refactoring.
@@ -125,7 +145,13 @@ Output:
 - include API/UI/visual/schema/not automated decisions
 - include API Implementation Brief
 - include UI Implementation Brief
+- note that E2E is planned separately in specs/e2e/<journey>.md when a full journey may be needed later
+- include E2E Note only (no E2E scenarios or implementation brief)
+- do not recommend /implement-e2e-flow directly from feature plans
+- if E2E is relevant, recommend /plan-e2e-journey first
 - include recommended next commands
+
+Do not include E2E Coverage in feature plans.
 
 Stop condition:
 - stop after creating or updating specs/<feature>.md
@@ -237,6 +263,7 @@ Focus:
 - schema validation decision is present for non-trivial API response shapes
 - UI scenarios have unique user-facing value
 - UI does not duplicate API/schema coverage without visible UI risk
+- E2E is not part of feature coverage plans — full journeys belong in specs/e2e/<journey>.md
 - ready now vs blocked/postponed is clear
 - implementation details are not listed as scenarios
 - recommended next commands are informational only
@@ -660,6 +687,184 @@ Report:
 - verification results
 - remaining risks
 ```
+
+---
+
+# 4a. E2E Prompts
+
+E2E is planned separately from feature coverage.
+
+```text
+specs/<feature>.md     = API, UI, schema, visual, not automated
+specs/e2e/<journey>.md = full user/business journeys only
+```
+
+Do not add E2E scenarios to feature plans.
+
+---
+
+## Prompt: Plan E2E Journey
+
+Use when a critical full user or business journey needs automation beyond API and UI coverage.
+
+```text
+/plan-e2e-journey
+
+E2E journey plan path:
+specs/e2e/<journey>.md
+
+Journey:
+<short journey name, e.g. checkout, registration-login>
+
+Task:
+Create an E2E journey plan for the selected full user/business flow.
+
+Scope:
+- planning only
+- allowed change: create/update only specs/e2e/<journey>.md
+- do not implement tests
+- do not add E2E to feature coverage plans
+
+Output must include:
+- business value
+- user journey steps
+- systems or states crossed
+- setup strategy
+- data strategy
+- cleanup or isolation strategy
+- final outcome/assertion
+- why API/UI/schema coverage is not sufficient
+- ready to implement now vs blocked/postponed
+- flakiness risks and external dependencies
+
+Stop condition:
+- stop after creating or updating the E2E journey plan
+- do not start implementation
+```
+
+### Example journey plans
+
+Registration → login:
+
+- path: `specs/e2e/registration-login.md`
+- journey: register disposable user, log in, reach authenticated account area
+- setup: API or UI registration precondition allowed; journey steps must stay visible in the spec
+
+Checkout:
+
+- path: `specs/e2e/checkout.md`
+- journey: select product, add to cart, complete checkout, verify order confirmation
+- setup: product/cart preconditions via approved API setup when available
+
+Forgot password (feature plan stays API + UI only):
+
+- feature plan: page render, validation feedback, submit confirmation, API contract
+- full reset journey belongs in `specs/e2e/forgot-password-reset.md` and remains blocked or postponed without mailbox/reset-link access and safe disposable-user or cleanup strategy
+
+---
+
+## Prompt: Implement E2E Flow From Journey Plan
+
+Use this after `specs/e2e/<journey>.md` includes at least one scenario marked ready to implement now.
+
+```text
+/implement-e2e-flow
+
+E2E journey plan:
+<path to specs/e2e/<journey>.md>
+
+Implementation scope:
+Implement only E2E coverage marked ready to implement now.
+
+Scenario:
+<exact E2E scenario name from the E2E journey plan>
+
+Context:
+<any important setup/data/cleanup/external dependency constraints>
+
+Rules:
+- E2E test only
+- full user/business journey only, not short UI functional coverage
+- use @e2e plus @smoke or @regression
+- do not use @ui by default for full E2E specs
+- keep the user journey visible in the spec
+- do not hide the journey in fixtures, hooks, Page Objects, or helper flow methods
+- API setup may be used only for backend preconditions or cleanup
+- API setup must not replace the UI action under test
+- do not validate full API contracts inside E2E
+- use safe isolated/disposable data
+- destructive flows require cleanup or isolation
+- do not implement blocked/postponed E2E scenarios
+- do not read E2E scenarios from feature coverage plans
+
+Expected location:
+- tests/e2e/...
+
+If no Playwright runner matches tests/e2e/**/*.e2e.spec.ts yet:
+- stop and report the config gap instead of guessing
+
+After changes:
+run impacted E2E spec using the browser project defined by the project map and quality gate from project map.
+
+Report:
+- files changed
+- E2E scenario implemented
+- setup strategy
+- data strategy
+- cleanup/isolation strategy
+- final assertions
+- tags used
+- verification results
+- remaining risks
+```
+
+### Example: Registration → Login
+
+```text
+/implement-e2e-flow
+
+E2E journey plan:
+specs/e2e/registration-login.md
+
+Implementation scope:
+Implement only E2E coverage marked ready to implement now.
+
+Scenario:
+Register disposable user and reach authenticated account area
+
+Context:
+Use approved API precondition setup if available; keep registration and login steps visible in the spec.
+```
+
+### Example: Checkout
+
+```text
+/implement-e2e-flow
+
+E2E journey plan:
+specs/e2e/checkout.md
+
+Implementation scope:
+Implement only E2E coverage marked ready to implement now.
+
+Scenario:
+Complete checkout from product selection to order confirmation
+
+Context:
+Use disposable test data; destructive order creation requires cleanup or safe isolation.
+```
+
+### Forgot Password Reminder
+
+Do not use E2E prompts for:
+
+- forgot-password page render;
+- empty-email validation feedback;
+- valid-email submit confirmation.
+
+Those remain API + UI coverage in the feature plan.
+
+Full Forgot Password E2E belongs in a separate journey plan and remains blocked or postponed without mailbox/reset-link access and safe disposable-user or cleanup strategy.
 
 ---
 
