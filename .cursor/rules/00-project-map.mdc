@@ -128,6 +128,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 AI_WORKFLOW_MAP.md
       - 📄 HOW_TO_USE_AI_AUTOMATION.md
     - 📄 AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md
+    - 📄 QUICK_REFERENCE.md
     - 📄 START_NEW_PROJECT.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
@@ -161,6 +162,10 @@ GitHub repository:
 Root documentation entry point:
 
 - `README.md` — high-level workflow kit overview, quick start, and workflow summary
+
+Daily-use quick reference cheat sheet:
+
+- `docs/QUICK_REFERENCE.md` — commands, workflows, tags, scripts, and guardrails at a glance
 
 Detailed new-project onboarding guide:
 
@@ -845,6 +850,7 @@ Playwright project status:
 
 User-facing workflow docs:
 
+- `docs/QUICK_REFERENCE.md` — daily-use quick reference cheat sheet
 - `docs/reference/AI_WORKFLOW_MAP.md`
 - `docs/reference/HOW_TO_USE_AI_AUTOMATION.md`
 - `docs/reference/AI_AGENT_PROMPTS.md`

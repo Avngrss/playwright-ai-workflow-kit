@@ -48,6 +48,8 @@ These are added per application through planning and implementation workflows.
 
 ## Quick Start
 
+**Daily cheat sheet:** [Quick Reference](docs/QUICK_REFERENCE.md)
+
 ```bash
 npm install
 ```
@@ -280,6 +282,7 @@ Source of truth for structure, tags, projects, apps, services, and env names: `.
 
 | Document | Purpose |
 |----------|---------|
+| [Quick Reference](docs/QUICK_REFERENCE.md) | Daily-use workflow cheat sheet |
 | [Start a New Project](docs/START_NEW_PROJECT.md) | Detailed onboarding guide |
 | [AI Skills and Commands Playbook](docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md) | Full skills and commands reference |
 | [How To Use AI Automation](docs/reference/HOW_TO_USE_AI_AUTOMATION.md) | Day-to-day AI workflow usage |

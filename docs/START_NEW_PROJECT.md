@@ -2,6 +2,8 @@
 
 **Overview:** [README](../README.md) — high-level workflow kit overview. This guide is the detailed onboarding walkthrough.
 
+**Daily cheat sheet:** [Quick Reference](QUICK_REFERENCE.md) — commands, workflows, tags, and scripts at a glance.
+
 ---
 
 ## Purpose
