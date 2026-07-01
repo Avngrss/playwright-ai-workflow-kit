@@ -15,10 +15,12 @@ This skill defines journey intent, boundary, setup/data/cleanup strategy, blocke
 Follow these rules:
 
 - E2E Testing Rules;
+- Cross-Browser and Responsive Testing Rules;
 - Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
 - Fixtures and Test Data Rules;
 - Configuration and Secrets Rules;
+- Multi-Target Environment Rules;
 - Test Isolation and State Rules;
 - Project Map Rules;
 - Agent Workflow.
@@ -88,6 +90,33 @@ Explicitly separate:
 - what remains covered by API/UI/schema/visual feature coverage.
 
 Do not duplicate lower-level checks.
+
+### 2a. Document Target Applications And Services
+
+Follow Multi-Target Environment Rules and the project map.
+
+Document for the journey:
+
+- every UI app crossed (entry, intermediate pages, final assertion app);
+- every API service crossed (setup, actions via backend, cleanup);
+- env name for each target from the project map;
+- explicit ownership for setup, UI actions, and final assertions;
+- precondition service when setup uses a different service from the UI flow.
+
+Simple project defaults:
+
+- UI: `UI_BASE_URL`
+- setup/precondition API: `UI_PRECONDITION_API_BASE_URL` or service documented in project map
+
+If service or environment ownership is unclear:
+
+- mark the journey **blocked**;
+- document missing target or env name;
+- do not use conditional readiness wording.
+
+Do not derive API host from UI host.
+
+Do not invent env variable names.
 
 ### 3. Define Setup/Data/Cleanup Strategy
 
@@ -164,6 +193,21 @@ Not covered by E2E:
 ## Entry Point
 
 <User state / starting point>
+
+## Target Applications / Services
+
+UI apps crossed:
+- <app name> — env: <name from project map> — role in journey: entry / action / final assertion
+
+API services crossed:
+- <service name> — env: <name from project map> — role: setup / cleanup / backend state
+
+Precondition service (if different from UI runtime backend):
+- <service> — env: <name from project map> — used for: <setup step>
+
+If only one UI app and one API service exist, state defaults from project map.
+
+If ownership is unclear, status must be **blocked**.
 
 ## Expected Outcome
 
@@ -266,6 +310,10 @@ Before marking a journey as **ready to implement now**, ALL of the following mus
 - **Cleanup or Isolation:**
   Either cleanup exists OR the system safely allows disposable data.
 
+- **Target Ownership:**
+  Every UI app and API service crossed is named with env names from the project map.
+  Setup, actions, and final assertion ownership are explicit.
+
 If ANY item is unclear or not guaranteed:
 
 → the journey MUST be marked as **blocked**.
@@ -285,6 +333,15 @@ Do not:
 - use conditional readiness wording;
 - mark a journey ready when any readiness checklist item is unclear.
 
+### Cross-Browser And Responsive Policy
+
+E2E cross-browser and responsive expansion is **not** the default.
+
+- document browser or viewport variants in `specs/e2e/<journey>.md` only when a documented browser or viewport risk exists;
+- limit cross-browser E2E to very small smoke journeys;
+- do not plan full E2E regression matrices across browsers or viewports by default;
+- if no browser-specific or viewport-specific E2E risk exists, state that no extra cross-browser or responsive E2E coverage is needed.
+
 ---
 
 ## Done Criteria
@@ -296,6 +353,7 @@ This skill is complete when:
 - boundary is explicit (covered vs not covered);
 - setup/data/cleanup strategy is defined;
 - determinism guarantees are documented;
+- target UI apps and API services are documented with env names from project map;
 - final assertion marker is explicit;
 - status is exactly **ready to implement now** or **blocked** (no conditional wording);
 - readiness checklist was applied;

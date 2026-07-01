@@ -8,6 +8,9 @@
     - 📁 commands/
       - 📄 add-allure-metadata.md
       - 📄 align-plan-with-tms.md
+      - 📄 audit-test-coverage.md
+      - 📄 audit-test-data-strategy.md
+      - 📄 audit-test-stability.md
       - 📄 heal-api-test.md
       - 📄 implement-api-batch.md
       - 📄 implement-e2e-flow.md
@@ -31,6 +34,7 @@
       - 📄 agent-workflow.mdc
       - 📄 api-architecture.mdc
       - 📄 api-schema-validation.rules.mdc
+      - 📄 browser-and-responsive-testing.rules.mdc
       - 📄 code-quality-cleanliness.mdc
       - 📄 configuration-secrets.rules.mdc
       - 📄 core-playwright.mdc
@@ -41,9 +45,12 @@
       - 📄 feature-lifecycle.mdc
       - 📄 fixtures-data.mdc
       - 📄 flakiness-policy.rules.mdc
+      - 📄 framework-starter-boundary.rules.mdc
+      - 📄 multi-target-environment.rules.mdc
       - 📄 project-scaling.mdc
       - 📄 reporting-allure.mdc
       - 📄 sorting-filtering.mdc
+      - 📄 test-abstraction-hygiene.rules.mdc
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
       - 📄 test-structure-and-tags.rules.mdc
@@ -51,6 +58,12 @@
       - 📄 visual-testing.mdc
     - 📁 skills/
       - 📁 align-plan-with-tms/
+        - 📄 SKILL.md
+      - 📁 audit-test-coverage/
+        - 📄 SKILL.md
+      - 📁 audit-test-data-strategy/
+        - 📄 SKILL.md
+      - 📁 audit-test-stability/
         - 📄 SKILL.md
       - 📁 configure-allure-reporting/
         - 📄 SKILL.md
@@ -78,9 +91,9 @@
         - 📄 SKILL.md
       - 📁 implement-visual-test/
         - 📄 SKILL.md
-      - 📁 plan-from-tms/
-        - 📄 SKILL.md
       - 📁 plan-e2e-journey/
+        - 📄 SKILL.md
+      - 📁 plan-from-tms/
         - 📄 SKILL.md
       - 📁 plan-test-coverage/
         - 📄 SKILL.md
@@ -112,79 +125,233 @@
       - 📄 AI_WORKFLOW_MAP.md
       - 📄 HOW_TO_USE_AI_AUTOMATION.md
     - 📄 AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md
+    - 📄 START_NEW_PROJECT.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
     - 📄 project-cartographer.mjs
   - 📁 specs/
-    - 📁 e2e/
-      - 📄 user-onboarding.md
-    - 📄 contact.md
-    - 📄 login.md
-    - 📄 product-price-range.md
-    - 📄 registration.md
-    - 📄 sorting-items.md
-  - 📁 src/
-    - 📁 test/
-      - 📁 assertions/
-        - 📁 api/
-        - 📁 ui/
-      - 📁 data/
-        - 📁 builders/
-        - 📁 generators/
-        - 📁 types/
-      - 📁 fixtures/
-        - 📄 api-preconditions.fixture.ts
-        - 📄 base.fixture.ts
-        - 📄 pages.fixture.ts
-        - 📄 test.ts
-      - 📁 pages/
-        - 📄 account.page.ts
-        - 📄 contact.page.ts
-        - 📄 login.page.ts
-        - 📄 products.page.ts
-        - 📄 register.page.ts
-      - 📁 reporting/
-        - 📄 allure-metadata.helper.ts
-      - 📁 schemas/
-        - 📁 api/
   - 📁 tests/
-    - 📁 api/
-      - 📁 contact/
-        - 📄 contact.api.spec.ts
-      - 📁 login/
-        - 📄 login.api.spec.ts
-      - 📁 products/
-        - 📄 product-price-range.api.spec.ts
-        - 📄 product-sorting.api.spec.ts
-      - 📁 registration/
-        - 📄 register-user.api.spec.ts
-    - 📁 e2e/
-    - 📁 ui/
-      - 📁 contact/
-        - 📄 contact.ui.spec.ts
-      - 📁 login/
-        - 📄 login.ui.spec.ts
-      - 📁 products/
-        - 📄 product-price-range.ui.spec.ts
-        - 📄 product-sorting.ui.spec.ts
-      - 📁 registration/
-        - 📁 register.ui.spec.ts-snapshots/
-        - 📄 register.ui.spec.ts
-    - 📄 seed.spec.ts
-  - 📄 .env
+  - 📄 .env.example
   - 📄 .gitignore
   - 📄 package-lock.json
   - 📄 package.json
   - 📄 playwright.config.ts
+  - 📄 README.md
 
 <!-- PROJECT_MAP_END -->
 
 
 ---
 
+## Framework Starter State
+
+This repository is a reusable Playwright + TypeScript automation framework starter.
+
+Root documentation entry point:
+
+- `README.md` — high-level starter overview, quick start, and workflow summary
+
+Detailed new-project onboarding guide:
+
+- `docs/START_NEW_PROJECT.md`
+
+The clean starter intentionally has **no project implementation layer** under `src/test/`.
+
+Skills and commands create the required `src/test/**` structure when implementation starts on a concrete application.
+
+Expected project implementation locations (created per application; **absent in clean starter**):
+
+- `src/test/pages/**` — Page Objects
+- `src/test/components/**` — Component Objects
+- `src/test/fixtures/**` — fixture chain; final entry point: `test.ts`
+- `src/test/assertions/**` — assertion helpers (API and UI)
+- `src/test/schemas/**` — API Zod schemas
+- `src/test/data/**` — builders, generators, datasets
+- `src/test/reporting/**` — Allure and reporting helpers
+- `src/test/api/clients/**` — thin API clients (when justified)
+- `src/test/assets/files/**` — safe synthetic upload assets
+
+Current empty project locations (add coverage when implementing a concrete product):
+
+- `tests/` — test specs root
+- `tests/api/` — API specs (`*.api.spec.ts`)
+- `tests/ui/` — UI specs (`*.ui.spec.ts`)
+- `tests/e2e/` — E2E specs (`*.e2e.spec.ts`)
+- `specs/` — feature coverage plans (`specs/<feature>.md`)
+- `specs/e2e/` — E2E journey plans (`specs/e2e/<journey>.md`)
+
+Quality gate:
+
+- `npm run qa:gate`
+
+Package scripts (starter-safe; all use `--pass-with-no-tests` so zero tests is valid):
+
+| Script | Purpose |
+|--------|---------|
+| `npm run test:list` | List discovered tests without executing them |
+| `npm run test:api` | Run API project (`api`) |
+| `npm run test:ui` | Run UI project (`ui-chromium`) |
+| `npm run test:e2e` | Run E2E project (`e2e`) |
+| `npm run test:smoke` | Run tests tagged `@smoke` across projects |
+| `npm run test:regression` | Run tests tagged `@regression` across projects |
+| `npm run test:visual` | Run tests tagged `@visual` across projects |
+| `npm run test:cross-browser` | Run tests tagged `@cross-browser` (coverage-type filter only) |
+| `npm run test:responsive` | Run tests tagged `@responsive` (coverage-type filter only) |
+
+Rules:
+
+- scripts do not assume project-specific tests, specs, or `src/test/**` exist;
+- layer scripts use only registered Playwright projects: `api`, `ui-chromium`, `e2e`;
+- smoke/regression/visual/cross-browser/responsive scripts filter by Playwright tags, not browser or device names;
+- `@cross-browser` and `@responsive` are coverage-type tags — they do not imply Firefox, WebKit, or mobile projects exist;
+- browser and viewport execution still depends on Playwright project configuration in `playwright.config.ts`;
+- do not add firefox/webkit/mobile scripts until matching projects are registered in the project map and config;
+- do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`.
+
+First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the starter.
+
+Coverage audit (review only; does not implement tests):
+
+- skill: `.cursor/skills/audit-test-coverage/SKILL.md`
+- command: `/audit-test-coverage`
+- compares feature plans (`specs/<feature>.md`), E2E journey plans (`specs/e2e/<journey>.md`), implemented tests, optional TMS mappings, and project map conventions
+- use after planning/implementation batches or before cleanup/starter conversion
+- reports missing ready coverage, unplanned tests, duplicate/wrong-layer coverage, blocked/postponed violations, TMS gaps, tag issues, and stale coverage-tied artifacts
+- does not modify files, implement tests, delete tests, update TMS, or publish results unless explicitly requested in the same task
+
+Test data strategy audit (review only; does not create or modify data):
+
+- skill: `.cursor/skills/audit-test-data-strategy/SKILL.md`
+- command: `/audit-test-data-strategy`
+- assesses data safety and maintainability across feature plans, E2E journey plans, specs, `src/test/data/**`, fixtures, and related setup
+- use before E2E implementation, before destructive flows, before cleanup/starter conversion, or when shared mutable data is suspected
+- detects shared mutable data, missing isolation/cleanup, inline random data, builder/generator/fixture misuse, E2E data policy gaps, and environment/service ownership issues
+- does not modify files, create builders, change tests, delete data, mutate environment, update TMS, or infer cleanup without evidence unless explicitly requested
+- for implementation after audit, use `/create-test-data-builder`, `/create-fixture`, `/plan-e2e-journey`, or heal skills as appropriate
+
+Rule references:
+
+- `.cursor/rules/fixtures-data.mdc`
+- `.cursor/rules/test-isolation-state.rules.mdc`
+- `.cursor/rules/multi-target-environment.rules.mdc`
+
+Stability audit (review only; does not heal tests):
+
+- skill: `.cursor/skills/audit-test-stability/SKILL.md`
+- command: `/audit-test-stability`
+- audits `tests/ui/**`, `tests/e2e/**`, and referenced Page Objects, fixtures, and assertion helpers for flaky patterns
+- use after UI/E2E implementation or before committing test changes; optional after failed runs when static review may reveal root cause
+- detects forbidden waits, retry anti-patterns, weak assertions, synchronization issues, hidden flows, debug artifacts, data instability, environment/config workarounds, and E2E-specific stability risks
+- does not modify files, fix tests, add waits/retries, weaken assertions, install browsers, or run broad suites unless explicitly requested
+- for actual fixes, use `/heal-ui-test` or `/heal-api-test`
+
+Rule reference:
+
+- `.cursor/rules/flakiness-policy.rules.mdc`
+
+---
+
+## Environment Variables
+
+Rule:
+
+- `.cursor/rules/multi-target-environment.rules.mdc`
+
+Starter env template:
+
+- `.env.example` — provider-agnostic placeholders only; safe to commit
+- `.env` — local values only; never commit
+
+Copy `.env.example` to `.env` locally and fill placeholders when needed.
+
+### Simple starter env model
+
+Single-application projects may use:
+
+```text
+UI_BASE_URL = UI application base URL for ui-chromium and e2e projects
+
+API_BASE_URL = API project/tests base URL
+
+UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
+
+UI_API_BASE_URL = optional documented fallback for UI precondition API base
+```
+
+Rules:
+
+- API tests use `API_BASE_URL`;
+- UI and E2E browser tests use `UI_BASE_URL`;
+- UI API precondition setup must use an API backend aligned with the UI runtime backend when preconditions are implemented;
+- specs must not read environment variables directly;
+- specs must not derive API host from UI host;
+- config/env access belongs in approved config or fixture layer.
+
+Do not hardcode product URLs in the starter. Set values in local `.env` or CI secrets for each concrete project.
+
+Example shape only (placeholders — not real URLs):
+
+```text
+UI_BASE_URL=https://your-ui-host.example
+API_BASE_URL=https://your-api-host.example
+UI_PRECONDITION_API_BASE_URL=https://your-api-host.example
+```
+
+### Multi-target env model
+
+Real projects with multiple UI applications, microfrontends, or API/microservices must extend env ownership here before use.
+
+This project map is the **source of truth** for app and service env names.
+
+Examples only — register actual names per concrete project:
+
+```text
+CUSTOMER_UI_BASE_URL = customer-facing UI app
+ADMIN_UI_BASE_URL = admin UI app
+CHECKOUT_UI_BASE_URL = checkout UI app or microfrontend
+
+AUTH_API_BASE_URL = authentication service
+CATALOG_API_BASE_URL = catalog service
+ORDER_API_BASE_URL = order service
+PAYMENT_API_BASE_URL = payment service
+```
+
+Multi-target rules:
+
+- agents must not invent env variable names;
+- feature plans must identify target UI app(s), API service(s), and precondition service(s) when more than one exists;
+- E2E journey plans must document every UI app and service crossed;
+- do not use generic `API_BASE_URL` when the feature belongs to a specific service;
+- do not use generic `UI_BASE_URL` when the feature belongs to a specific UI app;
+- update `.env.example` with commented examples that match registered names;
+- if target ownership is unclear, mark blocked/postponed or request clarification before implementation.
+
+---
+
+## Fixture Entry Point
+
+When a concrete project adds implementation, the final fixture entry point for specs is:
+
+- `src/test/fixtures/test.ts`
+
+Import pattern (after implementation creates the fixture chain):
+
+```ts
+import { test, expect } from "../../src/test/fixtures/test";
+```
+
+Rules:
+
+- specs must import only from the final fixture entry point;
+- extend fixture layers in project-specific files when a concrete product is added;
+- skills such as `create-fixture` and implementation skills create the required fixture chain;
+- the clean starter does not ship a fixture entry point.
+
+---
+
 ## Test Assets
 
-Upload test files:
+Upload test files (when a concrete project adds UI upload coverage):
 
 - `src/test/assets/files/`
 
@@ -214,7 +381,7 @@ Allure reporter:
 
 - configured in `playwright.config.ts`
 
-Allure metadata helper:
+Allure metadata helper (created per project when reporting is implemented):
 
 - `src/test/reporting/allure-metadata.helper.ts`
 
@@ -227,6 +394,8 @@ Rules:
 - UI and API specs may use the shared Allure metadata helper;
 - specs own concrete Allure metadata values;
 - shared reporting helpers own reusable metadata application logic;
+- Allure metadata may describe reporting dimensions such as browser/project, viewport, layer, feature, story, component, and coverage type;
+- Allure metadata must not replace Playwright tags;
 - Page Objects and Components must not use Allure;
 - API clients must not use Allure;
 - builders and generators must not use Allure;
@@ -246,7 +415,7 @@ Visual tests:
 
 Visual tag:
 
-- `@visual`
+- `@visual` (see Tag Registry)
 
 Rules:
 
@@ -266,35 +435,18 @@ Skill:
 
 ## API
 
-API base URL:
-
-- `https://api.practicesoftwaretesting.com`
-
 Environment variables:
 
-- `API_BASE_URL` is used only by the Playwright `api` project and API tests;
-- `UI_PRECONDITION_API_BASE_URL` is used by `src/test/fixtures/api-preconditions.fixture.ts` for UI API precondition setup;
-- `UI_API_BASE_URL` is an optional fallback for UI API precondition setup when `UI_PRECONDITION_API_BASE_URL` is not provided;
-- UI precondition API base must point to the same backend used by UI runtime API calls.
-
-UI precondition fixture ownership and usage:
-
-- `registrationApiPreconditionSetup` is owned by `src/test/fixtures/api-preconditions.fixture.ts`;
-- fixture exposure follows `api-preconditions.fixture.ts` -> `pages.fixture.ts` -> `test.ts`;
-- UI specs must use the fixture for API setup and keep UI action under test explicit in spec steps;
-- setup through `registrationApiPreconditionSetup` verifies only required precondition creation success and returns created user credentials;
-- UI specs must not read environment variables directly;
-- UI specs must not derive API host from UI host.
+- `API_BASE_URL` — API project/tests base URL;
+- `UI_PRECONDITION_API_BASE_URL` — optional API backend for UI/E2E precondition setup when documented;
+- `UI_API_BASE_URL` — optional fallback for UI precondition API base.
 
 API documentation / contract source:
 
-- `https://api.practicesoftwaretesting.com/api/documentation`
+- define in project-specific feature plans at `specs/<feature>.md`;
+- do not hardcode product API URLs in the starter.
 
-API docs type:
-
-- Swagger UI / OpenAPI 3.0
-
-API specs:
+API specs (when added):
 
 - `tests/api/**/*.api.spec.ts`
 
@@ -302,32 +454,126 @@ API Playwright project:
 
 - `api`
 
-API clients:
+Shared schema assertion helper (created per project when API schema validation is implemented):
+
+- `src/test/assertions/api/zod-schema.assertion.ts`
+
+API clients (when added):
 
 - `src/test/api/clients/`
 
-API schemas:
+API schemas (when added):
 
-- `src/test/api/schemas/`
+- `src/test/schemas/api/`
 
-API types:
+API types (when added):
 
 - `src/test/api/types/`
 
+UI precondition setup (when added for a concrete project):
+
+- implement in approved project fixture layers;
+- UI specs must not read environment variables directly;
+- UI specs must not derive API host from UI host;
+- setup must verify only required precondition creation and must not hide the UI action under test.
+
 Rules:
 
-- API tests must use the API documentation as contract source;
+- API tests must use the documented API contract as source of truth;
 - API tests must not guess payload fields, status codes, or response fields;
 - if the API contract is unclear or incomplete, stop and report missing information;
 - API tests use request/response model;
-- API tests must not use Page Objects;
-- API tests must not use Component Objects;
-- API tests must not use browser page interactions;
+- API tests must not use Page Objects or Component Objects;
 - API clients are thin and optional;
-- API clients must not contain assertions;
-- API clients must not use Allure;
+- API clients must not contain assertions or Allure usage;
 - API specs may use the shared Allure metadata helper.
 
+---
+
+## Tag Registry
+
+Rule reference:
+
+- `.cursor/rules/test-structure-and-tags.rules.mdc`
+
+Registered Playwright tags by category:
+
+Layer tags:
+
+- `@api`
+- `@ui`
+- `@e2e`
+- `@visual`
+
+Execution scope tags:
+
+- `@smoke`
+- `@regression`
+
+Coverage-type tags:
+
+- `@cross-browser`
+- `@responsive`
+
+Tag rules:
+
+- `@cross-browser` and `@responsive` are coverage-type tags, not browser or device tags;
+- use `@cross-browser` or `@responsive` only when explicitly planned and the scenario needs that coverage classification;
+- browser names must not be used as tags: `@chromium`, `@firefox`, `@webkit`;
+- viewport or device names must not be used as tags: `@mobile`, `@tablet`, `@desktop`;
+- browser and viewport selection belongs to Playwright projects documented in this project map;
+- reporting dimensions such as browser, project, viewport, feature, story, and coverage type may be represented through Allure reporting metadata, not invented Playwright tags;
+- Allure metadata must not replace required Playwright layer or execution tags;
+- agents must not invent new tags without a project map update.
+
+Feature or domain tags may be added only when registered in this project map or an approved tag registry.
+
+---
+
+## Cross-Browser And Responsive Testing
+
+Rule:
+
+- `.cursor/rules/browser-and-responsive-testing.rules.mdc`
+
+Default policy:
+
+- broad browser/device matrix is **not** the default;
+- do not run every UI or E2E test in every browser or viewport by default;
+- API and schema tests are browser-independent and must not be duplicated per browser;
+- cross-browser and responsive coverage are focused additions for documented browser or viewport risks only.
+
+Current Playwright browser projects (`playwright.config.ts`):
+
+- `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `api` — API specs; no browser
+- `e2e` — E2E specs (`*.e2e.spec.ts`); uses default browser/viewport from shared `use` config unless a project override is added later
+
+Not configured yet:
+
+- dedicated Firefox or WebKit UI projects;
+- dedicated mobile/tablet viewport projects;
+- dedicated cross-browser or responsive CI jobs
+
+Tag policy:
+
+- see Tag Registry for registered tags and forbidden browser/device tag names;
+- use `@cross-browser` or `@responsive` only when explicitly planned;
+- browser and viewport details belong to Playwright project configuration and Allure reporting metadata.
+
+Planning:
+
+- feature plans may include Cross-browser coverage, Responsive coverage, or an explicit note that no extra coverage is needed;
+- E2E cross-browser expansion belongs in `specs/e2e/<journey>.md`, not feature coverage plans;
+- do not invent browser, device, or unregistered coverage-type tags.
+
+Skills:
+
+- planning: `.cursor/skills/plan-test-coverage/SKILL.md`
+- UI implementation: `.cursor/skills/implement-ui-feature/SKILL.md`
+- review: `.cursor/skills/review-generated-code-quality/SKILL.md`
+
+---
 
 ## Test Strategy
 
@@ -402,11 +648,11 @@ Implementation policy:
 
 Layer tag:
 
-- `@e2e`
+- `@e2e` (see Tag Registry)
 
 Required execution-scope tags:
 
-- `@smoke` or `@regression` (every E2E test must also have one of these)
+- `@smoke` or `@regression` (see Tag Registry; every E2E test must also have one of these)
 
 Layer tag policy:
 
@@ -474,23 +720,29 @@ Rule:
 
 - `.cursor/rules/tms-integration.rules.mdc`
 
-Provider:
+Concept:
 
-- Qase
+- TMS integration is optional and provider-agnostic at the starter level
+- TMS cases are planning input and traceability source
+- TMS reporter/result publishing is separate and not configured by default
+
+Currently supported example provider:
+
+- **Qase** — via user/global Cursor MCP when configured (server name `qase`)
+- other TMS providers may be supported later through approved integration paths
 
 Stable project code:
 
-- `TOOLSSHOP`
+- user-provided per concrete project and TMS provider (example only: `MYPROJECT`)
 
 Project MCP (`.cursor/mcp.json`):
 
 - `playwright` — project-level MCP; safe to commit in repo
 
-Qase MCP:
+TMS credentials:
 
-- server name: `qase`
-- configured in user/global Cursor MCP settings (not in project `.cursor/mcp.json`)
-- requires `QASE_API_TOKEN` in user/global MCP config; never commit real tokens to repo
+- belong in user/global MCP settings, extension settings, or local secret storage
+- must not be stored in repository env files, committed MCP config, docs, rules, skills, commands, or specs
 
 Default mode:
 
@@ -530,7 +782,6 @@ Existing-plan workflow:
 
 Principles:
 
-- TMS cases are planning input and traceability source
 - do not assume 1 TMS case equals 1 Playwright test
 - align TMS intent with feature plans; do not replace plans blindly
 - API owns backend contract and data predicates
@@ -544,9 +795,56 @@ TMS writes:
 
 Secrets:
 
-- real Qase tokens must not be committed
-- real Qase tokens must not be stored in docs, rules, skills, commands, specs, or committed MCP config
+- real TMS tokens must not be committed
+- real TMS tokens must not be stored in docs, rules, skills, commands, specs, or committed MCP config
 
 Reporter status:
 
-- Qase reporter/result publishing is not configured yet
+- TMS reporter/result publishing is not configured yet
+
+---
+
+## Framework Starter Boundary
+
+Rule:
+
+- `.cursor/rules/framework-starter-boundary.rules.mdc`
+
+Purpose:
+
+- distinguish reusable framework starter content from project-specific artifacts before cleanup or deletion;
+- require audit-before-delete classification for starter conversion work.
+
+Reusable starter content normally includes:
+
+- `.cursor/rules/**`
+- `.cursor/skills/**`
+- `.cursor/commands/**`
+- `docs/**` when reusable for any project
+- package/config/tooling files when generic or reviewed
+- safe committed project MCP config with Playwright only
+- generic scripts such as `scripts/check-conventions.mjs`
+
+Project-specific artifacts normally include:
+
+- `tests/api/**`, `tests/ui/**`, `tests/e2e/**`
+- `specs/<feature>.md`, `specs/e2e/<journey>.md`
+- current-app Page Objects, schemas, assertion helpers, builders, generators, fixtures, and visual baselines
+- product-specific project map entries until generalized
+
+Generated/runtime artifacts normally include:
+
+- `.playwright-mcp/**`
+- `test-results/**`, `playwright-report/**`, `allure-results/**`, `allure-report/**`
+- local secrets, temporary debug scripts, and non-starter IDE MCP config
+
+Cleanup policy:
+
+- audit before deletion;
+- classify each file as keep, remove, generated, or unsure;
+- do not delete unsure files without user decision;
+- do not delete framework docs, rules, skills, or commands;
+- do not delete package/config files unless explicitly reviewed;
+- do not keep sample tests as framework content unless explicitly marked as templates or examples.
+
+Cleanup report must list removed files, preserved files, unsure files left untouched, verification results, and remaining risks.

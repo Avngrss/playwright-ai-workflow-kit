@@ -1,27 +1,27 @@
 {
-  "name": "gh-action",
+  "name": "playwright-automation-framework-starter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Reusable Playwright + TypeScript test automation framework starter",
   "main": "index.js",
   "scripts": {
-    "test:ui": "npx playwright test tests/ui --project=ui-chromium",
-    "test:api": "npx playwright test tests/api --project=api",
+    "test": "npx playwright test --pass-with-no-tests",
+    "test:list": "npx playwright test --list --pass-with-no-tests",
+    "test:api": "npx playwright test --project=api --pass-with-no-tests",
+    "test:ui": "npx playwright test --project=ui-chromium --pass-with-no-tests",
+    "test:e2e": "npx playwright test --project=e2e --pass-with-no-tests",
+    "test:smoke": "npx playwright test --grep @smoke --pass-with-no-tests",
+    "test:regression": "npx playwright test --grep @regression --pass-with-no-tests",
+    "test:visual": "npx playwright test --grep @visual --pass-with-no-tests",
+    "test:cross-browser": "npx playwright test --grep @cross-browser --pass-with-no-tests",
+    "test:responsive": "npx playwright test --grep @responsive --pass-with-no-tests",
     "project-map:update": "node scripts/project-cartographer.mjs",
     "conventions:check": "node scripts/check-conventions.mjs",
     "qa:gate": "npm run conventions:check"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Avngrss/github-actions.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Avngrss/github-actions/issues"
-  },
-  "homepage": "https://github.com/Avngrss/github-actions#readme",
   "devDependencies": {
     "@playwright/mcp": "^0.0.75",
     "@playwright/test": "^1.60.0",

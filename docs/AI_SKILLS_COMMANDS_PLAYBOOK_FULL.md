@@ -14,6 +14,8 @@ Use this document to decide:
 
 The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the framework architecture.
 
+**New to this starter?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands.
+
 ---
 
 ## Core Model
@@ -32,6 +34,64 @@ Use one main skill per task.
 Do not use generic "write code" prompts.
 
 Choose the smallest skill that matches the task.
+
+---
+
+## Package Test Scripts
+
+Starter-safe scripts (all use `--pass-with-no-tests`; zero tests is valid):
+
+| Script | Purpose |
+|--------|---------|
+| `npm run qa:gate` | Convention checks |
+| `npm run test:list` | List tests without executing |
+| `npm run test:api` | API project (`api`) |
+| `npm run test:ui` | UI project (`ui-chromium`) |
+| `npm run test:e2e` | E2E project (`e2e`) |
+| `npm run test:smoke` | Tests tagged `@smoke` |
+| `npm run test:regression` | Tests tagged `@regression` |
+| `npm run test:visual` | Tests tagged `@visual` |
+| `npm run test:cross-browser` | Tests tagged `@cross-browser` (coverage-type only) |
+| `npm run test:responsive` | Tests tagged `@responsive` (coverage-type only) |
+
+Rules:
+
+- layer scripts use only registered Playwright projects — no Firefox/WebKit/mobile scripts until projects exist;
+- smoke/regression/visual scripts filter by tags, not paths;
+- cross-browser/responsive scripts filter planned coverage-type tags — they do not run a browser matrix;
+- browser/viewport execution still depends on `playwright.config.ts` projects;
+- first real tests come from `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
+
+---
+
+## Framework Starter Cleanup
+
+Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+
+Rule:
+
+- `.cursor/rules/framework-starter-boundary.rules.mdc`
+
+Keep:
+
+- rules, skills, commands, reusable docs, generic scripts, and domain-neutral starter mechanisms
+
+Remove or exclude unless explicitly approved as templates:
+
+- project tests, specs, and the full `src/test/**` implementation layer (Page Objects, fixtures, schemas, helpers, data, reporting helpers, and related assets)
+- product-specific docs
+
+The clean starter intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
+
+Do not delete:
+
+- ambiguous files without user decision;
+- framework docs/rules/skills/commands;
+- package/config files without explicit review
+
+Generated/runtime artifacts such as `.playwright-mcp/**`, reports, and local run output are not starter source content.
+
+Cleanup work must produce a report with removed files, preserved files, unsure files, verification, and remaining risks.
 
 ---
 
@@ -63,6 +123,26 @@ Use the lowest reliable level that proves the behavior.
 - **visual** — meaningful layout or appearance regression inside stable UI states
 - **schema/contract** — response or payload shape validation
 - **not automated** — manual, unstable, duplicate, or low-value automation
+
+Cross-browser and responsive coverage are **not** default matrix expansion.
+
+They are focused additions for documented browser or viewport risks on top of normal UI coverage.
+
+- do not run every UI or E2E test in every browser or viewport by default
+- API and schema tests are browser-independent
+- E2E cross-browser should stay limited to very small smoke journeys and be planned in `specs/e2e/<journey>.md`
+- responsive coverage should use functional assertions unless planned visual coverage with approved baselines exists
+
+Rule:
+
+- `.cursor/rules/browser-and-responsive-testing.rules.mdc`
+
+Tag and metadata policy:
+
+- Playwright tags describe test intent: layer (`@api`, `@ui`, `@e2e`, `@visual`), execution scope (`@smoke`, `@regression`), optional registered coverage type (`@cross-browser`, `@responsive`);
+- do not use browser or device names as tags: `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop`;
+- browser and viewport belong to Playwright projects (`ui-chromium`, `api`, `e2e`) and Allure reporting metadata;
+- Allure metadata must not replace Playwright tags.
 
 Not every UI test is E2E.
 
@@ -107,6 +187,9 @@ Examples:
 - `/plan-e2e-journey`
 - `/implement-e2e-flow`
 - `/review-generated`
+- `/audit-test-coverage`
+- `/audit-test-data-strategy`
+- `/audit-test-stability`
 - `/heal-api-test`
 
 Commands should stay short. Do not copy full rules or full skills into commands.
@@ -143,6 +226,9 @@ Report:
 → /implement-ui-batch (all UI coverage ready to implement now)
 → /implement-visual-checkpoint, only if planned/requested
 → /review-generated
+→ /audit-test-coverage (optional; plan vs implemented coverage alignment)
+→ /audit-test-data-strategy (optional; before destructive flows or shared-data review)
+→ /audit-test-stability (optional; flaky patterns before commit)
 → /run-verification
 → /refactor-overengineering or /heal-api-test / /heal-ui-test only if needed
 ```
@@ -151,9 +237,13 @@ Report:
 
 ```text
 /plan-e2e-journey
-→ review journey plan (optional)
+→ review journey plan
+→ /audit-test-data-strategy (optional; E2E data/cleanup/isolation before implementation)
 → /implement-e2e-flow specs/e2e/<journey>.md (only when journey plan has ready-to-implement-now scenarios)
 → /review-generated
+→ /audit-test-coverage (optional; journey plan vs E2E specs)
+→ /audit-test-data-strategy (optional; E2E data policy vs implementation)
+→ /audit-test-stability (optional; E2E stability patterns before commit)
 → /run-verification
 ```
 
@@ -196,19 +286,20 @@ Do not add E2E scenarios to feature plans — use `specs/e2e/<journey>.md` inste
 
 ## TMS Planning Conventions
 
-- Provider: Qase (`TOOLSSHOP` project code; MCP server name `qase`).
-- Qase MCP: user/global Cursor MCP settings (not project `.cursor/mcp.json`); requires `QASE_API_TOKEN` in user config.
+- TMS integration is optional and provider-agnostic at the starter level.
+- **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`); other TMS providers may be added later.
+- TMS credentials belong in user/global MCP settings or local secret storage — not in repository env files or committed MCP config.
 - Project MCP (`.cursor/mcp.json`): `playwright` only — project-level; safe to commit.
 - Default mode: **read-only** (list/read cases; no writes, runs, or result publishing without explicit approval).
 - TMS cases are **planning input and traceability** — do not assume 1 TMS case = 1 Playwright test.
 - TMS Source and TMS Mapping live in `specs/<feature>.md` (TMS-aligned plan).
-- Qase reporter/result publishing is **not configured** — do not add reporter integration in planning docs or agents by default.
-- Never commit or document real Qase tokens in repo files.
+- TMS reporter/result publishing is **not configured** — separate from read-only TMS planning; do not add reporter integration by default.
+- Never commit or document real TMS tokens in repo files.
 
 | Command | When |
 |---|---|
 | `/plan-from-tms` | No `specs/<feature>.md` yet; TMS cases are main input |
-| `/align-plan-with-tms` | Plan exists; align with Qase suite/cases |
+| `/align-plan-with-tms` | Plan exists; align with TMS suite/cases |
 | `/plan-feature` | Plan from UI/API/requirements (not TMS-first) |
 
 ---
@@ -319,6 +410,9 @@ Output:
 - API coverage blocked/postponed
 - UI coverage ready to implement now
 - UI coverage blocked/postponed
+- cross-browser/responsive decisions or explicit no-extra-coverage note
+- Cross-Browser Implementation Brief when applicable
+- Responsive Implementation Brief when applicable
 - visual checkpoints planned now
 - visual checkpoints postponed
 - schema/contract checks
@@ -356,7 +450,7 @@ Execution mode guidance:
 
 ### Purpose
 
-Create `specs/<feature>.md` from Qase/TMS cases when **no feature plan exists**.
+Create `specs/<feature>.md` from TMS cases when **no feature plan exists**.
 
 ### Skill
 
@@ -366,13 +460,13 @@ Create `specs/<feature>.md` from Qase/TMS cases when **no feature plan exists**.
 
 ### Use When
 
-- Qase suite/cases are the primary planning input;
+- TMS suite/cases are the primary planning input;
 - `specs/<feature>.md` does not exist yet.
 
 ### Do Not Use When
 
 - `specs/<feature>.md` already exists (use `/align-plan-with-tms`);
-- implementing tests or modifying Qase entities.
+- implementing tests or modifying TMS entities.
 
 ### Template
 
@@ -383,8 +477,8 @@ Feature:
 <feature name>
 
 TMS:
-- provider: Qase
-- project code: TOOLSSHOP
+- provider: <TMS provider, e.g. Qase>
+- project code: <TMS project code>
 - suite id: <suite id>
 - suite title/path: <suite title/path>
 - cases: <all cases in suite / selected ids>
@@ -397,7 +491,7 @@ Scope:
 Stop condition:
 - stop after creating/updating specs/<feature>.md
 - do not implement tests
-- do not create/update Qase entities, runs, or publish results
+- do not create/update TMS entities, runs, or publish results
 ```
 
 ---
@@ -406,7 +500,7 @@ Stop condition:
 
 ### Purpose
 
-Align an **existing** `specs/<feature>.md` with Qase/TMS cases.
+Align an **existing** `specs/<feature>.md` with TMS cases.
 
 ### Skill
 
@@ -422,7 +516,7 @@ Align an **existing** `specs/<feature>.md` with Qase/TMS cases.
 ### Do Not Use When
 
 - no plan exists (use `/plan-from-tms`);
-- implementing tests or modifying Qase entities.
+- implementing tests or modifying TMS entities.
 
 ### Template
 
@@ -433,8 +527,8 @@ Feature plan:
 specs/<feature>.md
 
 TMS:
-- provider: Qase
-- project code: TOOLSSHOP
+- provider: <TMS provider, e.g. Qase>
+- project code: <TMS project code>
 - suite id: <suite id>
 - suite title/path: <suite title/path>
 - cases: <all cases in suite / selected ids>
@@ -527,17 +621,17 @@ Report:
 /implement-api-batch
 
 Feature plan:
-@specs/contact.md
+@specs/<feature>.md
 
 Implementation scope:
-Implement all Contact API coverage from the plan that is currently safe and unblocked.
+Implement all API coverage from the plan that is currently safe and unblocked.
 
 Input:
-- API contract: https://api.practicesoftwaretesting.com/api/documentation#/Contact
+- API contract: <swagger/openapi/docs link from the feature plan>
 - existing builder/client/helpers: check existing project first
 
 Context:
-If authenticated Contact endpoints require missing role-capable auth/setup, report them as blocked instead of inventing setup architecture.
+If authenticated endpoints require missing role-capable auth/setup, report them as blocked instead of inventing setup architecture.
 ```
 
 ---
@@ -607,14 +701,14 @@ Report:
 /implement-ui-batch
 
 Feature plan:
-@specs/contact.md
+@specs/<feature>.md
 
 Implementation scope:
-Implement all Contact UI coverage from the plan that is currently safe and unblocked.
+Implement all UI coverage from the plan that is currently safe and unblocked.
 
 Context:
 No visual screenshots in this step.
-If signed-in Contact scenario requires missing approved auth/setup, report it as blocked instead of inventing setup architecture.
+If a signed-in scenario requires missing approved auth/setup, report it as blocked instead of inventing setup architecture.
 ```
 
 ---
@@ -740,14 +834,22 @@ Forgot password (feature plan — API + UI only):
 
 Full forgot-password reset plus login with a new password belongs in a separate E2E journey plan (`specs/e2e/forgot-password-reset.md` or similar) and remains blocked or postponed without mailbox/reset-link access and safe disposable-user or cleanup strategy.
 
-Checkout or onboarding (E2E journey plan examples):
+Checkout or onboarding (E2E journey plan examples only):
 
-- registration followed by login and authenticated account access;
-- product selection followed by cart state and checkout completion.
+- sign-up followed by login and authenticated account access;
+- item selection followed by cart state and order completion.
 
 ### Playwright Runner Note
 
-A dedicated E2E Playwright project is configured in `playwright.config.ts`.
+Current browser projects in `playwright.config.ts`:
+
+- `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `api` — API specs; no browser
+- `e2e` — E2E specs (`*.e2e.spec.ts`)
+
+Broad browser/device matrix is **not** the default.
+
+Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
 
 If no runner matches the intended E2E spec path or pattern, stop and report the config gap.
 
@@ -1269,7 +1371,182 @@ Recommended next step must be one of:
 - request changes
 ```
 
-**Note:** `/review-generated` (Review Generated Code Quality) is the **primary** post-implementation review. Use `/review-ui-suite` only for broader UI suite audits.
+**Note:** `/review-generated` (Review Generated Code Quality) is the **primary** post-implementation code review. Use `/audit-test-coverage` for plan-to-test coverage alignment. Use `/audit-test-data-strategy` for test data safety, isolation, and cleanup policy review. Use `/audit-test-stability` for flaky-pattern and synchronization audits before commit. Use `/review-ui-suite` only for broader UI suite audits.
+
+---
+
+## `/audit-test-data-strategy`
+
+### Purpose
+
+Audit test data strategy for shared mutable data, isolation, cleanup, generation, builders, fixtures, and E2E data risks.
+
+Audit/review only — does **not** create or modify data by default.
+
+### Skill
+
+```text
+@.cursor/skills/audit-test-data-strategy/SKILL.md
+```
+
+### Use When
+
+- before E2E implementation or destructive flows;
+- before cleanup or starter conversion;
+- when shared users, carts, orders, or fixed entities are suspected;
+- when inline random data or fixture/data misuse is suspected.
+
+### Do Not Use When
+
+- the task is to create builders or fixtures (use create skills);
+- the task is to fix failing tests (use heal skills);
+- only flaky synchronization patterns are in scope (use `/audit-test-stability`).
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/audit-test-data-strategy/SKILL.md
+
+Plans/tests/data paths:
+<specs, tests, src/test/data, src/test/fixtures — or empty>
+
+Scope:
+- audit only
+- do not modify files
+- do not create or change data
+- do not delete data
+- do not mutate environment
+
+Report:
+- summary
+- safe data patterns found
+- data risks
+- destructive flow risks
+- cleanup/isolation gaps
+- builder/generator findings
+- fixture findings
+- E2E data risks
+- recommended next actions
+```
+
+---
+
+## `/audit-test-stability`
+
+### Purpose
+
+Audit UI/E2E tests for flaky patterns, weak synchronization, hidden journeys, debug artifacts, and stability risks.
+
+Audit/review only — does **not** heal tests by default.
+
+### Skill
+
+```text
+@.cursor/skills/audit-test-stability/SKILL.md
+```
+
+### Use When
+
+- after UI or E2E implementation;
+- before committing new or changed UI/E2E tests;
+- when retry logic, sleeps, or weak assertions are suspected;
+- after a failed run when static review may reveal root-cause patterns.
+
+### Do Not Use When
+
+- the task is to fix a failing test (use `/heal-ui-test` or `/heal-api-test`);
+- the task is plan-to-test coverage alignment (use `/audit-test-coverage`);
+- only API tests changed with no UI/E2E stability risk.
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/audit-test-stability/SKILL.md
+
+Test paths:
+<tests/ui/... tests/e2e/... or empty>
+
+Optional failed spec/report:
+<failure output or "none">
+
+Scope:
+- audit only
+- do not modify files
+- do not fix tests
+
+Report:
+- summary
+- critical flaky risks
+- major stability risks
+- minor maintainability risks
+- affected files
+- root-cause category
+- recommended fix strategy
+- recommended next command
+```
+
+For actual fixes after audit, use `/heal-ui-test`.
+
+---
+
+## `/audit-test-coverage`
+
+### Purpose
+
+Compare feature plans, E2E journey plans, implemented tests, and optional TMS mappings to find coverage alignment gaps.
+
+Audit/review only — does **not** implement tests.
+
+### Skill
+
+```text
+@.cursor/skills/audit-test-coverage/SKILL.md
+```
+
+### Use When
+
+- after planning and implementation batches;
+- before cleanup or starter conversion;
+- when duplicate API/UI/E2E coverage is suspected;
+- when blocked/postponed scenarios may have been implemented;
+- when TMS Mapping exists and traceability must be checked.
+
+### Do Not Use When
+
+- the task is to implement missing tests;
+- the task is to heal failing tests;
+- only recent code diff quality review is needed (use `/review-generated`).
+
+### Template
+
+```md
+Use Skill: @.cursor/skills/audit-test-coverage/SKILL.md
+
+Plan:
+<specs/<feature>.md and/or specs/e2e/<journey>.md>
+
+Optional test paths:
+<tests paths or empty>
+
+Optional TMS:
+<from plan sections or "none">
+
+Scope:
+- audit only
+- do not modify files
+- do not implement tests
+
+Report:
+- summary
+- coverage matrix
+- missing ready coverage
+- unplanned tests
+- duplicate coverage risks
+- blocked/postponed violations
+- TMS traceability gaps
+- tag/layer issues
+- recommended next command
+```
 
 ---
 
@@ -2107,6 +2384,63 @@ Review framework-level changes.
 ### Do Not Use When
 
 - only feature tests changed.
+
+---
+
+## audit-test-data-strategy
+
+### Purpose
+
+Audit test data safety, isolation, cleanup, and fixture/builder/generator usage.
+
+### Use When
+
+- before E2E or destructive flows;
+- before cleanup;
+- investigating shared mutable data or missing isolation.
+
+### Do Not Use When
+
+- builders/fixtures should be created in the same task;
+- only stability/flaky patterns are in scope.
+
+---
+
+## audit-test-stability
+
+### Purpose
+
+Audit UI/E2E tests for flaky patterns and stability risks.
+
+### Use When
+
+- before committing UI/E2E test changes;
+- after UI/E2E implementation;
+- investigating suspected synchronization or hidden-flow issues.
+
+### Do Not Use When
+
+- tests should be fixed in the same task (use heal skills);
+- only coverage alignment is needed.
+
+---
+
+## audit-test-coverage
+
+### Purpose
+
+Compare planned coverage vs implemented tests and optional TMS mappings.
+
+### Use When
+
+- checking plan-to-test alignment after implementation;
+- before cleanup or coverage reduction;
+- investigating duplicate, missing, stale, or wrong-layer coverage.
+
+### Do Not Use When
+
+- missing tests should be implemented in the same task;
+- only code quality of recent diffs is needed.
 
 ---
 

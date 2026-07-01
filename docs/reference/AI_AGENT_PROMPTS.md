@@ -66,6 +66,9 @@ Rules of thumb:
 - UI should own distinct user-facing browser behavior.
 - E2E should own critical full journeys with safe setup, data, cleanup, and meaningful final assertions.
 - Visual checks should cover visual risk only.
+- Cross-browser and responsive coverage should be planned only for documented browser or viewport risks; broad browser/device matrix is not the default.
+- Playwright tags describe test intent and coverage type; browser and viewport belong to Playwright projects and Allure reporting metadata.
+- Use `@cross-browser` and `@responsive` only when explicitly planned; do not invent browser or device tags such as `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`.
 - If the plan is too vague for UI or API implementation, refine the relevant implementation brief before coding.
 - If a test fails, use healing before refactoring.
 - If the framework reveals a repeated failure pattern, harden rules or skills only after confirming it is not a one-off.
@@ -91,6 +94,8 @@ Do not introduce speculative abstractions.
 
 Do not modify unrelated files.
 
+Tags describe test intent and coverage type. Browser and viewport belong to Playwright projects and reporting metadata. Use `@cross-browser` and `@responsive` only when planned. Do not invent browser or device tags.
+
 If required information is missing, do not invent architecture or behavior. Report the blocker and propose the smallest safe next step.
 ```
 
@@ -98,11 +103,13 @@ If required information is missing, do not invent architecture or behavior. Repo
 
 # 1. Planning Prompts
 
-## MCP ownership (planning with Qase)
+## MCP ownership (planning with TMS)
 
 - project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
-- Qase MCP — server name `qase`; user/global Cursor MCP settings (not project `.cursor/mcp.json`)
-- requires `QASE_API_TOKEN` in user/global MCP config; never commit real tokens to repo
+- TMS MCP or API access — user/global Cursor MCP settings, extension settings, or local secret storage (not in repo)
+- **Qase** (example provider) — server name `qase` when configured user/global; other TMS providers may be supported later
+- TMS tokens belong in user/global tool settings or local secret storage; never commit real TMS tokens to repo
+- TMS reporter/result publishing is separate and not configured by default
 
 ---
 
@@ -143,6 +150,7 @@ Output:
 - include coverage matrix
 - include ready to implement now vs blocked/postponed coverage
 - include API/UI/visual/schema/not automated decisions
+- include cross-browser/responsive decisions or explicit no-extra-coverage note when relevant
 - include API Implementation Brief
 - include UI Implementation Brief
 - note that E2E is planned separately in specs/e2e/<journey>.md when a full journey may be needed later
@@ -188,7 +196,7 @@ The generated feature plan must still include:
 
 ## Prompt: Plan From TMS (No Existing Plan)
 
-Use when Qase/TMS cases are the primary input and `specs/<feature>.md` does not exist.
+Use when TMS cases are the primary input and `specs/<feature>.md` does not exist.
 
 ```text
 /plan-from-tms
@@ -197,25 +205,35 @@ Feature:
 <feature name>
 
 TMS:
-- provider: Qase
-- project code: TOOLSSHOP
+- provider: <TMS provider, e.g. Qase>
+- project code: <TMS project code>
 - suite id: <suite id>
 - suite title/path: <suite title/path>
 - cases: <all cases in suite / selected ids>
+- access mode: read-only
 
 Scope:
 - planning only
 - TMS read-only
 - allowed change: create/update only specs/<feature>.md
+- do not create/update TMS entities, runs, or publish results
+- do not add reporter integration
 ```
 
-Stop after creating/updating the feature plan. Do not implement tests or modify Qase entities.
+Stop after creating/updating the feature plan. Do not implement tests or modify TMS entities.
+
+TMS rules:
+
+- TMS cases are planning input and traceability — not 1:1 Playwright tests.
+- Map cases by risk: API / UI / schema-contract / visual / not automated / blocked / postponed.
+- TMS writes require explicit user approval.
+- Reporter/result publishing is separate from read-only TMS planning.
 
 ---
 
 ## Prompt: Align Plan With TMS (Existing Plan)
 
-Use when `specs/<feature>.md` exists and must be aligned with Qase cases.
+Use when `specs/<feature>.md` exists and must be aligned with TMS cases.
 
 ```text
 /align-plan-with-tms
@@ -224,20 +242,30 @@ Feature plan:
 specs/<feature>.md
 
 TMS:
-- provider: Qase
-- project code: TOOLSSHOP
+- provider: <TMS provider, e.g. Qase>
+- project code: <TMS project code>
 - suite id: <suite id>
 - suite title/path: <suite title/path>
 - cases: <all cases in suite / selected ids>
+- access mode: read-only
+
+Scope:
+- planning only
+- TMS read-only
+- allowed change: update TMS Source and TMS Mapping in specs/<feature>.md only
+- do not create/update TMS entities, runs, or publish results
+- do not add reporter integration
 ```
 
-Update TMS Source and TMS Mapping only in the feature plan. Do not implement tests or modify Qase entities.
+Update TMS Source and TMS Mapping only in the feature plan. Do not implement tests or modify TMS entities.
 
 TMS rules:
 
-- TMS cases are intent/traceability, not 1:1 Playwright tests.
+- TMS cases are planning input and traceability — not 1:1 Playwright tests.
 - Map cases by risk: API / UI / schema-contract / visual / not automated / blocked / postponed.
 - Do not guess undocumented status codes, bodies, messages, or boundary limits.
+- TMS writes require explicit user approval.
+- Reporter/result publishing is separate from read-only TMS planning.
 
 ---
 
@@ -662,8 +690,11 @@ Target:
 Task:
 Use approved API precondition setup for backend preconditions.
 
-Approved setup:
-registrationApiPreconditionSetup.createRegisteredUser(...)
+Approved setup example pattern only:
+
+```text
+<approvedPreconditionFixture>.createRequiredState(...)
+```
 
 Context:
 UI_PRECONDITION_API_BASE_URL must point to the same API backend used by the UI runtime.
@@ -742,7 +773,7 @@ Stop condition:
 - do not start implementation
 ```
 
-### Example journey plans
+### Example journey plans (illustrative only)
 
 Registration → login:
 
@@ -818,7 +849,7 @@ Report:
 - remaining risks
 ```
 
-### Example: Registration → Login
+### Example: Registration → Login (illustrative only)
 
 ```text
 /implement-e2e-flow
@@ -836,7 +867,7 @@ Context:
 Use approved API precondition setup if available; keep registration and login steps visible in the spec.
 ```
 
-### Example: Checkout
+### Example: Checkout (illustrative only)
 
 ```text
 /implement-e2e-flow

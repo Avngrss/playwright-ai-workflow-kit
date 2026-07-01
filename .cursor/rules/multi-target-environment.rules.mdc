@@ -1,0 +1,200 @@
+---
+description: Multi-application and multi-service environment rules
+alwaysApply: true
+---
+
+# Multi-Target Environment Rules
+
+## Purpose
+
+These rules define how projects with multiple UI applications, microfrontends, and API or microservices must document and use environment configuration.
+
+The goal is to prevent agents from using the wrong URL, inventing env variable names, deriving API URLs from UI URLs, or mixing service ownership across plans, specs, and setup code.
+
+---
+
+## Core Principle
+
+Every automated scenario must know which UI application and which API service it targets.
+
+Environment variable names are project conventions — not agent inventions.
+
+The project map is the source of truth for app and service env names.
+
+---
+
+## Simple Projects
+
+Single-application projects may use the starter default env model:
+
+```text
+UI_BASE_URL = UI application base URL for ui-chromium and e2e projects
+
+API_BASE_URL = API project/tests base URL
+
+UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
+```
+
+Rules for simple projects:
+
+- one UI app and one API backend is the default assumption;
+- `UI_PRECONDITION_API_BASE_URL` is for backend preconditions only;
+- specs must not read environment variables directly;
+- config and fixture layers resolve env values;
+- do not derive API host from UI host.
+
+---
+
+## Complex Projects
+
+Projects with multiple UI apps, microfrontends, or API/microservices may define named targets.
+
+Examples only — do not use unless registered in the project map:
+
+```text
+CUSTOMER_UI_BASE_URL
+ADMIN_UI_BASE_URL
+CHECKOUT_UI_BASE_URL
+
+AUTH_API_BASE_URL
+CATALOG_API_BASE_URL
+ORDER_API_BASE_URL
+PAYMENT_API_BASE_URL
+```
+
+Rules for complex projects:
+
+- every env name must be documented in the project map before use;
+- agents must not invent env variable names;
+- do not use one generic `API_BASE_URL` when the feature belongs to a specific service;
+- do not use one generic `UI_BASE_URL` when the feature belongs to a specific UI app;
+- each Page Object, API client, and setup utility must resolve the correct target through the approved config layer;
+- plans must identify target UI app(s), API service(s), and precondition service(s) when more than one exists.
+
+---
+
+## Env Name Ownership
+
+Allowed:
+
+- project map documents env names and which app or service each name represents;
+- `.env.example` shows placeholders and commented examples that match the project map;
+- config providers and fixtures read env through approved layers;
+- API clients and setup utilities receive base URLs from config, not from specs.
+
+Not allowed:
+
+- inventing env names in specs, plans, Page Objects, or clients without a project map update;
+- reading `process.env` directly in specs;
+- reading `process.env` directly in Page Objects or Component Objects;
+- deriving API host from UI host;
+- host rewriting heuristics such as stripping `www` or prefixing UI host with `api`;
+- using the wrong service because a generic env name exists.
+
+If a needed env name is missing from the project map, stop and request a project map update or mark the scenario blocked/postponed.
+
+---
+
+## Planning Requirements
+
+Feature plans at `specs/<feature>.md` must document target ownership when more than one UI app or API service exists.
+
+Required when applicable:
+
+- target UI app(s);
+- target API service(s) for API coverage;
+- precondition API service(s) for UI setup;
+- env variable name for each target;
+- reason the target is required.
+
+If targets are unclear, mark the scenario blocked or postponed, or ask for clarification.
+
+Do not implement until target ownership is explicit in the plan and project map.
+
+E2E journey plans at `specs/e2e/<journey>.md` must document:
+
+- every UI app crossed;
+- every API service crossed;
+- setup service ownership;
+- action service ownership;
+- final assertion UI app ownership;
+- precondition service when setup uses a different service from the UI flow.
+
+If service or environment ownership is unclear, mark the E2E journey **blocked**.
+
+---
+
+## Implementation Requirements
+
+API implementation:
+
+- use the API service documented in the feature plan;
+- route requests through clients or config bound to that service;
+- do not substitute a generic `API_BASE_URL` when the plan names a specific service.
+
+UI implementation:
+
+- use the UI target documented in the feature plan;
+- use the approved precondition service documented in the plan;
+- Page Objects open the planned UI app base URL through config, not raw env in specs.
+
+E2E implementation:
+
+- do not guess target apps or services;
+- if target service or UI app is missing from the journey plan, stop and report;
+- document in the spec journey which apps and services are crossed when the plan defines multiple targets.
+
+API setup may use a different service from the UI flow, but ownership must be explicit in the plan and visible in setup code comments or fixture naming only when needed for clarity — not to hide journey steps.
+
+---
+
+## Config Layer Boundary
+
+Environment access belongs in:
+
+- `playwright.config.ts` when project-level;
+- config providers;
+- fixtures;
+- setup projects;
+- auth providers;
+- approved API setup utilities.
+
+Environment access must not belong in:
+
+- specs;
+- Page Objects;
+- Component Objects;
+- domain flows;
+- random helpers.
+
+API clients may receive base URL from config at construction time.
+
+API clients must not read env directly unless the project map explicitly allows it in the client layer through an approved config provider.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- one env name for every microservice without project map documentation;
+- deriving `api.example.com` from `www.example.com`;
+- using `API_BASE_URL` for order tests when order service has its own base URL;
+- using `UI_BASE_URL` for admin UI when customer UI is under test;
+- mixing catalog setup with checkout UI without explicit plan ownership;
+- inventing `CHECKOUT_API_BASE_URL` in a spec without project map registration;
+- environment mismatch fixes that weaken assertions instead of fixing config.
+
+---
+
+## Main Principle
+
+Simple projects use starter env names.
+
+Complex projects register named targets in the project map.
+
+Plans name the targets.
+
+Implementation uses the planned targets through the approved config layer.
+
+Agents do not invent URLs, env names, or service ownership.

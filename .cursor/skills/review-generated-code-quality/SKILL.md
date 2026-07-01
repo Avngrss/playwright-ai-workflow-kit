@@ -29,6 +29,7 @@ Follow these rules:
 - API Schema Validation Rules;
 - Allure Reporting Rules;
 - Visual Testing Rules;
+- Cross-Browser and Responsive Testing Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -437,7 +438,11 @@ When reporting metadata is changed, verify that:
 - tags are structured in Playwright details object;
 - tags are not embedded in test titles;
 - required layer and execution tags are present;
-- feature/domain tags are registered in the project map or tag registry before use.
+- feature/domain tags are registered in the project map or tag registry before use;
+- browser, engine, or device names are not used as Playwright tags;
+- viewport or device is not encoded as a Playwright tag when project config or Allure metadata is the correct layer;
+- Allure metadata does not replace required Playwright layer or execution tags;
+- Allure metadata may describe browser/project, viewport, layer, feature, story, component, or coverage type when useful for reporting.
 
 Flag ad-hoc tags as major when they affect filtering/reporting consistency.
 
@@ -460,6 +465,39 @@ Look for:
 Flag workarounds that should be fixed at root cause or moved to the correct layer.
 
 Use critical severity for fake assertions and `waitForTimeout`.
+
+---
+
+### 17. Check Cross-Browser And Responsive Testing
+
+When browser projects, viewports, or responsive setup are changed, verify that cross-browser and responsive coverage stays focused.
+
+Flag as major when:
+
+- full E2E matrix across browsers was added without journey-plan justification;
+- responsive tests duplicate normal UI tests without viewport-specific risk;
+- visual assertions were added as a substitute for responsive functional checks;
+- browser-specific tests exist without documented browser risk in the plan;
+- API or schema tests were duplicated per browser;
+- invented browser, engine, or device tags such as `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`;
+- unregistered coverage-type tags;
+- browser or viewport encoded as Playwright tags instead of Playwright project or Allure metadata;
+- Allure metadata hides required Playwright layer or execution tags;
+- missing `@cross-browser` or `@responsive` when a test was explicitly planned for that coverage type and those tags are registered in the project map;
+- the implementation expanded into a broad browser/device matrix without explicit plan approval;
+- cross-browser visual baselines were created or updated without explicit approval.
+
+Do not flag:
+
+- a single planned cross-browser or responsive UI scenario with documented risk;
+- use of the default `ui-chromium` project for normal UI coverage;
+- explicit viewport setup for a planned responsive scenario.
+
+Accept when:
+
+- the feature plan documents browser or viewport risk;
+- the scenario is focused and tagged according to project map rules;
+- functional assertions prove responsive behavior without unnecessary pixel checks.
 
 ---
 
@@ -496,7 +534,11 @@ Examples:
 - API client created without need;
 - schema validation in wrong layer;
 - visual test without meaningful state;
-- scope expanded beyond request.
+- scope expanded beyond request;
+- cross-browser or responsive matrix added without plan justification;
+- browser-specific test without documented browser risk;
+- browser or device name used as a Playwright tag;
+- Allure metadata used instead of required Playwright tags.
 
 ### Minor
 

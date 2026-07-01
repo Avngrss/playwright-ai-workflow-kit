@@ -1,0 +1,285 @@
+---
+description: Framework starter boundary and cleanup rules for reusable starter conversion
+alwaysApply: true
+---
+
+# Framework Starter Boundary Rules
+
+## Purpose
+
+These rules define what belongs in a reusable Playwright + TypeScript automation framework starter versus what belongs to a concrete project implementation.
+
+The goal is to help agents audit, classify, and clean the repository safely before deleting files during starter conversion.
+
+Rule reference:
+
+- `.cursor/rules/core-project-boundary-and-structure.rules.mdc`
+
+---
+
+## Core Principle
+
+Keep reusable framework infrastructure.
+
+Remove or exclude project-specific application artifacts unless they are explicitly preserved as approved templates or examples.
+
+When ownership is unclear, classify the file as **unsure** and do not delete it without user decision.
+
+---
+
+## Reusable Framework / Starter Content
+
+These areas normally belong in the starter and should not be deleted during cleanup unless explicitly reviewed and replaced with a generic equivalent.
+
+### Agent guidance and workflow
+
+- `.cursor/rules/**`
+- `.cursor/skills/**`
+- `.cursor/commands/**`
+
+### Documentation
+
+- `docs/**`
+
+Exception:
+
+- docs that describe only the current training-site product and have no reusable framework value should be classified as project-specific, not starter docs.
+
+### Package and configuration structure
+
+- `package.json`
+- `package-lock.json`
+- `playwright.config.ts` when structure is generic or can be generalized
+- `.env.example` when it documents generic environment variables only
+- `.gitignore`
+- TypeScript / lint / CI config files when they support the starter toolchain
+
+Do not delete package or config files unless explicitly reviewed.
+
+### Safe committed MCP config
+
+- project `.cursor/mcp.json` when it contains only safe starter MCP such as Playwright
+
+Do not commit user-specific MCP secrets or tokens.
+
+### Generic scripts and tooling
+
+- `scripts/check-conventions.mjs`
+- `scripts/project-cartographer.mjs`
+- other generic quality-gate, reporting, or maintenance scripts
+
+### GitHub starter content
+
+Under `.github/**`, these may belong in the starter when generic and reusable:
+
+- generic Playwright or automation agents;
+- reusable prompt agents;
+- generic workflow templates that are not tied to one product environment.
+
+### Reusable framework mechanisms under `src/test/`
+
+Keep only when the file is domain-neutral and not bound to the current application.
+
+Examples of reusable starter mechanisms:
+
+- generic fixture composition entry points when generalized;
+- generic reporting helpers;
+- generic assertion plumbing;
+- generic config or transport mechanisms.
+
+If a `src/test/**` file contains current-app bindings, classify it as project-specific.
+
+---
+
+## Project-Specific Artifacts
+
+These areas normally belong to the concrete application under test and are candidates for removal during starter conversion unless explicitly preserved as approved templates or examples.
+
+### Tests
+
+- `tests/api/**`
+- `tests/ui/**`
+- `tests/e2e/**`
+- visual baseline folders such as `tests/ui/**/**/*-snapshots/**`
+
+Do not preserve sample tests as framework content unless they are explicitly marked as templates or examples.
+
+### Plans and product docs
+
+- `specs/<feature>.md`
+- `specs/e2e/<journey>.md`
+- product-specific docs tied to the current app only
+
+### Application-bound implementation under `src/test/`
+
+Classify as project-specific when the file knows the current product, route, endpoint, selector, schema, user, or workflow.
+
+Examples:
+
+- training-site Page Objects;
+- training-site Component Objects;
+- training-site API schemas;
+- training-site assertion helpers;
+- training-site builders, generators, datasets, and types;
+- training-site fixtures and API clients;
+- storage states for concrete app users;
+- upload assets tied to one product scenario only.
+
+### Current app environment bindings
+
+Treat as project-specific when they hardcode or assume the current application:
+
+- concrete API base URLs for one product;
+- concrete UI base URLs for one product;
+- product-specific tag registry entries beyond generic starter tags;
+- Qase project mappings for one product;
+- committed credentials, tokens, cookies, or storage state for one app.
+
+### GitHub project-specific content
+
+Under `.github/**`, classify as project-specific until generalized when the file is tied to the current application:
+
+- app-specific CI workflows;
+- product-specific deployment or release workflows;
+- workflows bound to current training-site scripts, data, environments, or secrets.
+
+---
+
+## GitHub Content Audit (`.github/**`)
+
+`.github/**` must be classified during cleanup audit.
+
+Do not blindly keep or remove all `.github/**` files.
+
+For each file under `.github/**`, classify as **keep**, **remove**, **generated**, or **unsure**.
+
+Ambiguous `.github/**` files require user decision before deletion.
+
+---
+
+## Generated / Runtime Artifacts
+
+These files are normally generated locally or at runtime and are not starter source content.
+
+Examples:
+
+- `.playwright-mcp/**`
+- `test-results/**`
+- `playwright-report/**`
+- `allure-results/**`
+- `allure-report/**`
+- temporary debug scripts;
+- local IDE MCP config files not part of the committed starter;
+- local `.env` with real secrets;
+- downloaded traces, videos, screenshots, or logs from local runs.
+
+Generated/runtime artifacts may be deleted or gitignored.
+
+Do not treat them as framework documentation or reusable implementation.
+
+---
+
+## Cleanup Rules
+
+### Audit before deletion
+
+Before deleting anything:
+
+1. inventory affected files;
+2. classify each file as **keep**, **remove**, **generated**, or **unsure**;
+3. report ambiguous files and wait for user decision;
+4. preserve framework docs, rules, skills, and commands unless explicitly replaced;
+5. run verification after cleanup.
+
+### Classification rules
+
+- **keep** — reusable starter infrastructure or explicitly approved template/example;
+- **remove** — project-specific artifact with no starter value;
+- **generated** — runtime or local output; safe to delete or ignore;
+- **unsure** — ownership unclear; do not delete without user decision.
+
+Do not delete ambiguous files automatically.
+
+Do not keep `src/test/**` files only because they were useful in the current project.
+
+If a `src/test/**` file contains current-app bindings, classify it as project-specific even if the folder name looks generic.
+
+Do not delete framework docs, rules, skills, or commands during starter cleanup.
+
+Do not delete package or config files unless explicitly reviewed.
+
+Do not preserve sample tests as framework content unless explicitly marked as templates or examples.
+
+### Starter conversion intent
+
+Starter conversion means:
+
+- keep reusable agent guidance, docs, scripts, and generic framework mechanisms;
+- remove or replace project-specific tests, plans, Page Objects, schemas, helpers, data, and app-bound fixtures;
+- generalize project map entries that currently describe one product;
+- leave generated/runtime artifacts out of version control.
+
+---
+
+## Cleanup Report Requirements
+
+After cleanup work, report:
+
+- files removed;
+- files intentionally preserved;
+- ambiguous files left untouched;
+- verification commands run and results;
+- remaining risks.
+
+Minimum report shape:
+
+```text
+Removed:
+- ...
+
+Preserved:
+- ...
+
+Unsure (left untouched):
+- ...
+
+Verification:
+- command:
+- result:
+
+Remaining risks:
+- ...
+```
+
+Do not claim cleanup is complete if unsure files remain unreviewed unless the user explicitly accepted that scope.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- deleting `.cursor/rules/**`, `.cursor/skills/**`, `.cursor/commands/**`, or reusable `docs/**` during starter cleanup;
+- deleting `package.json`, `playwright.config.ts`, or generic scripts without review;
+- keeping training-site tests because they demonstrate framework patterns;
+- keeping training-site Page Objects, schemas, or fixtures because they were convenient;
+- treating `.playwright-mcp/**` or report folders as source code;
+- deleting files with unclear ownership without reporting them;
+- moving project-specific logic into rules or skills instead of removing it from the starter;
+- blindly keeping or removing all `.github/**` files without per-file classification.
+
+---
+
+## Main Principle
+
+A framework starter keeps reusable automation infrastructure.
+
+A concrete project keeps application-specific tests, plans, Page Objects, schemas, helpers, data, and fixtures.
+
+Audit first.
+
+Classify every file.
+
+Delete only with clear ownership.
+
+Preserve ambiguity for user review.

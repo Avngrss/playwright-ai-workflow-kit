@@ -31,11 +31,14 @@ Follow these rules:
 - Page Object and Component Assertion Rules;
 - Component Extraction Rules;
 - Locator Strategy Rules;
+- Cross-Browser and Responsive Testing Rules;
+- Test Structure and Tags Rules;
 - UI Refactoring Rules;
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Configuration and Secrets Rules;
+- Multi-Target Environment Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -169,7 +172,22 @@ Read the feature plan and identify:
 - affected pages;
 - affected components;
 - expected assertions;
+- cross-browser scenarios ready to implement now;
+- responsive scenarios ready to implement now;
+- explicit note that no extra cross-browser or responsive coverage is needed;
+- UI target and env name from project map;
+- precondition API service and env name when setup is needed;
 - verification command.
+
+If the feature plan names a specific UI app or precondition service, use those targets — not generic starter env names when the project map defines named targets.
+
+If UI target or precondition service is missing from the plan and the project has multiple apps or services, stop and report:
+
+"UI target or precondition service is missing from the feature plan. Update the plan and project map before implementation."
+
+Do not invent env variable names.
+
+Do not derive API host from UI host.
 
 Do not implement scenarios that are unclear.
 
@@ -484,6 +502,7 @@ The UI test should focus on the user-facing behavior under test.
 When UI tests need backend preconditions:
 
 - prefer an approved API setup mechanism when it exists;
+- use the precondition API service documented in the feature plan and project map;
 - do not derive API host from the UI host;
 - do not use host rewriting heuristics such as stripping `www` or prefixing the UI host with `api`;
 - do not build API URLs manually in specs;
@@ -535,6 +554,33 @@ Do not create one UI test per simple value unless each value has distinct user-f
 Use table-driven tests only when multiple values verify the same UI behavior.
 
 Do not create a full interaction matrix unless the feature plan explicitly requires it.
+
+#### Cross-Browser And Responsive Implementation Check
+
+Implement cross-browser or responsive UI scenarios only when they are marked ready to implement now in the feature plan.
+
+Rules:
+
+- implement only the browser project or viewport defined by the plan and project map;
+- do not expand normal UI scenarios into a browser or viewport matrix unless explicitly planned;
+- do not duplicate API or schema behavior per browser;
+- use functional assertions for responsive behavior unless the selected scope is an approved visual checkpoint;
+- do not assert exact pixels for responsive functional coverage;
+- use tags only when registered in the project map; do not invent browser or responsive tags;
+- keep browser or viewport setup visible in the spec; do not hide it in fixtures in a way that obscures the scenario under test.
+
+Tag guardrail:
+
+- use only tags registered in the project map Tag Registry;
+- add `@cross-browser` only for planned cross-browser coverage;
+- add `@responsive` only for planned responsive coverage;
+- do not use `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop` as tags;
+- do not invent tags;
+- do not use Allure metadata as a substitute for required Playwright layer or execution tags.
+
+If the feature plan states that no extra cross-browser or responsive coverage is needed, do not add browser or viewport variants during implementation.
+
+If cross-browser or responsive scope is ambiguous, stop and report the ambiguity.
 
 #### Cross-Page Navigation Check
 
@@ -772,6 +818,7 @@ Do not:
 - implement unrelated UI behavior;
 - implement API tests;
 - implement visual checkpoints unless explicitly selected;
+- expand UI coverage into cross-browser or responsive matrices unless explicitly selected in the feature plan;
 - modify unrelated files;
 - create speculative abstractions;
 - create components just in case;
@@ -784,7 +831,10 @@ Do not:
 - bypass the final fixture entry point;
 - import intermediate fixture layers from specs;
 - put project-specific logic into framework core;
-- change expected behavior unless the requirement is wrong.
+- change expected behavior unless the requirement is wrong;
+- use unregistered Playwright tags;
+- use browser or device names as Playwright tags;
+- use Allure metadata instead of required Playwright layer or execution tags.
 
 ---
 
@@ -821,6 +871,7 @@ When reporting implementation, use this structure:
 - specs added or updated:
 - tags used:
 - hooks used:
+- browser project or viewport used, if applicable:
 - unique UI value covered:
 - API/schema behavior intentionally not duplicated:
 
@@ -858,6 +909,10 @@ This skill is complete when:
 - reusable technical helper logic is not accumulated in specs;
 - fixtures are used through the final fixture entry point;
 - no speculative abstractions were added;
+- browser or viewport coverage was implemented only when planned in the feature plan;
+- no unplanned browser matrix was introduced;
+- no unplanned responsive viewport matrix was introduced;
+- responsive checks assert visible user-facing behavior, not pixel-perfect layout unless visual coverage was planned;
 - impacted specs were run or documented as not run;
 - quality gate was run or documented as not run.
 

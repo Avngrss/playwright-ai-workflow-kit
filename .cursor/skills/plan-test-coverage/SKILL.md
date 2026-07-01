@@ -23,6 +23,9 @@ Follow these rules:
 - API Architecture Rules;
 - API Schema Validation Rules;
 - Visual Testing Rules;
+- Cross-Browser and Responsive Testing Rules;
+- Multi-Target Environment Rules;
+- Test Structure and Tags Rules;
 - Project Map Rules;
 - Agent Workflow;
 - Examples Policy.
@@ -74,6 +77,8 @@ Start from:
 - boundary rules;
 - integration points;
 - visual risks;
+- browser-specific risks;
+- viewport or responsive layout risks;
 - error handling;
 - contract/schema risks.
 
@@ -114,6 +119,38 @@ Implementation briefs must not ask implementation agents to cover adjacent funct
 
 ---
 
+### 2a. Identify Target Applications And Services
+
+Before recommending coverage, identify which UI application(s) and API service(s) the feature touches.
+
+Follow Multi-Target Environment Rules and the project map.
+
+For simple single-app projects:
+
+- default UI target: `UI_BASE_URL`;
+- default API service: `API_BASE_URL`;
+- default precondition service: `UI_PRECONDITION_API_BASE_URL` when UI setup is needed.
+
+For multi-app or multi-service projects:
+
+- identify target UI app(s) for UI and visual coverage;
+- identify target API service(s) for API and schema coverage;
+- identify precondition API service(s) when UI setup uses a different backend than the action under test;
+- use env names registered in the project map only;
+- do not invent env variable names;
+- do not derive API host from UI host;
+- do not use generic `API_BASE_URL` when the feature belongs to a specific service.
+
+If more than one UI app or API service exists and target ownership is unclear:
+
+- mark affected scenarios blocked or postponed;
+- ask for clarification;
+- request project map update for missing env names.
+
+Document target ownership in the feature plan even when only one app and one service exist, if the project map defines named targets.
+
+---
+
 ### 3. Classify Risk
 
 For each behavior, classify the main risk:
@@ -128,7 +165,9 @@ For each behavior, classify the main risk:
 - data transformation;
 - integration;
 - configuration;
-- error handling.
+- error handling;
+- browser compatibility;
+- responsive layout or navigation.
 
 The risk classification should explain why the behavior needs automated coverage.
 
@@ -170,7 +209,73 @@ API coverage is preferred for backend contract, validation, data, status behavio
 
 ---
 
-### 5. Avoid Duplicate Coverage
+### 5. Decide Cross-Browser And Responsive Coverage
+
+After choosing the primary test level for each behavior, decide whether extra cross-browser or responsive coverage is needed.
+
+Follow Cross-Browser and Responsive Testing Rules.
+
+Default:
+
+- no extra cross-browser or responsive coverage unless a documented browser or viewport risk exists;
+- state explicitly when no extra coverage is needed.
+
+Cross-browser coverage is justified when there is a documented browser-specific rendering or interaction risk.
+
+Good cross-browser UI candidates:
+
+- critical controls or pages with known engine differences;
+- modal, dialog, menu, or native control behavior;
+- browser-specific validation or interaction feedback.
+
+Responsive coverage is justified when there is a documented viewport-specific layout or navigation risk.
+
+Good responsive UI candidates:
+
+- mobile navigation or hamburger menu;
+- collapsed sidebar or filter panel;
+- form or control visibility at a breakpoint;
+- layout switching between desktop and mobile states.
+
+Do **not** recommend:
+
+- running every UI scenario in every browser;
+- running full E2E journeys across many viewports;
+- duplicating API or schema coverage per browser;
+- cross-browser visual baselines without explicit baseline approval;
+- pixel-exact responsive assertions unless planned visual coverage exists.
+
+E2E cross-browser coverage:
+
+- limit to very small smoke journeys only;
+- plan separately in `specs/e2e/<journey>.md`, not in feature coverage plans;
+- do not mix cross-browser E2E expansion into normal feature plans unless noting a future journey-plan candidate.
+
+For each cross-browser or responsive item, specify:
+
+- browser project or viewport;
+- user value;
+- expected visible behavior;
+- why default UI coverage is not sufficient;
+- ready to implement now, blocked, postponed, or not automated;
+- whether visual coverage is needed and whether baseline approval is required.
+
+If no browser-specific or viewport-specific risk exists, include this note in the plan:
+
+- no extra cross-browser or responsive coverage is needed.
+
+Tag and metadata planning note:
+
+- planned cross-browser coverage should use registered `@cross-browser` when implemented;
+- planned responsive coverage should use registered `@responsive` when implemented;
+- do not plan browser or device tags such as `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`;
+- browser and viewport execution is controlled by Playwright projects documented in the project map;
+- reporting dimensions such as browser, project, viewport, and coverage type belong in Allure metadata when useful, not in invented Playwright tags;
+- if a needed tag or Playwright project is not registered in the project map, mark the item blocked or postponed or request a project map update.
+
+---
+
+### 6. Avoid Duplicate Coverage
 
 Check whether the behavior is already covered or better covered at another layer.
 
@@ -198,7 +303,7 @@ Bad duplicate coverage example:
 
 ---
 
-### 6. UI Value And Test Pyramid Check
+### 7. UI Value And Test Pyramid Check
 
 Before recommending UI coverage, verify that each UI scenario has distinct user-facing value.
 
@@ -246,7 +351,7 @@ Use the pyramid as a decision model, not as a numeric quota.
 
 ---
 
-### 7. Boundary And Negative Coverage Check
+### 8. Boundary And Negative Coverage Check
 
 Before finalizing coverage, check whether the contract or requirement defines boundary or negative behavior.
 
@@ -290,7 +395,7 @@ Rules:
 
 ---
 
-### 8. Define Smoke vs Regression
+### 9. Define Smoke vs Regression
 
 Mark each automated scenario as:
 
@@ -307,7 +412,7 @@ Do not put every test into smoke.
 
 ---
 
-### 9. Decide Visual Checkpoints
+### 10. Decide Visual Checkpoints
 
 Recommend visual checkpoints only for meaningful visual risks.
 
@@ -338,7 +443,7 @@ If baseline approval is not requested, visual checkpoints should normally be mar
 
 ---
 
-### 10. Recommend Implementation Scope
+### 11. Recommend Implementation Scope
 
 Recommend implementation scope by level.
 
@@ -432,7 +537,7 @@ Implementation briefs should describe how to implement the coverage safely, but 
 
 ---
 
-### 11. Validate Scenarios vs Implementation Decisions
+### 12. Validate Scenarios vs Implementation Decisions
 
 Before finalizing the plan, verify that planned scenarios represent real coverage items.
 
@@ -477,7 +582,7 @@ Helpers, builders, clients, fixtures, Page Objects, Component Objects, and metad
 
 ---
 
-### 12. Plan Scenario Variants
+### 13. Plan Scenario Variants
 
 When a behavior has multiple data variants, decide whether variants should be:
 
@@ -538,8 +643,35 @@ For each variant group, specify:
 - in scope:
 - out of scope:
 - UI target:
+- API service target:
+- precondition API service (if UI setup needed):
+- target env names (from project map):
 - API contract source:
 - requirements/specs:
+
+### Target Applications / Services
+
+Document when the project has one or more UI apps or API services.
+
+Simple project (defaults):
+
+- UI target: `UI_BASE_URL`
+- API service: `API_BASE_URL`
+- precondition service: `UI_PRECONDITION_API_BASE_URL` (if needed)
+
+Multi-target project (examples — use names from project map):
+
+- UI target(s):
+- API service(s):
+- precondition service(s):
+- env names per target:
+- unclear targets → blocked/postponed items:
+
+Rules:
+
+- plans must name targets explicitly when more than one app or service exists;
+- do not invent env names;
+- if ownership is unclear, mark blocked/postponed or ask for clarification.
 
 ### Coverage Matrix
 
@@ -585,6 +717,8 @@ For each API scenario:
 
 - endpoint:
 - method:
+- API service target:
+- env name (from project map):
 - tags:
 - payload source:
 - scenario data strategy:
@@ -619,6 +753,9 @@ Blocked or postponed:
 For each UI scenario:
 
 - route/page:
+- UI target:
+- precondition API service (if needed):
+- env names (from project map):
 - tags:
 - preconditions:
 - test data:
@@ -633,6 +770,77 @@ For each UI scenario:
 - locator discovery notes:
 - assertions in spec:
 - not covered in UI:
+
+### Cross-Browser Coverage
+
+Ready to implement now:
+
+- scenarios:
+- browser project:
+- reason:
+- dependencies:
+- blockers:
+
+Blocked or postponed:
+
+- scenarios:
+- reason:
+- blocker or clarification needed:
+
+If not needed:
+
+- reason no extra cross-browser coverage is required:
+
+### Cross-Browser Implementation Brief
+
+For each cross-browser UI scenario:
+
+- route/page:
+- browser project:
+- tags:
+- preconditions:
+- user steps:
+- expected visible outcome:
+- browser-specific risk:
+- why default-browser UI is not sufficient:
+- related default UI scenario:
+- visual checkpoint decision:
+
+### Responsive Coverage
+
+Ready to implement now:
+
+- scenarios:
+- viewport:
+- reason:
+- dependencies:
+- blockers:
+
+Blocked or postponed:
+
+- scenarios:
+- reason:
+- blocker or clarification needed:
+
+If not needed:
+
+- reason no extra responsive coverage is required:
+
+### Responsive Implementation Brief
+
+For each responsive UI scenario:
+
+- route/page:
+- viewport:
+- tags:
+- preconditions:
+- user steps:
+- expected visible behavior:
+- viewport-specific risk:
+- why default-viewport UI is not sufficient:
+- related default UI scenario:
+- visual checkpoint decision:
+- pixel assertion decision: functional only unless planned visual coverage
 
 ### E2E Note
 
@@ -745,4 +953,8 @@ This skill is complete when:
 - negative coverage decision is specified for API behaviors with documented errors;
 - API Implementation Brief is actionable, if API coverage exists;
 - UI Implementation Brief is actionable, if UI coverage exists;
-- blockers and missing contract details are documented.
+- blockers and missing contract details are documented;
+- cross-browser and responsive decisions are documented, including explicit no-extra-coverage note when applicable;
+- cross-browser or responsive items specify browser project or viewport, user value, and expected visible behavior when planned.
+- target UI app(s), API service(s), and precondition service(s) are documented when more than one exists, or defaults are stated for simple projects;
+- unclear target ownership is marked blocked/postponed or clarified before implementation.

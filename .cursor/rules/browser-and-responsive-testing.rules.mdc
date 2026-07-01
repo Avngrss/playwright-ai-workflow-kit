@@ -1,0 +1,319 @@
+---
+description: Cross-browser and responsive/adaptive testing rules
+alwaysApply: true
+---
+
+# Cross-Browser and Responsive Testing Rules
+
+## Purpose
+
+These rules define how cross-browser and responsive/adaptive coverage should be planned, implemented, reviewed, and kept separate from normal API, UI, E2E, schema, and visual coverage.
+
+The goal is to prevent agents from running every UI or E2E test across all browsers and viewports by default, which creates slow, flaky, and expensive test matrices.
+
+---
+
+## Core Principle
+
+Cross-browser and responsive coverage are optional, focused layers.
+
+They verify browser-specific or viewport-specific risks that normal UI coverage at the default browser and viewport does not prove.
+
+Do not expand the default test matrix unless a plan documents the browser or viewport risk.
+
+---
+
+## Relationship To Other Layers
+
+Cross-browser and responsive coverage are **not** separate test pyramid levels like API, UI, E2E, visual, or schema.
+
+They are execution or scope variants of focused UI coverage, or very small E2E smoke coverage, when a documented browser or viewport risk exists.
+
+Keep them separate from:
+
+- API tests;
+- schema/contract tests;
+- normal default-browser UI tests;
+- full E2E journeys;
+- visual checkpoints unless baseline approval and browser/engine stability are explicitly planned.
+
+Rule references:
+
+- `.cursor/rules/test-strategy-pyramid.rules.mdc`
+- `.cursor/rules/e2e-testing.rules.mdc`
+- `.cursor/rules/visual-testing.mdc`
+
+---
+
+## Cross-Browser Principles
+
+Cross-browser coverage verifies browser-specific rendering, interaction, or compatibility risks.
+
+### Default Policy
+
+- Do **not** run every UI or E2E test in every browser by default.
+- Default UI and E2E runs use the project's primary browser project unless a scenario explicitly targets another browser.
+- API and schema tests are browser-independent and must **not** be duplicated per browser.
+- Visual checks across browsers require explicit approval because screenshots differ by rendering engine, fonts, and OS.
+
+### When Cross-Browser Coverage Is Justified
+
+Use focused cross-browser UI coverage when there is a documented browser-specific risk, such as:
+
+- browser-only interaction behavior;
+- known engine differences for a critical control;
+- browser-specific validation or dialog behavior;
+- critical page or form behavior that must work in more than one engine.
+
+Good candidates:
+
+- critical login or checkout controls;
+- modal/dialog behavior;
+- file upload or native control behavior;
+- navigation menus with browser-specific interaction risk.
+
+### E2E Cross-Browser Policy
+
+- E2E cross-browser coverage must be limited to very small smoke journeys only.
+- Do not run full E2E regression matrices across browsers by default.
+- If an E2E journey needs cross-browser coverage, document it explicitly in `specs/e2e/<journey>.md`.
+- Do not add cross-browser E2E expansion during normal E2E implementation unless the journey plan says so.
+
+### When Cross-Browser Coverage Is Not Needed
+
+State explicitly in the feature plan when no browser-specific risk exists.
+
+Examples:
+
+- backend-only behavior;
+- API contract behavior;
+- UI behavior with no known engine difference;
+- pages already covered adequately at the default browser project.
+
+---
+
+## Responsive / Adaptive Principles
+
+Responsive coverage verifies behavior and layout at meaningful viewport breakpoints.
+
+### Default Policy
+
+- Do **not** run full E2E journeys across many viewport sizes by default.
+- Default UI and E2E runs use the project's default viewport unless a scenario explicitly targets another viewport.
+- Prefer focused UI tests for responsive navigation, layout, menus, forms, and critical controls.
+
+### When Responsive Coverage Is Justified
+
+Use responsive UI coverage when there is a documented viewport-specific risk, such as:
+
+- mobile navigation or hamburger menu behavior;
+- collapsed sidebar or filter panel behavior;
+- form layout or control visibility at a breakpoint;
+- sticky header, footer, or action bar behavior;
+- table/card layout switching;
+- touch-target or overflow behavior on smaller viewports.
+
+Each responsive scenario must define:
+
+- viewport size or device profile;
+- user value;
+- expected visible behavior;
+- why default-viewport UI coverage is not sufficient.
+
+### Responsive Assertion Policy
+
+- Do not assert exact pixels unless the scenario is planned visual coverage with approved baselines.
+- Prefer functional assertions for visible controls, navigation, menus, forms, and layout state.
+- Use visual checkpoints only when the risk is layout appearance and baselines are approved for the target viewport and browser project.
+
+### When Responsive Coverage Is Not Needed
+
+State explicitly in the feature plan when no viewport-specific risk exists.
+
+Examples:
+
+- desktop-only admin layouts with no mobile requirement;
+- behavior that does not change by breakpoint;
+- API or schema behavior;
+- pages with no meaningful responsive layout change.
+
+---
+
+## Planning Rules
+
+Feature coverage plans at `specs/<feature>.md` may include:
+
+- Cross-browser coverage;
+- Responsive coverage;
+- blocked or postponed browser/responsive items;
+- explicit note that no extra cross-browser or responsive coverage is needed.
+
+Planning requirements:
+
+- document browser or viewport risk before recommending cross-browser or responsive coverage;
+- do not mix cross-browser or responsive expansion into E2E unless explicitly planned in `specs/e2e/<journey>.md`;
+- if no browser-specific or viewport-specific risk exists, state that no extra cross-browser or responsive coverage is needed;
+- cross-browser and responsive items must specify ready to implement now, blocked, postponed, or not automated;
+- do not duplicate normal UI scenarios across browsers or viewports without a documented distinct risk.
+
+E2E journey plans:
+
+- cross-browser E2E must be explicitly documented;
+- responsive full-journey matrices are discouraged by default;
+- if cross-browser E2E is needed, limit it to small smoke scope and document why default E2E is not sufficient.
+
+Skill reference:
+
+- `.cursor/skills/plan-test-coverage/SKILL.md`
+
+---
+
+## Implementation Rules
+
+### UI Implementation
+
+- implement planned cross-browser or responsive UI scenarios only when marked ready to implement now in the feature plan;
+- use the browser project or viewport defined by the plan and project map;
+- keep cross-browser and responsive scenarios focused; do not convert the whole UI suite into a browser or viewport matrix;
+- use coverage-type tags only when registered in the project map: `@cross-browser` or `@responsive`;
+- do not use browser, engine, or device names as Playwright tags.
+
+Skill reference:
+
+- `.cursor/skills/implement-ui-feature/SKILL.md`
+
+### E2E Implementation
+
+- do not expand E2E to a cross-browser or responsive matrix unless the E2E journey plan explicitly says so;
+- default E2E implementation stays on the primary browser project and default viewport unless planned otherwise.
+
+Skill reference:
+
+- `.cursor/skills/implement-e2e-flow/SKILL.md`
+
+### Visual Implementation
+
+- cross-browser visual baselines require explicit baseline approval per browser/engine;
+- responsive visual baselines require explicit baseline approval per viewport;
+- do not use screenshots as a substitute for responsive functional checks.
+
+Skill reference:
+
+- `.cursor/skills/implement-visual-test/SKILL.md`
+
+---
+
+## Review Rules
+
+Review must flag:
+
+- full E2E matrix across browsers without justification;
+- responsive tests that duplicate normal UI tests without viewport-specific risk;
+- visual assertions added as a substitute for responsive functional checks;
+- browser-specific tests without documented browser risk;
+- excessive test matrix expansion;
+- API or schema tests duplicated per browser;
+- unregistered coverage-type tags;
+- browser, engine, or device names used as Playwright tags;
+- viewport encoded as a tag instead of Playwright project or Allure metadata;
+- Allure metadata hiding required Playwright layer or execution tags;
+- missing `@cross-browser` or `@responsive` when a test was explicitly planned for that coverage type and those tags are registered.
+- cross-browser visual baselines created without explicit approval.
+
+Skill reference:
+
+- `.cursor/skills/review-generated-code-quality/SKILL.md`
+
+---
+
+## Playwright Project And Viewport Policy
+
+Follow the project map for current Playwright browser projects, default viewport, and CI strategy.
+
+Agents must not assume additional browser projects exist unless documented in the project map.
+
+Dedicated cross-browser or responsive CI strategy is future work unless already configured in the project map or CI workflow.
+
+Broad browser/device matrix is **not** the default execution model.
+
+---
+
+## Tag And Allure Metadata Policy
+
+Playwright tags describe test intent.
+
+Browser and viewport describe execution environment.
+
+### Allowed Playwright tags
+
+Keep required tags:
+
+- layer: `@api`, `@ui`, `@e2e`, `@visual` when applicable;
+- execution scope: `@smoke`, `@regression`.
+
+Optional coverage-type tags when registered in the project map and explicitly planned:
+
+- `@cross-browser` — marks cross-browser coverage intent; not a browser name;
+- `@responsive` — marks responsive/viewport coverage intent; not a device name.
+
+### Forbidden Playwright tags
+
+Do not use browser, engine, viewport, or device names as tags:
+
+- `@chromium`, `@firefox`, `@webkit`;
+- `@mobile`, `@tablet`, `@desktop`.
+
+### Playwright projects
+
+Browser and default viewport selection belongs to Playwright projects documented in the project map.
+
+Agents must not use non-existing projects until the project map registers them.
+
+### Allure metadata
+
+Allure metadata may describe reporting dimensions such as:
+
+- browser or Playwright project;
+- viewport;
+- layer;
+- feature;
+- story;
+- component;
+- coverage type.
+
+Allure metadata must not replace Playwright tags.
+
+Do not add Allure reporter integration, tokens, or credentials as part of cross-browser or responsive policy work.
+
+Rule reference:
+
+- `.cursor/rules/reporting-allure.mdc`
+- `.cursor/rules/test-structure-and-tags.rules.mdc`
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- running all UI specs in Chromium, Firefox, and WebKit by default;
+- running all E2E specs across multiple browsers by default;
+- running full journeys at mobile, tablet, and desktop viewports by default;
+- duplicating API tests per browser;
+- using screenshots to prove responsive menu or layout behavior when functional assertions are enough;
+- adding cross-browser visual baselines without explicit approval;
+- inventing `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop` as Playwright tags;
+- using `@cross-browser` or `@responsive` without project map registration or explicit plan coverage;
+- encoding browser or viewport in Playwright tags instead of Playwright projects or Allure metadata;
+- using Allure metadata as a substitute for required Playwright layer or execution tags;
+- hiding browser or viewport setup inside fixtures in a way that obscures the scenario under test.
+
+---
+
+## Main Principle
+
+Cross-browser and responsive coverage are focused additions for documented browser or viewport risks.
+
+Normal UI, E2E, API, schema, and visual workflows stay the default.
+
+Do not expand the browser or viewport matrix unless the plan proves the extra risk is worth the cost.

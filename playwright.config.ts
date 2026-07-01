@@ -20,7 +20,7 @@ export default defineConfig({
     },
   },
   use: {
-    baseURL: process.env.PRACTICE_TESTING_URL,
+    baseURL: process.env.UI_BASE_URL,
     headless: false,
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
@@ -36,7 +36,7 @@ export default defineConfig({
       testMatch: /.*\.ui\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: process.env.PRACTICE_TESTING_URL,
+        baseURL: process.env.UI_BASE_URL,
       },
     },
     {
@@ -46,7 +46,6 @@ export default defineConfig({
         baseURL: process.env.API_BASE_URL,
       },
     },
-
     {
       name: "e2e",
       testDir: "./tests/e2e",
@@ -54,7 +53,7 @@ export default defineConfig({
       retries: process.env.CI ? 1 : 0,
       timeout: 60_000,
       use: {
-        baseURL: process.env.PRACTICE_TESTING_URL,
+        baseURL: process.env.UI_BASE_URL,
         trace: "retain-on-failure",
         screenshot: "only-on-failure",
         video: "retain-on-failure",

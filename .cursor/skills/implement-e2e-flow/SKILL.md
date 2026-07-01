@@ -36,6 +36,7 @@ Follow these rules:
 
 - Agent Workflow;
 - E2E Testing Rules;
+- Cross-Browser and Responsive Testing Rules;
 - Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
 - Fixtures and Test Data Rules;
@@ -47,6 +48,7 @@ Follow these rules:
 - Project Map Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Configuration and Secrets Rules;
+- Multi-Target Environment Rules;
 - Reporting Allure Rules;
 - Examples Policy.
 
@@ -256,9 +258,20 @@ Identify:
 - why API/UI/schema coverage is not sufficient;
 - flakiness risks;
 - external dependencies;
+- target UI apps and API services with env names from project map;
 - required tags;
 - affected pages or flows;
 - verification command.
+
+If the journey plan is missing target apps or services and the project has multiple targets, stop and report:
+
+"Target UI app or API service is missing from the E2E journey plan. Update the plan and project map before implementation."
+
+Do not guess target apps or services.
+
+Do not invent env variable names.
+
+Do not derive API host from UI host.
 
 Do not read E2E scenarios from feature coverage plans.
 
@@ -578,6 +591,14 @@ Do not:
 - import intermediate fixture layers from specs;
 - put project-specific logic into framework core;
 - change expected behavior unless the requirement is wrong.
+
+### Cross-Browser And Responsive Policy
+
+E2E cross-browser and responsive expansion is **not** the default.
+
+- implement E2E on the primary browser project and default viewport unless `specs/e2e/<journey>.md` explicitly plans browser or viewport variants;
+- only planned small smoke journeys may be expanded across browsers or viewports;
+- if the journey plan does not document cross-browser or responsive expansion, do not add a browser or viewport matrix during implementation.
 
 ---
 

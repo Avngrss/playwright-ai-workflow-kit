@@ -245,7 +245,53 @@ function checkNoAllureInForbiddenLayers(files) {
   ok("No forbidden Allure usage in pages, components, data, or API clients.");
 }
 
+const SRC_TEST_DIR = path.join(ROOT, "src", "test");
+const FIXTURE_ENTRY_POINT = path.join(SRC_TEST_DIR, "fixtures", "test.ts");
+
+function hasProjectImplementationLayer() {
+  return fs.existsSync(SRC_TEST_DIR);
+}
+
+function checkFinalFixtureEntryPoint() {
+  if (!fs.existsSync(FIXTURE_ENTRY_POINT)) {
+    skip(
+      "No final fixture entry point at src/test/fixtures/test.ts. Fixture entry point checks were not executed."
+    );
+    return;
+  }
+
+  const content = read(FIXTURE_ENTRY_POINT);
+
+  if (content.includes("./pages.fixture")) {
+    fail(
+      "Final fixture entry point must not import from pages.fixture: src/test/fixtures/test.ts",
+    );
+  }
+
+  if (!content.includes("./base.fixture")) {
+    fail(
+      "Final fixture entry point must re-export from ./base.fixture: src/test/fixtures/test.ts",
+    );
+  }
+
+  if (!/\btest\b/.test(content) || !/\bexpect\b/.test(content)) {
+    fail(
+      "Final fixture entry point must export test and expect: src/test/fixtures/test.ts",
+    );
+  }
+
+  ok("Final fixture entry point re-exports test and expect from base.fixture.");
+}
+
 function main() {
+  if (!hasProjectImplementationLayer()) {
+    skip(
+      "src/test/ is absent. Clean starter — project implementation layer checks were not executed."
+    );
+  } else {
+    checkFinalFixtureEntryPoint();
+  }
+
   const uiSpecs = listFiles(UI_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
   const apiSpecs = listFiles(API_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
 

@@ -4,8 +4,16 @@
 
 This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted Playwright + TypeScript automation work.
 
+**Repository entry point:** [README](../../README.md)
+
+**Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
+
+The clean starter has no `src/test/**` project implementation layer. Page Objects, fixtures, schemas, assertion helpers, builders, and reporting helpers are created per application through skills and commands when implementation starts.
+
+The clean starter also has **zero tests** — that is valid. Package test scripts use `--pass-with-no-tests` and succeed until real tests are added through `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
+
 ```text
-Project Map = source of truth for structure, commands, aliases, tags, environment ownership, fixture entry points, and file ownership
+Project Map = source of truth for structure, commands, aliases, tags, environment ownership, app/service env names, fixture entry points, and file ownership
 
 Rules = always-on architecture and quality guardrails
 
@@ -110,6 +118,9 @@ Examples:
 - Discover UI Components.
 - Create Fixture.
 - Review Generated Code Quality.
+- Audit Test Coverage.
+- Audit Test Data Strategy.
+- Audit Test Stability.
 
 Skills are used only when their task matches the current work.
 
@@ -133,6 +144,9 @@ Examples:
 - `/plan-e2e-journey`
 - `/implement-e2e-flow`
 - `/review-generated`
+- `/audit-test-coverage`
+- `/audit-test-data-strategy`
+- `/audit-test-stability`
 - `/refactor-overengineering`
 - `/heal-api-test`
 - `/heal-ui-test`
@@ -161,6 +175,7 @@ Planner should:
 - identify API negative and boundary decisions;
 - identify UI unique user-facing value;
 - create actionable API and UI implementation briefs;
+- identify target UI app(s), API service(s), and precondition service(s) when more than one exists;
 - note when a full journey may need a separate E2E journey plan in `specs/e2e/<journey>.md`;
 - avoid implementation.
 
@@ -229,6 +244,12 @@ Reviewer should:
 - check Zod/schema ownership;
 - check fixture and setup boundaries.
 
+For plan-to-test alignment (missing ready coverage, unplanned tests, duplicate/wrong-layer coverage, TMS traceability gaps), use **Audit Test Coverage** instead of code-only review.
+
+For flaky-pattern detection (forbidden waits, retry loops, weak assertions, hidden flows, debug artifacts, data instability), use **Audit Test Stability** before commit; use **Heal UI Test** when fixes are requested.
+
+For test data safety (shared mutable data, missing cleanup/isolation, inline random data, builder/generator/fixture misuse, E2E data policy), use **Audit Test Data Strategy** before E2E implementation or destructive flows; use **Create Test Data Builder** or **Create Fixture** when implementation is requested after audit.
+
 ---
 
 ## Test Levels
@@ -243,6 +264,27 @@ Primary levels:
 - **visual** — meaningful layout or appearance regression inside stable UI states;
 - **schema/contract** — response or payload shape validation;
 - **not automated** — manual, unstable, duplicate, or low-value automation.
+
+Cross-browser and responsive coverage are focused additions for documented browser or viewport risks.
+
+They are not a default browser/device matrix.
+
+- default UI runs use the primary browser project from the project map;
+- API and schema tests must not be duplicated per browser;
+- responsive scenarios must define viewport, user value, and expected visible behavior;
+- E2E cross-browser expansion belongs in `specs/e2e/<journey>.md`, not feature coverage plans.
+
+Rule:
+
+- `.cursor/rules/browser-and-responsive-testing.rules.mdc`
+
+Tag and metadata policy:
+
+- Playwright tags describe test intent; browser and viewport are execution environment;
+- optional registered coverage-type tags: `@cross-browser`, `@responsive`;
+- forbidden tag names: `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop`;
+- browser/viewport details belong to Playwright projects and Allure metadata, not Playwright tags;
+- Allure metadata must not replace Playwright layer or execution tags.
 
 Layer ownership:
 
@@ -321,20 +363,22 @@ Run /plan-e2e-journey
 
 ## TMS Planning Workflows
 
-Qase is the current TMS provider (`TOOLSSHOP`; MCP server name `qase`). Default mode is **read-only**.
+TMS integration is optional and provider-agnostic at the starter level. Default mode is **read-only**.
+
+**Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`). Other TMS providers may be supported later through approved integration paths.
 
 MCP ownership:
 
 - project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
-- Qase MCP — user/global Cursor MCP settings (not project `.cursor/mcp.json`); requires `QASE_API_TOKEN` in user config; never commit real tokens
+- TMS credentials — user/global MCP settings, extension settings, or local secret storage (not in repository env files); never commit real TMS tokens
 
 TMS cases are planning input and traceability — **do not assume 1 TMS case = 1 Playwright test**.
 
 TMS Source and TMS Mapping belong in `specs/<feature>.md`.
 
-Qase reporter/result publishing is not configured. TMS writes require explicit user approval.
+TMS reporter/result publishing is separate and not configured. TMS writes require explicit user approval.
 
-Never commit real Qase tokens into docs, rules, skills, commands, or specs.
+Never commit real TMS tokens into docs, rules, skills, commands, or specs.
 
 ### No existing feature plan (TMS-first)
 
@@ -344,7 +388,7 @@ Never commit real Qase tokens into docs, rules, skills, commands, or specs.
 -> implement selected ready API/UI coverage
 ```
 
-Use when `specs/<feature>.md` does not exist and Qase cases are the main input.
+Use when `specs/<feature>.md` does not exist and TMS cases are the main input.
 
 Plan E2E journeys separately in `specs/e2e/` when a full cross-boundary flow is needed.
 
@@ -357,7 +401,7 @@ Plan E2E journeys separately in `specs/e2e/` when a full cross-boundary flow is 
 -> implement selected ready API/UI coverage
 ```
 
-Use when a plan exists and must be aligned with Qase suite/cases.
+Use when a plan exists and must be aligned with TMS suite/cases.
 
 ### Normal planning (not TMS-first)
 
@@ -381,6 +425,9 @@ or
 Implement selected UI coverage marked ready to implement now
 -> Run Verification
 -> Review Generated Code Quality
+-> Audit Test Coverage (optional; plan vs implemented alignment)
+-> Audit Test Data Strategy (optional; data/cleanup/isolation before destructive flows)
+-> Audit Test Stability (optional; flaky patterns before commit)
 -> Heal if failed
 ```
 
@@ -478,7 +525,7 @@ Examples that remain UI coverage:
 
 ### UI Precondition Setup
 
-When a UI or E2E test needs backend preconditions, prefer approved API precondition setup if available and reliable.
+When a UI or E2E test needs backend preconditions, prefer approved API precondition setup from the project fixture chain when available and reliable.
 
 UI specs must not:
 
@@ -487,10 +534,10 @@ UI specs must not:
 - validate full API contracts during setup;
 - hide the UI action under test in fixture or hook.
 
-For registered-user UI preconditions, use the approved fixture if available:
+Example pattern only:
 
 ```text
-registrationApiPreconditionSetup.createRegisteredUser(...)
+<approvedPreconditionFixture>.createRequiredState(...)
 ```
 
 The same approved precondition pattern may be used in E2E when the plan documents setup only for backend state before the UI journey starts.
@@ -498,14 +545,29 @@ The same approved precondition pattern may be used in E2E when the plan document
 Environment ownership:
 
 ```text
+Simple projects:
+UI_BASE_URL = UI application for ui-chromium and e2e
 API_BASE_URL = API project/tests
+UI_PRECONDITION_API_BASE_URL = API backend for UI/E2E preconditions
 
-UI_PRECONDITION_API_BASE_URL = API backend used for UI preconditions
-
-UI_API_BASE_URL = optional documented fallback for UI precondition API base
+Multi-target projects:
+Register named targets in project map before use — examples:
+CUSTOMER_UI_BASE_URL, ADMIN_UI_BASE_URL, AUTH_API_BASE_URL, ORDER_API_BASE_URL
 ```
 
-`UI_PRECONDITION_API_BASE_URL` must point to the same API backend used by the UI runtime.
+Rule: `.cursor/rules/multi-target-environment.rules.mdc`
+
+Rules:
+
+- project map is the source of truth for app/service env names;
+- plans must reference targets explicitly when more than one app or service exists;
+- agents must not invent env variable names;
+- specs must not read env variables directly;
+- do not derive API host from UI host;
+- do not use generic `API_BASE_URL` when the feature belongs to a specific service;
+- implementation skills stop when target service is missing from the plan.
+
+`UI_PRECONDITION_API_BASE_URL` is for UI backend preconditions only and must point to the same API backend used by the UI runtime when those preconditions are implemented, unless the plan documents a different precondition service explicitly.
 
 ---
 
@@ -524,12 +586,17 @@ Run /plan-e2e-journey
 
 E2E is **not** planned in `specs/<feature>.md`. Use a separate journey plan at `specs/e2e/<journey>.md`.
 
+Planning separation:
+
+- `specs/<feature>.md` — feature coverage for API, UI, schema, visual, and not automated scenarios;
+- `specs/e2e/<journey>.md` — full user or business journey plans only.
+
 Use E2E only when the scenario is a critical full user or business journey crossing multiple states, pages, or system boundaries and lower-level coverage cannot prove that journey safely.
 
-Good E2E candidates:
+Good E2E journey examples (illustrative only — not current repository contents):
 
-- registration followed by login and authenticated account access;
-- product selection followed by cart state and checkout completion;
+- sign-up followed by login and authenticated account access;
+- item selection followed by cart state and order completion;
 - full password reset followed by login with a new password when safe setup and cleanup exist.
 
 Do not use E2E for:
@@ -604,18 +671,19 @@ Full forgot-password reset plus login with a new password belongs in a separate 
 
 Full Forgot Password E2E remains blocked or postponed until required setup exists.
 
-### Checkout / Onboarding E2E Examples
-
-Good E2E journey plan candidates:
-
-- registration followed by login and authenticated account access;
-- product selection followed by cart state and checkout completion.
-
 ### Playwright Runner Note
 
-A dedicated E2E Playwright project is configured in `playwright.config.ts`.
+Current browser projects in `playwright.config.ts`:
 
-If no runner matches the intended E2E spec path or pattern, stop and report the config gap.
+- `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `api` — API specs; no browser
+- `e2e` — E2E specs (`*.e2e.spec.ts`)
+
+Broad browser/device matrix is **not** the default.
+
+Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
+
+If no runner matches the intended spec path or pattern, stop and report the config gap.
 
 ---
 
@@ -718,12 +786,13 @@ Investigate API Environment Or Setup Mismatch
 
 Check:
 
-- API project base URL;
-- UI base URL;
+- API project base URL or named API service env from project map;
+- UI base URL or named UI app env from project map;
 - UI runtime API endpoint from browser network;
-- UI precondition API base URL;
+- UI precondition API base URL or named precondition service;
 - whether API-created data is visible to UI runtime;
-- whether UI-created data is visible to API runtime.
+- whether UI-created data is visible to API runtime;
+- whether the wrong generic env name was used instead of a service-specific target.
 
 Do not derive API host from UI host.
 
@@ -870,6 +939,44 @@ It must not modify files.
 
 ---
 
+## Main Workflow: Framework Starter Cleanup
+
+Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+
+Rule:
+
+- `.cursor/rules/framework-starter-boundary.rules.mdc`
+
+Workflow:
+
+```text
+Audit first, delete later
+-> inventory files
+-> classify each file as keep / remove / generated / unsure
+-> remove only clear project-specific artifacts
+-> leave unsure files untouched until user decision
+-> generalize preserved starter docs/config where needed
+-> run verification
+-> report removed, preserved, unsure, verification, and remaining risks
+```
+
+Protect during cleanup:
+
+- `.cursor/rules/**`
+- `.cursor/skills/**`
+- `.cursor/commands/**`
+- reusable `docs/**`
+- reviewed package/config and generic scripts
+
+Classify `.github/**` per file during audit; do not blindly keep or remove it.
+
+Also see:
+
+- `docs/reference/HOW_TO_USE_AI_AUTOMATION.md` — section 19a
+- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md` — Framework Starter Cleanup
+
+---
+
 ## Main Workflow: Framework/Core Review
 
 Use when reviewing framework, fixtures, config, auth, API infrastructure, rules, skills, commands, or project map changes.
@@ -948,10 +1055,19 @@ Run Verification
 
 Verification order:
 
-1. impacted spec or targeted check;
+1. impacted spec or targeted check (`npm run test:api`, `npm run test:ui`, `npm run test:e2e`, or tag scripts such as `npm run test:smoke`);
 2. related specs if shared code changed;
 3. typecheck/lint if applicable;
-4. repository quality gate from project map.
+4. repository quality gate from project map (`npm run qa:gate`).
+
+Starter-safe package scripts:
+
+- `npm run test:list` — discovery without execution
+- `npm run test:api` / `test:ui` / `test:e2e` — layer scripts using registered projects only
+- `npm run test:smoke` / `test:regression` / `test:visual` — tag-based filters across projects
+- `npm run test:cross-browser` / `test:responsive` — coverage-type tag filters only; do not imply extra browser or mobile projects
+
+Tags describe test intent. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
 
 ---
 
@@ -1209,6 +1325,86 @@ Use:
 ```text
 Review Generated Code Quality
 ```
+
+---
+
+## Coverage alignment audit
+
+Use:
+
+```text
+Audit Test Coverage
+```
+
+Command:
+
+```text
+/audit-test-coverage
+```
+
+Use when comparing feature plans, E2E journey plans, implemented tests, and optional TMS mappings.
+
+Audit only — does not implement tests, delete tests, update TMS, or publish results.
+
+Use after planning/implementation batches or before cleanup/starter conversion.
+
+---
+
+## Test data strategy audit
+
+Use:
+
+```text
+Audit Test Data Strategy
+```
+
+Command:
+
+```text
+/audit-test-data-strategy
+```
+
+Use when auditing shared mutable data, isolation, cleanup policy, inline random data, builder/generator/fixture misuse, E2E data risks, and environment/service ownership for data setup.
+
+Audit only — does not create or modify data, change tests, delete data, mutate environment, update TMS, or infer cleanup without evidence unless explicitly requested.
+
+Use before E2E implementation, before destructive flows, and before cleanup/starter conversion.
+
+For implementation after audit, use Create Test Data Builder, Create Fixture, Plan E2E Journey, or heal skills as appropriate.
+
+Rule references:
+
+- `.cursor/rules/fixtures-data.mdc`
+- `.cursor/rules/test-isolation-state.rules.mdc`
+- `.cursor/rules/multi-target-environment.rules.mdc`
+
+---
+
+## Stability audit
+
+Use:
+
+```text
+Audit Test Stability
+```
+
+Command:
+
+```text
+/audit-test-stability
+```
+
+Use when auditing UI/E2E tests for flaky patterns, weak synchronization, hidden journeys, debug artifacts, and data or environment instability.
+
+Audit only — does not heal tests, add waits, weaken assertions, install browsers, or run broad suites unless explicitly requested.
+
+Use after UI/E2E implementation and before committing test changes.
+
+For actual fixes, use `/heal-ui-test` or `/heal-api-test`.
+
+Rule reference:
+
+- `.cursor/rules/flakiness-policy.rules.mdc`
 
 ---
 

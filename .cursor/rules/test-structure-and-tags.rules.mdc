@@ -508,6 +508,102 @@ Do not create feature/domain tags ad hoc in specs.
 
 Do not use feature/domain tags as a replacement for required layer and execution-scope tags.
 
+### Optional coverage-type tags for cross-browser and responsive
+
+Use only when registered in the project map and explicitly planned in the feature or E2E journey plan.
+
+Allowed examples when registered:
+
+```text
+@cross-browser
+@responsive
+```
+
+Meaning:
+
+- `@cross-browser` — test intent is cross-browser coverage for a documented browser-specific risk; it is **not** a browser name tag;
+- `@responsive` — test intent is responsive or viewport-specific coverage for a documented layout or navigation risk; it is **not** a device or viewport size tag.
+
+These tags classify coverage type.
+
+They do not replace required layer tags (`@ui`, `@e2e`, `@visual`) or execution-scope tags (`@smoke`, `@regression`).
+
+Do not use `@cross-browser` or `@responsive` on every test by default.
+
+Use them only when the plan explicitly marks the scenario as cross-browser or responsive coverage.
+
+### Forbidden browser, engine, and device tags
+
+Browser, engine, viewport, and device names are execution environment details.
+
+They are **not** Playwright test-intent tags.
+
+Do not use tags such as:
+
+```text
+@chromium
+@firefox
+@webkit
+@mobile
+@tablet
+@desktop
+```
+
+Browser and viewport selection belongs to:
+
+- Playwright projects in `playwright.config.ts`;
+- explicit viewport setup in the spec or project config when planned;
+- Allure reporting metadata for reporting dimensions.
+
+Do not encode browser or viewport in Playwright tags when a Playwright project or reporting metadata is the correct layer.
+
+### Playwright projects vs tags
+
+Playwright projects own browser and default viewport execution.
+
+Tags own test intent, layer, execution scope, and optional coverage type.
+
+Agents must use only Playwright projects documented in the project map.
+
+Do not reference non-existing projects such as `ui-firefox` or `ui-mobile` until the project map registers them.
+
+Current documented projects:
+
+- `ui-chromium`
+- `api`
+- `e2e`
+
+### Allure metadata for browser and viewport reporting
+
+Allure metadata may describe reporting dimensions such as:
+
+- browser or Playwright project;
+- viewport;
+- layer;
+- feature;
+- story;
+- component;
+- coverage type, such as cross-browser or responsive.
+
+Allure metadata must not replace Playwright tags.
+
+Playwright tags remain the source of truth for:
+
+- test layer;
+- smoke vs regression scope;
+- optional coverage type when registered;
+- feature/domain classification when registered.
+
+Specs or approved reporting helpers may set Allure metadata.
+
+Page Objects, Components, API clients, builders, and generators must not set Allure metadata.
+
+Do not add Allure reporter integration, tokens, or credentials as part of tag policy changes.
+
+Rule reference:
+
+- `.cursor/rules/reporting-allure.mdc`
+
 ### Tag category examples
 
 ```ts
@@ -515,6 +611,7 @@ export const tags = {
   layer: ["@ui", "@api", "@e2e"],
   execution: ["@smoke", "@regression"],
   quality: ["@visual", "@a11y", "@flaky", "@wip"],
+  coverageType: ["@cross-browser", "@responsive"],
   feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
   domain: ["@catalog", "@contact", "@checkout", "@cart", "@profile", "@auth"],
 } as const;
@@ -570,6 +667,7 @@ export const tags = {
   layer: ["@ui", "@api", "@e2e"],
   execution: ["@smoke", "@regression"],
   quality: ["@visual", "@a11y", "@flaky", "@wip"],
+  coverageType: ["@cross-browser", "@responsive"],
   feature: ["@sorting", "@filtering", "@login", "@register", "@registration"],
   domain: ["@catalog", "@contact", "@checkout", "@cart", "@profile", "@auth"],
 } as const;
@@ -609,7 +707,11 @@ Avoid:
 - reusable parsing, normalization, sorting, comparison, or predicate logic inside specs;
 - large assertion branching inside specs;
 - feature/domain tags used without being registered;
-- feature/domain tags used instead of required layer and execution-scope tags.
+- feature/domain tags used instead of required layer and execution-scope tags;
+- browser, engine, or device names used as Playwright tags;
+- viewport or device encoded as a tag instead of Playwright project or Allure metadata;
+- `@cross-browser` or `@responsive` used without project map registration or explicit plan coverage;
+- Allure metadata used as a substitute for required Playwright layer or execution tags.
 
 ---
 
@@ -621,7 +723,9 @@ Hooks prepare safe context.
 
 Steps describe user intent.
 
-Tags describe execution and reporting metadata.
+Tags describe test intent, layer, execution scope, and optional registered coverage type.
+
+Browser and viewport execution belongs to Playwright projects and Allure reporting metadata.
 
 Scenario data may stay in the spec when it is local and readable.
 

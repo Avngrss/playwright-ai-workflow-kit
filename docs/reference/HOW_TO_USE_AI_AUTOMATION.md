@@ -4,6 +4,10 @@
 
 This file explains how to use the project AI automation system in daily work.
 
+**Repository entry point:** [README](../../README.md) — starter overview and public entry point.
+
+**Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
+
 Main file:
 
 - `.cursor/rules/00-project-map.mdc`
@@ -14,13 +18,31 @@ Project Map decides structure and commands.
 
 Rules and skills must not override project-specific structure from Project Map.
 
+For starter conversion or repository cleanup, follow:
+
+- `.cursor/rules/framework-starter-boundary.rules.mdc`
+
 ---
 
 ## 1. Project Map
 
 Project Map is the source of truth.
 
-Use it to understand:
+This repository is currently a **framework starter** with no product-specific tests, specs, Page Objects, schemas, fixtures, or `src/test/**` implementation layer yet.
+
+The clean starter intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
+
+Expected future locations (created per project; absent in clean starter):
+
+- `src/test/pages/**` — Page Objects
+- `src/test/components/**` — Component Objects
+- `src/test/fixtures/**` — fixture chain; final entry point: `test.ts`
+- `src/test/assertions/**` — assertion helpers
+- `src/test/schemas/**` — API Zod schemas
+- `src/test/data/**` — builders, generators, datasets
+- `src/test/reporting/**` — Allure and reporting helpers
+
+Use the project map to understand:
 
 - where files should be created;
 - which fixture entry point to use;
@@ -71,6 +93,26 @@ Levels:
 - **visual** — meaningful layout or appearance regression inside stable UI states;
 - **schema/contract** — response or payload shape validation;
 - **not automated** — manual, unstable, duplicate, or low-value automation.
+
+Cross-browser and responsive coverage are optional, focused layers for documented browser or viewport risks.
+
+They are not a default browser/device matrix.
+
+- do not run every UI or E2E test in every browser or viewport by default;
+- API and schema tests are browser-independent;
+- responsive scenarios must define viewport, user value, and expected visible behavior;
+- E2E cross-browser expansion belongs in `specs/e2e/<journey>.md`.
+
+Rule:
+
+- `.cursor/rules/browser-and-responsive-testing.rules.mdc`
+
+Tag and metadata policy:
+
+- Playwright tags describe test intent: layer, smoke/regression scope, optional registered `@cross-browser` or `@responsive`;
+- do not use browser or device names as tags;
+- browser and viewport belong to Playwright projects and Allure reporting metadata;
+- Allure metadata must not replace Playwright tags.
 
 Not every UI test is E2E.
 
@@ -158,7 +200,8 @@ Project Map contains project-specific structure and commands.
 MCP ownership:
 
 - project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
-- Qase MCP — server name `qase`; user/global Cursor MCP settings; requires `QASE_API_TOKEN`; not in project `.cursor/mcp.json`
+- TMS MCP or API access — user/global Cursor MCP settings, extension settings, or local secret storage (not in repo)
+- **Qase** is a currently supported TMS example via user/global MCP when configured; other TMS providers may be supported later
 
 ---
 
@@ -227,18 +270,55 @@ Follow Project Map for the exact quality gate definition.
 
 ---
 
-## 6. Environment Variables
+## 5a. Package Test Scripts
+
+All test scripts are starter-safe: they use `--pass-with-no-tests`, so **zero tests is valid** in the clean starter.
+
+Quality gate:
+
+- `npm run qa:gate`
+
+Discovery:
+
+- `npm run test:list`
+
+Layer scripts (registered Playwright projects only):
+
+- `npm run test:api` — `api` project
+- `npm run test:ui` — `ui-chromium` project
+- `npm run test:e2e` — `e2e` project
+
+Tag-based scripts (filter across projects):
+
+- `npm run test:smoke` — tests tagged `@smoke`
+- `npm run test:regression` — tests tagged `@regression`
+- `npm run test:visual` — tests tagged `@visual`
+
+Coverage-type tag scripts (planned cross-browser or responsive tests only):
+
+- `npm run test:cross-browser` — tests tagged `@cross-browser`
+- `npm run test:responsive` — tests tagged `@responsive`
+
+Rules:
+
+- smoke/regression/visual scripts filter by Playwright tags, not folder paths;
+- cross-browser/responsive scripts filter by coverage-type tags only — they do not imply Firefox, WebKit, or mobile projects exist;
+- browser and viewport execution still depends on Playwright projects in `playwright.config.ts`;
+- do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`;
+- first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the starter.
+
+---
 
 Environment variable ownership matters.
 
 Current convention:
 
 ```text
-PRACTICE_TESTING_URL = UI application base URL
+UI_BASE_URL = UI application base URL
 
 API_BASE_URL = API project/tests base URL
 
-UI_PRECONDITION_API_BASE_URL = API backend used by UI precondition setup
+UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
 
 UI_API_BASE_URL = optional documented fallback for UI precondition API base
 ```
@@ -246,19 +326,19 @@ UI_API_BASE_URL = optional documented fallback for UI precondition API base
 Important rules:
 
 - API tests use `API_BASE_URL`.
-- UI browser tests use the UI base URL.
-- UI API precondition setup must use an API backend aligned with the UI runtime backend.
+- UI and E2E browser tests use `UI_BASE_URL`.
+- UI API precondition setup must use an API backend aligned with the UI runtime backend when preconditions are implemented.
 - UI specs must not read environment variables directly.
 - UI specs must not derive API host from UI host.
 - API host derivation by string replacement is forbidden.
 - Config/env access belongs in approved config or fixture layer.
 
-Example:
+Example shape only:
 
 ```text
-PRACTICE_TESTING_URL=https://practicesoftwaretesting.com
-API_BASE_URL=https://api-holtesting.practicesoftwaretesting.com
-UI_PRECONDITION_API_BASE_URL=https://api.practicesoftwaretesting.com
+UI_BASE_URL=https://your-ui-host.example
+API_BASE_URL=https://your-api-host.example
+UI_PRECONDITION_API_BASE_URL=https://your-api-host.example
 ```
 
 This split is intentional.
@@ -348,17 +428,21 @@ Recommended next commands are informational only.
 
 ## 8a. Typical Workflow: TMS Planning
 
-Use Qase MCP in **read-only** mode (server name `qase`; project `TOOLSSHOP`).
+TMS integration is optional. Use a Test Management System for planning input and traceability when available.
 
-Qase MCP is configured in **user/global** Cursor MCP settings (not project `.cursor/mcp.json`). Requires `QASE_API_TOKEN` in user config. Never commit real Qase tokens.
+Default mode is **read-only** unless explicitly approved for writes.
 
-Project `.cursor/mcp.json` contains project-level MCP only (`playwright`).
+MCP and secret ownership:
+
+- project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
+- TMS credentials — user/global MCP settings, extension settings, or local secret storage (not in repository env files)
+- **Qase** is a currently supported example provider via user/global Cursor MCP when configured; not a hard dependency
 
 TMS cases are planning input and traceability — not a 1:1 mapping to Playwright tests.
 
 TMS Source and TMS Mapping live in `specs/<feature>.md`.
 
-Qase reporter/result publishing is not configured. Do not add reporter integration by default.
+TMS reporter/result publishing is separate and not configured by default. Do not add reporter integration by default.
 
 ### No existing plan
 
@@ -557,7 +641,15 @@ Good E2E journey plan candidates:
 
 ### Playwright Runner Note
 
-A dedicated E2E Playwright project is configured in `playwright.config.ts`.
+Current browser projects in `playwright.config.ts`:
+
+- `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `api` — API specs; no browser
+- `e2e` — E2E specs (`*.e2e.spec.ts`)
+
+Broad browser/device matrix is **not** the default.
+
+Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
 
 If no runner matches `tests/e2e/**/*.e2e.spec.ts`, stop and report the config gap.
 
@@ -567,16 +659,16 @@ If no runner matches `tests/e2e/**/*.e2e.spec.ts`, stop and report the config ga
 
 Use when a UI or E2E test needs backend state before the UI action under test.
 
-Preferred approach:
+Preferred approach when a concrete project adds approved precondition fixtures:
 
 ```text
-approved API precondition fixture
+approved API precondition fixture from the project fixture chain
 ```
 
-Current registered-user setup example:
+Example pattern only:
 
 ```text
-registrationApiPreconditionSetup.createRegisteredUser(...)
+<approvedPreconditionFixture>.createRequiredState(...)
 ```
 
 Rules:
@@ -882,11 +974,50 @@ Do not include unrelated repository tree sync noise in focused commits unless ex
 
 ---
 
+## 19a. Typical Workflow: Framework Starter Cleanup
+
+Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+
+Rule:
+
+- `.cursor/rules/framework-starter-boundary.rules.mdc`
+
+Workflow:
+
+```text
+Audit repository files
+-> classify each file as keep / remove / generated / unsure
+-> remove only clear project-specific artifacts
+-> leave unsure files untouched until user decision
+-> generalize preserved starter docs/config where needed
+-> run verification
+-> report removed, preserved, unsure, verification, and remaining risks
+```
+
+Keep normally:
+
+- `.cursor/rules/**`, `.cursor/skills/**`, `.cursor/commands/**`
+- reusable `docs/**`
+- generic scripts and reviewed package/config files
+
+Remove normally:
+
+- `tests/api/**`, `tests/ui/**`, `tests/e2e/**`
+- `specs/**` for the current app
+- `src/test/**` project implementation layer (Page Objects, fixtures, schemas, helpers, builders, generators, reporting helpers, and related assets)
+- app-bound visual baselines
+
+Do not delete ambiguous files without user approval.
+
+Do not treat `.playwright-mcp/**`, report folders, or local run output as starter source content.
+
+---
+
 ## 20. Prompt Usage
 
 Use prompt templates from:
 
-- `AI_AGENT_PROMPT_TEMPLATES.md`
+- `docs/reference/AI_AGENT_PROMPTS.md`
 
 Use workflow reference from:
 

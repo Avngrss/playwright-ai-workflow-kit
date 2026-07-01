@@ -25,6 +25,7 @@ Follow these rules:
 - Fixtures and Test Data Rules;
 - Project Map Rules;
 - Configuration and Secrets Rules;
+- Multi-Target Environment Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Examples Policy.
 
@@ -143,7 +144,18 @@ Read the feature plan and identify:
 - required tags;
 - required test data;
 - contract gaps or blockers;
+- API service target and env name from project map;
 - verification command.
+
+If the feature plan names a specific API service, use that service — not a generic `API_BASE_URL` when the project map defines service-specific env names.
+
+If API service target is missing from the plan and the project has multiple services, stop and report:
+
+"API service target is missing from the feature plan. Update the plan and project map before implementation."
+
+Do not invent env variable names.
+
+Do not derive API host from UI host.
 
 Do not implement scenarios that are unclear.
 
@@ -165,9 +177,12 @@ Before creating or modifying files, check the project map for:
 - fixture entry point;
 - path aliases;
 - tags;
-- quality gate command.
+- quality gate command;
+- registered API service env names.
 
 Do not invent folders, aliases, commands, or naming conventions.
+
+If the project map defines multiple API services, bind clients and requests to the service documented in the feature plan through the approved config layer.
 
 ---
 
@@ -460,6 +475,10 @@ Do not derive API host from UI host.
 Do not build API URLs manually in specs when project config provides the base URL.
 
 Do not read secrets or environment variables directly in specs.
+
+Use the API service and env name documented in the feature plan and project map.
+
+Do not substitute a generic `API_BASE_URL` when the plan names a specific service.
 
 Do not use shared static credentials when fresh data can be created safely.
 
