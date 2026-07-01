@@ -72,7 +72,13 @@ Use this guide when you copy or clone this workflow kit as a **template for a ne
 
    Leave unused variables empty. Do not put real secrets, tokens, or production credentials in the repository.
 
+   Local `.env` corresponds conceptually to GitHub Actions configuration for the same env names:
+   - non-sensitive URLs → repository or environment **Variables**
+   - passwords, tokens, credentials → **Secrets**
+
 5. **Never commit** `.env` or other local secret files.
+
+6. **Configure CI variables and secrets** when real tests run in GitHub Actions (see [CI Baseline](#ci-baseline) below).
 
 ---
 
@@ -304,6 +310,7 @@ Behavior:
 - enables npm dependency caching via `actions/setup-node` (`cache: npm`);
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects whether test files exist and skips matrix execution when none exist;
+- maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
 - runs matrix jobs only when tests exist:
   - API, UI Chromium, E2E;
   - smoke, regression, visual;
@@ -311,14 +318,62 @@ Behavior:
   - responsive mobile Chromium with `@responsive`;
 - uploads generated artifacts when present:
   - `playwright-report/`
-  - `test-results/`;
+  - `test-results/`
+  - `allure-results/`
+  - `allure-report/`;
+- generates Allure HTML report via `npm run report:allure:generate` only when `allure-results/` exists;
 - does not configure TMS publishing;
 - does not configure GitHub Pages publishing.
 
+The clean starter does not require configured CI variables or secrets — the baseline gate passes with zero tests.
+
+### Reporting artifacts
+
+When tests exist:
+
+- Playwright writes `playwright-report/` (HTML) and failure artifacts under `test-results/` (screenshots/traces/videos retained on failure only);
+- Allure writes raw results to `allure-results/`;
+- CI runs `npm run report:allure:generate` when `allure-results/` exists, then uploads report folders when present.
+
+Allure is for reporting artifacts only — **not** TMS result publishing. Step-level custom Allure screenshots in specs are project-specific and not enabled by default.
+
+### GitHub Actions variables and secrets
+
+Configure when real tests exist. Document required names per project in `.cursor/rules/00-project-map.mdc`.
+
+**Repository or environment variables** (non-sensitive URLs):
+
+| Variable | Purpose |
+|----------|---------|
+| `UI_BASE_URL` | UI application base URL |
+| `API_BASE_URL` | API project base URL |
+| `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
+
+Multi-target projects register names such as `CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL` in the project map before use.
+
+**Secrets** (tokens, passwords, credentials):
+
+- user passwords
+- API tokens
+- service account credentials
+- TMS provider tokens
+- external service credentials
+
+Rules:
+
+- never commit real `.env` files;
+- never hardcode secrets in workflow YAML;
+- prefer GitHub **environment** secrets for staging/production-like targets;
+- use **variables** for URLs, **secrets** for tokens and passwords;
+- CI must not publish TMS results unless explicitly planned and approved.
+
 Reporting and diagnostics:
 
-- reporting integration (including Allure) is deferred to a separate approved batch;
-- CI uploads Playwright artifacts only when they exist.
+- Playwright HTML and Allure reporting are enabled for local/CI artifacts (`playwright.config.ts`);
+- Allure is for reporting artifacts only — **not** TMS result publishing;
+- failure screenshots, traces, and videos are retained on failure only;
+- CI generates and uploads Allure report only when `allure-results/` exists;
+- CI uploads Playwright and Allure artifacts only when folders exist.
 
 ---
 

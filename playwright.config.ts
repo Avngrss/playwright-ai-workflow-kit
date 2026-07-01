@@ -11,6 +11,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["allure-playwright", { resultsDir: "allure-results" }],
+  ],
   expect: {
     timeout: 10000,
     toHaveScreenshot: {
@@ -26,6 +31,9 @@ export default defineConfig({
     testIdAttribute: "data-test",
     actionTimeout: 10000,
     navigationTimeout: 15000,
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+    video: "retain-on-failure",
   },
 
   projects: [

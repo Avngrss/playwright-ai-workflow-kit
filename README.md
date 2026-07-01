@@ -38,7 +38,7 @@ You can copy or clone this repository as a **template for new automation project
 - `src/test/**` implementation layer (Page Objects, fixtures, schemas, assertion helpers, builders)
 - `src/test/data/**` project data layer (builders, generators, datasets)
 - Real URLs or production credentials
-- Reporter or TMS result publishing setup
+- TMS result publishing or GitHub Pages report publishing
 - Browser or mobile execution matrix by default
 - Data-generation libraries by default (`@faker-js/faker` is optional and project-driven)
 
@@ -165,8 +165,11 @@ All scripts are baseline-safe. Zero tests is a valid state.
 | `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Filter by `@cross-browser` coverage-type tag |
 | `npm run test:responsive` | Filter by `@responsive` coverage-type tag |
+| `npm run report:allure:generate` | Generate `allure-report/` from `allure-results/` |
 
 `npm test` is a **baseline run**, not a full browser/mobile matrix. `test:smoke`, `test:regression`, and `test:visual` are baseline-scoped tag runs. `test:cross-browser` and `test:responsive` are explicit opt-in coverage paths. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
+
+After test runs, Playwright writes `playwright-report/` and Allure writes `allure-results/`. Run `npm run report:allure:generate` to build `allure-report/`. Failure screenshots, traces, and videos are retained on failure only.
 
 ---
 
@@ -178,12 +181,48 @@ The starter CI workflow is starter-safe and stays valid in zero-test repositorie
 - Uses `actions/setup-node` npm dependency cache (`cache: npm`) in CI jobs
 - Detects test files and skips matrix jobs when no tests exist
 - Runs API/UI/E2E/tag-based matrix jobs only when tests are present
+- Maps repository variables to Playwright env when matrix jobs run (empty fallback when unset)
 - Runs cross-browser UI coverage with `@cross-browser` on `ui-chromium`, `ui-firefox`, and `ui-webkit`
 - Runs responsive UI coverage with `@responsive` on `ui-mobile-chromium`
-- Uploads generated artifacts when present: `playwright-report/`, `test-results/`
+- Uploads generated artifacts when present: `playwright-report/`, `test-results/`, `allure-results/`, `allure-report/`
+- Generates Allure HTML report when `allure-results/` exists after test runs
 - Keeps TMS publishing and GitHub Pages publishing out of scope by default
 
-Reporting integrations (including Allure) are deferred to a separate approved batch. This baseline only uploads Playwright artifacts when they exist.
+Playwright HTML and Allure reporting are enabled for local and CI artifacts only. Allure is **not** TMS result publishing. Step-level custom Allure screenshots in specs are project-specific and not enabled by default. Zero-test repositories still pass — matrix jobs and report uploads are skipped when no tests exist.
+
+### GitHub Actions variables and secrets
+
+Configure non-sensitive URLs as **repository or environment variables** (Settings → Secrets and variables → Actions):
+
+| Variable | Purpose |
+|----------|---------|
+| `UI_BASE_URL` | UI application base URL for `ui-chromium` and `e2e` projects |
+| `API_BASE_URL` | API base URL for the `api` project |
+| `UI_PRECONDITION_API_BASE_URL` | Optional API backend for UI/E2E precondition setup |
+
+Multi-target projects register additional names in the project map first, for example `CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL`.
+
+Store sensitive values as **Secrets** (never in workflow YAML or committed files):
+
+- user passwords
+- API tokens
+- service account credentials
+- TMS provider tokens
+- external service credentials
+
+Rules:
+
+- never commit real `.env` files
+- never hardcode secrets in workflow YAML
+- prefer GitHub **environment** secrets for staging/production-like targets
+- use repository/environment **variables** for non-sensitive URLs
+- use **secrets** for tokens and passwords
+- document required CI variables and secrets per real project in `.cursor/rules/00-project-map.mdc`
+- CI must not publish TMS results unless explicitly planned and approved
+
+The clean starter baseline does not require configured variables or secrets — the baseline gate passes with zero tests and empty env fallbacks.
+
+Local `.env` (from `.env.example`) corresponds conceptually to CI variables and secrets for the same env names.
 
 ---
 
@@ -256,4 +295,4 @@ Project map: `.cursor/rules/00-project-map.mdc`
 - Update the project map when adding apps, services, Playwright projects, or tags
 - Configure TMS tokens outside the repository (user/global MCP or local secret storage)
 - Keep full E2E browser/mobile matrix out of default baseline unless explicitly planned
-- Add reporter or TMS result publishing only as an explicit project decision
+- Add TMS result publishing or GitHub Pages report publishing only as an explicit project decision (Playwright HTML + Allure artifacts are already enabled)

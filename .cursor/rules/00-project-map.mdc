@@ -213,6 +213,7 @@ Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is 
 | `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Run `@cross-browser` on UI browser projects: `ui-chromium`, `ui-firefox`, `ui-webkit` |
 | `npm run test:responsive` | Run `@responsive` on `ui-mobile-chromium` |
+| `npm run report:allure:generate` | Generate `allure-report/` from `allure-results/` |
 
 Rules:
 
@@ -233,9 +234,12 @@ Starter CI baseline (`.github/workflows/playwright.yml`):
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects whether any `tests/**/*.spec.ts` or `tests/**/*.test.ts` files exist;
 - skips matrix test jobs when no tests exist (clean starter still passes);
+- maps repository variables to Playwright env when matrix jobs run (`UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`; empty fallback when unset);
+- does not require configured variables or secrets in zero-test state;
 - runs API/UI/E2E/tag-based jobs when tests exist;
 - includes focused cross-browser UI jobs and responsive mobile UI job via registered projects and coverage-type tags;
-- uploads artifacts when generated: `playwright-report/`, `test-results/`;
+- uploads artifacts when generated: `playwright-report/`, `test-results/`, `allure-results/`, `allure-report/`;
+- generates Allure HTML report via `npm run report:allure:generate` when `allure-results/` exists after test runs;
 - does not configure TMS result publishing;
 - does not configure GitHub Pages publishing.
 
@@ -324,7 +328,7 @@ Rules:
 - specs must not derive API host from UI host;
 - config/env access belongs in approved config or fixture layer.
 
-Do not hardcode product URLs in the starter baseline. Set values in local `.env` or CI secrets for each concrete project.
+Do not hardcode product URLs in the starter baseline. Set values in local `.env` or GitHub Variables (CI) for each concrete project.
 
 Example shape only (placeholders — not real URLs):
 
@@ -362,6 +366,68 @@ Multi-target rules:
 - do not use generic `UI_BASE_URL` when the feature belongs to a specific UI app;
 - update `.env.example` with commented examples that match registered names;
 - if target ownership is unclear, mark blocked/postponed or request clarification before implementation.
+
+---
+
+## CI Environment / Secrets
+
+Workflow file:
+
+- `.github/workflows/playwright.yml`
+
+Ownership model:
+
+- **GitHub repository or environment Variables** — non-sensitive URLs and other non-secret configuration;
+- **GitHub repository or environment Secrets** — passwords, tokens, service account credentials, TMS provider tokens, external service credentials;
+- **local `.env`** (from `.env.example`, uncommitted) — corresponds conceptually to the same env names used in CI.
+
+Clean starter baseline:
+
+- does **not** require configured CI variables or secrets;
+- baseline gate (`npm ci`, `qa:gate`, `test:list`) passes with zero tests and empty env fallbacks;
+- matrix test jobs run only when test files exist; variables become required for real test execution once tests need runtime URLs or credentials.
+
+Default CI variable mapping (simple single-app projects):
+
+| CI variable | Playwright/process env | Purpose |
+|-------------|------------------------|---------|
+| `vars.UI_BASE_URL` | `UI_BASE_URL` | UI application base URL for `ui-chromium` and `e2e` |
+| `vars.API_BASE_URL` | `API_BASE_URL` | API project base URL |
+| `vars.UI_PRECONDITION_API_BASE_URL` | `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
+
+Workflow uses empty fallback when variables are unset (`vars.NAME || ''`).
+
+GitHub Environment variables and secrets require adding `environment:` to CI jobs when a real project uses protected targets (staging/production-like). The starter workflow maps repository-level variables only.
+
+Multi-target CI variables:
+
+- register every env name in this project map before adding workflow mapping or using in tests;
+- examples: `CUSTOMER_UI_BASE_URL`, `ADMIN_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL`;
+- do not invent env names in workflow YAML, plans, or specs;
+- extend `.github/workflows/playwright.yml` env mapping only for names registered here.
+
+Secrets guidance (document per real project; do not commit values):
+
+- user passwords for authenticated flows;
+- API tokens and service account credentials;
+- TMS provider tokens (local MCP, extension settings, or CI Secrets — not repo files);
+- external service credentials (email, payment, third-party auth, etc.).
+
+Rules:
+
+- never commit real `.env` files;
+- never hardcode secrets in workflow YAML;
+- prefer GitHub **environment** secrets for staging/production-like targets;
+- use repository/environment **variables** for non-sensitive URLs;
+- use **secrets** for tokens and passwords;
+- each real project must document required CI variables and secrets in this project map section;
+- CI must not publish TMS results unless explicitly planned and approved;
+- do not add provider-specific secret names to the committed starter workflow unless the project map documents them.
+
+Rule references:
+
+- `.cursor/rules/configuration-secrets.rules.mdc`
+- `.cursor/rules/multi-target-environment.rules.mdc`
 
 ---
 
@@ -416,11 +482,39 @@ Usage:
 
 Reporting integration status:
 
-- reporter integration (including Allure and advanced artifact settings) is deferred to a separate approved reporting batch;
-- this baseline keeps CI artifact upload steps guarded by file existence checks;
-- reporting helper paths below are future/project-specific guidance, not baseline-enabled setup.
+- Playwright HTML reporter, Allure reporter, and failure artifacts are enabled in `playwright.config.ts`;
+- Allure is for local/CI reporting artifacts only — **not** TMS result publishing;
+- TMS reporter/result publishing remains separate and not configured by default;
+- GitHub Pages report publishing is not configured;
+- CI uploads report folders only when they exist (`hashFiles` guards);
+- zero-test starter remains valid — no report folders are required when matrix jobs are skipped.
 
-Allure metadata helper (created per project when reporting is implemented):
+Playwright reporters (`playwright.config.ts`):
+
+- console: `list`
+- HTML: `playwright-report/` (`open: never`)
+- Allure: `allure-results/` via `allure-playwright`
+
+Failure artifacts (Playwright `use` defaults):
+
+- `screenshot: only-on-failure`
+- `trace: retain-on-failure`
+- `video: retain-on-failure`
+
+Allure report generation:
+
+- script: `npm run report:allure:generate` — generates `allure-report/` from `allure-results/`
+- CI runs this step only when `allure-results/` exists after test execution
+- step-level custom Allure screenshots in specs are project-specific and not enabled by default
+
+Runtime artifact folders (gitignored):
+
+- `test-results/` — Playwright run output including failure screenshots/traces/videos
+- `playwright-report/` — Playwright HTML report
+- `allure-results/` — raw Allure results from test runs
+- `allure-report/` — generated Allure HTML report
+
+Allure metadata helper (created per project when custom metadata is implemented):
 
 - `src/test/reporting/allure-metadata.helper.ts`
 
@@ -430,7 +524,7 @@ Allure configuration skill:
 
 Rules:
 
-- UI and API specs may use the shared Allure metadata helper;
+- UI and API specs may use the shared Allure metadata helper when a project creates it;
 - specs own concrete Allure metadata values;
 - shared reporting helpers own reusable metadata application logic;
 - Allure metadata may describe reporting dimensions such as browser/project, viewport, layer, feature, story, component, and coverage type;

@@ -1104,17 +1104,46 @@ Behavior:
 - enables npm dependency caching via `actions/setup-node` (`cache: npm`);
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects test files and skips matrix execution when no tests exist;
+- maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
 - runs matrix jobs only when tests exist;
 - includes API/UI/E2E/tag-based jobs plus focused cross-browser/responsive jobs;
 - uploads generated artifacts when present:
   - `playwright-report/`
-  - `test-results/`;
+  - `test-results/`
+  - `allure-results/`
+  - `allure-report/`;
+- generates Allure HTML report when `allure-results/` exists after test runs;
 - keeps TMS publishing out of scope by default;
 - keeps GitHub Pages publishing out of scope by default.
 
 This CI baseline complements local scripts and keeps the starter useful both before and after tests are added.
 
-Reporting integration (including Allure reporter/metadata setup) is handled in a separate approved batch.
+The clean starter does not require configured CI variables or secrets.
+
+Reporting (Playwright HTML + Allure):
+
+- Allure is for reporting artifacts only — **not** TMS result publishing;
+- failure screenshots, traces, and videos retained on failure only;
+- Allure report generated/uploaded only when `allure-results/` exists;
+- step-level custom Allure screenshots are project-specific and not enabled by default.
+
+### GitHub Actions variables and secrets
+
+| Type | Examples | Storage |
+|------|----------|---------|
+| Variables | `UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`, multi-target URLs registered in project map | Repository or environment Variables |
+| Secrets | user passwords, API tokens, service credentials, TMS tokens | Repository or environment Secrets |
+
+Rules:
+
+- local `.env` corresponds conceptually to CI variables and secrets for the same env names;
+- never commit real `.env` files;
+- never hardcode secrets in workflow YAML;
+- prefer environment secrets for staging/production-like targets;
+- document required CI configuration per real project in `.cursor/rules/00-project-map.mdc`;
+- CI must not publish TMS results unless explicitly planned and approved.
+
+Reporting (Allure + Playwright HTML) is enabled for artifacts only — not TMS publishing or GitHub Pages.
 
 ---
 

@@ -328,15 +328,57 @@ CI behavior:
 - enables npm dependency caching via `actions/setup-node` (`cache: npm`);
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects test files and skips matrix jobs in zero-test state;
+- maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
 - runs matrix jobs only when tests exist;
 - includes API/UI/E2E/tag-based jobs and focused cross-browser/responsive jobs;
 - uploads generated artifacts when present:
   - `playwright-report/`
-  - `test-results/`;
+  - `test-results/`
+  - `allure-results/`
+  - `allure-report/`;
+- generates Allure HTML report when `allure-results/` exists after test runs;
 - does not configure TMS publishing;
 - does not configure GitHub Pages publishing.
 
-Reporting integration (including Allure reporter/metadata usage) is deferred to a separate approved batch.
+The clean starter does not require configured CI variables or secrets.
+
+Reporting (Playwright HTML + Allure):
+
+- reporters configured in `playwright.config.ts`: `list`, HTML (`playwright-report/`), Allure (`allure-results/`);
+- failure screenshots, traces, and videos retained on failure only;
+- `npm run report:allure:generate` builds `allure-report/` locally or in CI when results exist;
+- Allure is for reporting artifacts only — **not** TMS result publishing;
+- step-level custom Allure screenshots in specs are project-specific and not enabled by default;
+- zero-test starter remains valid — matrix and report uploads skipped when no tests exist.
+
+### GitHub Actions variables and secrets
+
+Local `.env` (from `.env.example`) corresponds conceptually to CI configuration:
+
+- non-sensitive URLs → repository or environment **Variables** (`vars.*` in workflow)
+- passwords, tokens, credentials → **Secrets** (`secrets.*` in workflow)
+
+Default repository variables for simple single-app projects:
+
+| Variable | Purpose |
+|----------|---------|
+| `UI_BASE_URL` | UI application base URL |
+| `API_BASE_URL` | API project base URL |
+| `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
+
+Multi-target env names (`CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, etc.) must be registered in the project map before use.
+
+Store as **Secrets**: user passwords, API tokens, service account credentials, TMS provider tokens, external service credentials.
+
+Rules:
+
+- never commit real `.env` files;
+- never hardcode secrets in workflow YAML;
+- prefer GitHub **environment** secrets for staging/production-like targets;
+- document required CI variables and secrets per real project in the project map;
+- CI must not publish TMS results unless explicitly planned and approved.
+
+Reporting integration (Allure + Playwright HTML) is enabled for artifacts only — not TMS publishing or GitHub Pages.
 
 ---
 

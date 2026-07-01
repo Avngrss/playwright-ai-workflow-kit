@@ -73,10 +73,30 @@ Starter CI baseline (`.github/workflows/playwright.yml`):
 - enables npm dependency caching via `actions/setup-node` (`cache: npm`);
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects test files and skips matrix execution in zero-test state;
+- maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
 - runs matrix jobs only when tests exist;
 - uploads generated Playwright artifacts when present (`playwright-report/`, `test-results/`);
+- generates and uploads Allure artifacts when present (`allure-results/`, `allure-report/`);
 - does not configure TMS publishing or GitHub Pages publishing by default.
-- keeps reporting integration (including Allure metadata/reporters) as a separate approved batch.
+
+Reporting (Playwright HTML + Allure):
+
+- enabled in `playwright.config.ts` for local and CI artifacts only;
+- Allure is **not** TMS result publishing;
+- failure screenshots, traces, and videos are retained on failure only;
+- `npm run report:allure:generate` builds `allure-report/` from `allure-results/`;
+- CI generates/uploads Allure report only when results exist;
+- step-level custom Allure screenshots are project-specific and not enabled by default;
+- zero-test starter remains valid — no report folders required when matrix is skipped.
+
+CI variables and secrets model:
+
+- **Variables** (non-sensitive URLs): `UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`; multi-target names when registered in project map.
+- **Secrets** (tokens/passwords/credentials): user passwords, API tokens, service accounts, TMS tokens, external service credentials.
+- local `.env` corresponds conceptually to CI variables and secrets; never commit real `.env`.
+- never hardcode secrets in workflow YAML; prefer environment secrets for staging/production-like targets.
+- document required CI configuration per real project in `.cursor/rules/00-project-map.mdc`.
+- clean starter does not require configured variables or secrets; TMS publishing remains disabled unless explicitly planned.
 
 ---
 

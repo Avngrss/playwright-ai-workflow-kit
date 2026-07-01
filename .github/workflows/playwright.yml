@@ -45,6 +45,13 @@ jobs:
     if: needs.baseline.outputs.has_tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Repository variables (Settings → Secrets and variables → Actions → Variables).
+    # Empty when unset — baseline gate does not require them; matrix runs only when tests exist.
+    # Register additional multi-target names in the project map before adding them here.
+    env:
+      UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
+      API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
+      UI_PRECONDITION_API_BASE_URL: ${{ vars.UI_PRECONDITION_API_BASE_URL || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -92,6 +99,9 @@ jobs:
         run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Run matrix command
         run: ${{ matrix.command }}
+      - name: Generate Allure report
+        if: always() && hashFiles('allure-results/**') != ''
+        run: npm run report:allure:generate
       - name: Upload Playwright HTML report
         if: always() && hashFiles('playwright-report/**') != ''
         uses: actions/upload-artifact@v4
@@ -104,3 +114,15 @@ jobs:
         with:
           name: test-results-${{ matrix.name }}
           path: test-results/
+      - name: Upload Allure results
+        if: always() && hashFiles('allure-results/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.name }}
+          path: allure-results/
+      - name: Upload Allure report
+        if: always() && hashFiles('allure-report/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ matrix.name }}
+          path: allure-report/
