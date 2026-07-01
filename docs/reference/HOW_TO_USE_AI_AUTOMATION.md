@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This file explains how to use the project AI automation system in daily work.
+This file explains how to use the **Playwright AI Automation Framework** AI automation system in daily work.
 
-**Repository entry point:** [README](../../README.md) — starter overview and public entry point.
+**Repository entry point:** [README](../../README.md) — framework overview and public entry point.
+
+**npm package name:** `playwright-ai-automation-framework`
 
 **Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
 
@@ -18,7 +20,7 @@ Project Map decides structure and commands.
 
 Rules and skills must not override project-specific structure from Project Map.
 
-For starter conversion or repository cleanup, follow:
+For baseline cleanup or repository conversion, follow:
 
 - `.cursor/rules/framework-starter-boundary.rules.mdc`
 
@@ -28,11 +30,11 @@ For starter conversion or repository cleanup, follow:
 
 Project Map is the source of truth.
 
-This repository is currently a **framework starter** with no product-specific tests, specs, Page Objects, schemas, fixtures, or `src/test/**` implementation layer yet.
+This repository is the **Playwright AI Automation Framework** baseline with no product-specific tests, specs, Page Objects, schemas, fixtures, or `src/test/**` implementation layer yet.
 
-The clean starter intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
+The clean framework baseline intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
 
-Expected future locations (created per project; absent in clean starter):
+Expected future locations (created per project; absent in clean baseline):
 
 - `src/test/pages/**` — Page Objects
 - `src/test/components/**` — Component Objects
@@ -272,7 +274,7 @@ Follow Project Map for the exact quality gate definition.
 
 ## 5a. Package Test Scripts
 
-All test scripts are starter-safe: they use `--pass-with-no-tests`, so **zero tests is valid** in the clean starter.
+All test scripts are baseline-safe: they use `--pass-with-no-tests`, so **zero tests is valid** in the clean framework baseline.
 
 Quality gate:
 
@@ -305,7 +307,7 @@ Rules:
 - cross-browser/responsive scripts filter by coverage-type tags only — they do not imply Firefox, WebKit, or mobile projects exist;
 - browser and viewport execution still depends on Playwright projects in `playwright.config.ts`;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`;
-- first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the starter.
+- first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the framework baseline.
 
 ---
 
@@ -974,9 +976,9 @@ Do not include unrelated repository tree sync noise in focused commits unless ex
 
 ---
 
-## 19a. Typical Workflow: Framework Starter Cleanup
+## 19a. Typical Workflow: Framework Baseline Cleanup
 
-Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 
@@ -989,7 +991,7 @@ Audit repository files
 -> classify each file as keep / remove / generated / unsure
 -> remove only clear project-specific artifacts
 -> leave unsure files untouched until user decision
--> generalize preserved starter docs/config where needed
+-> generalize preserved framework docs/config where needed
 -> run verification
 -> report removed, preserved, unsure, verification, and remaining risks
 ```
@@ -1009,7 +1011,7 @@ Remove normally:
 
 Do not delete ambiguous files without user approval.
 
-Do not treat `.playwright-mcp/**`, report folders, or local run output as starter source content.
+Do not treat `.playwright-mcp/**`, report folders, or local run output as framework source content.
 
 ---
 

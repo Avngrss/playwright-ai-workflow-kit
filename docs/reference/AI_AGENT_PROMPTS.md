@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Reusable prompt templates for working with AI agents in the Playwright + TypeScript test automation framework.
+Reusable prompt templates for working with AI agents in the **Playwright AI Automation Framework** (Playwright + TypeScript test automation framework).
+
+**npm package name:** `playwright-ai-automation-framework`
 
 A good prompt defines:
 

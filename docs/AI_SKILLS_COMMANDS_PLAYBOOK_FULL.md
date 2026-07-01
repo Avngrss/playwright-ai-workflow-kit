@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This playbook explains how to use the project AI skills and Cursor slash commands for the Playwright + TypeScript test automation framework.
+This playbook explains how to use the AI skills and Cursor slash commands for the **Playwright AI Automation Framework** (Playwright + TypeScript test automation framework).
+
+**npm package name:** `playwright-ai-automation-framework`
 
 Use this document to decide:
 
@@ -14,7 +16,7 @@ Use this document to decide:
 
 The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the framework architecture.
 
-**New to this starter?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands.
+**New to the Playwright AI Automation Framework?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands. You can also use this repository as a **template for new automation projects**.
 
 ---
 
@@ -39,7 +41,7 @@ Choose the smallest skill that matches the task.
 
 ## Package Test Scripts
 
-Starter-safe scripts (all use `--pass-with-no-tests`; zero tests is valid):
+Baseline-safe scripts (all use `--pass-with-no-tests`; zero tests is valid):
 
 | Script | Purpose |
 |--------|---------|
@@ -64,9 +66,9 @@ Rules:
 
 ---
 
-## Framework Starter Cleanup
+## Framework Baseline Cleanup
 
-Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 
@@ -74,14 +76,14 @@ Rule:
 
 Keep:
 
-- rules, skills, commands, reusable docs, generic scripts, and domain-neutral starter mechanisms
+- rules, skills, commands, reusable docs, generic scripts, and domain-neutral framework mechanisms
 
 Remove or exclude unless explicitly approved as templates:
 
 - project tests, specs, and the full `src/test/**` implementation layer (Page Objects, fixtures, schemas, helpers, data, reporting helpers, and related assets)
 - product-specific docs
 
-The clean starter intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
+The clean framework baseline intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
 
 Do not delete:
 
@@ -89,7 +91,7 @@ Do not delete:
 - framework docs/rules/skills/commands;
 - package/config files without explicit review
 
-Generated/runtime artifacts such as `.playwright-mcp/**`, reports, and local run output are not starter source content.
+Generated/runtime artifacts such as `.playwright-mcp/**`, reports, and local run output are not framework source content.
 
 Cleanup work must produce a report with removed files, preserved files, unsure files, verification, and remaining risks.
 
@@ -286,7 +288,7 @@ Do not add E2E scenarios to feature plans — use `specs/e2e/<journey>.md` inste
 
 ## TMS Planning Conventions
 
-- TMS integration is optional and provider-agnostic at the starter level.
+- TMS integration is optional and provider-agnostic at the framework level.
 - **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`); other TMS providers may be added later.
 - TMS credentials belong in user/global MCP settings or local secret storage — not in repository env files or committed MCP config.
 - Project MCP (`.cursor/mcp.json`): `playwright` only — project-level; safe to commit.
@@ -1392,7 +1394,7 @@ Audit/review only — does **not** create or modify data by default.
 ### Use When
 
 - before E2E implementation or destructive flows;
-- before cleanup or starter conversion;
+- before cleanup or baseline conversion;
 - when shared users, carts, orders, or fixed entities are suspected;
 - when inline random data or fixture/data misuse is suspected.
 
@@ -1506,7 +1508,7 @@ Audit/review only — does **not** implement tests.
 ### Use When
 
 - after planning and implementation batches;
-- before cleanup or starter conversion;
+- before cleanup or baseline conversion;
 - when duplicate API/UI/E2E coverage is suspected;
 - when blocked/postponed scenarios may have been implemented;
 - when TMS Mapping exists and traceability must be checked.

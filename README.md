@@ -1,16 +1,18 @@
-# Playwright Automation Framework Starter
+# Playwright AI Automation Framework
 
-A reusable **Playwright + TypeScript** automation framework starter for building test automation on any target application.
+npm package: `playwright-ai-automation-framework`
 
-It supports **API**, **UI**, **E2E**, **visual**, **TMS-assisted planning**, **cross-browser**, and **responsive** testing workflows. AI **rules**, **skills**, and **commands** guide planning, implementation, review, and healing.
+A reusable **Playwright + TypeScript** AI-assisted automation framework foundation for building test automation on any target application.
 
-The clean starter ships **zero tests** and **no `src/test/**` implementation layer**. That is valid. Project-specific code is created when you start work on a concrete application.
+It supports **API**, **UI**, **E2E**, **visual**, **TMS-assisted planning**, **cross-browser**, and **responsive** testing workflows. AI **rules**, **skills**, and **commands** guide planning, implementation, review, and audit.
 
-For step-by-step onboarding, see [Start a New Project](docs/START_NEW_PROJECT.md).
+The clean framework baseline ships **zero tests** and **no `src/test/**` implementation layer**. That is valid. Project-specific code is created when you start work on a concrete application.
+
+You can copy or clone this repository as a **template for new automation projects**. For step-by-step onboarding, see [Start a New Project](docs/START_NEW_PROJECT.md).
 
 ---
 
-## What This Starter Includes
+## What This Framework Includes
 
 - Playwright + TypeScript foundation
 - AI rules, skills, and slash commands under `.cursor/`
@@ -20,7 +22,7 @@ For step-by-step onboarding, see [Start a New Project](docs/START_NEW_PROJECT.md
 - Provider-agnostic TMS model — **Qase** is an example supported provider only
 - Cross-browser and responsive testing policies
 - Visual testing policy
-- Starter-safe package scripts (`--pass-with-no-tests`)
+- Baseline-safe package scripts (`--pass-with-no-tests`)
 - Provider-agnostic `.env.example`
 - Multi-application / multi-service environment support
 
@@ -57,7 +59,7 @@ Fill placeholders as needed:
 - **UI preconditions:** `UI_PRECONDITION_API_BASE_URL` only when backend setup is required
 - **Multi-target projects:** register app/service env names in the project map first
 
-Verify the starter:
+Verify the framework baseline:
 
 ```bash
 npm run qa:gate
@@ -143,7 +145,7 @@ TMS principles:
 
 ## Package Scripts
 
-All scripts are starter-safe. Zero tests is a valid state.
+All scripts are baseline-safe. Zero tests is a valid state.
 
 | Script | Purpose |
 |--------|---------|
@@ -162,9 +164,9 @@ All scripts are starter-safe. Zero tests is a valid state.
 
 ---
 
-## Current Starter Structure
+## Current Framework Structure
 
-Shipped with the starter:
+Shipped with the framework baseline:
 
 ```text
 .cursor/rules/**      Architecture and quality guardrails
@@ -174,7 +176,7 @@ docs/**               Framework and workflow documentation
 .env.example          Provider-agnostic env placeholders
 playwright.config.ts  Playwright projects and defaults
 scripts/**            Convention checks and tooling
-package.json          Starter-safe npm scripts
+package.json          Baseline-safe npm scripts
 ```
 
 Created when a real project starts:

@@ -1,7 +1,7 @@
 {
-  "name": "playwright-automation-framework-starter",
+  "name": "playwright-ai-automation-framework",
   "version": "1.0.0",
-  "description": "Reusable Playwright + TypeScript test automation framework starter",
+  "description": "AI-assisted Playwright and TypeScript automation framework for API, UI, E2E, visual, TMS-assisted, cross-browser, and responsive testing workflows.",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test --pass-with-no-tests",

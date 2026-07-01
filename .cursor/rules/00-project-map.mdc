@@ -143,23 +143,29 @@
 
 ---
 
-## Framework Starter State
+## Framework Foundation State
 
-This repository is a reusable Playwright + TypeScript automation framework starter.
+This repository is the **Playwright AI Automation Framework** — a reusable Playwright + TypeScript AI-assisted automation framework foundation.
+
+npm package name:
+
+- `playwright-ai-automation-framework`
+
+Repository URL is not fixed in framework metadata. Do not invent homepage, bugs, or repository fields until the target GitHub repository is known.
 
 Root documentation entry point:
 
-- `README.md` — high-level starter overview, quick start, and workflow summary
+- `README.md` — high-level framework overview, quick start, and workflow summary
 
 Detailed new-project onboarding guide:
 
 - `docs/START_NEW_PROJECT.md`
 
-The clean starter intentionally has **no project implementation layer** under `src/test/`.
+The clean framework baseline intentionally has **no project implementation layer** under `src/test/`.
 
 Skills and commands create the required `src/test/**` structure when implementation starts on a concrete application.
 
-Expected project implementation locations (created per application; **absent in clean starter**):
+Expected project implementation locations (created per application; **absent in clean baseline**):
 
 - `src/test/pages/**` — Page Objects
 - `src/test/components/**` — Component Objects
@@ -184,7 +190,7 @@ Quality gate:
 
 - `npm run qa:gate`
 
-Package scripts (starter-safe; all use `--pass-with-no-tests` so zero tests is valid):
+Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is valid):
 
 | Script | Purpose |
 |--------|---------|
@@ -208,14 +214,14 @@ Rules:
 - do not add firefox/webkit/mobile scripts until matching projects are registered in the project map and config;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`.
 
-First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the starter.
+First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the framework baseline.
 
 Coverage audit (review only; does not implement tests):
 
 - skill: `.cursor/skills/audit-test-coverage/SKILL.md`
 - command: `/audit-test-coverage`
 - compares feature plans (`specs/<feature>.md`), E2E journey plans (`specs/e2e/<journey>.md`), implemented tests, optional TMS mappings, and project map conventions
-- use after planning/implementation batches or before cleanup/starter conversion
+- use after planning/implementation batches or before cleanup or baseline conversion
 - reports missing ready coverage, unplanned tests, duplicate/wrong-layer coverage, blocked/postponed violations, TMS gaps, tag issues, and stale coverage-tied artifacts
 - does not modify files, implement tests, delete tests, update TMS, or publish results unless explicitly requested in the same task
 
@@ -224,7 +230,7 @@ Test data strategy audit (review only; does not create or modify data):
 - skill: `.cursor/skills/audit-test-data-strategy/SKILL.md`
 - command: `/audit-test-data-strategy`
 - assesses data safety and maintainability across feature plans, E2E journey plans, specs, `src/test/data/**`, fixtures, and related setup
-- use before E2E implementation, before destructive flows, before cleanup/starter conversion, or when shared mutable data is suspected
+- use before E2E implementation, before destructive flows, before cleanup or baseline conversion, or when shared mutable data is suspected
 - detects shared mutable data, missing isolation/cleanup, inline random data, builder/generator/fixture misuse, E2E data policy gaps, and environment/service ownership issues
 - does not modify files, create builders, change tests, delete data, mutate environment, update TMS, or infer cleanup without evidence unless explicitly requested
 - for implementation after audit, use `/create-test-data-builder`, `/create-fixture`, `/plan-e2e-journey`, or heal skills as appropriate
@@ -257,14 +263,14 @@ Rule:
 
 - `.cursor/rules/multi-target-environment.rules.mdc`
 
-Starter env template:
+Framework env template:
 
 - `.env.example` — provider-agnostic placeholders only; safe to commit
 - `.env` — local values only; never commit
 
 Copy `.env.example` to `.env` locally and fill placeholders when needed.
 
-### Simple starter env model
+### Simple single-app env model
 
 Single-application projects may use:
 
@@ -287,7 +293,7 @@ Rules:
 - specs must not derive API host from UI host;
 - config/env access belongs in approved config or fixture layer.
 
-Do not hardcode product URLs in the starter. Set values in local `.env` or CI secrets for each concrete project.
+Do not hardcode product URLs in the framework baseline. Set values in local `.env` or CI secrets for each concrete project.
 
 Example shape only (placeholders — not real URLs):
 
@@ -345,7 +351,7 @@ Rules:
 - specs must import only from the final fixture entry point;
 - extend fixture layers in project-specific files when a concrete product is added;
 - skills such as `create-fixture` and implementation skills create the required fixture chain;
-- the clean starter does not ship a fixture entry point.
+- the clean baseline does not ship a fixture entry point.
 
 ---
 
@@ -444,7 +450,7 @@ Environment variables:
 API documentation / contract source:
 
 - define in project-specific feature plans at `specs/<feature>.md`;
-- do not hardcode product API URLs in the starter.
+- do not hardcode product API URLs in the framework baseline.
 
 API specs (when added):
 
@@ -722,7 +728,7 @@ Rule:
 
 Concept:
 
-- TMS integration is optional and provider-agnostic at the starter level
+- TMS integration is optional and provider-agnostic at the framework level
 - TMS cases are planning input and traceability source
 - TMS reporter/result publishing is separate and not configured by default
 
@@ -812,10 +818,10 @@ Rule:
 
 Purpose:
 
-- distinguish reusable framework starter content from project-specific artifacts before cleanup or deletion;
-- require audit-before-delete classification for starter conversion work.
+- distinguish reusable framework baseline content from project-specific artifacts before cleanup or deletion;
+- require audit-before-delete classification for baseline conversion work.
 
-Reusable starter content normally includes:
+Reusable framework content normally includes:
 
 - `.cursor/rules/**`
 - `.cursor/skills/**`

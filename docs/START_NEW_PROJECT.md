@@ -1,18 +1,20 @@
 # Start a New Project
 
-**Overview:** [README](../README.md) — high-level starter introduction. This guide is the detailed onboarding walkthrough.
+**Overview:** [README](../README.md) — high-level framework overview. This guide is the detailed onboarding walkthrough.
 
 ---
 
 ## Purpose
 
-This repository is a reusable **Playwright + TypeScript automation framework starter**.
+This repository is the **Playwright AI Automation Framework** — a reusable **Playwright + TypeScript** AI-assisted automation framework foundation.
 
-It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, and feature plans are created per application — they are not shipped with the starter.
+npm package name: `playwright-ai-automation-framework`
 
-The clean starter has **no `src/test/**` implementation layer**. Skills and commands create the required project structure when implementation starts.
+It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, and feature plans are created per application — they are not shipped with the framework baseline.
 
-Use this guide when you copy or clone the starter for a new automation project.
+The clean framework baseline has **no `src/test/**` implementation layer**. Skills and commands create the required project structure when implementation starts.
+
+Use this guide when you copy or clone the framework as a **template for a new automation project**.
 
 ---
 
@@ -27,7 +29,7 @@ Use this guide when you copy or clone the starter for a new automation project.
 
 ## Initial Setup
 
-1. **Clone or copy** this starter into your project workspace.
+1. **Clone or copy** this framework into your project workspace.
 2. **Install dependencies:**
 
    ```bash
@@ -42,7 +44,7 @@ Use this guide when you copy or clone the starter for a new automation project.
 
 4. **Fill placeholders only when needed** for your target application:
 
-   **Simple single-app projects** (starter defaults):
+   **Simple single-app projects** (framework defaults):
 
    ```text
    UI_BASE_URL=
@@ -81,17 +83,17 @@ Use this guide when you copy or clone the starter for a new automation project.
 TMS guidance:
 
 - TMS integration is **optional**. Use it for planning input and traceability when a Test Management System is available.
-- **Qase** is a currently supported example provider via user/global Cursor MCP when configured — not a hard dependency of the starter.
+- **Qase** is a currently supported example provider via user/global Cursor MCP when configured — not a hard dependency of the framework.
 - Other TMS providers may be supported later through approved integration paths.
 - TMS tokens belong in user/global MCP settings or local secret storage — **not** in repository env files.
 - TMS is **read-only by default** (list/read cases; no writes, runs, or result publishing without explicit approval).
-- TMS reporter/result publishing is separate and **not** configured in this starter by default.
+- TMS reporter/result publishing is separate and **not** configured in this framework by default.
 
 If you use Qase as your TMS example, verify its MCP connection in Cursor before running `/plan-from-tms` or `/align-plan-with-tms`.
 
 ---
 
-## Starter Structure
+## Framework Structure
 
 Key locations:
 
@@ -107,7 +109,7 @@ Key locations:
 | `tests/ui/**` | UI specs (`*.ui.spec.ts`) |
 | `tests/e2e/**` | E2E specs (`*.e2e.spec.ts`) |
 
-**Project implementation layer** — created per application when implementation starts; **absent in clean starter**:
+**Project implementation layer** — created per application when implementation starts; **absent in clean baseline**:
 
 | Path | Purpose |
 |------|---------|
@@ -223,9 +225,9 @@ Rule reference: `.cursor/rules/visual-testing.mdc`
 
 ## Verification
 
-The clean starter has **zero tests** — that is valid. All package test scripts use `--pass-with-no-tests` so they succeed in the empty starter state.
+The clean framework baseline has **zero tests** — that is valid. All package test scripts use `--pass-with-no-tests` so they succeed in the empty baseline state.
 
-Common starter checks:
+Common baseline checks:
 
 ```bash
 npm run qa:gate
@@ -260,7 +262,7 @@ Notes:
 - **Smoke and regression** scripts filter by `@smoke` or `@regression` tags — not by folder paths or project names.
 - **Cross-browser and responsive** scripts filter by `@cross-browser` or `@responsive` coverage-type tags only. They do not run a browser matrix and do not imply Firefox, WebKit, or mobile projects exist.
 - **Browser and viewport execution** still depends on Playwright projects in `playwright.config.ts` (`ui-chromium`, `api`, `e2e`). Tags describe test intent; projects describe execution environment.
-- **Zero-test starter state** is expected. Scripts pass cleanly until real tests are added.
+- **Zero-test baseline state** is expected. Scripts pass cleanly until real tests are added.
 - **First real tests** are created through planning and implementation commands: `/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`.
 
 After implementing coverage, run the impacted layer or tag script and `npm run qa:gate` again.
@@ -294,7 +296,7 @@ Environment notes:
 - Invent tags, Playwright projects, or browser/device tag names.
 - Use `waitForTimeout`.
 - Hide E2E journey steps in fixtures, hooks, or Page Objects.
-- Leave application-specific code in the starter when converting it for reuse.
+- Leave application-specific code in the framework baseline when converting it for reuse.
 
 ---
 
@@ -321,7 +323,7 @@ Planning and implementation (Cursor slash commands):
 
 ## Related Documentation
 
-- [README](../README.md) — high-level starter overview
+- [README](../README.md) — high-level framework overview
 - [How To Use AI Automation System](reference/HOW_TO_USE_AI_AUTOMATION.md)
 - [AI Workflow Map](reference/AI_WORKFLOW_MAP.md)
 - [AI Skills and Commands Playbook](AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md)

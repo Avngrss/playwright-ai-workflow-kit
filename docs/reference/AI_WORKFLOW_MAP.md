@@ -2,15 +2,17 @@
 
 ## Purpose
 
-This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted Playwright + TypeScript automation work.
+This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted work with the **Playwright AI Automation Framework**.
 
 **Repository entry point:** [README](../../README.md)
 
+**npm package name:** `playwright-ai-automation-framework`
+
 **Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
 
-The clean starter has no `src/test/**` project implementation layer. Page Objects, fixtures, schemas, assertion helpers, builders, and reporting helpers are created per application through skills and commands when implementation starts.
+The clean framework baseline has no `src/test/**` project implementation layer. Page Objects, fixtures, schemas, assertion helpers, builders, and reporting helpers are created per application through skills and commands when implementation starts.
 
-The clean starter also has **zero tests** — that is valid. Package test scripts use `--pass-with-no-tests` and succeed until real tests are added through `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
+The clean framework baseline also has **zero tests** — that is valid. Package test scripts use `--pass-with-no-tests` and succeed until real tests are added through `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
 
 ```text
 Project Map = source of truth for structure, commands, aliases, tags, environment ownership, app/service env names, fixture entry points, and file ownership
@@ -363,7 +365,7 @@ Run /plan-e2e-journey
 
 ## TMS Planning Workflows
 
-TMS integration is optional and provider-agnostic at the starter level. Default mode is **read-only**.
+TMS integration is optional and provider-agnostic at the framework level. Default mode is **read-only**.
 
 **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`). Other TMS providers may be supported later through approved integration paths.
 
@@ -939,9 +941,9 @@ It must not modify files.
 
 ---
 
-## Main Workflow: Framework Starter Cleanup
+## Main Workflow: Framework Baseline Cleanup
 
-Use when converting the repository into a reusable Playwright + TypeScript automation framework starter.
+Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 
@@ -955,7 +957,7 @@ Audit first, delete later
 -> classify each file as keep / remove / generated / unsure
 -> remove only clear project-specific artifacts
 -> leave unsure files untouched until user decision
--> generalize preserved starter docs/config where needed
+-> generalize preserved framework docs/config where needed
 -> run verification
 -> report removed, preserved, unsure, verification, and remaining risks
 ```
@@ -973,7 +975,7 @@ Classify `.github/**` per file during audit; do not blindly keep or remove it.
 Also see:
 
 - `docs/reference/HOW_TO_USE_AI_AUTOMATION.md` — section 19a
-- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md` — Framework Starter Cleanup
+- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md` — Framework Baseline Cleanup
 
 ---
 
@@ -1060,7 +1062,7 @@ Verification order:
 3. typecheck/lint if applicable;
 4. repository quality gate from project map (`npm run qa:gate`).
 
-Starter-safe package scripts:
+Baseline-safe package scripts:
 
 - `npm run test:list` — discovery without execution
 - `npm run test:api` / `test:ui` / `test:e2e` — layer scripts using registered projects only
@@ -1346,7 +1348,7 @@ Use when comparing feature plans, E2E journey plans, implemented tests, and opti
 
 Audit only — does not implement tests, delete tests, update TMS, or publish results.
 
-Use after planning/implementation batches or before cleanup/starter conversion.
+Use after planning/implementation batches or before cleanup or baseline conversion.
 
 ---
 
@@ -1368,7 +1370,7 @@ Use when auditing shared mutable data, isolation, cleanup policy, inline random 
 
 Audit only — does not create or modify data, change tests, delete data, mutate environment, update TMS, or infer cleanup without evidence unless explicitly requested.
 
-Use before E2E implementation, before destructive flows, and before cleanup/starter conversion.
+Use before E2E implementation, before destructive flows, and before cleanup or baseline conversion.
 
 For implementation after audit, use Create Test Data Builder, Create Fixture, Plan E2E Journey, or heal skills as appropriate.
 
