@@ -53,6 +53,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 reporting-allure.mdc
       - 📄 sorting-filtering.mdc
       - 📄 test-abstraction-hygiene.rules.mdc
+      - 📄 test-data-generation.rules.mdc
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
       - 📄 test-structure-and-tags.rules.mdc
@@ -169,6 +170,10 @@ The clean starter baseline intentionally has **no project implementation layer**
 
 Skills and commands create the required `src/test/**` structure when implementation starts on a concrete application.
 
+The clean starter baseline also intentionally ships with no `src/test/data/**` data layer.
+
+Create `src/test/data/**` per project only when reusable generated data is actually needed.
+
 Expected project implementation locations (created per application; **absent in clean baseline**):
 
 - `src/test/pages/**` — Page Objects
@@ -198,27 +203,41 @@ Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is 
 
 | Script | Purpose |
 |--------|---------|
+| `npm test` | Baseline run: `api` + `ui-chromium` + `e2e` |
 | `npm run test:list` | List discovered tests without executing them |
 | `npm run test:api` | Run API project (`api`) |
 | `npm run test:ui` | Run UI project (`ui-chromium`) |
 | `npm run test:e2e` | Run E2E project (`e2e`) |
-| `npm run test:smoke` | Run tests tagged `@smoke` across projects |
-| `npm run test:regression` | Run tests tagged `@regression` across projects |
-| `npm run test:visual` | Run tests tagged `@visual` across projects |
-| `npm run test:cross-browser` | Run tests tagged `@cross-browser` (coverage-type filter only) |
-| `npm run test:responsive` | Run tests tagged `@responsive` (coverage-type filter only) |
+| `npm run test:smoke` | Baseline `@smoke` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:regression` | Baseline `@regression` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
+| `npm run test:cross-browser` | Run `@cross-browser` on UI browser projects: `ui-chromium`, `ui-firefox`, `ui-webkit` |
+| `npm run test:responsive` | Run `@responsive` on `ui-mobile-chromium` |
 
 Rules:
 
 - scripts do not assume project-specific tests, specs, or `src/test/**` exist;
-- layer scripts use only registered Playwright projects: `api`, `ui-chromium`, `e2e`;
-- smoke/regression/visual/cross-browser/responsive scripts filter by Playwright tags, not browser or device names;
-- `@cross-browser` and `@responsive` are coverage-type tags — they do not imply Firefox, WebKit, or mobile projects exist;
+- `npm test` is baseline scope only (`api`, `ui-chromium`, `e2e`) and does not run a full browser/mobile matrix;
+- layer scripts use `api`, `ui-chromium`, and `e2e` as default execution projects;
+- smoke/regression/visual scripts are baseline-scoped tag runs;
+- `test:cross-browser` runs only `ui-chromium`, `ui-firefox`, and `ui-webkit` with `@cross-browser`;
+- `test:responsive` runs only `ui-mobile-chromium` with `@responsive`;
 - browser and viewport execution still depends on Playwright project configuration in `playwright.config.ts`;
-- do not add firefox/webkit/mobile scripts until matching projects are registered in the project map and config;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`.
 
 First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the starter baseline.
+
+Starter CI baseline (`.github/workflows/playwright.yml`):
+
+- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
+- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- detects whether any `tests/**/*.spec.ts` or `tests/**/*.test.ts` files exist;
+- skips matrix test jobs when no tests exist (clean starter still passes);
+- runs API/UI/E2E/tag-based jobs when tests exist;
+- includes focused cross-browser UI jobs and responsive mobile UI job via registered projects and coverage-type tags;
+- uploads artifacts when generated: `playwright-report/`, `test-results/`;
+- does not configure TMS result publishing;
+- does not configure GitHub Pages publishing.
 
 Coverage audit (review only; does not implement tests):
 
@@ -242,8 +261,16 @@ Test data strategy audit (review only; does not create or modify data):
 Rule references:
 
 - `.cursor/rules/fixtures-data.mdc`
+- `.cursor/rules/test-data-generation.rules.mdc`
 - `.cursor/rules/test-isolation-state.rules.mdc`
 - `.cursor/rules/multi-target-environment.rules.mdc`
+
+Test data generation policy (starter baseline):
+
+- clean starter does not ship `src/test/data/**`;
+- create `src/test/data/builders/**` and `src/test/data/generators/**` only when a concrete project needs reusable generated data;
+- do not use inline random or faker calls directly in specs;
+- `@faker-js/faker` is optional and project-driven, not installed by default.
 
 Stability audit (review only; does not heal tests):
 
@@ -387,9 +414,11 @@ Usage:
 
 ## Reporting
 
-Allure reporter:
+Reporting integration status:
 
-- configured in `playwright.config.ts`
+- reporter integration (including Allure and advanced artifact settings) is deferred to a separate approved reporting batch;
+- this baseline keeps CI artifact upload steps guarded by file existence checks;
+- reporting helper paths below are future/project-specific guidance, not baseline-enabled setup.
 
 Allure metadata helper (created per project when reporting is implemented):
 
@@ -556,14 +585,19 @@ Default policy:
 Current Playwright browser projects (`playwright.config.ts`):
 
 - `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `ui-firefox` — focused cross-browser UI coverage; `@cross-browser` scenarios only
+- `ui-webkit` — focused cross-browser UI coverage; `@cross-browser` scenarios only
+- `ui-mobile-chromium` — focused responsive UI coverage; `@responsive` scenarios only
 - `api` — API specs; no browser
 - `e2e` — E2E specs (`*.e2e.spec.ts`); uses default browser/viewport from shared `use` config unless a project override is added later
 
 Not configured yet:
 
-- dedicated Firefox or WebKit UI projects;
-- dedicated mobile/tablet viewport projects;
-- dedicated cross-browser or responsive CI jobs
+- full E2E cross-browser matrix;
+- responsive E2E matrix;
+- dedicated mobile/tablet E2E projects;
+- TMS publishing pipeline integration;
+- GitHub Pages report publishing
 
 Tag policy:
 

@@ -48,23 +48,35 @@ Baseline-safe scripts (all use `--pass-with-no-tests`; zero tests is valid):
 | Script | Purpose |
 |--------|---------|
 | `npm run qa:gate` | Convention checks |
+| `npm test` | Baseline run: `api` + `ui-chromium` + `e2e` |
 | `npm run test:list` | List tests without executing |
 | `npm run test:api` | API project (`api`) |
 | `npm run test:ui` | UI project (`ui-chromium`) |
 | `npm run test:e2e` | E2E project (`e2e`) |
-| `npm run test:smoke` | Tests tagged `@smoke` |
-| `npm run test:regression` | Tests tagged `@regression` |
-| `npm run test:visual` | Tests tagged `@visual` |
-| `npm run test:cross-browser` | Tests tagged `@cross-browser` (coverage-type only) |
-| `npm run test:responsive` | Tests tagged `@responsive` (coverage-type only) |
+| `npm run test:smoke` | Baseline `@smoke` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:regression` | Baseline `@regression` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
+| `npm run test:cross-browser` | `@cross-browser` on `ui-chromium`, `ui-firefox`, `ui-webkit` |
+| `npm run test:responsive` | `@responsive` on `ui-mobile-chromium` |
 
 Rules:
 
-- layer scripts use only registered Playwright projects — no Firefox/WebKit/mobile scripts until projects exist;
-- smoke/regression/visual scripts filter by tags, not paths;
-- cross-browser/responsive scripts filter planned coverage-type tags — they do not run a browser matrix;
+- `npm test` is baseline scope only (`api`, `ui-chromium`, `e2e`) and not a full browser/mobile matrix;
+- layer scripts use registered default execution projects: `api`, `ui-chromium`, `e2e`;
+- smoke/regression/visual scripts are baseline-scoped tag runs;
+- cross-browser/responsive scripts run planned coverage-type tags on registered UI projects only;
 - browser/viewport execution still depends on `playwright.config.ts` projects;
 - first real tests come from `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
+
+Starter CI baseline (`.github/workflows/playwright.yml`):
+
+- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
+- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- detects test files and skips matrix execution in zero-test state;
+- runs matrix jobs only when tests exist;
+- uploads generated Playwright artifacts when present (`playwright-report/`, `test-results/`);
+- does not configure TMS publishing or GitHub Pages publishing by default.
+- keeps reporting integration (including Allure metadata/reporters) as a separate approved batch.
 
 ---
 
@@ -96,6 +108,28 @@ Do not delete:
 Generated/runtime artifacts such as `.playwright-mcp/**`, reports, and local run output are not framework source content.
 
 Cleanup work must produce a report with removed files, preserved files, unsure files, verification, and remaining risks.
+
+---
+
+## Test Data Generation Baseline Policy
+
+The clean starter baseline ships without `src/test/data/**`.
+
+Create project data files only when implementation needs reusable generated data:
+
+- `src/test/data/builders/**` for reusable structured domain data;
+- `src/test/data/generators/**` for primitive unique values.
+
+Rules:
+
+- do not generate random data directly in specs;
+- do not call faker directly in specs;
+- `@faker-js/faker` is optional and should be added only for a real project need;
+- if faker is added, keep generation deterministic enough for repeatable debugging.
+
+Rule:
+
+- `.cursor/rules/test-data-generation.rules.mdc`
 
 ---
 
@@ -145,7 +179,7 @@ Tag and metadata policy:
 
 - Playwright tags describe test intent: layer (`@api`, `@ui`, `@e2e`, `@visual`), execution scope (`@smoke`, `@regression`), optional registered coverage type (`@cross-browser`, `@responsive`);
 - do not use browser or device names as tags: `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop`;
-- browser and viewport belong to Playwright projects (`ui-chromium`, `api`, `e2e`) and Allure reporting metadata;
+- browser and viewport belong to Playwright projects (`api`, `ui-chromium`, `ui-firefox`, `ui-webkit`, `ui-mobile-chromium`, `e2e`) and Allure reporting metadata;
 - Allure metadata must not replace Playwright tags.
 
 Not every UI test is E2E.
@@ -848,12 +882,15 @@ Checkout or onboarding (E2E journey plan examples only):
 Current browser projects in `playwright.config.ts`:
 
 - `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `ui-firefox` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-webkit` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-mobile-chromium` — focused responsive UI coverage (`@responsive`)
 - `api` — API specs; no browser
 - `e2e` — E2E specs (`*.e2e.spec.ts`)
 
 Broad browser/device matrix is **not** the default.
 
-Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
+Full E2E cross-browser/mobile matrix remains future work unless documented in the project map.
 
 If no runner matches the intended E2E spec path or pattern, stop and report the config gap.
 

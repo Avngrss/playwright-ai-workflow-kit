@@ -11,7 +11,6 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [["line"], ["allure-playwright"]],
   expect: {
     timeout: 10000,
     toHaveScreenshot: {
@@ -21,10 +20,9 @@ export default defineConfig({
   },
   use: {
     baseURL: process.env.UI_BASE_URL,
-    headless: false,
+    headless: true,
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
-    trace: "on-first-retry",
     testIdAttribute: "data-test",
     actionTimeout: 10000,
     navigationTimeout: 15000,
@@ -36,6 +34,30 @@ export default defineConfig({
       testMatch: /.*\.ui\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
+        baseURL: process.env.UI_BASE_URL,
+      },
+    },
+    {
+      name: "ui-firefox",
+      testMatch: /.*\.ui\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        baseURL: process.env.UI_BASE_URL,
+      },
+    },
+    {
+      name: "ui-webkit",
+      testMatch: /.*\.ui\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        baseURL: process.env.UI_BASE_URL,
+      },
+    },
+    {
+      name: "ui-mobile-chromium",
+      testMatch: /.*\.ui\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
         baseURL: process.env.UI_BASE_URL,
       },
     },
@@ -54,9 +76,6 @@ export default defineConfig({
       timeout: 60_000,
       use: {
         baseURL: process.env.UI_BASE_URL,
-        trace: "retain-on-failure",
-        screenshot: "only-on-failure",
-        video: "retain-on-failure",
       },
     },
   ],

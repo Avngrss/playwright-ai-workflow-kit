@@ -1,0 +1,196 @@
+---
+description: Test data generation rules for safe, deterministic, and project-owned generated data
+alwaysApply: true
+---
+
+# Test Data Generation Rules
+
+## Purpose
+
+These rules define how future projects should generate fake, unique, deterministic, and safe test data.
+
+The goal is to prevent inline random data in specs, avoid uncontrolled faker usage, and keep data generation ownership explicit under `src/test/data/**` once project implementation starts.
+
+---
+
+## Core Principle
+
+Data generation is project-driven and explicit.
+
+Do not add data-generation dependencies or abstractions before a real project need exists.
+
+When needed, generators and builders belong to the project data layer, not specs.
+
+---
+
+## Starter Baseline Rule
+
+The clean starter baseline ships with no `src/test/**` implementation layer and no project data layer.
+
+Do not create `src/test/data/**` until a concrete project needs reusable generated data.
+
+Do not install data-generation libraries in advance.
+
+---
+
+## Ownership And Location
+
+When project implementation starts:
+
+- generators belong under `src/test/data/generators/**`;
+- builders belong under `src/test/data/builders/**`;
+- reusable datasets belong under `src/test/data/datasets/**` when needed.
+
+Do not place reusable data generation logic in specs, Page Objects, Components, API clients, or random helpers.
+
+---
+
+## Spec-Level Usage Rules
+
+Do not call faker or random generators directly in specs.
+
+Do not generate random data inline in tests.
+
+Do not create builders for one-off deterministic values.
+
+Allowed in specs:
+
+- small deterministic scenario constants;
+- calls to approved builders and generators from `src/test/data/**`.
+
+---
+
+## Builder Rules
+
+Builders are for reusable structured domain data.
+
+Builder defaults must be valid by default.
+
+Invalid or negative data must be explicit through overrides.
+
+Do not use builders for one-off constants or one-off deterministic payloads.
+
+---
+
+## Generator Rules
+
+Generators are for primitive values such as:
+
+- unique email suffixes;
+- ids;
+- timestamps;
+- slugs.
+
+Unique data should be deterministic enough to debug.
+
+Include test-purpose prefixes when useful.
+
+Avoid collisions in parallel execution.
+
+---
+
+## Faker Policy
+
+`@faker-js/faker` is optional.
+
+Prefer simple deterministic project-owned generators before adding faker or any external data generation dependency.
+
+It may be added as a dev dependency only when a real project needs realistic fake data.
+
+Before adding faker:
+
+- confirm the project has a real need;
+- verify current Node.js compatibility.
+
+When faker is used:
+
+- prefer seedable or deterministic configuration when repeatability is required;
+- do not rely on uncontrolled randomness for assertions.
+
+---
+
+## Safety Rules For Generated Data
+
+Do not generate fake emails, phones, addresses, or other data in ways that can trigger real external communication.
+
+Prefer safe reserved domains for emails when possible, such as `example.test` or another project-approved non-routable domain.
+
+If external email, SMS, payment, or other external systems are involved, generated data must be approved by the project plan.
+
+Do not include real user data, secrets, or production identifiers in generated test data.
+
+---
+
+## Uniqueness, Persistence, And Isolation
+
+When generated data is persisted by API, UI, or E2E flows:
+
+- define cleanup or safe isolation strategy;
+- keep generated identifiers traceable for debugging;
+- avoid shared mutable users or accounts by default.
+
+Do not rely on shared mutable users/accounts unless explicitly approved by project planning.
+
+---
+
+## E2E Data Policy
+
+E2E tests must use disposable or isolated data.
+
+Destructive flows require cleanup or safe isolation.
+
+Shared mutable users/accounts are forbidden unless explicitly approved.
+
+Rule reference:
+
+- `.cursor/rules/e2e-testing.rules.mdc`
+- `.cursor/rules/test-isolation-state.rules.mdc`
+
+---
+
+## Multi-Target Ownership Policy
+
+When data belongs to a specific UI app or API service, ownership must be documented in planning.
+
+Do not use one generic generator for service-specific payloads without clear service ownership.
+
+Rule reference:
+
+- `.cursor/rules/multi-target-environment.rules.mdc`
+
+---
+
+## Review Expectations
+
+Reviews should flag:
+
+- faker or random usage directly in specs;
+- non-deterministic data generation that harms repeatability;
+- shared mutable users/accounts without explicit approval;
+- builders created for one-off deterministic values;
+- generated data that may affect real external systems.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- installing faker before a real need exists;
+- `Math.random()` or inline faker calls in specs;
+- ad-hoc random emails and phones in tests;
+- realistic fake data that can reach real external systems;
+- one-off builders with no reuse;
+- opaque unique values that are hard to debug;
+- missing cleanup for persisted generated data;
+- shared mutable test accounts in E2E by default.
+
+---
+
+## Main Principle
+
+Keep generated test data safe, deterministic, and owned by the project data layer.
+
+No random data in specs.
+
+No preinstalled faker by default.

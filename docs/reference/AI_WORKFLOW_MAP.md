@@ -680,12 +680,15 @@ Full Forgot Password E2E remains blocked or postponed until required setup exist
 Current browser projects in `playwright.config.ts`:
 
 - `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `ui-firefox` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-webkit` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-mobile-chromium` — focused responsive UI coverage (`@responsive`)
 - `api` — API specs; no browser
 - `e2e` — E2E specs (`*.e2e.spec.ts`)
 
 Broad browser/device matrix is **not** the default.
 
-Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
+Full E2E cross-browser/mobile matrix remains future work unless documented in the project map.
 
 If no runner matches the intended spec path or pattern, stop and report the config gap.
 
@@ -825,6 +828,18 @@ Only expose data through fixtures when reuse is justified.
 Builder defaults must be valid by default.
 
 Invalid or negative data must be explicit through overrides.
+
+Additional policy:
+
+- do not call faker or random generators directly in specs;
+- keep reusable generators in `src/test/data/generators/**`;
+- keep reusable builders in `src/test/data/builders/**`;
+- `@faker-js/faker` is optional and project-driven, not installed by default;
+- add faker only when a real project needs it and keep generated values deterministic enough to debug.
+
+Rule:
+
+- `.cursor/rules/test-data-generation.rules.mdc`
 
 ---
 
@@ -1066,12 +1081,40 @@ Verification order:
 
 Baseline-safe package scripts:
 
+- `npm test` — baseline run (`api`, `ui-chromium`, `e2e`)
 - `npm run test:list` — discovery without execution
 - `npm run test:api` / `test:ui` / `test:e2e` — layer scripts using registered projects only
-- `npm run test:smoke` / `test:regression` / `test:visual` — tag-based filters across projects
-- `npm run test:cross-browser` / `test:responsive` — coverage-type tag filters only; do not imply extra browser or mobile projects
+- `npm run test:smoke` / `test:regression` — baseline tag runs on `api`, `ui-chromium`, `e2e`
+- `npm run test:visual` — baseline tag run on `ui-chromium`
+- `npm run test:cross-browser` — `@cross-browser` on `ui-chromium`, `ui-firefox`, `ui-webkit`
+- `npm run test:responsive` — `@responsive` on `ui-mobile-chromium`
 
-Tags describe test intent. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
+`npm test` is baseline scope only and does not run the full browser/mobile matrix. Tags describe test intent. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
+
+---
+
+## Starter CI Baseline
+
+Workflow:
+
+- `.github/workflows/playwright.yml`
+
+Behavior:
+
+- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
+- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- detects test files and skips matrix execution when no tests exist;
+- runs matrix jobs only when tests exist;
+- includes API/UI/E2E/tag-based jobs plus focused cross-browser/responsive jobs;
+- uploads generated artifacts when present:
+  - `playwright-report/`
+  - `test-results/`;
+- keeps TMS publishing out of scope by default;
+- keeps GitHub Pages publishing out of scope by default.
+
+This CI baseline complements local scripts and keeps the starter useful both before and after tests are added.
+
+Reporting integration (including Allure reporter/metadata setup) is handled in a separate approved batch.
 
 ---
 
@@ -1374,11 +1417,14 @@ Audit only — does not create or modify data, change tests, delete data, mutate
 
 Use before E2E implementation, before destructive flows, and before cleanup or baseline conversion.
 
+It complements `/audit-test-coverage` (coverage alignment) and `/review-generated` (code-quality review) by focusing specifically on data safety and ownership risks.
+
 For implementation after audit, use Create Test Data Builder, Create Fixture, Plan E2E Journey, or heal skills as appropriate.
 
 Rule references:
 
 - `.cursor/rules/fixtures-data.mdc`
+- `.cursor/rules/test-data-generation.rules.mdc`
 - `.cursor/rules/test-isolation-state.rules.mdc`
 - `.cursor/rules/multi-target-environment.rules.mdc`
 

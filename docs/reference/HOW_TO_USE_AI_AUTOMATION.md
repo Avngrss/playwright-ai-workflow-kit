@@ -36,6 +36,8 @@ This repository is the **Playwright AI Workflow Kit** baseline with no product-s
 
 The clean starter baseline intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
 
+The clean starter baseline also omits `src/test/data/**` and does not preinstall faker. Add project data generation only when a real implementation needs it.
+
 Expected future locations (created per project; absent in clean baseline):
 
 - `src/test/pages/**` — Page Objects
@@ -285,6 +287,7 @@ Quality gate:
 Discovery:
 
 - `npm run test:list`
+- `npm test` — baseline run (`api`, `ui-chromium`, `e2e`)
 
 Layer scripts (registered Playwright projects only):
 
@@ -292,24 +295,48 @@ Layer scripts (registered Playwright projects only):
 - `npm run test:ui` — `ui-chromium` project
 - `npm run test:e2e` — `e2e` project
 
-Tag-based scripts (filter across projects):
+Baseline tag scripts (filter on baseline projects):
 
-- `npm run test:smoke` — tests tagged `@smoke`
-- `npm run test:regression` — tests tagged `@regression`
-- `npm run test:visual` — tests tagged `@visual`
+- `npm run test:smoke` — baseline projects (`api`, `ui-chromium`, `e2e`) filtered by `@smoke`
+- `npm run test:regression` — baseline projects (`api`, `ui-chromium`, `e2e`) filtered by `@regression`
+- `npm run test:visual` — baseline UI project (`ui-chromium`) filtered by `@visual`
 
 Coverage-type tag scripts (planned cross-browser or responsive tests only):
 
-- `npm run test:cross-browser` — tests tagged `@cross-browser`
-- `npm run test:responsive` — tests tagged `@responsive`
+- `npm run test:cross-browser` — tests tagged `@cross-browser` on `ui-chromium`, `ui-firefox`, `ui-webkit`
+- `npm run test:responsive` — tests tagged `@responsive` on `ui-mobile-chromium`
 
 Rules:
 
-- smoke/regression/visual scripts filter by Playwright tags, not folder paths;
-- cross-browser/responsive scripts filter by coverage-type tags only — they do not imply Firefox, WebKit, or mobile projects exist;
+- `npm test` is baseline scope only (`api`, `ui-chromium`, `e2e`) and not a full browser/mobile matrix;
+- smoke/regression/visual scripts are baseline-scoped tag runs;
+- cross-browser/responsive scripts run coverage-type tags on registered UI projects only;
 - browser and viewport execution still depends on Playwright projects in `playwright.config.ts`;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`;
 - first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the starter baseline.
+
+---
+
+## 5b. Starter CI Baseline
+
+Workflow file:
+
+- `.github/workflows/playwright.yml`
+
+CI behavior:
+
+- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
+- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- detects test files and skips matrix jobs in zero-test state;
+- runs matrix jobs only when tests exist;
+- includes API/UI/E2E/tag-based jobs and focused cross-browser/responsive jobs;
+- uploads generated artifacts when present:
+  - `playwright-report/`
+  - `test-results/`;
+- does not configure TMS publishing;
+- does not configure GitHub Pages publishing.
+
+Reporting integration (including Allure reporter/metadata usage) is deferred to a separate approved batch.
 
 ---
 
@@ -648,12 +675,15 @@ Good E2E journey plan candidates:
 Current browser projects in `playwright.config.ts`:
 
 - `ui-chromium` — focused UI specs (`*.ui.spec.ts`); Desktop Chrome; default viewport `1280x720`
+- `ui-firefox` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-webkit` — focused cross-browser UI coverage (`@cross-browser`)
+- `ui-mobile-chromium` — focused responsive UI coverage (`@responsive`)
 - `api` — API specs; no browser
 - `e2e` — E2E specs (`*.e2e.spec.ts`)
 
 Broad browser/device matrix is **not** the default.
 
-Dedicated Firefox, WebKit, mobile/tablet, and cross-browser/responsive CI jobs are future work unless documented in the project map.
+Full E2E cross-browser/mobile matrix remains future work unless documented in the project map.
 
 If no runner matches `tests/e2e/**/*.e2e.spec.ts`, stop and report the config gap.
 
@@ -794,6 +824,9 @@ Rules:
 - use generators for unique primitive values;
 - do not generate reusable business data inline in specs;
 - do not create builders for one-off deterministic values.
+- do not call faker/random generators directly in specs;
+- `@faker-js/faker` is optional and project-driven, not installed by default;
+- when faker is added, prefer deterministic/seedable usage and safe non-routable test domains for generated emails.
 
 If data must be exposed through fixtures:
 
@@ -802,6 +835,10 @@ Create Fixture
 ```
 
 Only expose data through fixtures when reuse is justified.
+
+Rule reference:
+
+- `.cursor/rules/test-data-generation.rules.mdc`
 
 ---
 

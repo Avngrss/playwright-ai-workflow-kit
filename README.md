@@ -25,6 +25,7 @@ You can copy or clone this repository as a **template for new automation project
 - Cross-browser and responsive testing policies
 - Visual testing policy
 - Baseline-safe package scripts (`--pass-with-no-tests`)
+- Starter-safe GitHub Actions CI with Playwright artifacts
 - Provider-agnostic `.env.example`
 - Multi-application / multi-service environment support
 
@@ -35,9 +36,11 @@ You can copy or clone this repository as a **template for new automation project
 - Project-specific tests
 - Project-specific feature or E2E plans
 - `src/test/**` implementation layer (Page Objects, fixtures, schemas, assertion helpers, builders)
+- `src/test/data/**` project data layer (builders, generators, datasets)
 - Real URLs or production credentials
 - Reporter or TMS result publishing setup
 - Browser or mobile execution matrix by default
+- Data-generation libraries by default (`@faker-js/faker` is optional and project-driven)
 
 These are added per application through planning and implementation workflows.
 
@@ -152,17 +155,35 @@ All scripts are baseline-safe. Zero tests is a valid state.
 | Script | Purpose |
 |--------|---------|
 | `npm run qa:gate` | Convention and quality checks |
+| `npm test` | Baseline run: `api` + `ui-chromium` + `e2e` projects |
 | `npm run test:list` | List discovered tests without executing |
 | `npm run test:api` | Run API project |
 | `npm run test:ui` | Run UI project (`ui-chromium`) |
 | `npm run test:e2e` | Run E2E project |
-| `npm run test:smoke` | Filter by `@smoke` tag |
-| `npm run test:regression` | Filter by `@regression` tag |
-| `npm run test:visual` | Filter by `@visual` tag |
+| `npm run test:smoke` | Baseline `@smoke` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:regression` | Baseline `@regression` run on `api` + `ui-chromium` + `e2e` |
+| `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Filter by `@cross-browser` coverage-type tag |
 | `npm run test:responsive` | Filter by `@responsive` coverage-type tag |
 
-`test:cross-browser` and `test:responsive` are **tag filters**, not a browser or mobile matrix. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
+`npm test` is a **baseline run**, not a full browser/mobile matrix. `test:smoke`, `test:regression`, and `test:visual` are baseline-scoped tag runs. `test:cross-browser` and `test:responsive` are explicit opt-in coverage paths. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
+
+---
+
+## CI Baseline
+
+The starter CI workflow is starter-safe and stays valid in zero-test repositories.
+
+- Always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`
+- Uses `actions/setup-node` npm dependency cache (`cache: npm`) in CI jobs
+- Detects test files and skips matrix jobs when no tests exist
+- Runs API/UI/E2E/tag-based matrix jobs only when tests are present
+- Runs cross-browser UI coverage with `@cross-browser` on `ui-chromium`, `ui-firefox`, and `ui-webkit`
+- Runs responsive UI coverage with `@responsive` on `ui-mobile-chromium`
+- Uploads generated artifacts when present: `playwright-report/`, `test-results/`
+- Keeps TMS publishing and GitHub Pages publishing out of scope by default
+
+Reporting integrations (including Allure) are deferred to a separate approved batch. This baseline only uploads Playwright artifacts when they exist.
 
 ---
 
@@ -189,6 +210,13 @@ specs/**              Feature and E2E journey plans
 src/test/**           Page Objects, fixtures, schemas, helpers, data
 ```
 
+Test-data policy for real projects:
+
+- no random or faker calls directly in specs;
+- keep generators under `src/test/data/generators/**`;
+- keep builders under `src/test/data/builders/**`;
+- add faker only when there is a real project need and keep generation deterministic enough for debugging.
+
 Source of truth for structure, tags, projects, apps, services, and env names: `.cursor/rules/00-project-map.mdc`.
 
 ---
@@ -204,6 +232,7 @@ Source of truth for structure, tags, projects, apps, services, and env names: `.
 - No browser or device Playwright tags (`@firefox`, `@mobile`, etc.)
 - No `waitForTimeout`
 - No unnecessary abstractions
+- No inline random data in specs
 - Project map is the source of truth for tags, Playwright projects, apps, services, and env names
 
 ---
@@ -226,5 +255,5 @@ Project map: `.cursor/rules/00-project-map.mdc`
 
 - Update the project map when adding apps, services, Playwright projects, or tags
 - Configure TMS tokens outside the repository (user/global MCP or local secret storage)
-- Add browser or mobile Playwright projects only when intentionally supported and documented
+- Keep full E2E browser/mobile matrix out of default baseline unless explicitly planned
 - Add reporter or TMS result publishing only as an explicit project decision

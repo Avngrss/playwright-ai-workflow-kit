@@ -29,6 +29,7 @@ Do not infer cleanup mechanisms without evidence from plans, code, or project co
 Follow these rules:
 
 - Fixtures and Test Data Rules;
+- Test Data Generation Rules;
 - Test Isolation and State Rules;
 - E2E Testing Rules;
 - Test Strategy and Test Pyramid Rules;
@@ -156,14 +157,19 @@ Classify findings into these categories:
 ### 4. Data generation
 
 - inline random or unique data in specs (`Date.now()`, `Math.random()`, ad-hoc email strings)
+- no faker or random usage directly in specs
 - non-deterministic data used where deterministic constants would suffice
 - generators with unclear ownership or duplicated across specs/helpers
 - duplicated generation logic that should live in generators or builders
 - generation inside Page Objects, Components, or assertion helpers
+- simple deterministic project-owned generators preferred before faker
+- faker usage present only when approved by feature plan, E2E journey plan, or explicit task scope
+- generated emails, phones, addresses, or other test data must not affect real external systems
 
 ### 5. Builders
 
 - reusable structured business/API/form data uses builders when appropriate
+- builders under `src/test/data/builders/**` when project implementation exists
 - builders created for one-off deterministic values without reuse justification
 - invalid or negative data is explicit through overrides, not hidden as defaults
 - builder defaults are valid by default
@@ -256,6 +262,8 @@ When `src/test/data/**` or equivalent exists, review:
 
 - builders — defaults, override pattern, invalid data explicitness, reuse justification;
 - generators — centralized uniqueness, clear naming, no duplication in specs;
+- generators under `src/test/data/generators/**` when project implementation exists;
+- builders under `src/test/data/builders/**` when project implementation exists;
 - datasets — read-only vs mutable usage;
 - types — ownership and reuse.
 

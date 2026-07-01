@@ -12,9 +12,11 @@ npm package name: `playwright-ai-workflow-kit`
 
 GitHub repository: https://github.com/Avngrss/playwright-ai-workflow-kit
 
-It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, and feature plans are created per application — they are not shipped with the starter baseline.
+It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, generators, and feature plans are created per application — they are not shipped with the starter baseline.
 
 The clean starter baseline has **no `src/test/**` implementation layer**. Skills and commands create the required project structure when implementation starts.
+
+The clean starter also has no `src/test/data/**` layer by default. Create builders and generators only when a real project needs reusable generated data.
 
 Use this guide when you copy or clone this workflow kit as a **template for a new automation project**.
 
@@ -127,6 +129,14 @@ Key locations:
 
 Many project-specific folders do not exist until the first implementation run. Use skills such as `create-fixture`, `create-page-object`, and `implement-api-feature` / `implement-ui-feature` to create the required structure.
 
+Data generation policy for new projects:
+
+- do not add data-generation libraries by default;
+- `@faker-js/faker` is optional and should be added only for a real project need;
+- do not call random/faker generators directly in specs;
+- keep reusable generators in `src/test/data/generators/**`;
+- keep reusable builders in `src/test/data/builders/**`.
+
 Source of truth for structure and commands: `.cursor/rules/00-project-map.mdc`.
 
 When you run `npm run project-map:update`, the generated repository tree uses the `package.json` name as the root label (for example `playwright-ai-workflow-kit/`), not the local workspace folder name.
@@ -207,7 +217,7 @@ Rules:
 ## Cross-Browser and Responsive Coverage
 
 - Cross-browser and responsive coverage are **risk-based**, not a default browser/device matrix.
-- Browser and viewport belong to **Playwright projects** (`ui-chromium`, `api`, `e2e`), not Playwright tags.
+- Browser and viewport belong to **Playwright projects** (`api`, `ui-chromium`, `ui-firefox`, `ui-webkit`, `ui-mobile-chromium`, `e2e`), not Playwright tags.
 - Use `@cross-browser` and `@responsive` only when explicitly planned and registered.
 - Do **not** invent tags such as `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`.
 - Responsive coverage is usually focused UI coverage, not a full E2E viewport matrix.
@@ -236,6 +246,7 @@ Common baseline checks:
 ```bash
 npm run qa:gate
 npm run test:list
+npm test
 ```
 
 Layer scripts (use registered Playwright projects only):
@@ -246,7 +257,7 @@ npm run test:ui
 npm run test:e2e
 ```
 
-Tag-based scripts (filter by Playwright tags across projects):
+Baseline tag scripts (filter by Playwright tags on baseline projects):
 
 ```bash
 npm run test:smoke
@@ -263,9 +274,12 @@ npm run test:responsive
 
 Notes:
 
-- **Smoke and regression** scripts filter by `@smoke` or `@regression` tags — not by folder paths or project names.
-- **Cross-browser and responsive** scripts filter by `@cross-browser` or `@responsive` coverage-type tags only. They do not run a browser matrix and do not imply Firefox, WebKit, or mobile projects exist.
-- **Browser and viewport execution** still depends on Playwright projects in `playwright.config.ts` (`ui-chromium`, `api`, `e2e`). Tags describe test intent; projects describe execution environment.
+- `npm test` is the baseline run and executes only `api`, `ui-chromium`, and `e2e`.
+- **Smoke and regression** scripts run baseline projects (`api`, `ui-chromium`, `e2e`) filtered by `@smoke` or `@regression`.
+- **Visual** script runs baseline UI project (`ui-chromium`) filtered by `@visual`.
+- **Cross-browser** script targets `ui-chromium`, `ui-firefox`, and `ui-webkit` with `@cross-browser` only.
+- **Responsive** script targets `ui-mobile-chromium` with `@responsive` only.
+- **Browser and viewport execution** depends on Playwright projects in `playwright.config.ts` (`api`, `ui-chromium`, `ui-firefox`, `ui-webkit`, `ui-mobile-chromium`, `e2e`).
 - **Zero-test baseline state** is expected. Scripts pass cleanly until real tests are added.
 - **First real tests** are created through planning and implementation commands: `/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`.
 
@@ -278,6 +292,33 @@ Environment notes:
   ```bash
   npx playwright install chromium
   ```
+
+---
+
+## CI Baseline
+
+Starter workflow file: `.github/workflows/playwright.yml`
+
+Behavior:
+
+- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
+- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- detects whether test files exist and skips matrix execution when none exist;
+- runs matrix jobs only when tests exist:
+  - API, UI Chromium, E2E;
+  - smoke, regression, visual;
+  - cross-browser Chromium/Firefox/WebKit with `@cross-browser`;
+  - responsive mobile Chromium with `@responsive`;
+- uploads generated artifacts when present:
+  - `playwright-report/`
+  - `test-results/`;
+- does not configure TMS publishing;
+- does not configure GitHub Pages publishing.
+
+Reporting and diagnostics:
+
+- reporting integration (including Allure) is deferred to a separate approved batch;
+- CI uploads Playwright artifacts only when they exist.
 
 ---
 
