@@ -12,6 +12,10 @@ export class ProductsPage {
   readonly priceRangeMinHandle: Locator;
   readonly priceRangeMaxHandle: Locator;
   readonly productCards: Locator;
+  readonly inStockProductCards: Locator;
+  readonly addToCartButton: Locator;
+  readonly cartLink: Locator;
+  readonly cartAddedAlert: Locator;
   readonly searchInput: Locator;
 
   constructor(private readonly page: Page) {
@@ -27,6 +31,10 @@ export class ProductsPage {
     this.productCards = page.locator(
       '[data-test^="product-"]:not([data-test="product-name"]):not([data-test="product-price"])',
     );
+    this.inStockProductCards = this.productCards.filter({ hasNotText: "Out of stock" });
+    this.addToCartButton = page.getByTestId("add-to-cart");
+    this.cartLink = page.getByRole("link", { name: /cart/i });
+    this.cartAddedAlert = page.getByRole("alert", { name: /Product added to shopping cart/i });
     // Search control inside the filters panel. Prefers placeholder/role; falls back to first text input in filters if needed.
     this.searchInput = this.filtersPanel
       .getByPlaceholder(/search/i)
@@ -140,6 +148,44 @@ export class ProductsPage {
   async searchFor(query: string): Promise<void> {
     await this.enterSearchQuery(query);
     await this.submitSearch();
+  }
+
+  async getFirstInStockProductName(): Promise<string> {
+    const firstInStockCard = this.inStockProductCards.first();
+    await firstInStockCard.waitFor({ state: "visible", timeout: 20000 });
+
+    const productName = ((await firstInStockCard.getByTestId("product-name").textContent()) ?? "").trim();
+    if (!productName) {
+      throw new Error("First in-stock product card does not contain a visible product name.");
+    }
+
+    return productName;
+  }
+
+  async addFirstInStockProductToCart(): Promise<void> {
+    const firstInStockCard = this.inStockProductCards.first();
+    await firstInStockCard.waitFor({ state: "visible", timeout: 20000 });
+    await firstInStockCard.click();
+    await this.page.waitForURL(/\/product\//);
+    await this.addToCartButton.waitFor({ state: "visible", timeout: 20000 });
+
+    const addToCartResponse = this.page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().toLowerCase().includes("cart"),
+      { timeout: 20000 },
+    );
+
+    await this.addToCartButton.click();
+    await addToCartResponse;
+    await this.cartAddedAlert.waitFor({ state: "visible", timeout: 20000 });
+    await this.cartLink.waitFor({ state: "visible", timeout: 20000 });
+  }
+
+  async openCart(): Promise<void> {
+    await this.cartLink.waitFor({ state: "visible", timeout: 20000 });
+    await this.cartLink.click();
+    await this.page.waitForURL(/\/checkout$/);
   }
 
   private async getSliderHandleValue(handle: Locator, handleName: string): Promise<number> {

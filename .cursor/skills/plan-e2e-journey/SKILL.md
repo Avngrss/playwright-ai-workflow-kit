@@ -102,7 +102,15 @@ Define:
 - cleanup or isolation strategy;
 - assumptions and risks.
 
-### 4. Identify Dependencies And Blockers
+### 4. Apply E2E Readiness Checklist
+
+Run the mandatory readiness checklist before choosing status.
+
+If ANY checklist item is unclear or not guaranteed, mark the journey as **blocked**.
+
+Do not defer the decision to implementation.
+
+### 5. Identify Dependencies And Blockers
 
 Capture blockers and dependencies:
 
@@ -112,9 +120,9 @@ Capture blockers and dependencies:
 - unsafe cleanup;
 - missing setup capabilities.
 
-Mark blocked journeys clearly with reason.
+If any dependency is not deterministic and automation-safe, mark the journey as **blocked** with a clear reason and required unblocker.
 
-### 5. Define Implementation Target
+### 6. Define Implementation Target
 
 Include:
 
@@ -161,6 +169,14 @@ Not covered by E2E:
 
 <Final business-visible result>
 
+## Determinism Guarantees
+
+<Why this E2E flow is deterministic. Include payment or external flow behavior, step stability, and absence of unpredictable behavior.>
+
+## Final Assertion Marker
+
+<Exact UI elements used for final validation, such as confirmation heading text, success container, or account/dashboard marker. No vague wording.>
+
 ## Data Strategy
 
 <Generated/disposable/static data strategy>
@@ -175,7 +191,22 @@ Not covered by E2E:
 
 ## External Dependencies And Blockers
 
-<Mailbox, payment, reset links, third-party dependencies, unsafe cleanup, unstable environment, etc.>
+<Mailbox, payment, reset links, third-party dependencies, unsafe cleanup, unstable environment, etc. If blocked, include reason and required unblocker.>
+
+## Status
+
+- ready to implement now
+OR
+- blocked
+
+Forbidden status wording:
+
+- "ready if"
+- "ready once"
+- "blocked until"
+- "conditionally"
+- "conditionally blocked"
+- "conditionally ready"
 
 ## Implementation Target
 
@@ -187,8 +218,57 @@ Tags:
 
 ## Implementation Notes
 
-<Notes for implement-e2e-flow. Do not include Playwright code.>
+<Notes for implement-e2e-flow. Do not include Playwright code. Only present when status is ready to implement now.>
 ```
+
+---
+
+## Deterministic Readiness Requirement
+
+E2E plans must be deterministic.
+
+Do NOT produce:
+
+- "ready if"
+- "conditionally ready"
+- "conditionally blocked"
+- "blocked until confirmed"
+- "ready once"
+- any wording that implies uncertainty or future validation
+
+Only two statuses are allowed:
+
+- ready to implement now
+- blocked
+
+If determinism, final assertion, external dependencies, data strategy, or cleanup/isolation cannot be stated with certainty, the journey MUST be marked as **blocked**.
+
+Do not defer readiness decisions to implementation.
+
+---
+
+## E2E Readiness Checklist (Mandatory)
+
+Before marking a journey as **ready to implement now**, ALL of the following must be explicitly defined:
+
+- **Flow Determinism:**
+  The full journey can run without randomness or unstable behavior.
+
+- **Final Assertion:**
+  A clear and stable UI marker exists for the final expected outcome.
+
+- **External Dependencies:**
+  All dependencies (payments, email, etc.) are deterministic and automation-safe.
+
+- **Data Strategy:**
+  Test data can be created safely and deterministically.
+
+- **Cleanup or Isolation:**
+  Either cleanup exists OR the system safely allows disposable data.
+
+If ANY item is unclear or not guaranteed:
+
+→ the journey MUST be marked as **blocked**.
 
 ---
 
@@ -201,7 +281,9 @@ Do not:
 - replace UI business actions with API calls;
 - duplicate API/UI/schema/visual feature coverage;
 - write low-level click-by-click steps unless needed for clarity;
-- invent missing requirements or dependencies.
+- invent missing requirements or dependencies;
+- use conditional readiness wording;
+- mark a journey ready when any readiness checklist item is unclear.
 
 ---
 
@@ -213,7 +295,11 @@ This skill is complete when:
 - candidate is validated as true E2E (or redirected);
 - boundary is explicit (covered vs not covered);
 - setup/data/cleanup strategy is defined;
-- blockers/dependencies are documented;
+- determinism guarantees are documented;
+- final assertion marker is explicit;
+- status is exactly **ready to implement now** or **blocked** (no conditional wording);
+- readiness checklist was applied;
+- blockers/dependencies are documented when blocked;
 - implementation target under `tests/e2e/...` is defined;
 - tags include `@e2e`;
 - no Playwright implementation was added.

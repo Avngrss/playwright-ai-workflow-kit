@@ -1,0 +1,129 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - text: View the
+      - link "Documentation" [ref=e4] [cursor=pointer]:
+        - /url: https://testsmith-io.github.io/practice-software-testing/#/
+      - text: for this application.
+    - generic [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: Practice Black Box Testing & Bug Hunting
+        - button "Testing Guide" [ref=e9] [cursor=pointer]
+        - button "🐛 Bug Hunting" [ref=e10] [cursor=pointer]
+      - navigation [ref=e11]:
+        - generic [ref=e12]:
+          - link "Practice Software Testing - Toolshop" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e14]
+          - button "Toggle navigation" [ref=e32] [cursor=pointer]
+    - generic [ref=e35]:
+      - generic [ref=e50]:
+        - figure "Photo by Helinton Fantin on Unsplash." [ref=e52]:
+          - img "Combination Pliers" [ref=e54]
+          - generic [ref=e55]:
+            - text: Photo by
+            - link "Helinton Fantin" [ref=e56] [cursor=pointer]:
+              - /url: https://unsplash.com/@fantin
+            - text: "on"
+            - link "Unsplash" [ref=e57] [cursor=pointer]:
+              - /url: https://unsplash.com/photos/W8BNwvOvW4M
+            - text: .
+        - generic [ref=e58]:
+          - heading "Combination Pliers" [level=1] [ref=e59]
+          - paragraph [ref=e60]:
+            - generic "category" [ref=e61]: Pliers
+            - generic "brand" [ref=e62]: ForgeFlex Tools
+          - generic [ref=e64]: $14.15
+          - generic "A = most environmentally friendly, E = higher environmental impact" [ref=e65]:
+            - text: "CO₂:"
+            - generic [ref=e66]: A
+            - generic [ref=e67]: B
+            - generic [ref=e68]: C
+            - generic [ref=e69]: D
+            - generic [ref=e70]: E
+          - paragraph [ref=e71]: Versatile combination pliers designed for gripping, bending, and cutting wire with ease. Featuring chrome vanadium steel construction with induction-hardened cutting edges, these pliers deliver excellent grip and leverage for a wide range of tasks. The precision-machined jaws combine flat gripping surfaces with a pipe-grip section and integrated wire cutter for true multi-purpose functionality. Ergonomic bi-component handles reduce hand fatigue during extended use and provide a secure hold even with oily or gloved hands. The joint is precisely fitted to eliminate play and ensure smooth operation over thousands of cycles. Ideal for electricians, mechanics, and DIY enthusiasts tackling everyday projects around the workshop or job site.
+          - generic [ref=e72]:
+            - button "Decrease quantity" [ref=e73] [cursor=pointer]:
+              - img [ref=e75]
+            - generic [ref=e77]: Quantity
+            - spinbutton "Quantity" [ref=e78]: "1"
+            - button "Increase quantity" [ref=e79] [cursor=pointer]:
+              - img [ref=e81]
+          - generic [ref=e83]:
+            - button "Add to cart" [active] [ref=e84] [cursor=pointer]:
+              - img [ref=e86]
+              - text: Add to cart
+            - button "Add to favourites" [ref=e88] [cursor=pointer]:
+              - img [ref=e90]
+              - text: Add to favourites
+            - button "Compare" [ref=e92] [cursor=pointer]:
+              - img [ref=e94]
+              - text: Compare
+      - generic [ref=e97]:
+        - heading "Specifications" [level=3] [ref=e98]
+        - table [ref=e99]:
+          - rowgroup [ref=e100]:
+            - row "Handle Material Bi-component" [ref=e101]:
+              - cell "Handle Material" [ref=e102]
+              - cell "Bi-component" [ref=e103]
+            - row "Length 200mm" [ref=e104]:
+              - cell "Length" [ref=e105]
+              - cell "200mm" [ref=e106]
+            - row "Material Chrome Vanadium Steel" [ref=e107]:
+              - cell "Material" [ref=e108]
+              - cell "Chrome Vanadium Steel" [ref=e109]
+            - row "Warranty 2years" [ref=e110]:
+              - cell "Warranty" [ref=e111]
+              - cell "2years" [ref=e112]
+            - row "Weight 340g" [ref=e113]:
+              - cell "Weight" [ref=e114]
+              - cell "340g" [ref=e115]
+      - separator [ref=e36]
+      - generic [ref=e37]:
+        - heading "Related products" [level=2] [ref=e38]
+        - generic [ref=e117]:
+          - link "Pliers Pliers More information" [ref=e118] [cursor=pointer]:
+            - /url: /product/01KW9GK6E480241MKQT0YA58TS
+            - img "Pliers" [ref=e120]
+            - generic [ref=e121]:
+              - heading "Pliers" [level=5] [ref=e122]
+              - link "More information" [ref=e123]:
+                - /url: "#"
+          - link "Bolt Cutters Bolt Cutters More information" [ref=e124] [cursor=pointer]:
+            - /url: /product/01KW9GK6E65Q4C1C2G68N1HEGD
+            - img "Bolt Cutters" [ref=e126]
+            - generic [ref=e127]:
+              - heading "Bolt Cutters" [level=5] [ref=e128]
+              - link "More information" [ref=e129]:
+                - /url: "#"
+          - link "Long Nose Pliers Long Nose Pliers More information" [ref=e130] [cursor=pointer]:
+            - /url: /product/01KW9GK6E85506HW61V3JCDHTA
+            - img "Long Nose Pliers" [ref=e132]
+            - generic [ref=e133]:
+              - heading "Long Nose Pliers" [level=5] [ref=e134]
+              - link "More information" [ref=e135]:
+                - /url: "#"
+          - link "Slip Joint Pliers Slip Joint Pliers More information" [ref=e136] [cursor=pointer]:
+            - /url: /product/01KW9GK6EA4T9FJFHD821NJN5H
+            - img "Slip Joint Pliers" [ref=e138]
+            - generic [ref=e139]:
+              - heading "Slip Joint Pliers" [level=5] [ref=e140]
+              - link "More information" [ref=e141]:
+                - /url: "#"
+    - paragraph [ref=e41]:
+      - text: This is a DEMO application (
+      - link "GitHub repo" [ref=e42] [cursor=pointer]:
+        - /url: https://github.com/testsmith-io/practice-software-testing
+      - text: ), used for software testing training purpose. |
+      - link "Privacy Policy" [ref=e43] [cursor=pointer]:
+        - /url: /privacy
+      - text: "| Banner photo by"
+      - link "Barn Images" [ref=e44] [cursor=pointer]:
+        - /url: https://unsplash.com/@barnimages
+      - text: "on"
+      - link "Unsplash" [ref=e45] [cursor=pointer]:
+        - /url: https://unsplash.com/photos/t5YUoHW6zRo
+      - text: .
+    - button "Open chat" [ref=e47] [cursor=pointer]:
+      - img [ref=e48]
+  - alert "Product added to shopping cart." [ref=e143]

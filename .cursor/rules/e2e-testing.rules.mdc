@@ -119,6 +119,42 @@ Use one representative E2E scenario when lower-level tests already cover variant
 
 ---
 
+## Deterministic E2E Requirement
+
+E2E tests must be fully deterministic.
+
+E2E journey plans must use exactly one planning status:
+
+- ready to implement now
+- blocked
+
+Conditional readiness is not allowed at planning stage.
+
+Examples of forbidden planning status wording:
+
+- "ready if"
+- "ready once"
+- "blocked until"
+- "conditionally blocked"
+- "conditionally ready"
+
+Scenarios must NOT be implemented if:
+
+- external dependencies are unstable;
+- payment or critical flow is not controlled and automation-safe;
+- final observable result is unclear;
+- final assertion marker is not explicitly defined;
+- test data cannot be safely created or isolated;
+- cleanup or isolation strategy is undefined when required.
+
+In such cases:
+
+- mark scenario as **blocked** at planning stage;
+- do not defer the decision to implementation;
+- do not use conditional readiness wording.
+
+---
+
 ## Required E2E Scenario Information
 
 Every planned E2E scenario must document:
@@ -130,13 +166,16 @@ Every planned E2E scenario must document:
 - setup strategy;
 - test data strategy;
 - cleanup or isolation strategy;
+- determinism guarantees;
+- final assertion marker;
 - final assertion;
 - why API/UI/schema coverage is not sufficient;
 - flakiness risks;
 - external dependencies;
-- blocked or postponed reasons, if any.
+- status: **ready to implement now** or **blocked**;
+- blocked reason and required unblocker, when blocked.
 
-If any of this is unclear, mark the E2E scenario blocked or postponed.
+If any of this is unclear, mark the E2E scenario **blocked** at planning stage.
 
 ---
 
@@ -204,7 +243,7 @@ Avoid:
 - test data that depends on previous test order;
 - assumptions about existing mutable live data.
 
-If safe data cannot be created, mark the E2E scenario blocked or postponed.
+If safe data cannot be created, mark the E2E scenario **blocked** at planning stage.
 
 ---
 
@@ -218,7 +257,7 @@ Allowed strategies:
 - disposable data that does not need cleanup;
 - isolated test user;
 - isolated test environment;
-- explicit blocked/postponed status when cleanup is not possible.
+- explicit **blocked** status when cleanup is not possible.
 
 Do not implement destructive E2E flows without cleanup or isolation.
 
@@ -248,7 +287,7 @@ Examples:
 - external files;
 - external notification services.
 
-If an external dependency is unavailable or unstable, mark the E2E scenario blocked or postponed.
+If an external dependency is unavailable or unstable, mark the E2E scenario **blocked** at planning stage.
 
 Do not fake external dependency success unless the scenario is explicitly scoped as a mocked or partial integration test.
 
@@ -273,7 +312,7 @@ Full Forgot Password E2E requires:
 - logging in with the new password;
 - safe disposable user or cleanup strategy.
 
-If mailbox, reset-link, reset-token, or safe user cleanup strategy is missing, full Forgot Password E2E must be blocked or postponed.
+If mailbox, reset-link, reset-token, or safe user cleanup strategy is missing, full Forgot Password E2E must be **blocked** at planning stage.
 
 ---
 
@@ -375,7 +414,7 @@ Avoid depending on:
 - exact product ordering unless that is the tested behavior;
 - test execution order.
 
-If the scenario cannot be made stable, mark it blocked or postponed.
+If the scenario cannot be made stable, mark it **blocked** at planning stage.
 
 ---
 
@@ -388,6 +427,9 @@ E2E review must check:
 - setup strategy is safe;
 - data strategy is isolated;
 - cleanup strategy is defined or intentionally unnecessary;
+- determinism guarantees are documented;
+- final assertion marker is explicit;
+- planning status is exactly **ready to implement now** or **blocked**;
 - action under test is visible in the spec;
 - API setup does not replace the UI journey;
 - assertions prove meaningful final outcome;
@@ -399,20 +441,25 @@ E2E review must check:
 
 ---
 
-## Block Or Postpone E2E When Needed
+## Block E2E When Needed
 
-E2E should be blocked or postponed when:
+E2E should be **blocked** at planning stage when:
 
 - test data cannot be created safely;
-- cleanup is unavailable for destructive state;
+- cleanup is unavailable for destructive state and safe isolation is not confirmed;
 - reset-link or mailbox access is missing;
-- payment provider is unavailable;
+- payment provider is unavailable or not automation-safe;
 - external dependency is unstable;
 - required API setup is not approved;
 - final outcome cannot be observed reliably;
+- final assertion marker is not defined;
 - scenario would duplicate existing UI/API coverage without additional E2E value.
 
-Blocked E2E scenarios should include a clear reason and required unblocker.
+Blocked E2E scenarios must include a clear reason and required unblocker.
+
+Do not use conditional readiness wording.
+
+Do not defer blocked decisions to implementation.
 
 ---
 
@@ -424,4 +471,4 @@ Use them to prove critical user journeys, not to replace API, UI, schema, or vis
 
 If a scenario does not cross meaningful system or state boundaries, keep it as a UI or API test.
 
-If a scenario cannot be isolated or cleaned up safely, block or postpone it.
+If a scenario cannot be isolated or cleaned up safely, block it at planning stage.

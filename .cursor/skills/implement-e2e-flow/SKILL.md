@@ -101,7 +101,7 @@ Do not use this skill when:
 - no E2E journey plan exists at `specs/e2e/<journey>.md`;
 - the task is only to plan feature coverage (use Plan Test Coverage for API/UI/schema/visual);
 - the task is only to create an E2E journey plan without implementation;
-- the E2E scenario is blocked or postponed;
+- the E2E scenario is blocked;
 - setup, data, or cleanup strategy is missing or unclear;
 - the scenario is a short page, control, or validation UI test;
 - the scenario is an API contract test;
@@ -127,7 +127,7 @@ Examples that must remain in feature plans as UI/API coverage, not E2E:
 - login form invalid-credentials feedback;
 - product sort dropdown visibility.
 
-Full forgot-password reset plus login with a new password belongs in a separate E2E journey plan and must remain blocked or postponed without mailbox/reset-link access and a safe disposable-user or cleanup strategy.
+Full forgot-password reset plus login with a new password belongs in a separate E2E journey plan and must remain **blocked** without mailbox/reset-link access and a safe disposable-user or cleanup strategy.
 
 If E2E scope is not yet defined, stop and direct planning to `/plan-e2e-journey`.
 
@@ -194,7 +194,7 @@ Do not implement:
 - API contract coverage;
 - schema validation coverage;
 - visual checkpoints unless explicitly selected;
-- blocked or postponed E2E scenarios;
+- blocked E2E scenarios;
 - adjacent journeys not explicitly in scope;
 - helper-only scenarios.
 
@@ -202,19 +202,51 @@ If the selected scope is ambiguous, stop and report the ambiguity.
 
 If the scenario is not truly E2E, stop and report that it belongs at UI, API, schema, or not automated level instead.
 
+Do not implement blocked scenarios.
+
+---
+
+## Strict Plan Validation
+
+Before implementation, validate the E2E journey plan is deterministic and implementation-ready.
+
+If the E2E plan contains:
+
+- conditional language ("if", "until", "when available", "ready once", "conditionally")
+- unclear determinism
+- missing **Determinism Guarantees** section
+- missing **Final Assertion Marker** section
+- vague final assertion wording
+- missing cleanup/isolation strategy
+- undefined external dependency behavior
+- status other than exactly **ready to implement now** or **blocked**
+- status is **blocked**
+
+→ treat the journey as **BLOCKED** and STOP implementation.
+
+Do not attempt to interpret, repair, or fix the plan during implementation.
+
+Stop with:
+
+"This E2E journey is blocked: <reason>. Resolve the blocker or create a different E2E journey plan."
+
 ---
 
 ## Workflow
 
 ### 1. Read The E2E Journey Plan
 
-Read `specs/e2e/<journey>.md` and identify:
+Read `specs/e2e/<journey>.md` and run **Strict Plan Validation** first.
+
+Identify:
 
 - journey scope;
 - business value;
 - source of truth;
 - E2E scenarios ready to implement now;
-- blocked or postponed E2E scenarios;
+- blocked E2E scenarios;
+- determinism guarantees;
+- final assertion marker;
 - user journey steps;
 - systems or states crossed;
 - setup strategy;
@@ -232,11 +264,9 @@ Do not read E2E scenarios from feature coverage plans.
 
 Do not implement scenarios that are unclear.
 
-Do not implement blocked or postponed scenarios.
+Do not implement blocked scenarios.
 
-If the selected journey plan is blocked, stop with:
-
-"This E2E journey is blocked: <reason>. Resolve the blocker or create a different E2E journey plan."
+If **Strict Plan Validation** fails, stop immediately.
 
 Do not invent missing planning details.
 
@@ -273,7 +303,7 @@ If the scenario does not cross meaningful page, state, data, or system boundarie
 
 ### 3. Verify Ready Status And Required Planning Details
 
-Confirm the scenario is marked ready to implement now.
+Confirm status is exactly **ready to implement now**.
 
 Confirm all required planning details are present:
 
@@ -283,12 +313,13 @@ Confirm all required planning details are present:
 - setup strategy;
 - test data strategy;
 - cleanup or isolation strategy;
-- final assertion;
+- determinism guarantees;
+- final assertion marker;
 - why API/UI/schema coverage is not sufficient;
 - flakiness risks;
 - external dependency strategy, if applicable.
 
-If any required detail is missing, stop and report the blocker.
+If status is not exactly **ready to implement now**, or any required detail is missing, stop and report the blocker.
 
 Do not guess setup, cleanup, mailbox, reset-link, payment, or external dependency behavior.
 
@@ -366,8 +397,8 @@ Data rules:
 Cleanup and isolation rules:
 
 - destructive flows require cleanup or intentional isolation;
-- if cleanup is unavailable and isolation is not safe, stop and mark the scenario blocked;
-- external dependencies must be stable or the scenario must remain blocked or postponed.
+- if cleanup is unavailable and isolation is not safe, stop and treat the scenario as blocked;
+- external dependencies must be stable; otherwise the scenario must remain blocked;
 
 Examples of destructive flows:
 
@@ -525,7 +556,8 @@ Do not:
 - read E2E scenarios from feature coverage plans;
 - create E2E scenarios from scratch during implementation;
 - convert short UI tests into E2E;
-- implement blocked or postponed scenarios;
+- implement blocked scenarios;
+- interpret or repair non-deterministic journey plans;
 - implement unrelated journeys;
 - implement API contract tests;
 - implement focused UI functional tests;
@@ -604,7 +636,8 @@ When reporting implementation, use this structure:
 This skill is complete when:
 
 - E2E journey plan at `specs/e2e/<journey>.md` was read;
-- selected E2E scope was validated as ready to implement now;
+- **Strict Plan Validation** passed;
+- selected E2E scope was validated as **ready to implement now** only;
 - scenario was confirmed as truly E2E;
 - setup, data, cleanup, and final assertion strategies were confirmed before implementation;
 - project map was followed;
