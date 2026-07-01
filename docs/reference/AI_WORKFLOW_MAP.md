@@ -2,17 +2,19 @@
 
 ## Purpose
 
-This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted work with the **Playwright AI Automation Framework**.
+This document explains how to use project rules, skills, agents, commands, and the project map in day-to-day AI-assisted work with the **Playwright AI Workflow Kit**.
 
 **Repository entry point:** [README](../../README.md)
 
-**npm package name:** `playwright-ai-automation-framework`
+**npm package name:** `playwright-ai-workflow-kit`
+
+**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
 
 **Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
 
-The clean framework baseline has no `src/test/**` project implementation layer. Page Objects, fixtures, schemas, assertion helpers, builders, and reporting helpers are created per application through skills and commands when implementation starts.
+The clean starter baseline has no `src/test/**` project implementation layer. Page Objects, fixtures, schemas, assertion helpers, builders, and reporting helpers are created per application through skills and commands when implementation starts.
 
-The clean framework baseline also has **zero tests** — that is valid. Package test scripts use `--pass-with-no-tests` and succeed until real tests are added through `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
+The clean starter baseline also has **zero tests** — that is valid. Package test scripts use `--pass-with-no-tests` and succeed until real tests are added through `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
 
 ```text
 Project Map = source of truth for structure, commands, aliases, tags, environment ownership, app/service env names, fixture entry points, and file ownership
@@ -365,7 +367,7 @@ Run /plan-e2e-journey
 
 ## TMS Planning Workflows
 
-TMS integration is optional and provider-agnostic at the framework level. Default mode is **read-only**.
+TMS integration is optional and provider-agnostic at the workflow kit level. Default mode is **read-only**.
 
 **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`). Other TMS providers may be supported later through approved integration paths.
 
@@ -941,9 +943,9 @@ It must not modify files.
 
 ---
 
-## Main Workflow: Framework Baseline Cleanup
+## Main Workflow: Starter Baseline Cleanup
 
-Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
+Use when converting the repository into a reusable **Playwright AI Workflow Kit** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 
@@ -975,7 +977,7 @@ Classify `.github/**` per file during audit; do not blindly keep or remove it.
 Also see:
 
 - `docs/reference/HOW_TO_USE_AI_AUTOMATION.md` — section 19a
-- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md` — Framework Baseline Cleanup
+- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md` — Starter Baseline Cleanup
 
 ---
 

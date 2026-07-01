@@ -1,9 +1,11 @@
 
 ## Repository Tree
 
+Generated section below is updated by `npm run project-map:update` (`scripts/project-cartographer.mjs`). The tree root label uses `package.json` `name` when available; otherwise it falls back to the local workspace folder name.
+
 <!-- PROJECT_MAP_START -->
 
-- ToolShopAI/
+- playwright-ai-workflow-kit/
   - 📁 .cursor/
     - 📁 commands/
       - 📄 add-allure-metadata.md
@@ -143,25 +145,27 @@
 
 ---
 
-## Framework Foundation State
+## Workflow Kit Foundation State
 
-This repository is the **Playwright AI Automation Framework** — a reusable Playwright + TypeScript AI-assisted automation framework foundation.
+This repository is the **Playwright AI Workflow Kit** — a reusable AI-assisted workflow kit and starter foundation for Playwright automation projects.
 
 npm package name:
 
-- `playwright-ai-automation-framework`
+- `playwright-ai-workflow-kit`
 
-Repository URL is not fixed in framework metadata. Do not invent homepage, bugs, or repository fields until the target GitHub repository is known.
+GitHub repository:
+
+- https://github.com/Avngrss/playwright-ai-workflow-kit
 
 Root documentation entry point:
 
-- `README.md` — high-level framework overview, quick start, and workflow summary
+- `README.md` — high-level workflow kit overview, quick start, and workflow summary
 
 Detailed new-project onboarding guide:
 
 - `docs/START_NEW_PROJECT.md`
 
-The clean framework baseline intentionally has **no project implementation layer** under `src/test/`.
+The clean starter baseline intentionally has **no project implementation layer** under `src/test/`.
 
 Skills and commands create the required `src/test/**` structure when implementation starts on a concrete application.
 
@@ -214,7 +218,7 @@ Rules:
 - do not add firefox/webkit/mobile scripts until matching projects are registered in the project map and config;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`.
 
-First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the framework baseline.
+First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the starter baseline.
 
 Coverage audit (review only; does not implement tests):
 
@@ -293,7 +297,7 @@ Rules:
 - specs must not derive API host from UI host;
 - config/env access belongs in approved config or fixture layer.
 
-Do not hardcode product URLs in the framework baseline. Set values in local `.env` or CI secrets for each concrete project.
+Do not hardcode product URLs in the starter baseline. Set values in local `.env` or CI secrets for each concrete project.
 
 Example shape only (placeholders — not real URLs):
 
@@ -450,7 +454,7 @@ Environment variables:
 API documentation / contract source:
 
 - define in project-specific feature plans at `specs/<feature>.md`;
-- do not hardcode product API URLs in the framework baseline.
+- do not hardcode product API URLs in the starter baseline.
 
 API specs (when added):
 

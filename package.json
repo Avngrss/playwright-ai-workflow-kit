@@ -1,7 +1,15 @@
 {
-  "name": "playwright-ai-automation-framework",
+  "name": "playwright-ai-workflow-kit",
   "version": "1.0.0",
-  "description": "AI-assisted Playwright and TypeScript automation framework for API, UI, E2E, visual, TMS-assisted, cross-browser, and responsive testing workflows.",
+  "description": "AI-assisted workflow kit for planning, implementing, reviewing, auditing, and maintaining Playwright automation projects.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Avngrss/playwright-ai-workflow-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Avngrss/playwright-ai-workflow-kit/issues"
+  },
+  "homepage": "https://github.com/Avngrss/playwright-ai-workflow-kit#readme",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test --pass-with-no-tests",

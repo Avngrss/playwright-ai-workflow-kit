@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This playbook explains how to use the AI skills and Cursor slash commands for the **Playwright AI Automation Framework** (Playwright + TypeScript test automation framework).
+This playbook explains how to use the AI skills and Cursor slash commands for the **Playwright AI Workflow Kit** — an AI-assisted workflow kit for Playwright automation projects.
 
-**npm package name:** `playwright-ai-automation-framework`
+**npm package name:** `playwright-ai-workflow-kit`
+
+**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
 
 Use this document to decide:
 
@@ -14,9 +16,9 @@ Use this document to decide:
 - what the agent is allowed to change;
 - how to verify the result.
 
-The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the framework architecture.
+The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the workflow kit conventions.
 
-**New to the Playwright AI Automation Framework?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands. You can also use this repository as a **template for new automation projects**.
+**New to the Playwright AI Workflow Kit?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands. You can also use this repository as a **template for new automation projects**.
 
 ---
 
@@ -66,9 +68,9 @@ Rules:
 
 ---
 
-## Framework Baseline Cleanup
+## Starter Baseline Cleanup
 
-Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
+Use when converting the repository into a reusable **Playwright AI Workflow Kit** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 
@@ -83,7 +85,7 @@ Remove or exclude unless explicitly approved as templates:
 - project tests, specs, and the full `src/test/**` implementation layer (Page Objects, fixtures, schemas, helpers, data, reporting helpers, and related assets)
 - product-specific docs
 
-The clean framework baseline intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
+The clean starter baseline intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
 
 Do not delete:
 
@@ -288,7 +290,7 @@ Do not add E2E scenarios to feature plans — use `specs/e2e/<journey>.md` inste
 
 ## TMS Planning Conventions
 
-- TMS integration is optional and provider-agnostic at the framework level.
+- TMS integration is optional and provider-agnostic at the workflow kit level.
 - **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`); other TMS providers may be added later.
 - TMS credentials belong in user/global MCP settings or local secret storage — not in repository env files or committed MCP config.
 - Project MCP (`.cursor/mcp.json`): `playwright` only — project-level; safe to commit.

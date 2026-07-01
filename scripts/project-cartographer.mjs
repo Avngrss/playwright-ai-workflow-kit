@@ -89,6 +89,25 @@ function treeLines(dir, depth) {
   return lines;
 }
 
+function resolveRootLabel() {
+  const packageJsonPath = path.join(ROOT, "package.json");
+
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+      const name = typeof packageJson.name === "string" ? packageJson.name.trim() : "";
+
+      if (name) {
+        return `${name}/`;
+      }
+    } catch {
+      // Fall back to the local workspace folder name when package.json is invalid.
+    }
+  }
+
+  return `${path.basename(ROOT)}/`;
+}
+
 function replaceSection(content, newSection) {
   const startIndex = content.indexOf(START);
   const endIndex = content.indexOf(END);
@@ -110,7 +129,7 @@ function main() {
 
   const current = fs.readFileSync(TARGET, "utf8");
 
-  const header = `- ${path.basename(ROOT)}/`;
+  const header = `- ${resolveRootLabel()}`;
   const lines = [header, ...treeLines(ROOT, 1)];
   const newSection = lines.join("\n");
 

@@ -2,9 +2,11 @@
 
 ## Purpose
 
-Reusable prompt templates for working with AI agents in the **Playwright AI Automation Framework** (Playwright + TypeScript test automation framework).
+Reusable prompt templates for working with AI agents in the **Playwright AI Workflow Kit** — an AI-assisted workflow kit for Playwright automation projects.
 
-**npm package name:** `playwright-ai-automation-framework`
+**npm package name:** `playwright-ai-workflow-kit`
+
+**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
 
 A good prompt defines:
 
@@ -82,7 +84,7 @@ Rules of thumb:
 Use this prefix when starting most AI-agent tasks.
 
 ```text
-You are working in a Playwright + TypeScript test automation framework.
+You are working in a Playwright + TypeScript automation project using the Playwright AI Workflow Kit.
 
 Follow the project map as the source of truth for paths, commands, aliases, tags, fixture entry points, and ownership.
 

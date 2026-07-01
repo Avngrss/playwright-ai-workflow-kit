@@ -1,4 +1,4 @@
-name: Playwright AI Automation Framework Quality Gate
+name: Playwright AI Workflow Kit Quality Gate
 on:
   push:
     branches: [main, master]

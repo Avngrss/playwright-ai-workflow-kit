@@ -1,20 +1,22 @@
 # Start a New Project
 
-**Overview:** [README](../README.md) — high-level framework overview. This guide is the detailed onboarding walkthrough.
+**Overview:** [README](../README.md) — high-level workflow kit overview. This guide is the detailed onboarding walkthrough.
 
 ---
 
 ## Purpose
 
-This repository is the **Playwright AI Automation Framework** — a reusable **Playwright + TypeScript** AI-assisted automation framework foundation.
+This repository is the **Playwright AI Workflow Kit** — a reusable AI-assisted workflow kit and starter foundation for **Playwright + TypeScript** automation projects.
 
-npm package name: `playwright-ai-automation-framework`
+npm package name: `playwright-ai-workflow-kit`
 
-It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, and feature plans are created per application — they are not shipped with the framework baseline.
+GitHub repository: https://github.com/Avngrss/playwright-ai-workflow-kit
 
-The clean framework baseline has **no `src/test/**` implementation layer**. Skills and commands create the required project structure when implementation starts.
+It provides rules, skills, commands, scripts, and documentation for building test automation on a target application. Project-specific tests, Page Objects, schemas, fixtures, builders, and feature plans are created per application — they are not shipped with the starter baseline.
 
-Use this guide when you copy or clone the framework as a **template for a new automation project**.
+The clean starter baseline has **no `src/test/**` implementation layer**. Skills and commands create the required project structure when implementation starts.
+
+Use this guide when you copy or clone this workflow kit as a **template for a new automation project**.
 
 ---
 
@@ -29,7 +31,7 @@ Use this guide when you copy or clone the framework as a **template for a new au
 
 ## Initial Setup
 
-1. **Clone or copy** this framework into your project workspace.
+1. **Clone or copy** this workflow kit into your project workspace (for example: `git clone https://github.com/Avngrss/playwright-ai-workflow-kit.git`).
 2. **Install dependencies:**
 
    ```bash
@@ -44,7 +46,7 @@ Use this guide when you copy or clone the framework as a **template for a new au
 
 4. **Fill placeholders only when needed** for your target application:
 
-   **Simple single-app projects** (framework defaults):
+   **Simple single-app projects** (starter defaults):
 
    ```text
    UI_BASE_URL=
@@ -83,17 +85,17 @@ Use this guide when you copy or clone the framework as a **template for a new au
 TMS guidance:
 
 - TMS integration is **optional**. Use it for planning input and traceability when a Test Management System is available.
-- **Qase** is a currently supported example provider via user/global Cursor MCP when configured — not a hard dependency of the framework.
+- **Qase** is a currently supported example provider via user/global Cursor MCP when configured — not a hard dependency of the workflow kit.
 - Other TMS providers may be supported later through approved integration paths.
 - TMS tokens belong in user/global MCP settings or local secret storage — **not** in repository env files.
 - TMS is **read-only by default** (list/read cases; no writes, runs, or result publishing without explicit approval).
-- TMS reporter/result publishing is separate and **not** configured in this framework by default.
+- TMS reporter/result publishing is separate and **not** configured in this workflow kit by default.
 
 If you use Qase as your TMS example, verify its MCP connection in Cursor before running `/plan-from-tms` or `/align-plan-with-tms`.
 
 ---
 
-## Framework Structure
+## Workflow Kit Structure
 
 Key locations:
 
@@ -102,7 +104,7 @@ Key locations:
 | `.cursor/rules/**` | Architecture and quality guardrails |
 | `.cursor/skills/**` | Task-specific AI procedures |
 | `.cursor/commands/**` | Slash command launchers |
-| `docs/**` | Framework and workflow documentation |
+| `docs/**` | Workflow kit and automation documentation |
 | `specs/<feature>.md` | Feature coverage plans (API, UI, schema, visual) |
 | `specs/e2e/<journey>.md` | E2E journey plans (full user/business flows) |
 | `tests/api/**` | API specs (`*.api.spec.ts`) |
@@ -126,6 +128,8 @@ Key locations:
 Many project-specific folders do not exist until the first implementation run. Use skills such as `create-fixture`, `create-page-object`, and `implement-api-feature` / `implement-ui-feature` to create the required structure.
 
 Source of truth for structure and commands: `.cursor/rules/00-project-map.mdc`.
+
+When you run `npm run project-map:update`, the generated repository tree uses the `package.json` name as the root label (for example `playwright-ai-workflow-kit/`), not the local workspace folder name.
 
 ---
 
@@ -225,7 +229,7 @@ Rule reference: `.cursor/rules/visual-testing.mdc`
 
 ## Verification
 
-The clean framework baseline has **zero tests** — that is valid. All package test scripts use `--pass-with-no-tests` so they succeed in the empty baseline state.
+The clean starter baseline has **zero tests** — that is valid. All package test scripts use `--pass-with-no-tests` so they succeed in the empty baseline state.
 
 Common baseline checks:
 
@@ -296,7 +300,7 @@ Environment notes:
 - Invent tags, Playwright projects, or browser/device tag names.
 - Use `waitForTimeout`.
 - Hide E2E journey steps in fixtures, hooks, or Page Objects.
-- Leave application-specific code in the framework baseline when converting it for reuse.
+- Leave application-specific code out of the starter baseline when converting it for reuse.
 
 ---
 
@@ -323,7 +327,7 @@ Planning and implementation (Cursor slash commands):
 
 ## Related Documentation
 
-- [README](../README.md) — high-level framework overview
+- [README](../README.md) — high-level workflow kit overview
 - [How To Use AI Automation System](reference/HOW_TO_USE_AI_AUTOMATION.md)
 - [AI Workflow Map](reference/AI_WORKFLOW_MAP.md)
 - [AI Skills and Commands Playbook](AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md)

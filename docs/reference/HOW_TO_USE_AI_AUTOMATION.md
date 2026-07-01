@@ -2,11 +2,13 @@
 
 ## Purpose
 
-This file explains how to use the **Playwright AI Automation Framework** AI automation system in daily work.
+This file explains how to use the **Playwright AI Workflow Kit** AI automation system in daily work.
 
-**Repository entry point:** [README](../../README.md) — framework overview and public entry point.
+**Repository entry point:** [README](../../README.md) — workflow kit overview and public entry point.
 
-**npm package name:** `playwright-ai-automation-framework`
+**npm package name:** `playwright-ai-workflow-kit`
+
+**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
 
 **Detailed new-project onboarding:** [Start a New Project](../START_NEW_PROJECT.md)
 
@@ -30,9 +32,9 @@ For baseline cleanup or repository conversion, follow:
 
 Project Map is the source of truth.
 
-This repository is the **Playwright AI Automation Framework** baseline with no product-specific tests, specs, Page Objects, schemas, fixtures, or `src/test/**` implementation layer yet.
+This repository is the **Playwright AI Workflow Kit** baseline with no product-specific tests, specs, Page Objects, schemas, fixtures, or `src/test/**` implementation layer yet.
 
-The clean framework baseline intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
+The clean starter baseline intentionally omits `src/test/**`. Skills and commands create the required project implementation structure when API, UI, or E2E coverage is implemented on a concrete application.
 
 Expected future locations (created per project; absent in clean baseline):
 
@@ -274,7 +276,7 @@ Follow Project Map for the exact quality gate definition.
 
 ## 5a. Package Test Scripts
 
-All test scripts are baseline-safe: they use `--pass-with-no-tests`, so **zero tests is valid** in the clean framework baseline.
+All test scripts are baseline-safe: they use `--pass-with-no-tests`, so **zero tests is valid** in the clean starter baseline.
 
 Quality gate:
 
@@ -307,7 +309,7 @@ Rules:
 - cross-browser/responsive scripts filter by coverage-type tags only — they do not imply Firefox, WebKit, or mobile projects exist;
 - browser and viewport execution still depends on Playwright projects in `playwright.config.ts`;
 - do not use browser/device tags such as `@firefox`, `@webkit`, `@chromium`, `@mobile`, `@tablet`, or `@desktop`;
-- first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the framework baseline.
+- first real project tests are created via `/plan-feature`, `/plan-e2e-journey`, and implementation commands — not shipped with the starter baseline.
 
 ---
 
@@ -976,9 +978,9 @@ Do not include unrelated repository tree sync noise in focused commits unless ex
 
 ---
 
-## 19a. Typical Workflow: Framework Baseline Cleanup
+## 19a. Typical Workflow: Starter Baseline Cleanup
 
-Use when converting the repository into a reusable **Playwright AI Automation Framework** baseline or cleaning project-specific artifacts from a copied template.
+Use when converting the repository into a reusable **Playwright AI Workflow Kit** baseline or cleaning project-specific artifacts from a copied template.
 
 Rule:
 

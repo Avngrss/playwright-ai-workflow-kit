@@ -1,20 +1,22 @@
-# Playwright AI Automation Framework
+# Playwright AI Workflow Kit
 
-npm package: `playwright-ai-automation-framework`
+npm package: `playwright-ai-workflow-kit`
 
-A reusable **Playwright + TypeScript** AI-assisted automation framework foundation for building test automation on any target application.
+GitHub repository: https://github.com/Avngrss/playwright-ai-workflow-kit
 
-It supports **API**, **UI**, **E2E**, **visual**, **TMS-assisted planning**, **cross-browser**, and **responsive** testing workflows. AI **rules**, **skills**, and **commands** guide planning, implementation, review, and audit.
+A reusable **AI-assisted workflow kit** and starter foundation for **Playwright + TypeScript** automation projects.
 
-The clean framework baseline ships **zero tests** and **no `src/test/**` implementation layer**. That is valid. Project-specific code is created when you start work on a concrete application.
+It provides rules, skills, commands, docs, conventions, and baseline scripts that guide planning, implementation, review, and audit work for **API**, **UI**, **E2E**, **visual**, **TMS-assisted planning**, **cross-browser**, and **responsive** testing workflows.
+
+The clean starter baseline ships **zero tests** and **no `src/test/**` implementation layer**. That is valid. Project-specific code is created when you start work on a concrete application.
 
 You can copy or clone this repository as a **template for new automation projects**. For step-by-step onboarding, see [Start a New Project](docs/START_NEW_PROJECT.md).
 
 ---
 
-## What This Framework Includes
+## What This Workflow Kit Includes
 
-- Playwright + TypeScript foundation
+- Playwright + TypeScript starter configuration
 - AI rules, skills, and slash commands under `.cursor/`
 - Feature coverage planning (`specs/<feature>.md`)
 - E2E journey planning (`specs/e2e/<journey>.md`)
@@ -59,7 +61,7 @@ Fill placeholders as needed:
 - **UI preconditions:** `UI_PRECONDITION_API_BASE_URL` only when backend setup is required
 - **Multi-target projects:** register app/service env names in the project map first
 
-Verify the framework baseline:
+Verify the starter baseline:
 
 ```bash
 npm run qa:gate
@@ -164,15 +166,15 @@ All scripts are baseline-safe. Zero tests is a valid state.
 
 ---
 
-## Current Framework Structure
+## Current Workflow Kit Structure
 
-Shipped with the framework baseline:
+Shipped with the starter baseline:
 
 ```text
 .cursor/rules/**      Architecture and quality guardrails
 .cursor/skills/**     Task-specific AI procedures
 .cursor/commands/**   Slash command launchers
-docs/**               Framework and workflow documentation
+docs/**               Workflow kit and automation documentation
 .env.example          Provider-agnostic env placeholders
 playwright.config.ts  Playwright projects and defaults
 scripts/**            Convention checks and tooling
