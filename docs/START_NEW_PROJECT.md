@@ -137,6 +137,8 @@ Key locations:
 
 Many project-specific folders do not exist until the first implementation run. Use skills such as `create-fixture`, `create-page-object`, and `implement-api-feature` / `implement-ui-feature` to create the required structure.
 
+Optional reference when first implementation creates `src/test/**`: [Helper Recipes](HELPER_RECIPES.md) — reusable helper patterns documented for future projects; the starter does not ship helper source files.
+
 Data generation policy for new projects:
 
 - do not add data-generation libraries by default;
@@ -426,6 +428,7 @@ Planning and implementation (Cursor slash commands):
 ## Related Documentation
 
 - [README](../README.md) — high-level workflow kit overview
+- [Helper Recipes](HELPER_RECIPES.md) — reusable helper patterns (documentation only)
 - [How To Use AI Automation System](reference/HOW_TO_USE_AI_AUTOMATION.md)
 - [AI Workflow Map](reference/AI_WORKFLOW_MAP.md)
 - [AI Skills and Commands Playbook](AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md)

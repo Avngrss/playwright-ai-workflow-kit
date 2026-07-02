@@ -182,10 +182,17 @@ Browser and viewport belong to Playwright projects, not Playwright tags.
 
 ---
 
+## Helper Guidance
+
+Optional patterns when a project creates `src/test/**`: [Helper Recipes](HELPER_RECIPES.md) — documentation only, not shipped source helpers.
+
+---
+
 ## Links
 
 - [README.md](../README.md)
 - [Start a New Project](START_NEW_PROJECT.md)
+- [Helper Recipes](HELPER_RECIPES.md)
 - [AI Skills and Commands Playbook](AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md)
 - [AI Workflow Map](reference/AI_WORKFLOW_MAP.md)
 - [AI Agent Prompts](reference/AI_AGENT_PROMPTS.md)
