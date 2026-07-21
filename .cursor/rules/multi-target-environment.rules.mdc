@@ -15,7 +15,9 @@ The goal is to prevent agents from using the wrong URL, inventing env variable n
 
 ## Core Principle
 
-Every automated scenario must know which UI application and which API service it targets.
+Every feature must document the URLs and systems it uses as **Feature Targets**.
+
+Feature Targets may include UI applications, API services, external or partner systems, and setup/cleanup targets when needed.
 
 Environment variable names are project conventions — not agent inventions.
 
@@ -28,17 +30,15 @@ The project map is the source of truth for app and service env names.
 Single-application projects may use the starter default env model:
 
 ```text
-UI_BASE_URL = UI application base URL for ui-chromium and e2e projects
+UI_BASE_URL = UI/application target for browser tests and plans
 
 API_BASE_URL = API project/tests base URL
-
-UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
 ```
 
 Rules for simple projects:
 
 - one UI app and one API backend is the default assumption;
-- `UI_PRECONDITION_API_BASE_URL` is for backend preconditions only;
+- `UI_PRECONDITION_API_BASE_URL` is legacy/simple-project compatibility only, not a default target;
 - specs must not read environment variables directly;
 - config and fixture layers resolve env values;
 - do not derive API host from UI host.
@@ -52,14 +52,15 @@ Projects with multiple UI apps, microfrontends, or API/microservices may define 
 Examples only — do not use unless registered in the project map:
 
 ```text
-CUSTOMER_UI_BASE_URL
-ADMIN_UI_BASE_URL
-CHECKOUT_UI_BASE_URL
+CUSTOMER_APP_URL
+ADMIN_APP_URL
+CHECKOUT_APP_URL
 
-AUTH_API_BASE_URL
-CATALOG_API_BASE_URL
-ORDER_API_BASE_URL
-PAYMENT_API_BASE_URL
+AUTH_API_URL
+USERS_API_URL
+ORDERS_API_URL
+PAYMENTS_API_URL
+EXTERNAL_PARTNER_API_URL
 ```
 
 Rules for complex projects:
@@ -67,9 +68,11 @@ Rules for complex projects:
 - every env name must be documented in the project map before use;
 - agents must not invent env variable names;
 - do not use one generic `API_BASE_URL` when the feature belongs to a specific service;
-- do not use one generic `UI_BASE_URL` when the feature belongs to a specific UI app;
+- do not use one generic application target when the feature belongs to a specific UI app;
 - each Page Object, API client, and setup utility must resolve the correct target through the approved config layer;
-- plans must identify target UI app(s), API service(s), and precondition service(s) when more than one exists.
+- feature plans list only the Feature Targets they use;
+- setup, cleanup, and preconditions are optional roles that use one of the registered targets;
+- there is no default global precondition API URL.
 
 ---
 
@@ -97,13 +100,14 @@ If a needed env name is missing from the project map, stop and request a project
 
 ## Planning Requirements
 
-Feature plans at `specs/<feature>.md` must document target ownership when more than one UI app or API service exists.
+Feature plans at `specs/<feature>.md` must document Feature Targets when more than one URL or system is involved.
 
 Required when applicable:
 
-- target UI app(s);
-- target API service(s) for API coverage;
-- precondition API service(s) for UI setup;
+- UI/application targets;
+- API/service targets;
+- external/partner targets;
+- setup/cleanup targets only when relevant;
 - env variable name for each target;
 - reason the target is required.
 
@@ -118,7 +122,7 @@ E2E journey plans at `specs/e2e/<journey>.md` must document:
 - setup service ownership;
 - action service ownership;
 - final assertion UI app ownership;
-- precondition service when setup uses a different service from the UI flow.
+- setup/cleanup target when the journey uses one.
 
 If service or environment ownership is unclear, mark the E2E journey **blocked**.
 
@@ -135,7 +139,7 @@ API implementation:
 UI implementation:
 
 - use the UI target documented in the feature plan;
-- use the approved precondition service documented in the plan;
+- use setup/cleanup targets only when the plan requires them;
 - Page Objects open the planned UI app base URL through config, not raw env in specs.
 
 E2E implementation:
@@ -144,7 +148,9 @@ E2E implementation:
 - if target service or UI app is missing from the journey plan, stop and report;
 - document in the spec journey which apps and services are crossed when the plan defines multiple targets.
 
-API setup may use a different service from the UI flow, but ownership must be explicit in the plan and visible in setup code comments or fixture naming only when needed for clarity — not to hide journey steps.
+Setup or cleanup may use a different target from the UI flow, but the target must be explicit in the plan and visible in setup code comments or fixture naming only when needed for clarity — not to hide journey steps.
+
+If a required Feature Target is unclear, stop and ask for clarification or mark the scenario blocked/postponed. Do not fall back to `UI_PRECONDITION_API_BASE_URL` and do not derive an API host from a UI host.
 
 ---
 

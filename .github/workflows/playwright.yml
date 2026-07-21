@@ -47,11 +47,11 @@ jobs:
     timeout-minutes: 45
     # Repository variables (Settings → Secrets and variables → Actions → Variables).
     # Empty when unset — baseline gate does not require them; matrix runs only when tests exist.
-    # Register additional multi-target names in the project map before adding them here.
+    # Keep starter mappings minimal. Real projects add only Feature Targets
+    # registered in the project map and used by their tests.
     env:
       UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
       API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
-      UI_PRECONDITION_API_BASE_URL: ${{ vars.UI_PRECONDITION_API_BASE_URL || '' }}
     strategy:
       fail-fast: false
       matrix:

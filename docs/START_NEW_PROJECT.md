@@ -55,20 +55,19 @@ Use this guide when you copy or clone this workflow kit as a **template for a ne
    ```text
    UI_BASE_URL=
    API_BASE_URL=
-   UI_PRECONDITION_API_BASE_URL=
    ```
 
-   - `UI_BASE_URL` — fill when adding UI or E2E browser tests.
+   - `UI_BASE_URL` — UI/application Feature Target used in plans and browser projects.
    - `API_BASE_URL` — fill when adding API tests.
-   - `UI_PRECONDITION_API_BASE_URL` — fill only when UI or E2E tests need approved backend precondition setup.
 
-   **Multi-target projects** (multiple UI apps or API/microservices):
+   **Multi-target projects** (multiple UI apps, APIs, or external systems):
 
    - register every env name in `.cursor/rules/00-project-map.mdc` before use;
    - add matching commented examples to `.env.example`;
    - do not invent env names in plans or code;
-   - feature plans must name target UI app(s), API service(s), and precondition service(s);
-   - E2E journey plans must document every UI app and service crossed.
+   - feature plans list only their Feature Targets: UI/application, API/service, external/partner, and setup/cleanup when relevant;
+   - E2E journey plans document every Feature Target crossed.
+   - setup and cleanup use a registered target only when needed; there is no global precondition URL.
 
    Rule reference: `.cursor/rules/multi-target-environment.rules.mdc`
 
@@ -81,6 +80,15 @@ Use this guide when you copy or clone this workflow kit as a **template for a ne
 5. **Never commit** `.env` or other local secret files.
 
 6. **Configure CI variables and secrets** when real tests run in GitHub Actions (see [CI Baseline](#ci-baseline) below).
+
+7. **Optional — integrate API collections** when the team maintains them:
+   - add curated Bruno collections under `collections/bruno/<service-or-domain>/**`;
+   - register each service and its environment variable names in `.cursor/rules/00-project-map.mdc`;
+   - use `/inspect-api-collection`, `/plan-from-api-collection`, and `/audit-api-collection-coverage` before API implementation;
+   - use collections for feature planning and coverage audits, never direct Playwright test generation;
+   - keep real secrets, personal collections, and debug collections out of the repository.
+
+   See [API Collection Integration](API_COLLECTION_INTEGRATION.md).
 
 ---
 
@@ -115,6 +123,7 @@ Key locations:
 | `.cursor/skills/**` | Task-specific AI procedures |
 | `.cursor/commands/**` | Slash command launchers |
 | `docs/**` | Workflow kit and automation documentation |
+| `collections/bruno/**` | Optional curated team Bruno API collections |
 | `specs/<feature>.md` | Feature coverage plans (API, UI, schema, visual) |
 | `specs/e2e/<journey>.md` | E2E journey plans (full user/business flows) |
 | `tests/api/**` | API specs (`*.api.spec.ts`) |
@@ -172,7 +181,7 @@ Recommended flow for the first feature on a new application:
 Clarifications:
 
 - **Feature plans** cover API, UI, schema, visual, cross-browser, and responsive decisions.
-- **Feature plans** must identify target UI app(s), API service(s), and precondition service(s) when more than one exists.
+- **Feature plans** must list only their Feature Targets: UI/application, API/service, external/partner, and setup/cleanup when relevant.
 - **Feature plans do not contain E2E journeys.** Plan E2E separately under `specs/e2e/`.
 - Use **ready to implement now** vs **blocked/postponed** in plans; do not implement blocked items without clarification.
 - **Project map** is the source of truth for app/service env names in multi-target projects.
@@ -351,9 +360,8 @@ Configure when real tests exist. Document required names per project in `.cursor
 |----------|---------|
 | `UI_BASE_URL` | UI application base URL |
 | `API_BASE_URL` | API project base URL |
-| `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
 
-Multi-target projects register names such as `CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL` in the project map before use.
+Multi-target projects register only required Feature Targets, such as `ADMIN_APP_URL`, `ORDERS_API_URL`, and `EXTERNAL_PARTNER_API_URL`, in the project map before use.
 
 **Secrets** (tokens, passwords, credentials):
 

@@ -91,12 +91,14 @@ Reporting (Playwright HTML + Allure):
 
 CI variables and secrets model:
 
-- **Variables** (non-sensitive URLs): `UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`; multi-target names when registered in project map.
+- **Feature Target variables** (non-sensitive URLs): simple baseline `UI_BASE_URL` + `API_BASE_URL`; named targets only when registered in project map.
 - **Secrets** (tokens/passwords/credentials): user passwords, API tokens, service accounts, TMS tokens, external service credentials.
 - local `.env` corresponds conceptually to CI variables and secrets; never commit real `.env`.
 - never hardcode secrets in workflow YAML; prefer environment secrets for staging/production-like targets.
 - document required CI configuration per real project in `.cursor/rules/00-project-map.mdc`.
 - clean starter does not require configured variables or secrets; TMS publishing remains disabled unless explicitly planned.
+
+Each feature plan lists only the Feature Targets it uses: UI/application, API/service, external/partner, and setup/cleanup when relevant. Do not assume a global precondition API URL.
 
 ---
 
@@ -600,6 +602,104 @@ Stop condition:
 - stop after updating the feature plan
 - do not start implementation
 ```
+
+---
+
+## `/inspect-api-collection`
+
+### Purpose
+
+Inspect API collection sources as planning and audit input without modifying files or executing requests.
+
+### Inputs
+
+- collection path, normally `collections/bruno/<service-or-domain>/**`;
+- optional OpenAPI/Swagger path;
+- optional target service/domain.
+
+### Output
+
+- endpoint inventory;
+- variables/auth hints;
+- destructive/stateful request candidates;
+- contract drift notes when OpenAPI/Swagger is supplied;
+- recommended next step.
+
+### Do / Don't
+
+- Do treat Bruno as executable request examples and OpenAPI/Swagger as contract authority when available.
+- Do redact discovered secrets and flag unregistered environment names.
+- Do not create plans or tests.
+- Do not execute requests, call external APIs, or install dependencies.
+
+### Recommended Next Command
+
+`/plan-from-api-collection` when a feature plan should be created or updated.
+
+---
+
+## `/plan-from-api-collection`
+
+### Purpose
+
+Create or update `specs/<feature>.md` from a Bruno collection and optional OpenAPI/Swagger source.
+
+### Inputs
+
+- collection path under `collections/bruno/**`;
+- optional OpenAPI/Swagger path;
+- output feature plan path;
+- optional TMS or requirements context.
+
+### Output
+
+- created or updated feature plan;
+- ready, blocked/postponed, and not-automated coverage;
+- service/environment ownership;
+- data, auth, cleanup/isolation, destructive-request, and contract-drift decisions.
+
+### Do / Don't
+
+- Do group requests by capability rather than generating one test per request.
+- Do block affected coverage when Bruno and OpenAPI/Swagger conflict.
+- Do not implement tests, create `src/test/**`, execute requests, or modify source collections, contracts, or TMS.
+
+### Recommended Next Command
+
+`/implement-api-batch` only after the feature plan is reviewed and contains ready API coverage.
+
+---
+
+## `/audit-api-collection-coverage`
+
+### Purpose
+
+Audit alignment among Bruno collections, feature plans, implemented API tests, and optional OpenAPI/Swagger sources.
+
+### Inputs
+
+- collection path;
+- feature plan path;
+- `tests/api/**` path;
+- optional OpenAPI/Swagger path.
+
+### Output
+
+- coverage matrix;
+- planned coverage missing tests;
+- collection requests not planned;
+- tests without plan justification;
+- contract drift, destructive-request, and environment/auth risks.
+
+### Do / Don't
+
+- Do identify blocked/postponed coverage implemented accidentally and duplicate coverage.
+- Do not modify plans, collections, tests, OpenAPI/Swagger, or TMS.
+- Do not execute API requests.
+
+### Recommended Next Command
+
+Use `/review-generated` for implementation quality or `/plan-from-api-collection` to update the plan when approved.
 
 ---
 

@@ -10,6 +10,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
     - 📁 commands/
       - 📄 add-allure-metadata.md
       - 📄 align-plan-with-tms.md
+      - 📄 audit-api-collection-coverage.md
       - 📄 audit-test-coverage.md
       - 📄 audit-test-data-strategy.md
       - 📄 audit-test-stability.md
@@ -18,8 +19,10 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 implement-e2e-flow.md
       - 📄 implement-ui-batch.md
       - 📄 implement-visual-checkpoint.md
+      - 📄 inspect-api-collection.md
       - 📄 plan-e2e-journey.md
       - 📄 plan-feature.md
+      - 📄 plan-from-api-collection.md
       - 📄 plan-from-tms.md
       - 📄 refactor-overengineering.md
       - 📄 review-generated.md
@@ -35,6 +38,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 00-project-map.mdc
       - 📄 agent-workflow.mdc
       - 📄 api-architecture.mdc
+      - 📄 api-collection-integration.rules.mdc
       - 📄 api-schema-validation.rules.mdc
       - 📄 browser-and-responsive-testing.rules.mdc
       - 📄 code-quality-cleanliness.mdc
@@ -61,6 +65,8 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 visual-testing.mdc
     - 📁 skills/
       - 📁 align-plan-with-tms/
+        - 📄 SKILL.md
+      - 📁 audit-api-collection-coverage/
         - 📄 SKILL.md
       - 📁 audit-test-coverage/
         - 📄 SKILL.md
@@ -94,7 +100,11 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
         - 📄 SKILL.md
       - 📁 implement-visual-test/
         - 📄 SKILL.md
+      - 📁 inspect-api-collection/
+        - 📄 SKILL.md
       - 📁 plan-e2e-journey/
+        - 📄 SKILL.md
+      - 📁 plan-from-api-collection/
         - 📄 SKILL.md
       - 📁 plan-from-tms/
         - 📄 SKILL.md
@@ -122,12 +132,16 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 playwright-test-planner.agent.md
     - 📁 workflows/
       - 📄 playwright.yml
+  - 📁 collections/
+    - 📁 bruno/
+      - 📄 README.md
   - 📁 docs/
     - 📁 reference/
       - 📄 AI_AGENT_PROMPTS.md
       - 📄 AI_WORKFLOW_MAP.md
       - 📄 HOW_TO_USE_AI_AUTOMATION.md
     - 📄 AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md
+    - 📄 API_COLLECTION_INTEGRATION.md
     - 📄 HELPER_RECIPES.md
     - 📄 QUICK_REFERENCE.md
     - 📄 START_NEW_PROJECT.md
@@ -167,6 +181,10 @@ Root documentation entry point:
 Daily-use quick reference cheat sheet:
 
 - `docs/QUICK_REFERENCE.md` — commands, workflows, tags, scripts, and guardrails at a glance
+
+API collection integration guidance:
+
+- `docs/API_COLLECTION_INTEGRATION.md` — Bruno collection, OpenAPI/Swagger contract, planning, and audit hierarchy
 
 Helper recipe documentation (not shipped source helpers):
 
@@ -244,7 +262,7 @@ Starter CI baseline (`.github/workflows/playwright.yml`):
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
 - detects whether any `tests/**/*.spec.ts` or `tests/**/*.test.ts` files exist;
 - skips matrix test jobs when no tests exist (clean starter still passes);
-- maps repository variables to Playwright env when matrix jobs run (`UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`; empty fallback when unset);
+- maps starter compatibility variables to Playwright env when matrix jobs run (`UI_BASE_URL`, `API_BASE_URL`; empty fallback when unset);
 - does not require configured variables or secrets in zero-test state;
 - runs API/UI/E2E/tag-based jobs when tests exist;
 - includes focused cross-browser UI jobs and responsive mobile UI job via registered projects and coverage-type tags;
@@ -308,6 +326,16 @@ Rule:
 
 - `.cursor/rules/multi-target-environment.rules.mdc`
 
+### Feature Targets / URL Model
+
+The project map is the source of truth for every registered target environment name.
+
+- simple projects: `UI_BASE_URL` and `API_BASE_URL`;
+- multi-target projects: register named UI/application, API/service, and external/partner URLs;
+- feature plans select only the targets used by that feature;
+- setup and cleanup are optional roles using registered targets, not a global precondition URL;
+- do not invent target names or derive API hosts from UI hosts.
+
 Framework env template:
 
 - `.env.example` — provider-agnostic placeholders only; safe to commit
@@ -315,25 +343,21 @@ Framework env template:
 
 Copy `.env.example` to `.env` locally and fill placeholders when needed.
 
-### Simple single-app env model
+### Feature Targets / simple baseline model
 
 Single-application projects may use:
 
 ```text
-UI_BASE_URL = UI application base URL for ui-chromium and e2e projects
+UI_BASE_URL = UI/application target for browser tests and plans
 
 API_BASE_URL = API project/tests base URL
-
-UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
-
-UI_API_BASE_URL = optional documented fallback for UI precondition API base
 ```
 
 Rules:
 
 - API tests use `API_BASE_URL`;
-- UI and E2E browser tests use `UI_BASE_URL`;
-- UI API precondition setup must use an API backend aligned with the UI runtime backend when preconditions are implemented;
+- UI and E2E browser tests use the application target from the feature or journey plan;
+- each feature lists only its Feature Targets: UI/application, API/service, external/partner, and setup/cleanup when relevant;
 - specs must not read environment variables directly;
 - specs must not derive API host from UI host;
 - config/env access belongs in approved config or fixture layer.
@@ -343,9 +367,8 @@ Do not hardcode product URLs in the starter baseline. Set values in local `.env`
 Example shape only (placeholders — not real URLs):
 
 ```text
-UI_BASE_URL=https://your-ui-host.example
+UI_BASE_URL=https://your-app-host.example
 API_BASE_URL=https://your-api-host.example
-UI_PRECONDITION_API_BASE_URL=https://your-api-host.example
 ```
 
 ### Multi-target env model
@@ -357,25 +380,29 @@ This project map is the **source of truth** for app and service env names.
 Examples only — register actual names per concrete project:
 
 ```text
-CUSTOMER_UI_BASE_URL = customer-facing UI app
-ADMIN_UI_BASE_URL = admin UI app
-CHECKOUT_UI_BASE_URL = checkout UI app or microfrontend
+CUSTOMER_APP_URL = customer-facing UI app
+ADMIN_APP_URL = admin UI app
+CHECKOUT_APP_URL = checkout UI app or microfrontend
 
-AUTH_API_BASE_URL = authentication service
-CATALOG_API_BASE_URL = catalog service
-ORDER_API_BASE_URL = order service
-PAYMENT_API_BASE_URL = payment service
+AUTH_API_URL = authentication service
+USERS_API_URL = user service
+ORDERS_API_URL = order service
+PAYMENTS_API_URL = payment service
+EXTERNAL_PARTNER_API_URL = external or partner system (example logical alias: payment-provider)
 ```
+
+Register actual env names here before use. Do not copy example names without project-specific registration.
 
 Multi-target rules:
 
 - agents must not invent env variable names;
-- feature plans must identify target UI app(s), API service(s), and precondition service(s) when more than one exists;
+- feature plans select and document only Feature Targets used: UI/application, API/service, external/partner, and setup/cleanup when relevant;
 - E2E journey plans must document every UI app and service crossed;
 - do not use generic `API_BASE_URL` when the feature belongs to a specific service;
-- do not use generic `UI_BASE_URL` when the feature belongs to a specific UI app;
+- do not use a generic application target when the feature belongs to a specific UI app;
 - update `.env.example` with commented examples that match registered names;
-- if target ownership is unclear, mark blocked/postponed or request clarification before implementation.
+- there is no global precondition API URL model;
+- if a required target is unclear, mark blocked/postponed or request clarification before implementation.
 
 ---
 
@@ -403,7 +430,6 @@ Default CI variable mapping (simple single-app projects):
 |-------------|------------------------|---------|
 | `vars.UI_BASE_URL` | `UI_BASE_URL` | UI application base URL for `ui-chromium` and `e2e` |
 | `vars.API_BASE_URL` | `API_BASE_URL` | API project base URL |
-| `vars.UI_PRECONDITION_API_BASE_URL` | `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
 
 Workflow uses empty fallback when variables are unset (`vars.NAME || ''`).
 
@@ -412,7 +438,7 @@ GitHub Environment variables and secrets require adding `environment:` to CI job
 Multi-target CI variables:
 
 - register every env name in this project map before adding workflow mapping or using in tests;
-- examples: `CUSTOMER_UI_BASE_URL`, `ADMIN_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL`;
+- examples: `CUSTOMER_APP_URL`, `ADMIN_APP_URL`, `AUTH_API_URL`, `ORDERS_API_URL`, `EXTERNAL_PARTNER_API_URL`;
 - do not invent env names in workflow YAML, plans, or specs;
 - extend `.github/workflows/playwright.yml` env mapping only for names registered here.
 
@@ -581,13 +607,32 @@ Skill:
 Environment variables:
 
 - `API_BASE_URL` — API project/tests base URL;
-- `UI_PRECONDITION_API_BASE_URL` — optional API backend for UI/E2E precondition setup when documented;
-- `UI_API_BASE_URL` — optional fallback for UI precondition API base.
+- `UI_BASE_URL` — UI/application Feature Target in simple projects;
+- named Feature Targets — registered per project for additional UI, API, external, setup, or cleanup use.
 
 API documentation / contract source:
 
 - define in project-specific feature plans at `specs/<feature>.md`;
 - do not hardcode product API URLs in the starter baseline.
+
+API collection input (optional per project):
+
+- rule: `.cursor/rules/api-collection-integration.rules.mdc`
+- curated Bruno collections: `collections/bruno/**`
+- collection folder guidance: `collections/bruno/README.md`
+- the clean starter ships with no real API collection requests;
+- Bruno provides executable request examples and planning/audit input;
+- OpenAPI/Swagger remains the API contract source of truth when available;
+- `specs/<feature>.md` remains the automation source of truth.
+
+Bruno workflows:
+
+- inspect: `.cursor/skills/inspect-api-collection/SKILL.md` / `/inspect-api-collection` — read-only collection inventory and drift review;
+- plan: `.cursor/skills/plan-from-api-collection/SKILL.md` / `/plan-from-api-collection` — creates or updates only `specs/<feature>.md` when explicitly requested;
+- audit: `.cursor/skills/audit-api-collection-coverage/SKILL.md` / `/audit-api-collection-coverage` — read-only collection, plan, and API-test alignment audit;
+- do not generate tests directly from collections;
+- use OpenAPI/Swagger to resolve contract details when available and report Bruno/OpenAPI drift instead of guessing;
+- destructive/stateful collection requests require documented cleanup or isolation before automation.
 
 API specs (when added):
 

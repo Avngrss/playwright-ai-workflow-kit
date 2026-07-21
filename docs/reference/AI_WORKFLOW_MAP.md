@@ -179,7 +179,7 @@ Planner should:
 - identify API negative and boundary decisions;
 - identify UI unique user-facing value;
 - create actionable API and UI implementation briefs;
-- identify target UI app(s), API service(s), and precondition service(s) when more than one exists;
+- identify only the Feature Targets used: UI/application, API/service, external/partner, and setup/cleanup when relevant;
 - note when a full journey may need a separate E2E journey plan in `specs/e2e/<journey>.md`;
 - avoid implementation.
 
@@ -419,6 +419,43 @@ Do not implement directly from TMS cases. Do not implement blocked/postponed cov
 
 ---
 
+## API Collection Workflows
+
+Use API collections as planning and audit input, not as direct test generators.
+
+```text
+OpenAPI / Swagger + Bruno + TMS / requirements
+-> specs/<feature>.md
+-> tests/api/**
+-> API collection coverage audit
+```
+
+### API Collection Discovery
+
+```text
+/inspect-api-collection
+-> request inventory, variables/auth hints, destructive candidates, and contract-drift notes
+```
+
+### API Collection Planning
+
+```text
+/plan-from-api-collection
+-> specs/<feature>.md
+-> reviewed ready API coverage only
+```
+
+### API Collection Coverage Audit
+
+```text
+/audit-api-collection-coverage
+-> collection / plan / test alignment findings
+```
+
+Bruno supplies executable request examples under `collections/bruno/**`. OpenAPI/Swagger remains contract authority when available. Feature plans decide automation, and `tests/api/**` implements reviewed plans. Report Bruno/OpenAPI drift instead of guessing; destructive requests require cleanup or isolation before automation.
+
+---
+
 ## Main Workflow: Existing Feature Plan
 
 Use when a feature plan already exists.
@@ -546,17 +583,16 @@ Example pattern only:
 
 The same approved precondition pattern may be used in E2E when the plan documents setup only for backend state before the UI journey starts.
 
-Environment ownership:
+Feature Target ownership:
 
 ```text
 Simple projects:
-UI_BASE_URL = UI application for ui-chromium and e2e
+UI_BASE_URL = UI/application target for planning
 API_BASE_URL = API project/tests
-UI_PRECONDITION_API_BASE_URL = API backend for UI/E2E preconditions
 
 Multi-target projects:
 Register named targets in project map before use — examples:
-CUSTOMER_UI_BASE_URL, ADMIN_UI_BASE_URL, AUTH_API_BASE_URL, ORDER_API_BASE_URL
+CUSTOMER_APP_URL, ADMIN_APP_URL, ORDERS_API_URL, EXTERNAL_PARTNER_API_URL
 ```
 
 Rule: `.cursor/rules/multi-target-environment.rules.mdc`
@@ -569,9 +605,10 @@ Rules:
 - specs must not read env variables directly;
 - do not derive API host from UI host;
 - do not use generic `API_BASE_URL` when the feature belongs to a specific service;
+- feature plans list only the Feature Targets they use: UI/application, API/service, external/partner, and setup/cleanup when relevant;
 - implementation skills stop when target service is missing from the plan.
 
-`UI_PRECONDITION_API_BASE_URL` is for UI backend preconditions only and must point to the same API backend used by the UI runtime when those preconditions are implemented, unless the plan documents a different precondition service explicitly.
+There is no global precondition API URL. Setup and cleanup use registered Feature Targets only when the plan requires them.
 
 ---
 
@@ -796,7 +833,7 @@ Check:
 - API project base URL or named API service env from project map;
 - UI base URL or named UI app env from project map;
 - UI runtime API endpoint from browser network;
-- UI precondition API base URL or named precondition service;
+- registered setup/cleanup Feature Target only when the scenario needs it;
 - whether API-created data is visible to UI runtime;
 - whether UI-created data is visible to API runtime;
 - whether the wrong generic env name was used instead of a service-specific target.
@@ -1131,7 +1168,7 @@ Reporting (Playwright HTML + Allure):
 
 | Type | Examples | Storage |
 |------|----------|---------|
-| Variables | `UI_BASE_URL`, `API_BASE_URL`, `UI_PRECONDITION_API_BASE_URL`, multi-target URLs registered in project map | Repository or environment Variables |
+| Variables | `UI_BASE_URL`, `API_BASE_URL`, and registered Feature Targets | Repository or environment Variables |
 | Secrets | user passwords, API tokens, service credentials, TMS tokens | Repository or environment Secrets |
 
 Rules:

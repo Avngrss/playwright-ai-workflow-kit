@@ -1,0 +1,66 @@
+---
+description: API client collection planning and audit integration
+alwaysApply: true
+---
+
+# API Collection Integration Rules
+
+## Purpose
+
+API client collections are planning and audit inputs for API automation. Bruno is the preferred git-native collection format when teams store curated collections in the repository. OpenAPI/Swagger remains the API contract source of truth when available, and Markdown feature plans remain the source of truth for automation decisions.
+
+## Source Hierarchy
+
+```text
+OpenAPI / Swagger      = API contract: endpoints, schemas, status codes, parameters, and auth
+Bruno collections      = executable request examples, manual client requests, payload examples, and request flows
+specs/<feature>.md     = reviewed automation plan and source of truth for what is automated
+tests/api/**           = Playwright implementation
+```
+
+If Bruno and OpenAPI/Swagger disagree, report contract or source drift. Do not guess which definition is correct.
+
+## Bruno Storage Convention
+
+- Store curated team Bruno collections under `collections/bruno/**`.
+- Group collections by service or domain, for example `collections/bruno/<service-or-domain>/**`.
+- Keep personal and debug collections out of the repository.
+- Never commit secrets, tokens, passwords, cookies, or production credentials.
+
+## Collection Usage
+
+- Do not generate tests directly from Bruno collections.
+- Bruno informs planning; it does not decide automation coverage.
+- Use collections to identify request examples, auth variables, service ownership, payload examples, request flows, and possible coverage gaps.
+- Every automated API test must originate from a reviewed `specs/<feature>.md` plan.
+- Collection examples may inform payloads or builders, but do not replace API schema or contract validation.
+
+## Secrets And Environment Variables
+
+- Bruno variables must map to environment names registered in the project map.
+- Store real values in local `.env`, GitHub Variables, or GitHub Secrets as appropriate.
+- Do not commit Bruno environment files containing real secrets.
+- Register multi-target service environment names in the project map before using them.
+
+## Destructive Or Stateful Requests
+
+- Flag DELETE, payment, order creation, user mutation, admin operations, and similar requests as destructive or stateful.
+- Define cleanup or isolation before automating a destructive request.
+- Do not automate a destructive collection request without feature-plan approval.
+
+## API Plan Usage
+
+- Collections may be used to create or update `specs/<feature>.md`.
+- Plans must classify candidate coverage as `ready to implement now`, `blocked/postponed`, or `not automated`.
+- Do not infer undocumented request fields, status codes, or behavior from a collection alone.
+
+## API Coverage Audit
+
+A future audit may compare Bruno collections, OpenAPI/Swagger when available, feature plans, and `tests/api/**` to detect:
+
+- collection requests covered by tests;
+- collection requests not planned;
+- planned endpoints missing tests;
+- tests without collection or source references;
+- OpenAPI/Swagger and Bruno mismatches;
+- destructive requests without a cleanup or isolation strategy.

@@ -91,24 +91,25 @@ Explicitly separate:
 
 Do not duplicate lower-level checks.
 
-### 2a. Document Target Applications And Services
+### 2a. Document Feature Targets
 
 Follow Multi-Target Environment Rules and the project map.
 
 Document for the journey:
 
-- every UI app crossed (entry, intermediate pages, final assertion app);
-- every API service crossed (setup, actions via backend, cleanup);
+- UI/application targets crossed (entry, intermediate pages, final assertion app);
+- API/service targets crossed (backend actions, setup, cleanup);
+- external/partner targets crossed;
 - env name for each target from the project map;
 - explicit ownership for setup, UI actions, and final assertions;
-- precondition service when setup uses a different service from the UI flow.
+- setup/cleanup targets only when the journey uses them.
 
 Simple project defaults:
 
-- UI: `UI_BASE_URL`
-- setup/precondition API: `UI_PRECONDITION_API_BASE_URL` or service documented in project map
+- UI/application: `UI_BASE_URL`
+- API: `API_BASE_URL`
 
-If service or environment ownership is unclear:
+If a required Feature Target or environment ownership is unclear:
 
 - mark the journey **blocked**;
 - document missing target or env name;
@@ -202,8 +203,8 @@ UI apps crossed:
 API services crossed:
 - <service name> — env: <name from project map> — role: setup / cleanup / backend state
 
-Precondition service (if different from UI runtime backend):
-- <service> — env: <name from project map> — used for: <setup step>
+Setup/cleanup targets (only when needed):
+- <target> — env: <name from project map> — used for: <setup or cleanup step>
 
 If only one UI app and one API service exist, state defaults from project map.
 
