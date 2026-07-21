@@ -175,15 +175,15 @@ Read the feature plan and identify:
 - cross-browser scenarios ready to implement now;
 - responsive scenarios ready to implement now;
 - explicit note that no extra cross-browser or responsive coverage is needed;
-- UI target and env name from project map;
-- precondition API service and env name when setup is needed;
+- UI/application Feature Target and env name from project map;
+- setup/cleanup Feature Targets only when the plan requires them;
 - verification command.
 
-If the feature plan names a specific UI app or precondition service, use those targets — not generic starter env names when the project map defines named targets.
+Use only the UI/application and optional setup/cleanup Feature Targets listed in the feature plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL` or generic starter env names when the project map defines named targets.
 
-If UI target or precondition service is missing from the plan and the project has multiple apps or services, stop and report:
+If a required UI/application or setup/cleanup Feature Target is missing from the plan, stop and report:
 
-"UI target or precondition service is missing from the feature plan. Update the plan and project map before implementation."
+"Required Feature Target is missing from the feature plan. Update the plan and project map before implementation."
 
 Do not invent env variable names.
 
@@ -502,7 +502,7 @@ The UI test should focus on the user-facing behavior under test.
 When UI tests need backend preconditions:
 
 - prefer an approved API setup mechanism when it exists;
-- use the precondition API service documented in the feature plan and project map;
+- use the setup Feature Target documented in the feature plan and project map;
 - do not derive API host from the UI host;
 - do not use host rewriting heuristics such as stripping `www` or prefixing the UI host with `api`;
 - do not build API URLs manually in specs;

@@ -43,6 +43,26 @@ Daily-use cheat sheet for the Playwright AI Workflow Kit. For full onboarding, s
 
 ---
 
+### API collection workflow
+
+`Bruno → inspect → plan → implement API tests → audit`
+
+- `/inspect-api-collection` — inspect collection content without modifying files.
+- `/plan-from-api-collection` — create/update `specs/<feature>.md`; never implement tests.
+- `/audit-api-collection-coverage` — audit collection, plan, and API-test alignment.
+
+---
+
+## API Collections (Short)
+
+- **Bruno** = executable request and payload examples.
+- **OpenAPI/Swagger** = API contract source of truth.
+- **`specs/<feature>.md`** = reviewed automation plan.
+- **`tests/api/**`** = Playwright implementation.
+- Store curated team Bruno collections under `collections/bruno/**`; do not generate tests directly from them or commit secrets.
+
+---
+
 ## Command Quick Table
 
 | Command | Use when |
@@ -51,6 +71,9 @@ Daily-use cheat sheet for the Playwright AI Workflow Kit. For full onboarding, s
 | `/plan-e2e-journey` | Create or update full-journey plan at `specs/e2e/<journey>.md` |
 | `/plan-from-tms` | Build feature plan from TMS cases (no existing plan) |
 | `/align-plan-with-tms` | Align existing feature plan with TMS cases |
+| `/inspect-api-collection` | Inspect a collection as planning/audit input |
+| `/plan-from-api-collection` | Create/update a feature plan from collection input |
+| `/audit-api-collection-coverage` | Audit collection, plan, and API-test alignment |
 | `/implement-api-batch` | Implement ready API coverage from feature plan |
 | `/implement-ui-batch` | Implement ready UI coverage from feature plan |
 | `/implement-e2e-flow` | Implement ready E2E journey from journey plan only |
@@ -126,6 +149,8 @@ Browser and viewport belong to Playwright projects, not Playwright tags.
 - **Local:** copy `.env.example` to `.env`.
 - **CI URLs:** GitHub Variables.
 - **CI tokens/passwords:** GitHub Secrets.
+- **Feature Targets:** each plan lists only its UI/application, API/service, external/partner, and optional setup/cleanup targets.
+- Simple projects use `UI_BASE_URL` and `API_BASE_URL`.
 - Multi-target env names must be registered in the project map.
 - Do not hardcode secrets.
 
@@ -191,6 +216,7 @@ Optional patterns when a project creates `src/test/**`: [Helper Recipes](HELPER_
 ## Links
 
 - [README.md](../README.md)
+- [API Collection Integration](API_COLLECTION_INTEGRATION.md)
 - [Start a New Project](START_NEW_PROJECT.md)
 - [Helper Recipes](HELPER_RECIPES.md)
 - [AI Skills and Commands Playbook](AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md)

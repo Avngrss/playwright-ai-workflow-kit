@@ -144,14 +144,14 @@ Read the feature plan and identify:
 - required tags;
 - required test data;
 - contract gaps or blockers;
-- API service target and env name from project map;
+- API/service Feature Target and env name from project map;
 - verification command.
 
-If the feature plan names a specific API service, use that service — not a generic `API_BASE_URL` when the project map defines service-specific env names.
+Use only the API/service Feature Target listed in the feature plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL` or a generic `API_BASE_URL` when the project map defines a specific service target.
 
-If API service target is missing from the plan and the project has multiple services, stop and report:
+If the required API/service Feature Target is missing from the plan, stop and report:
 
-"API service target is missing from the feature plan. Update the plan and project map before implementation."
+"API/service Feature Target is missing from the feature plan. Update the plan and project map before implementation."
 
 Do not invent env variable names.
 

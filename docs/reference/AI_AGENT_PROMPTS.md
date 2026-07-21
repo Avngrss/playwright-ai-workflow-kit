@@ -273,6 +273,99 @@ TMS rules:
 
 ---
 
+## Prompt: Inspect API Collection
+
+```text
+/inspect-api-collection
+
+Collection path:
+collections/bruno/<service-or-domain>/**
+
+Optional OpenAPI/Swagger path:
+<path or none>
+
+Optional service/domain:
+<name or none>
+
+Scope:
+- inspect only
+- do not modify files
+- do not create plans or tests
+- do not execute requests
+
+Report:
+- endpoint inventory
+- variables/auth hints
+- destructive/stateful request candidates
+- contract drift, if OpenAPI/Swagger is provided
+- recommended next step
+```
+
+---
+
+## Prompt: Plan From API Collection
+
+```text
+/plan-from-api-collection
+
+Collection path:
+collections/bruno/<service-or-domain>/**
+
+Optional OpenAPI/Swagger path:
+<path or none>
+
+Output feature plan:
+specs/<feature>.md
+
+Scope:
+- planning only
+- create/update only the feature plan
+- do not implement tests
+- do not execute requests
+
+Rules:
+- Bruno is planning input, not contract authority
+- OpenAPI/Swagger is the contract source when available
+- block Bruno/OpenAPI drift until clarified
+- define auth, service/env ownership, and cleanup/isolation for destructive requests
+```
+
+---
+
+## Prompt: Audit API Collection Coverage
+
+```text
+/audit-api-collection-coverage
+
+Collection path:
+collections/bruno/<service-or-domain>/**
+
+Feature plan path:
+specs/<feature>.md
+
+API tests path:
+tests/api/**
+
+Optional OpenAPI/Swagger path:
+<path or none>
+
+Scope:
+- audit only
+- do not modify files
+- do not create tests or update plans
+- do not execute requests
+
+Report:
+- coverage matrix
+- collection requests not planned
+- planned coverage missing tests
+- tests without plan justification
+- contract drift and destructive/env/auth risks
+- recommended next command
+```
+
+---
+
 ## Prompt: Review Feature Coverage Plan
 
 Use this before implementation when the feature is broad, risky, or has API/UI overlap.
@@ -683,7 +776,7 @@ Report:
 
 ## Prompt: Use API Precondition Setup In UI Test
 
-Use only when an approved API precondition fixture exists and the UI runtime backend is aligned.
+Use only when a feature plan requires approved backend setup through a registered Feature Target.
 
 ```text
 Use Skill: @.cursor/skills/implement-ui-feature/SKILL.md
@@ -701,8 +794,8 @@ Approved setup example pattern only:
 ```
 
 Context:
-UI_PRECONDITION_API_BASE_URL must point to the same API backend used by the UI runtime.
-API_BASE_URL is for API project/tests and must not be used for UI preconditions unless it is intentionally the same backend.
+Use the setup Feature Target named in the feature plan and project map.
+Do not assume or fall back to a global precondition API URL.
 
 Rules:
 - do not read env variables in specs
@@ -1129,9 +1222,8 @@ Setup must not validate full API contracts.
 Setup must not hide UI action under test.
 
 Expected config:
-- API_BASE_URL is for API project/tests
-- UI_PRECONDITION_API_BASE_URL is for UI API preconditions
-- UI_API_BASE_URL may be used as documented fallback if project convention allows it
+- API/service Feature Target comes from the feature plan and project map
+- setup is optional and uses a registered target only when needed
 
 Rules:
 - use project map for fixture layer
@@ -1404,8 +1496,7 @@ Diagnose whether API setup, UI runtime, and API tests point to the same backend/
 
 Scope:
 - do not modify files unless a minimal confirmed config fix is explicitly requested
-- inspect configured API_BASE_URL
-- inspect configured UI_PRECONDITION_API_BASE_URL or UI_API_BASE_URL
+- inspect the API/service and setup Feature Targets named in the plan
 - inspect UI network API endpoints if needed
 - compare API-created data visibility across API and UI paths
 - do not derive API host from UI host

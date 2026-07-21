@@ -22,6 +22,7 @@ You can copy or clone this repository as a **template for new automation project
 - E2E journey planning (`specs/e2e/<journey>.md`)
 - TMS planning and alignment support
 - Provider-agnostic TMS model — **Qase** is an example supported provider only
+- API collection integration guidance — Bruno is the preferred git-native collection format
 - Cross-browser and responsive testing policies
 - Visual testing policy
 - Baseline-safe package scripts (`--pass-with-no-tests`)
@@ -60,11 +61,10 @@ Copy the environment template when your project needs runtime URLs:
 cp .env.example .env
 ```
 
-Fill placeholders as needed:
+Fill Feature Targets as needed:
 
 - **Simple projects:** `UI_BASE_URL`, `API_BASE_URL`
-- **UI preconditions:** `UI_PRECONDITION_API_BASE_URL` only when backend setup is required
-- **Multi-target projects:** register app/service env names in the project map first
+- **Multi-target projects:** register only the app, service, external, setup, or cleanup targets used by each feature
 
 Verify the starter baseline:
 
@@ -75,17 +75,34 @@ npm run test:list
 
 ---
 
-## Environment Model
+## Feature Targets / URL Model
 
 **Simple projects** may use:
 
 | Variable | Purpose |
 |----------|---------|
-| `UI_BASE_URL` | UI application for browser tests |
+| `UI_BASE_URL` | UI/application target for browser tests and feature plans |
 | `API_BASE_URL` | API project and API tests |
-| `UI_PRECONDITION_API_BASE_URL` | Optional API backend for UI/E2E preconditions only |
 
-**Multi-target projects** (multiple UI apps or API/microservices) must register every env name in `.cursor/rules/00-project-map.mdc` before use. See `.cursor/rules/multi-target-environment.rules.mdc`.
+**Multi-target projects** register named Feature Targets in `.cursor/rules/00-project-map.mdc` before use. Each feature plan lists only the targets it uses: UI/application, API/service, external/partner, and setup/cleanup when relevant.
+
+```text
+Feature Targets:
+UI/application targets:
+- customer-app: CUSTOMER_APP_URL
+
+API/service targets:
+- orders-api: ORDERS_API_URL
+- auth-api: AUTH_API_URL
+
+External targets:
+- payment-provider: EXTERNAL_PARTNER_API_URL
+
+Setup/cleanup targets:
+- only when the feature needs them
+```
+
+Example names only. Real projects must register their actual Feature Target env names in `.cursor/rules/00-project-map.mdc` before use.
 
 Rules:
 
@@ -93,6 +110,7 @@ Rules:
 - API hosts must not be derived from UI hosts
 - Specs must not read environment variables directly
 - Real `.env` files stay local and uncommitted
+- There is no global precondition API URL model
 
 ---
 
@@ -200,9 +218,8 @@ Configure non-sensitive URLs as **repository or environment variables** (Setting
 |----------|---------|
 | `UI_BASE_URL` | UI application base URL for `ui-chromium` and `e2e` projects |
 | `API_BASE_URL` | API base URL for the `api` project |
-| `UI_PRECONDITION_API_BASE_URL` | Optional API backend for UI/E2E precondition setup |
 
-Multi-target projects register additional names in the project map first, for example `CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, `ORDER_API_BASE_URL`.
+Real projects add only project-map-registered Feature Targets to CI, for example `ADMIN_APP_URL`, `ORDERS_API_URL`, or `EXTERNAL_PARTNER_API_URL`.
 
 Store sensitive values as **Secrets** (never in workflow YAML or committed files):
 
@@ -237,6 +254,7 @@ Shipped with the starter baseline:
 .cursor/skills/**     Task-specific AI procedures
 .cursor/commands/**   Slash command launchers
 docs/**               Workflow kit and automation documentation
+collections/bruno/    Guidance for optional curated Bruno collections
 .env.example          Provider-agnostic env placeholders
 playwright.config.ts  Playwright projects and defaults
 scripts/**            Convention checks and tooling
@@ -250,6 +268,8 @@ tests/**              API, UI, and E2E specs
 specs/**              Feature and E2E journey plans
 src/test/**           Page Objects, fixtures, schemas, helpers, data
 ```
+
+When a project uses API collections, add real curated Bruno collection content under `collections/bruno/**`. Bruno collections are planning/audit input, not the API contract source of truth; use OpenAPI/Swagger when available.
 
 Test-data policy for real projects:
 
@@ -283,6 +303,7 @@ Source of truth for structure, tags, projects, apps, services, and env names: `.
 | Document | Purpose |
 |----------|---------|
 | [Quick Reference](docs/QUICK_REFERENCE.md) | Daily-use workflow cheat sheet |
+| [API Collection Integration](docs/API_COLLECTION_INTEGRATION.md) | Bruno collection, API contract, planning, and audit guidance |
 | [Helper Recipes](docs/HELPER_RECIPES.md) | Reusable helper patterns (documentation only; no shipped source) |
 | [Start a New Project](docs/START_NEW_PROJECT.md) | Detailed onboarding guide |
 | [AI Skills and Commands Playbook](docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md) | Full skills and commands reference |

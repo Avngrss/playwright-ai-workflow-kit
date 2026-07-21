@@ -258,16 +258,18 @@ Identify:
 - why API/UI/schema coverage is not sufficient;
 - flakiness risks;
 - external dependencies;
-- target UI apps and API services with env names from project map;
+- Feature Targets (UI/application, API/service, external, and setup/cleanup when relevant) with env names from project map;
 - required tags;
 - affected pages or flows;
 - verification command.
 
-If the journey plan is missing target apps or services and the project has multiple targets, stop and report:
+If the journey plan is missing a required Feature Target, stop and report:
 
-"Target UI app or API service is missing from the E2E journey plan. Update the plan and project map before implementation."
+"Required Feature Target is missing from the E2E journey plan. Update the plan and project map before implementation."
 
-Do not guess target apps or services.
+Use only Feature Targets listed in the E2E journey plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL`.
+
+Do not guess targets.
 
 Do not invent env variable names.
 

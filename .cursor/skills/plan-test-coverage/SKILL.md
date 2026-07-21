@@ -119,23 +119,23 @@ Implementation briefs must not ask implementation agents to cover adjacent funct
 
 ---
 
-### 2a. Identify Target Applications And Services
+### 2a. Identify Feature Targets
 
 Before recommending coverage, identify which UI application(s) and API service(s) the feature touches.
 
 Follow Multi-Target Environment Rules and the project map.
 
-For simple single-app projects:
+For simple projects:
 
-- default UI target: `UI_BASE_URL`;
-- default API service: `API_BASE_URL`;
-- default precondition service: `UI_PRECONDITION_API_BASE_URL` when UI setup is needed.
+- UI/application target: `UI_BASE_URL`;
+- API target: `API_BASE_URL`.
 
-For multi-app or multi-service projects:
+For multi-target projects:
 
-- identify target UI app(s) for UI and visual coverage;
-- identify target API service(s) for API and schema coverage;
-- identify precondition API service(s) when UI setup uses a different backend than the action under test;
+- identify UI/application targets for UI and visual coverage;
+- identify API/service targets for API and schema coverage;
+- identify external/partner targets when the feature uses them;
+- identify setup/cleanup targets only when the feature requires them;
 - use env names registered in the project map only;
 - do not invent env variable names;
 - do not derive API host from UI host;
@@ -642,28 +642,26 @@ For each variant group, specify:
 - source of truth:
 - in scope:
 - out of scope:
-- UI target:
-- API service target:
-- precondition API service (if UI setup needed):
+- Feature Targets:
 - target env names (from project map):
 - API contract source:
 - requirements/specs:
 
-### Target Applications / Services
+### Feature Targets
 
-Document when the project has one or more UI apps or API services.
+List only URLs and systems used by the feature.
 
 Simple project (defaults):
 
-- UI target: `UI_BASE_URL`
-- API service: `API_BASE_URL`
-- precondition service: `UI_PRECONDITION_API_BASE_URL` (if needed)
+- UI/application target: `UI_BASE_URL`
+- API target: `API_BASE_URL`
 
 Multi-target project (examples — use names from project map):
 
-- UI target(s):
-- API service(s):
-- precondition service(s):
+- UI/application target(s):
+- API/service target(s):
+- external/partner target(s):
+- setup/cleanup target(s), only when relevant:
 - env names per target:
 - unclear targets → blocked/postponed items:
 
@@ -753,8 +751,8 @@ Blocked or postponed:
 For each UI scenario:
 
 - route/page:
-- UI target:
-- precondition API service (if needed):
+- UI/application Feature Target:
+- setup/cleanup Feature Target (if needed):
 - env names (from project map):
 - tags:
 - preconditions:
@@ -956,5 +954,5 @@ This skill is complete when:
 - blockers and missing contract details are documented;
 - cross-browser and responsive decisions are documented, including explicit no-extra-coverage note when applicable;
 - cross-browser or responsive items specify browser project or viewport, user value, and expected visible behavior when planned.
-- target UI app(s), API service(s), and precondition service(s) are documented when more than one exists, or defaults are stated for simple projects;
+- required Feature Targets (UI/application, API/service, external/partner, and setup/cleanup when relevant) are documented, or simple-project defaults are stated;
 - unclear target ownership is marked blocked/postponed or clarified before implementation.

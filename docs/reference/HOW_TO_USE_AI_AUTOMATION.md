@@ -351,22 +351,21 @@ Reporting (Playwright HTML + Allure):
 - step-level custom Allure screenshots in specs are project-specific and not enabled by default;
 - zero-test starter remains valid — matrix and report uploads skipped when no tests exist.
 
-### GitHub Actions variables and secrets
+### GitHub Actions Feature Targets and secrets
 
 Local `.env` (from `.env.example`) corresponds conceptually to CI configuration:
 
 - non-sensitive URLs → repository or environment **Variables** (`vars.*` in workflow)
 - passwords, tokens, credentials → **Secrets** (`secrets.*` in workflow)
 
-Default repository variables for simple single-app projects:
+Default Feature Target variables for simple projects:
 
 | Variable | Purpose |
 |----------|---------|
-| `UI_BASE_URL` | UI application base URL |
+| `UI_BASE_URL` | UI/application target in feature plans and browser projects |
 | `API_BASE_URL` | API project base URL |
-| `UI_PRECONDITION_API_BASE_URL` | Optional UI/E2E precondition API backend |
 
-Multi-target env names (`CUSTOMER_UI_BASE_URL`, `AUTH_API_BASE_URL`, etc.) must be registered in the project map before use.
+Multi-target projects register only Feature Targets used by a plan, such as `ADMIN_APP_URL`, `ORDERS_API_URL`, and `EXTERNAL_PARTNER_API_URL`.
 
 Store as **Secrets**: user passwords, API tokens, service account credentials, TMS provider tokens, external service credentials.
 
@@ -382,25 +381,22 @@ Reporting integration (Allure + Playwright HTML) is enabled for artifacts only �
 
 ---
 
-Environment variable ownership matters.
+Feature Target ownership matters.
 
 Current convention:
 
 ```text
-UI_BASE_URL = UI application base URL
+UI_BASE_URL = UI/application target for planning
 
 API_BASE_URL = API project/tests base URL
-
-UI_PRECONDITION_API_BASE_URL = optional API backend for UI/E2E precondition setup
-
-UI_API_BASE_URL = optional documented fallback for UI precondition API base
 ```
 
 Important rules:
 
-- API tests use `API_BASE_URL`.
-- UI and E2E browser tests use `UI_BASE_URL`.
-- UI API precondition setup must use an API backend aligned with the UI runtime backend when preconditions are implemented.
+- Feature plans list only their UI/application, API/service, external/partner, and setup/cleanup targets.
+- API tests use the API/service target listed in the feature plan.
+- UI and E2E browser tests use the application target listed in the feature or journey plan.
+- Setup or cleanup uses a registered target only when relevant.
 - UI specs must not read environment variables directly.
 - UI specs must not derive API host from UI host.
 - API host derivation by string replacement is forbidden.
@@ -409,14 +405,11 @@ Important rules:
 Example shape only:
 
 ```text
-UI_BASE_URL=https://your-ui-host.example
+UI_BASE_URL=https://your-app-host.example
 API_BASE_URL=https://your-api-host.example
-UI_PRECONDITION_API_BASE_URL=https://your-api-host.example
 ```
 
-This split is intentional.
-
-`API_BASE_URL` and `UI_PRECONDITION_API_BASE_URL` may point to different environments.
+Multi-target projects register named targets in the project map instead of deriving hosts or using a global precondition URL.
 
 ---
 
@@ -541,6 +534,23 @@ Plan E2E journeys separately in `specs/e2e/` when needed.
 Do not implement directly from TMS cases.
 
 Do not implement blocked/postponed coverage without contract or product clarification.
+
+---
+
+## 8b. Using Bruno Collections With Automation Planning
+
+Use curated Bruno collections under `collections/bruno/<service-or-domain>/**` as request examples and planning/audit input:
+
+```text
+/inspect-api-collection
+-> /plan-from-api-collection
+-> /implement-api-batch
+-> /audit-api-collection-coverage
+```
+
+Do not generate tests directly from Bruno. OpenAPI/Swagger remains the contract source when available, `specs/<feature>.md` decides automation, and `tests/api/**` implements reviewed plan coverage. Never commit secrets in collections; document cleanup/isolation before automating destructive requests.
+
+See [API Collection Integration](../API_COLLECTION_INTEGRATION.md) for details.
 
 ---
 
