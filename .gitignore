@@ -10,7 +10,9 @@ playwright-report/
 .playwright-mcp/
 .env
 .env.uat
-reports/
+# Allure generated output (config stays tracked under reports/allure/)
+reports/allure/results/
+reports/allure/html/
 allure-results/
 allure-report/
 .scannerwork/
