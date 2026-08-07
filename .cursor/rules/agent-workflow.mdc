@@ -32,8 +32,12 @@ For UI feature work, follow the dedicated Feature Lifecycle rule.
 Default cycle:
 
 ```text
-plan -> data -> Page Objects/components -> tests -> verify -> heal -> harden
+plan -> data -> Page Objects/components -> tests -> verify -> cleanup temporary debug artifacts -> heal -> harden
 ```
+
+Rule reference for cleanup:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
 
 Do not go directly into test implementation when data, structure, or existing abstractions are not understood.
 
@@ -139,6 +143,12 @@ After code changes:
 
 Do not mark work complete if verification was skipped.
 
+Before marking work complete, remove temporary discovery/debug artifacts created during the task.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 If verification cannot be run, state clearly:
 
 - what was changed;
@@ -201,7 +211,8 @@ Avoid:
 - adding utilities for one-off logic;
 - applying UI patterns to API tests;
 - skipping verification;
-- masking test failures instead of healing root causes.
+- masking test failures instead of healing root causes;
+- leaving temporary debug scripts, discovery JSON dumps, or scratch investigation files in the repository after implementation or healing.
 
 ---
 
@@ -220,5 +231,7 @@ Minimal abstraction.
 Targeted verification.
 
 Root-cause healing.
+
+Cleanup temporary debug artifacts before finishing.
 
 Reusable hardening only when justified.

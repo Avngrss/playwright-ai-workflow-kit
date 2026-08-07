@@ -26,6 +26,7 @@ Follow these rules:
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
 - Agent Workflow;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -413,6 +414,12 @@ Recommended order:
 2. re-run related specs if shared Page Object, Component Object, fixture, or data builder was changed;
 3. run the repository quality gate command defined by the project map.
 
+4. remove temporary discovery/debug artifacts created during healing.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 If the repository command is `npm run qa:gate`, run it after targeted verification.
 
 If verification cannot be run, state:
@@ -541,6 +548,7 @@ This skill is complete when:
 - no forbidden workaround was introduced;
 - impacted spec was re-run or documented as not run;
 - quality gate was run or documented as not run;
+- temporary debug scripts and discovery dumps created during healing were removed or explicitly preserved by user request;
 - hardening was considered only for reusable learnings.
 
 ---

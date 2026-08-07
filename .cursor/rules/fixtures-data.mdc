@@ -28,6 +28,12 @@ The main goals are:
 - Keep fixtures thin and focused on setup, dependency wiring, and teardown only.
 - Fixtures should prepare context, not execute the scenario being tested.
 
+Recommendation-first policy:
+
+- if the user explicitly asks for a fixture, implement it directly;
+- if the fixture is inferred by the agent, provide a short recommendation with reuse evidence before creating a new fixture file;
+- avoid speculative fixture creation without either explicit request or clear reuse evidence accepted by the user.
+
 ### Good
 
 ```ts

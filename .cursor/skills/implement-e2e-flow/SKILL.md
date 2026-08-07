@@ -50,6 +50,7 @@ Follow these rules:
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
 - Reporting Allure Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -524,6 +525,12 @@ After changes:
 2. run related specs if shared Page Objects, fixtures, builders, generators, datasets, or setup helpers were changed;
 3. run the repository quality gate command defined by the project map.
 
+4. remove temporary discovery/debug artifacts created during the task.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 Default examples:
 
 - impacted E2E spec command may use `npx playwright test <spec-path>`;
@@ -652,6 +659,12 @@ When reporting implementation, use this structure:
 - external dependency risks:
 - project or config follow-up needed:
 
+### Cleanup
+
+- temporary artifacts removed:
+- temporary artifacts preserved:
+- unsure artifacts left untouched:
+
 ---
 
 ## Done Criteria
@@ -676,7 +689,8 @@ This skill is complete when:
 - destructive flow cleanup or isolation was implemented or the scenario was blocked instead of guessed;
 - no speculative abstractions were added;
 - impacted E2E spec was run or documented as not run;
-- quality gate was run or documented as not run.
+- quality gate was run or documented as not run;
+- temporary debug scripts and discovery dumps were removed or explicitly preserved by user request.
 
 ---
 

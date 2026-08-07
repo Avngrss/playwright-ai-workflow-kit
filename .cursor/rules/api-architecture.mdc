@@ -314,6 +314,13 @@ Every API test must validate:
 - error message or error code for negative tests;
 - schema or contract when applicable.
 
+For state-changing endpoints, coverage should include:
+
+- at least one positive scenario proving expected successful behavior;
+- at least one deterministic negative scenario when documented by contract or accepted source of truth.
+
+If a negative path is undocumented or cannot be triggered deterministically, mark it blocked or postponed in the feature plan instead of skipping silently.
+
 ### Positive response checks
 
 ```ts
@@ -403,7 +410,8 @@ Avoid:
 - shared global tokens across unrelated roles;
 - tests depending on execution order;
 - fake assertions such as `expect(response).toBeDefined()` only;
-- long API chains when only one endpoint behavior is under test.
+- long API chains when only one endpoint behavior is under test;
+- mutation endpoint coverage that includes only positive or only negative paths when both are documented as ready.
 
 ---
 ## API spec readability

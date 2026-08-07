@@ -76,7 +76,7 @@ Starter CI baseline (`.github/workflows/playwright.yml`):
 - maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
 - runs matrix jobs only when tests exist;
 - uploads generated Playwright artifacts when present (`playwright-report/`, `test-results/`);
-- generates and uploads Allure artifacts when present (`allure-results/`, `allure-report/`);
+- generates and uploads Allure artifacts when present (`reports/allure/results/`, `reports/allure/html/`);
 - does not configure TMS publishing or GitHub Pages publishing by default.
 
 Reporting (Playwright HTML + Allure):
@@ -84,7 +84,7 @@ Reporting (Playwright HTML + Allure):
 - enabled in `playwright.config.ts` for local and CI artifacts only;
 - Allure is **not** TMS result publishing;
 - failure screenshots, traces, and videos are retained on failure only;
-- `npm run report:allure:generate` builds `allure-report/` from `allure-results/`;
+- `npm run report:allure:generate` builds `reports/allure/html/` from `reports/allure/results/`;
 - CI generates/uploads Allure report only when results exist;
 - step-level custom Allure screenshots are project-specific and not enabled by default;
 - zero-test starter remains valid — no report folders required when matrix is skipped.
@@ -187,6 +187,8 @@ Use the lowest reliable level that proves the behavior.
 Cross-browser and responsive coverage are **not** default matrix expansion.
 
 They are focused additions for documented browser or viewport risks on top of normal UI coverage.
+
+**Full reference:** [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
 
 - do not run every UI or E2E test in every browser or viewport by default
 - API and schema tests are browser-independent

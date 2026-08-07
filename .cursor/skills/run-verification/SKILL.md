@@ -14,6 +14,7 @@ Follow these rules:
 
 - Agent Workflow;
 - Project Map Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Core Playwright Rules;
 - Examples Policy.
@@ -117,7 +118,27 @@ If no quality gate exists, report that it is missing.
 
 ---
 
-### 5. Report Results
+### 5. Cleanup Temporary Debug Artifacts
+
+After verification, remove temporary discovery/debug files created during the task.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
+Examples to remove:
+
+- `scripts/debug-*.mjs`
+- `scripts/discover-*.mjs`
+- `discover-*-output.json`
+
+Report removed files in the final summary.
+
+Skip deletion only when the user explicitly asked to keep specific investigation files.
+
+---
+
+### 6. Report Results
 
 Report:
 
@@ -194,6 +215,7 @@ This skill is complete when:
 - targeted verification was selected;
 - related verification was considered;
 - quality gate was run or documented as not run;
+- temporary debug artifacts were removed or explicitly preserved by user request;
 - results are reported clearly;
 - failures are not hidden.
 
@@ -206,3 +228,5 @@ Verify the smallest affected area first.
 Then verify shared impact.
 
 Then run the project quality gate.
+
+Then cleanup temporary debug artifacts before reporting completion.

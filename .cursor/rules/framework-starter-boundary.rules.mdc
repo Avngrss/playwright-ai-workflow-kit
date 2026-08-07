@@ -168,7 +168,11 @@ Examples:
 - `playwright-report/**`
 - `allure-results/**`
 - `allure-report/**`
+- `reports/allure/results/**`
+- `reports/allure/html/**`
 - temporary debug scripts;
+- `scripts/debug-*.mjs`, `scripts/discover-*.mjs`, `scripts/scratch-*.mjs`;
+- discovery output dumps such as `discover-*-output.json`;
 - local IDE MCP config files not part of the committed starter;
 - local `.env` with real secrets;
 - downloaded traces, videos, screenshots, or logs from local runs.

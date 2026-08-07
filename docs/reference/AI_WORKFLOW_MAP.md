@@ -273,6 +273,8 @@ Cross-browser and responsive coverage are focused additions for documented brows
 
 They are not a default browser/device matrix.
 
+**Full reference:** [Cross-Browser and Visual Testing](../CROSS_BROWSER_AND_VISUAL_TESTING.md)
+
 - default UI runs use the primary browser project from the project map;
 - API and schema tests must not be duplicated per browser;
 - responsive scenarios must define viewport, user value, and expected visible behavior;
@@ -361,6 +363,9 @@ Run /plan-e2e-journey
 - UI should own distinct user-facing browser behavior.
 - E2E should own critical full journeys with safe setup, data, cleanup, and meaningful final assertions.
 - Visual should own visual layout risk only.
+
+Visual baseline approval, dynamic content masking, and failure-artifact vs regression distinction: [Cross-Browser and Visual Testing](../CROSS_BROWSER_AND_VISUAL_TESTING.md)
+
 - If the plan is too vague, refine the relevant implementation brief before coding.
 
 ---
@@ -1147,9 +1152,9 @@ Behavior:
 - uploads generated artifacts when present:
   - `playwright-report/`
   - `test-results/`
-  - `allure-results/`
-  - `allure-report/`;
-- generates Allure HTML report when `allure-results/` exists after test runs;
+  - `reports/allure/results/`
+  - `reports/allure/html/`;
+- generates Allure HTML report when `reports/allure/results/` exists after test runs;
 - keeps TMS publishing out of scope by default;
 - keeps GitHub Pages publishing out of scope by default.
 
@@ -1161,7 +1166,7 @@ Reporting (Playwright HTML + Allure):
 
 - Allure is for reporting artifacts only — **not** TMS result publishing;
 - failure screenshots, traces, and videos retained on failure only;
-- Allure report generated/uploaded only when `allure-results/` exists;
+- Allure report generated/uploaded only when `reports/allure/results/` exists;
 - step-level custom Allure screenshots are project-specific and not enabled by default.
 
 ### GitHub Actions variables and secrets

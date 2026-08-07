@@ -39,6 +39,7 @@ Follow these rules:
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -217,6 +218,18 @@ Do not invent folders, aliases, commands, tags, or naming conventions.
 
 ---
 
+### 2A. Fixture Recommendation Gate
+
+If a new fixture seems useful but was not explicitly requested:
+
+- provide a short fixture recommendation with reuse evidence;
+- wait for user confirmation before creating the fixture file;
+- continue with minimal inline setup when confirmation is not yet given.
+
+If the user explicitly requests the fixture, implement it directly.
+
+---
+
 ### 3. Scope Boundary Check
 
 Before writing UI tests, verify the selected implementation scope against the feature plan and user request.
@@ -259,6 +272,41 @@ If a planned UI scenario appears to duplicate lower-level coverage without UI va
 If a page-level smoke test and a journey test verify the same controls, keep the smoke test only when it adds clear value as a fast availability/default-state check.
 
 Do not expand UI coverage just because related controls or states exist on the page.
+
+---
+
+### 4A. Positive And Negative UI Balance
+
+For form and mutation-oriented features (for example: login, registration, checkout, profile update), implement both:
+
+- at least one positive user path proving successful interaction;
+- at least one negative user-facing path proving visible validation, conflict, or error feedback.
+
+If a negative or positive branch is documented as ready to implement now in the feature plan, do not skip it.
+
+If one branch is blocked (for example due to missing setup or unstable dependency), keep the implemented branch and report the blocker explicitly.
+
+---
+
+### 4B. Ready-Scenario Completeness Gate
+
+Before writing or finalizing UI tests, create a direct mapping between:
+
+- each UI scenario marked **ready to implement now** in the feature plan;
+- the concrete spec test that implements it.
+
+Rules:
+
+- do not skip a ready scenario silently;
+- if a ready scenario is not implemented, mark it explicitly as blocked or postponed with reason before completion;
+- do not claim UI implementation complete while any ready scenario is unmapped;
+- if two ready scenarios are intentionally merged into one test, document both mappings explicitly in the implementation report.
+
+Minimum traceability expectation:
+
+- scenario from plan: ...
+- implemented test title: ...
+- status: implemented | blocked | postponed
 
 ---
 
@@ -542,12 +590,20 @@ Tests must:
 - avoid hidden behavior in hooks or fixtures;
 - avoid inline random data;
 - remain readable and minimal.
+- add Allure metadata through `src/test/reporting/allure-metadata.helper.ts` by default for new or updated specs.
+
+Allure metadata placement for UI specs:
+
+- use `beforeEach` for shared suite metadata (feature, suite, owner, layer);
+- add story/severity per test close to the scenario.
 
 `beforeEach` may perform only safe navigation and page-loaded checks.
 
 Do not perform the action under test in `beforeEach`.
 
 Do not repeat navigation already done in `beforeEach`.
+
+When multiple tests in the same `describe` open the same page and verify the same loaded marker, prefer moving that shared setup to `beforeEach`.
 
 Do not create one UI test per simple value unless each value has distinct user-facing risk.
 
@@ -757,6 +813,12 @@ After changes:
 2. run related specs if shared Page Objects, Components, fixtures, builders, generators, datasets, or assertion helpers were changed;
 3. run the repository quality gate command defined by the project map.
 
+4. remove temporary discovery/debug artifacts created during the task.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 Default examples:
 
 - impacted UI spec command may use `npx playwright test <spec-path>`;
@@ -898,6 +960,7 @@ This skill is complete when:
 - selected UI scope was validated;
 - project map was followed;
 - scope did not expand to adjacent behavior;
+- form/mutation-style UI scenarios include both positive and negative user-facing coverage when both are planned as ready;
 - each implemented UI scenario has distinct user-facing value;
 - UI tests do not duplicate API/schema behavior without UI-specific risk;
 - required data was identified before tests;
@@ -914,7 +977,9 @@ This skill is complete when:
 - no unplanned responsive viewport matrix was introduced;
 - responsive checks assert visible user-facing behavior, not pixel-perfect layout unless visual coverage was planned;
 - impacted specs were run or documented as not run;
-- quality gate was run or documented as not run.
+- quality gate was run or documented as not run;
+- every UI scenario marked ready to implement now is mapped to an implemented test or explicitly marked blocked/postponed with reason;
+- temporary debug scripts and discovery dumps were removed or explicitly preserved by user request.
 
 ---
 

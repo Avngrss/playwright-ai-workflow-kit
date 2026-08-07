@@ -17,6 +17,7 @@ Follow these rules:
 - Code Quality and Cleanliness Rules;
 - Test Abstraction Hygiene Rules;
 - Agent Workflow;
+- Temporary Debug Artifact Cleanup Rules;
 - Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
 - Core / Project Boundary and Structure Rules;
@@ -135,6 +136,21 @@ Flag as major when:
 - implementation details were treated as standalone scenarios.
 
 Do not flag related code changes when they are necessary to implement the selected scope.
+
+---
+
+### 2A. Plan-to-Implementation Completeness Check
+
+When a feature plan exists, verify that every scenario marked **ready to implement now** is represented in implementation or explicitly marked blocked/postponed with reason.
+
+Flag as major when:
+
+- one or more ready scenarios from the plan are missing in generated tests;
+- a form/mutation feature includes only negative or only positive branch although both are ready in plan;
+- implementation report claims completion without a clear scenario-to-test mapping;
+- a scenario is silently skipped because "covered by another layer" without plan approval.
+
+Do not accept "API coverage already exists" as a reason to skip a ready UI user-facing scenario unless the plan explicitly changed that decision.
 
 ---
 
@@ -324,7 +340,8 @@ Flag as major when:
 - schemas assert undocumented fields without justification;
 - behavior checks are hidden in schemas;
 - shared Zod helper is bypassed repeatedly;
-- duplicate manual runtime type checks remain in a non-trivial migrated helper.
+- duplicate manual runtime type checks remain in a non-trivial migrated helper;
+- large field-by-field manual assertions in specs duplicate response shape already validated by a feature-specific Zod helper and add no behavior value.
 
 ---
 
@@ -345,6 +362,20 @@ Flag as major when:
 Do not require negative tests for undocumented behavior.
 
 If the contract is unclear, the correct outcome is blocked/postponed with reason, not guessed assertions.
+
+---
+
+### 10A. API Positive Coverage Review
+
+When API tests are changed for state-changing endpoints, verify that positive path coverage is present together with negative path coverage.
+
+Flag as major when:
+
+- only negative tests exist for a mutation endpoint and no positive success contract is verified;
+- only positive tests exist while documented negative behavior is ready to implement now;
+- mutation behavior is claimed complete without at least one success and one documented deterministic failure path.
+
+Do not require negative coverage for undocumented behavior.
 
 ---
 
@@ -369,6 +400,22 @@ Accept UI tests that verify:
 - browser interaction;
 - frontend/backend integration visible to the user;
 - behavior not reliably proven at API/schema level.
+
+---
+
+### 11A. UI Positive And Negative Balance Review
+
+For form and mutation-oriented UI features, verify that coverage includes both:
+
+- a positive user path;
+- a negative user-facing validation/conflict/error path.
+
+Flag as major when:
+
+- feature is marked complete but has only positive or only negative UI branch despite both being planned ready;
+- UI suite verifies only backend-like predicates and misses visible negative feedback state.
+
+If a branch is blocked by missing deterministic setup, require explicit blocked/postponed documentation instead of silently skipping.
 
 ---
 
@@ -408,6 +455,24 @@ Flag as major when:
 
 ---
 
+### 13A. Check Fixture Recommendation-First Compliance
+
+When fixture creation or fixture-layer changes are present, verify recommendation-first behavior.
+
+Flag as major when:
+
+- a new fixture is created without clear reuse evidence;
+- fixture layering is changed without explicit user request or confirmation;
+- one-off setup is moved to a fixture without demonstrated reuse need;
+- implementation skips a fixture recommendation block when the fixture was inferred by the agent.
+
+Accept when:
+
+- the user explicitly requested the fixture and scope;
+- or a recommendation block was provided with candidate, layer, evidence, expected benefit, and acceptable temporary approach, then user confirmation was received.
+
+---
+
 ### 14. Check Visual Testing
 
 When visual changes are present, verify that:
@@ -443,6 +508,9 @@ When reporting metadata is changed, verify that:
 - viewport or device is not encoded as a Playwright tag when project config or Allure metadata is the correct layer;
 - Allure metadata does not replace required Playwright layer or execution tags;
 - Allure metadata may describe browser/project, viewport, layer, feature, story, component, or coverage type when useful for reporting.
+- new or updated planned UI/API specs apply metadata through `src/test/reporting/allure-metadata.helper.ts`;
+- suite-level metadata is set in `beforeEach` when shared across tests;
+- scenario-level metadata (story/severity) is set per test.
 
 Flag ad-hoc tags as major when they affect filtering/reporting consistency.
 
@@ -535,9 +603,11 @@ Examples:
 - schema validation in wrong layer;
 - visual test without meaningful state;
 - scope expanded beyond request;
+- temporary debug scripts or discovery JSON dumps left in repository after implementation;
 - cross-browser or responsive matrix added without plan justification;
 - browser-specific test without documented browser risk;
 - browser or device name used as a Playwright tag;
+- inferred fixture created without recommendation-first evidence or user confirmation;
 - Allure metadata used instead of required Playwright tags.
 
 ### Minor

@@ -36,6 +36,20 @@ Use this skill when:
 
 ---
 
+## Explicit vs Recommendation-First
+
+If the user explicitly requests a concrete fixture, create or update that fixture directly.
+
+If the user does not request a concrete fixture, use recommendation-first behavior:
+
+1. inspect reuse evidence;
+2. propose the smallest fixture option;
+3. ask for confirmation before creating a new fixture file.
+
+Do not auto-create a new fixture solely from assumption.
+
+---
+
 ## When NOT To Use
 
 Do not create a fixture for:
@@ -67,6 +81,11 @@ Classify fixture type:
 - project setup.
 
 Clarify what the fixture provides.
+
+Also classify whether this is:
+
+- explicit fixture request from user;
+- recommendation candidate inferred from repeated setup/wiring.
 
 ---
 
@@ -117,6 +136,8 @@ Ask:
 
 If answer is unclear, do not create fixture.
 
+If reuse is plausible but not yet confirmed by the user, provide recommendation first.
+
 ---
 
 ### 5. Ensure Fixture Is Thin
@@ -144,6 +165,23 @@ Fixture must not:
 Specs must use the final fixture entry point.
 
 Do not import intermediate fixture layers directly from specs unless project map explicitly allows it.
+
+---
+
+### 7. Recommendation Output (when fixture is not explicitly requested)
+
+Use this compact block:
+
+```text
+Fixture Recommendation:
+- candidate: <fixture name>
+- layer: <base/data/pages/...>
+- evidence: <where repetition exists>
+- expected benefit: <what duplication/risk it removes>
+- if skipped now: <acceptable temporary approach>
+```
+
+Only implement after user confirmation.
 
 ---
 

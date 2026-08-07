@@ -27,6 +27,7 @@ Follow these rules:
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -186,6 +187,18 @@ If the project map defines multiple API services, bind clients and requests to t
 
 ---
 
+### 2A. Fixture Recommendation Gate
+
+If a new fixture seems useful but was not explicitly requested:
+
+- provide a short fixture recommendation with reuse evidence;
+- wait for user confirmation before creating the fixture file;
+- continue with minimal inline setup when confirmation is not yet given.
+
+If the user explicitly requests the fixture, implement it directly.
+
+---
+
 ### 3. Scope Boundary Check
 
 Before writing API tests, verify the selected implementation scope against the feature plan and user request.
@@ -289,6 +302,20 @@ Do not add negative tests for undocumented behavior just because they seem usefu
 
 ---
 
+### 6A. Positive And Negative Coverage Balance
+
+For create, update, delete, login, registration, checkout, and similar state-changing endpoints, keep coverage balanced:
+
+- at least one positive path with contract-relevant assertions;
+- at least one deterministic negative path when contract evidence exists;
+- explicit blocked or postponed status when negative behavior is undocumented or non-deterministic.
+
+Do not ship mutation coverage as positive-only when the feature plan already documents negative scenarios as ready to implement now.
+
+If a negative case cannot be implemented safely, document the blocker in the feature plan and implementation report instead of silently skipping it.
+
+---
+
 ### 7. Scenario Data Implementation Check
 
 Before writing API tests, decide how scenario data should be represented.
@@ -368,6 +395,13 @@ Assertion helpers may contain Playwright `expect`.
 API clients must not contain schema assertions.
 
 Specs should normally import feature-specific assertion helpers, not raw schemas or the generic Zod helper, when a feature-specific helper exists.
+
+For non-trivial success responses, schema validation call is mandatory in the spec flow:
+
+- perform response schema validation through the feature-specific assertion helper;
+- then perform scenario behavior assertions on the parsed typed response.
+
+Do not rely only on manual field assertions when the scenario is planned with schema/contract validation ready now.
 
 Do not migrate unrelated response helpers while implementing a feature.
 
@@ -451,6 +485,12 @@ API tests must:
 - avoid process.env access in specs;
 - avoid full API contract validation in setup steps;
 - avoid over-abstracting early.
+- add Allure metadata through `src/test/reporting/allure-metadata.helper.ts` by default for new or updated specs.
+
+Allure metadata placement for API specs:
+
+- use `beforeEach` for shared suite metadata (feature, suite, owner, layer);
+- add story/severity per test close to the API scenario.
 
 Use one test per distinct API behavior or contract risk.
 
@@ -497,6 +537,12 @@ After changes:
 1. run the impacted API spec or specs;
 2. run related API specs if shared builders, generators, schemas, assertion helpers, API clients, or fixtures were changed;
 3. run the repository quality gate command defined by the project map.
+
+4. remove temporary discovery/debug artifacts created during the task.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
 
 Default examples:
 
@@ -637,18 +683,21 @@ This skill is complete when:
 - selected API scope was validated;
 - project map was followed;
 - scope did not expand to adjacent behavior;
+- mutation-style API scenarios include both positive and documented negative coverage, or the negative gap is explicitly blocked/postponed with reason;
 - required test data was identified before tests;
 - documented negative/error coverage was implemented or blocked/postponed with reason;
 - schema validation decision was made for non-trivial responses;
 - Zod schemas were used only when justified;
 - shared Zod assertion helper was used when Zod schema validation was implemented;
+- non-trivial success responses call the feature-specific schema assertion helper before manual behavior assertions;
 - behavior assertions remained separate from schema validation;
 - API clients were created only when justified;
 - tests use required tags;
 - implementation details are not standalone tests;
 - no speculative abstractions were added;
 - impacted API specs were run or documented as not run;
-- quality gate was run or documented as not run.
+- quality gate was run or documented as not run;
+- temporary debug scripts and discovery dumps were removed or explicitly preserved by user request.
 
 ---
 

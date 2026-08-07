@@ -1,18 +1,26 @@
 
 # Playwright
 node_modules/
-/test-results/
-/playwright-report/
+test-results/
+playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.auth/
 .playwright-mcp/
 .env
 .env.uat
-/allure-results/
-/allure-report/
+reports/
+allure-results/
+allure-report/
 .scannerwork/
 .sonarlint/
 sonar-project.properties
 .vscode/
+
+# Temporary agent discovery/debug artifacts
+discover-*-output.json
+scripts/debug-*.mjs
+scripts/discover-*.mjs
+scripts/scratch-*.mjs
 

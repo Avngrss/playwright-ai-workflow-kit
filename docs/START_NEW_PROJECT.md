@@ -170,17 +170,21 @@ Recommended flow for the first feature on a new application:
 /plan-feature
 -> review generated plan at specs/<feature>.md
 -> /implement-api-batch        (API ready coverage)
--> /implement-ui-batch           (UI ready coverage)
--> /implement-visual-checkpoint  (only when visual coverage is approved)
+-> /implement-ui-batch         (UI ready coverage)
+-> npm run test:* + npm run qa:gate
+-> /implement-visual-checkpoint  (optional — only when visual coverage is ready or explicitly requested)
+-> add @cross-browser / @responsive on specific tests  (optional — only when plan documents risk)
+-> npm run report:allure:generate + npm run report:allure:open
 -> /review-generated             (after implementation)
 -> /audit-test-coverage          (optional; plan vs tests alignment)
--> /audit-test-data-strategy      (optional; shared data / cleanup review)
+-> /audit-test-data-strategy     (optional; shared data / cleanup review)
 -> /audit-test-stability         (optional; flaky patterns before commit)
 ```
 
 Clarifications:
 
 - **Feature plans** cover API, UI, schema, visual, cross-browser, and responsive decisions.
+- **Visual and cross-browser are not default steps** — add them only when the plan marks them ready or you explicitly request them after functional coverage exists.
 - **Feature plans** must list only their Feature Targets: UI/application, API/service, external/partner, and setup/cleanup when relevant.
 - **Feature plans do not contain E2E journeys.** Plan E2E separately under `specs/e2e/`.
 - Use **ready to implement now** vs **blocked/postponed** in plans; do not implement blocked items without clarification.
@@ -240,19 +244,38 @@ Rules:
 - Use `@cross-browser` and `@responsive` only when explicitly planned and registered.
 - Do **not** invent tags such as `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`.
 - Responsive coverage is usually focused UI coverage, not a full E2E viewport matrix.
+- E2E cross-browser is limited to very small smoke journeys and must be documented in `specs/e2e/<journey>.md`.
+- API and schema tests are browser-independent — do not duplicate them per browser.
 
 Rule reference: `.cursor/rules/browser-and-responsive-testing.rules.mdc`
+
+Full guide: [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
 
 ---
 
 ## Visual Testing
 
-- Visual checkpoints are **separate from functional assertions** — verify behavior first, then screenshot stable UI state.
+Visual checkpoints are **separate from functional assertions** — verify behavior first, then screenshot stable UI state.
+
+**Two screenshot concepts:**
+
+- **Failure artifacts** — automatic on failure (`screenshot: only-on-failure` in config); for debugging, not regression baselines.
+- **Visual checkpoints** — planned `toHaveScreenshot` in specs with `@visual`; baselines require explicit approval.
+
+Rules:
+
 - Visual baselines require **explicit approval**; do not update snapshots silently.
 - Do not add screenshots by default.
 - Use `/implement-visual-checkpoint` only when visual coverage is planned and approved.
+- Default tags: `@ui` + `@visual` + `@regression`.
+- `toHaveScreenshot` stays in specs — not in Page Objects or Components.
+- Stabilize or mask dynamic content before screenshot; do not mask the element under test.
+- Cross-browser/responsive visual baselines need per-engine or per-viewport approval.
+- Do not include visual checks in `qa:gate` until the baseline environment is stable.
 
 Rule reference: `.cursor/rules/visual-testing.mdc`
+
+Full guide: [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
 
 ---
 
@@ -332,9 +355,9 @@ Behavior:
 - uploads generated artifacts when present:
   - `playwright-report/`
   - `test-results/`
-  - `allure-results/`
-  - `allure-report/`;
-- generates Allure HTML report via `npm run report:allure:generate` only when `allure-results/` exists;
+  - `reports/allure/results/`
+  - `reports/allure/html/`;
+- generates Allure HTML report via `npm run report:allure:generate` only when `reports/allure/results/` exists;
 - does not configure TMS publishing;
 - does not configure GitHub Pages publishing.
 
@@ -345,8 +368,18 @@ The clean starter does not require configured CI variables or secrets — the ba
 When tests exist:
 
 - Playwright writes `playwright-report/` (HTML) and failure artifacts under `test-results/` (screenshots/traces/videos retained on failure only);
-- Allure writes raw results to `allure-results/`;
-- CI runs `npm run report:allure:generate` when `allure-results/` exists, then uploads report folders when present.
+- Allure writes raw results to `reports/allure/results/`;
+- run `npm run report:allure:generate` to build `reports/allure/html/`;
+- open locally with `npm run report:allure:open`;
+- CI runs `npm run report:allure:generate` when `reports/allure/results/` exists, then uploads report folders when present.
+
+Allure uses **Allure 3** in this kit. Use npm scripts — do not pass legacy v2 flags such as `--clean`.
+
+Report readability defaults:
+
+- Playwright `allure-playwright` uses `detail: false` — only explicit `test.step` appear in the report;
+- use `applyAllureMetadata(testInfo, { feature })` from `src/test/reporting/allure-metadata.helper.ts` in specs;
+- config: `reports/allure/allurerc.mjs`.
 
 Allure is for reporting artifacts only — **not** TMS result publishing. Step-level custom Allure screenshots in specs are project-specific and not enabled by default.
 
@@ -384,7 +417,7 @@ Reporting and diagnostics:
 - Playwright HTML and Allure reporting are enabled for local/CI artifacts (`playwright.config.ts`);
 - Allure is for reporting artifacts only — **not** TMS result publishing;
 - failure screenshots, traces, and videos are retained on failure only;
-- CI generates and uploads Allure report only when `allure-results/` exists;
+- CI generates and uploads Allure report only when `reports/allure/results/` exists;
 - CI uploads Playwright and Allure artifacts only when folders exist.
 
 ---

@@ -61,6 +61,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
       - 📄 test-structure-and-tags.rules.mdc
+      - 📄 temporary-debug-artifact-cleanup.rules.mdc
       - 📄 tms-integration.rules.mdc
       - 📄 visual-testing.mdc
     - 📁 skills/
@@ -182,6 +183,10 @@ Daily-use quick reference cheat sheet:
 
 - `docs/QUICK_REFERENCE.md` — commands, workflows, tags, scripts, and guardrails at a glance
 
+Cross-browser, responsive, and visual testing guide:
+
+- `docs/CROSS_BROWSER_AND_VISUAL_TESTING.md` — browser/viewport matrix policy, visual checkpoints, baseline approval, and screenshot rules
+
 API collection integration guidance:
 
 - `docs/API_COLLECTION_INTEGRATION.md` — Bruno collection, OpenAPI/Swagger contract, planning, and audit hierarchy
@@ -206,7 +211,8 @@ Expected project implementation locations (created per application; **absent in 
 
 - `src/test/pages/**` — Page Objects
 - `src/test/components/**` — Component Objects
-- `src/test/fixtures/**` — fixture chain; final entry point: `test.ts`
+- `src/test/fixtures/**` — fixture chain (`base` -> `api` -> `pages` -> `test.ts`)
+- `src/test/setup/auth/**` — auth precondition helpers (disposable user setup)
 - `src/test/assertions/**` — assertion helpers (API and UI)
 - `src/test/schemas/**` — API Zod schemas
 - `src/test/data/**` — builders, generators, datasets
@@ -241,7 +247,7 @@ Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is 
 | `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Run `@cross-browser` on UI browser projects: `ui-chromium`, `ui-firefox`, `ui-webkit` |
 | `npm run test:responsive` | Run `@responsive` on `ui-mobile-chromium` |
-| `npm run report:allure:generate` | Generate `allure-report/` from `allure-results/` |
+| `npm run report:allure:generate` | Generate `reports/allure/html/` from `reports/allure/results/` |
 
 Rules:
 
@@ -266,8 +272,8 @@ Starter CI baseline (`.github/workflows/playwright.yml`):
 - does not require configured variables or secrets in zero-test state;
 - runs API/UI/E2E/tag-based jobs when tests exist;
 - includes focused cross-browser UI jobs and responsive mobile UI job via registered projects and coverage-type tags;
-- uploads artifacts when generated: `playwright-report/`, `test-results/`, `allure-results/`, `allure-report/`;
-- generates Allure HTML report via `npm run report:allure:generate` when `allure-results/` exists after test runs;
+- uploads artifacts when generated: `playwright-report/`, `test-results/`, `reports/allure/results/`, `reports/allure/html/`;
+- generates Allure HTML report via `npm run report:allure:generate` when `reports/allure/results/` exists after test runs;
 - does not configure TMS result publishing;
 - does not configure GitHub Pages publishing.
 
@@ -473,17 +479,52 @@ When a concrete project adds implementation, the final fixture entry point for s
 
 - `src/test/fixtures/test.ts`
 
-Import pattern (after implementation creates the fixture chain):
+Import pattern:
 
 ```ts
 import { test, expect } from "../../src/test/fixtures/test";
 ```
 
+### Fixture chain (current project)
+
+Use layered fixture composition. Specs import only from `test.ts`.
+
+```text
+base.fixture.ts
+  -> api.fixture.ts
+    -> pages.fixture.ts
+      -> test.ts
+```
+
+Layer ownership:
+
+| File | Responsibility |
+|------|----------------|
+| `base.fixture.ts` | Playwright `test` + `expect` only |
+| `api.fixture.ts` | cross-target API setup transport (`apiSetupRequest` for UI preconditions against `API_BASE_URL`) |
+| `pages.fixture.ts` | Page Object wiring (`loginPage`, `registerPage`, `accountPage`) |
+| `test.ts` | public entry point for specs |
+
+Auth setup helpers (not fixtures) live under:
+
+- `src/test/setup/auth/**` — reusable precondition helpers such as disposable user registration
+
+Add `auth.fixture.ts` only when auth wiring becomes a real fixture need, for example:
+
+- storage state project wiring;
+- authenticated context lifecycle;
+- reusable token/session fixture.
+
+Do **not** add fixtures that hide login or other action-under-test flows (for example `loggedInPage`).
+
 Rules:
 
 - specs must import only from the final fixture entry point;
-- extend fixture layers in project-specific files when a concrete product is added;
-- skills such as `create-fixture` and implementation skills create the required fixture chain;
+- do not import intermediate fixture layers from specs;
+- Page Object fixtures belong in `pages.fixture.ts`;
+- API precondition transport belongs in `api.fixture.ts`;
+- auth precondition helpers belong in `src/test/setup/auth/**`, not inside page fixtures;
+- skills such as `create-fixture` and implementation skills create or extend this chain;
 - the clean baseline does not ship a fixture entry point.
 
 ---
@@ -529,7 +570,7 @@ Playwright reporters (`playwright.config.ts`):
 
 - console: `list`
 - HTML: `playwright-report/` (`open: never`)
-- Allure: `allure-results/` via `allure-playwright`
+- Allure: `reports/allure/results/` via `allure-playwright` with `detail: false` (only explicit `test.step` in report)
 
 Failure artifacts (Playwright `use` defaults):
 
@@ -539,20 +580,21 @@ Failure artifacts (Playwright `use` defaults):
 
 Allure report generation:
 
-- script: `npm run report:allure:generate` — generates `allure-report/` from `allure-results/`
-- CI runs this step only when `allure-results/` exists after test execution
+- script: `npm run report:allure:generate` — generates `reports/allure/html/` from `reports/allure/results/` using `reports/allure/allurerc.mjs`
+- CI runs this step only when `reports/allure/results/` exists after test execution
 - step-level custom Allure screenshots in specs are project-specific and not enabled by default
 
 Runtime artifact folders (gitignored):
 
 - `test-results/` — Playwright run output including failure screenshots/traces/videos
 - `playwright-report/` — Playwright HTML report
-- `allure-results/` — raw Allure results from test runs
-- `allure-report/` — generated Allure HTML report
+- `reports/allure/results/` — raw Allure results from test runs
+- `reports/allure/html/` — generated Allure HTML report
+- `reports/allure/allurerc.mjs` — Allure 3 config (`singleFile`, `hideLabels`, readable `groupBy`)
 
 Allure metadata helper (created per project when custom metadata is implemented):
 
-- `src/test/reporting/allure-metadata.helper.ts`
+- `src/test/reporting/allure-metadata.helper.ts` — applies feature, story, layer, severity, and domain tags from Playwright tags
 
 Allure configuration skill:
 
@@ -715,6 +757,13 @@ Tag rules:
 - agents must not invent new tags without a project map update.
 
 Feature or domain tags may be added only when registered in this project map or an approved tag registry.
+
+Registered feature/domain tags:
+
+- `@login` — authentication login UI/API coverage
+- `@register` — customer registration UI/API coverage
+- `@registration` — registration journey or broader registration area coverage
+- `@checkout` — checkout and purchase E2E/UI coverage
 
 ---
 
@@ -1030,7 +1079,7 @@ Project-specific artifacts normally include:
 Generated/runtime artifacts normally include:
 
 - `.playwright-mcp/**`
-- `test-results/**`, `playwright-report/**`, `allure-results/**`, `allure-report/**`
+- `test-results/**`, `playwright-report/**`, `reports/allure/results/**`, `reports/allure/html/**`
 - local secrets, temporary debug scripts, and non-starter IDE MCP config
 
 Cleanup policy:

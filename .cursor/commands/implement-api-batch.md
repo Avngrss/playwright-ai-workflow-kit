@@ -14,6 +14,8 @@ Scope:
 - no visual checkpoints
 - minimal changes
 - do not create new builder/client/helper unless required by the plan or clearly justified
+- for mutation endpoints, include both positive and documented deterministic negative coverage
+- if a new fixture is only inferred (not explicitly requested), provide a fixture recommendation first and wait for confirmation
 
 Rules:
 - rely strictly on the API contract
@@ -24,6 +26,7 @@ Rules:
 - API client must not contain assertions
 - use dedicated assertion helper for non-trivial response contract/schema assertions
 - postpone unstable or ambiguous cases instead of forcing flaky assertions
+- if documented negative scenarios are ready in the plan, do not skip them silently
 
 If blocked:
 stop and report missing contract, builder, auth, setup, or response details.

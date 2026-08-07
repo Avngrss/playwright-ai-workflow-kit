@@ -20,6 +20,7 @@ Architecture:
 - do not create Component Object by default
 - use Discover UI Components only if ownership is unclear
 - do not create new fixture unless required
+- if a new fixture is inferred (not explicitly requested), provide a fixture recommendation first and wait for confirmation
 - do not hide the action under test in fixtures/hooks
 
 Data:
@@ -38,6 +39,8 @@ Tests:
 - avoid raw selector mechanics in specs
 - avoid inline random data
 - keep assertions in specs or dedicated assertion helpers
+- for form/mutation features, keep both positive and negative user-facing branches when both are planned ready
+- move repeated page-open + loaded-marker setup into beforeEach when shared in one describe
 
 If blocked:
 stop and report missing locator, data, fixture, page ownership, or behavior details.

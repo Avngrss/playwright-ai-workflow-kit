@@ -1,0 +1,177 @@
+---
+description: Cleanup temporary discovery, debug, and investigation artifacts after implementation
+alwaysApply: true
+---
+
+# Temporary Debug Artifact Cleanup Rules
+
+## Purpose
+
+Agents often create one-off discovery scripts, debug runners, and JSON dumps while exploring UI flows, healing tests, or pinning locators.
+
+These files are **not** project deliverables.
+
+They must be removed before the task is marked complete.
+
+Permanent learnings belong in specs, Page Objects, rules, skills, or approved scripts — not in scratch files left in the repository.
+
+---
+
+## Core Principle
+
+**Discover and debug in temporary artifacts.**
+
+**Deliver in approved project layers.**
+
+**Delete temporary artifacts before finishing.**
+
+Do not leave investigation output for the user to clean up unless the user explicitly asked to keep it.
+
+---
+
+## What Counts As Temporary Debug Artifacts
+
+Remove after implementation, healing, or discovery when no longer needed:
+
+- one-off Node scripts such as `scripts/debug-*.mjs`, `scripts/discover-*.mjs`, `scripts/scratch-*.mjs`;
+- discovery output dumps such as `discover-*-output.json`, `*-discovery.json`, `*-debug-output.json` at repo root or elsewhere;
+- ad-hoc investigation scripts outside approved project scripts;
+- local scratch specs created only to probe locators or routes;
+- copied MCP page YAML/JSON/log dumps saved into source folders (`.playwright-mcp/**` is already runtime output and must not be treated as source);
+- temporary markdown notes at repo root created only for agent debugging;
+- duplicate throwaway copies of Page Objects, specs, or plans created during experimentation.
+
+---
+
+## What Must Be Preserved
+
+Do not delete as "cleanup":
+
+- approved tests under `tests/**`;
+- approved implementation under `src/test/**`;
+- reviewed plans under `specs/**`;
+- permanent framework scripts under `scripts/**` that are part of the starter (`check-conventions.mjs`, `project-cartographer.mjs`, and other documented maintenance scripts);
+- intentional user-created files;
+- files the user explicitly asked to keep for follow-up.
+
+When unsure whether a script is permanent or temporary, classify as **unsure** and report it instead of deleting silently.
+
+---
+
+## When Cleanup Is Required
+
+Cleanup is mandatory:
+
+- after implementation verification passes or is documented;
+- after healing/fix iteration completes;
+- after UI discovery when temporary scripts or dumps were created;
+- before reporting "done", "complete", or equivalent;
+- before suggesting commit or PR, even if the user did not ask for cleanup.
+
+If verification failed and more debugging is still in progress, cleanup happens at the **end of the task**, not after every failed attempt.
+
+If the user explicitly asks to keep debug artifacts, keep only those named files and still remove unrelated temporary files from the same session.
+
+---
+
+## Required Workflow Step
+
+Extend the default agent cycle with an explicit cleanup step:
+
+```text
+plan -> implement -> verify -> cleanup temporary debug artifacts -> report
+```
+
+For healing:
+
+```text
+diagnose -> fix -> verify -> cleanup temporary debug artifacts -> report
+```
+
+Cleanup is not optional hardening.
+
+It is part of task completion.
+
+---
+
+## How To Clean Up
+
+1. Inventory files created or modified during discovery/debug in the current task.
+2. Classify each as **keep**, **remove**, or **unsure**.
+3. Delete all **remove** files.
+4. Transfer any still-useful findings into the proper layer before deletion:
+   - locators and routes -> Page Objects / Components;
+   - scenario decisions -> `specs/<feature>.md` or `specs/e2e/<journey>.md`;
+   - reusable commands -> approved scripts only when justified.
+5. Report removed files in the final summary.
+
+Do not move temporary debug scripts into `src/test/**` or `tests/**` to avoid deleting them.
+
+---
+
+## Secrets And Sensitive Output
+
+Temporary debug files must not be committed.
+
+Before deletion, ensure debug dumps did not capture:
+
+- passwords;
+- tokens;
+- cookies;
+- `.env` contents;
+- real user credentials.
+
+If sensitive data was written to a debug file, delete the file and do not summarize secret values in the report.
+
+Prefer updating `.gitignore` patterns when a temporary artifact pattern is likely to recur.
+
+Recommended ignore patterns:
+
+```text
+discover-*-output.json
+scripts/debug-*.mjs
+scripts/discover-*.mjs
+scripts/scratch-*.mjs
+```
+
+---
+
+## Reporting Requirements
+
+Final task report must include a short **Cleanup** section when any temporary artifacts were created:
+
+```text
+Cleanup:
+- removed: ...
+- preserved: ...
+- unsure (left untouched): ...
+```
+
+If no temporary artifacts were created, omit the section.
+
+Do not claim implementation is complete while temporary debug files remain unless the user explicitly requested keeping them.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- leaving `discover-*-output.json` in the repo root;
+- keeping a folder of `scripts/debug-*.mjs` after locators are pinned;
+- treating MCP/runtime folders as deliverables;
+- committing investigation JSON with generated credentials;
+- converting one-off debug scripts into "just in case" permanent scripts without reuse evidence;
+- deleting approved framework scripts during cleanup;
+- deleting user-owned files without classification;
+- skipping cleanup because verification passed.
+
+---
+
+## Main Principle
+
+Temporary files help the agent investigate.
+
+They are not part of the automation kit deliverable.
+
+Clean them up before finishing.

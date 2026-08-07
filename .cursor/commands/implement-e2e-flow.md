@@ -25,3 +25,7 @@ Rules:
 
 Runner gap handling:
 - if no Playwright runner matches tests/e2e/**/*.e2e.spec.ts, stop and report the config gap
+
+Cleanup:
+- remove temporary discovery/debug scripts and JSON dumps before finishing
+- rule: `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`

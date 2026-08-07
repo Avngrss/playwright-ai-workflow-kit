@@ -100,7 +100,7 @@ jobs:
       - name: Run matrix command
         run: ${{ matrix.command }}
       - name: Generate Allure report
-        if: always() && hashFiles('allure-results/**') != ''
+        if: always() && hashFiles('reports/allure/results/**') != ''
         run: npm run report:allure:generate
       - name: Upload Playwright HTML report
         if: always() && hashFiles('playwright-report/**') != ''
@@ -115,14 +115,14 @@ jobs:
           name: test-results-${{ matrix.name }}
           path: test-results/
       - name: Upload Allure results
-        if: always() && hashFiles('allure-results/**') != ''
+        if: always() && hashFiles('reports/allure/results/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-results-${{ matrix.name }}
-          path: allure-results/
+          path: reports/allure/results/
       - name: Upload Allure report
-        if: always() && hashFiles('allure-report/**') != ''
+        if: always() && hashFiles('reports/allure/html/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-${{ matrix.name }}
-          path: allure-report/
+          path: reports/allure/html/

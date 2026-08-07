@@ -5,6 +5,8 @@ const ROOT = process.cwd();
 
 const UI_TESTS_DIR = path.join(ROOT, "tests", "ui");
 const API_TESTS_DIR = path.join(ROOT, "tests", "api");
+const E2E_TESTS_DIR = path.join(ROOT, "tests", "e2e");
+const PROJECT_MAP_PATH = path.join(ROOT, ".cursor", "rules", "00-project-map.mdc");
 
 const PAGES_DIR = path.join(ROOT, "src", "test", "pages");
 const COMPONENTS_DIR = path.join(ROOT, "src", "test", "components");
@@ -37,6 +39,45 @@ function read(file) {
 
 function rel(file) {
   return path.relative(ROOT, file);
+}
+
+function extractRegisteredTagsFromProjectMap() {
+  if (!fs.existsSync(PROJECT_MAP_PATH)) {
+    return new Set();
+  }
+
+  const content = read(PROJECT_MAP_PATH);
+  const tags = new Set();
+  const tagPattern = /`(@[a-z0-9-]+)`/gi;
+  let match = tagPattern.exec(content);
+
+  while (match) {
+    tags.add(match[1].toLowerCase());
+    match = tagPattern.exec(content);
+  }
+
+  return tags;
+}
+
+function extractTagsFromSpecContent(content) {
+  const tags = new Set();
+  const tagArrayPattern = /tag\s*:\s*\[([^\]]*)\]/gms;
+  let arrayMatch = tagArrayPattern.exec(content);
+
+  while (arrayMatch) {
+    const values = arrayMatch[1];
+    const valuePattern = /["'](@[a-z0-9-]+)["']/gi;
+    let valueMatch = valuePattern.exec(values);
+
+    while (valueMatch) {
+      tags.add(valueMatch[1].toLowerCase());
+      valueMatch = valuePattern.exec(values);
+    }
+
+    arrayMatch = tagArrayPattern.exec(content);
+  }
+
+  return tags;
 }
 
 function fail(message) {
@@ -130,6 +171,20 @@ function checkUiSpecs(uiSpecs) {
 
   ok("All UI specs have @ui and @smoke/@regression tag coverage.");
   ok("All UI specs with toHaveScreenshot() have @visual tag.");
+
+  for (const spec of uiSpecs) {
+    const content = read(spec);
+    const hasBeforeEach = /test\.beforeEach\s*\(/.test(content);
+    const openCalls = content.match(/await\s+[a-zA-Z_$][\w$]*\.open\(\);/g) ?? [];
+
+    if (!hasBeforeEach && openCalls.length >= 3) {
+      fail(
+        `UI spec repeats page open setup (${openCalls.length} times) without beforeEach(): ${rel(spec)}`,
+      );
+    }
+  }
+
+  ok("UI specs avoid repeated page-open setup without beforeEach().");
 }
 
 function checkApiSpecs(apiSpecs) {
@@ -154,6 +209,44 @@ function checkApiSpecs(apiSpecs) {
   );
 
   ok("No API specs reference .env as test asset.");
+}
+
+function checkRegisteredTags(specFiles) {
+  if (specFiles.length === 0) {
+    skip("No spec files found for tag registry checks.");
+    return;
+  }
+
+  const registeredTags = extractRegisteredTagsFromProjectMap();
+  const baseAllowedTags = new Set([
+    "@api",
+    "@ui",
+    "@e2e",
+    "@visual",
+    "@smoke",
+    "@regression",
+    "@cross-browser",
+    "@responsive",
+  ]);
+
+  for (const tag of registeredTags) {
+    baseAllowedTags.add(tag);
+  }
+
+  for (const spec of specFiles) {
+    const content = read(spec);
+    const usedTags = extractTagsFromSpecContent(content);
+
+    for (const tag of usedTags) {
+      if (!baseAllowedTags.has(tag)) {
+        fail(
+          `Spec uses unregistered tag ${tag}. Register it in .cursor/rules/00-project-map.mdc: ${rel(spec)}`,
+        );
+      }
+    }
+  }
+
+  ok("All spec tags are registered in project map.");
 }
 
 function checkUiModelFiles(pageFiles, componentFiles) {
@@ -261,16 +354,20 @@ function checkFinalFixtureEntryPoint() {
   }
 
   const content = read(FIXTURE_ENTRY_POINT);
+  const finalFixtureLayers = ["./pages.fixture", "./auth.fixture"];
+  const reExportsFinalLayer = finalFixtureLayers.some((layer) =>
+    content.includes(`"${layer}"`) || content.includes(`'${layer}'`),
+  );
 
-  if (content.includes("./pages.fixture")) {
+  if (!reExportsFinalLayer) {
     fail(
-      "Final fixture entry point must not import from pages.fixture: src/test/fixtures/test.ts",
+      "Final fixture entry point must re-export from the last fixture layer (pages.fixture or auth.fixture): src/test/fixtures/test.ts",
     );
   }
 
-  if (!content.includes("./base.fixture")) {
+  if (content.includes("@playwright/test")) {
     fail(
-      "Final fixture entry point must re-export from ./base.fixture: src/test/fixtures/test.ts",
+      "Final fixture entry point must not import directly from @playwright/test: src/test/fixtures/test.ts",
     );
   }
 
@@ -280,7 +377,18 @@ function checkFinalFixtureEntryPoint() {
     );
   }
 
-  ok("Final fixture entry point re-exports test and expect from base.fixture.");
+  const baseFixturePath = path.join(SRC_TEST_DIR, "fixtures", "base.fixture.ts");
+  if (fs.existsSync(baseFixturePath)) {
+    const baseFixtureContent = read(baseFixturePath);
+
+    if (baseFixtureContent.includes("../pages/")) {
+      fail(
+        "base.fixture.ts must not import Page Objects. Move page wiring to pages.fixture.ts.",
+      );
+    }
+  }
+
+  ok("Final fixture entry point re-exports test and expect from the fixture chain.");
 }
 
 function main() {
@@ -294,6 +402,7 @@ function main() {
 
   const uiSpecs = listFiles(UI_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
   const apiSpecs = listFiles(API_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
+  const e2eSpecs = listFiles(E2E_TESTS_DIR, (file) => file.endsWith(".spec.ts"));
 
   const pageFiles = listFiles(PAGES_DIR, (file) => file.endsWith(".ts"));
   const componentFiles = listFiles(COMPONENTS_DIR, (file) => file.endsWith(".ts"));
@@ -302,6 +411,7 @@ function main() {
 
   checkUiSpecs(uiSpecs);
   checkApiSpecs(apiSpecs);
+  checkRegisteredTags([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
   checkUiModelFiles(pageFiles, componentFiles);
 
   checkNoAllureInForbiddenLayers([

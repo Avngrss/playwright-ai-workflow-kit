@@ -185,11 +185,13 @@ All scripts are baseline-safe. Zero tests is a valid state.
 | `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Filter by `@cross-browser` coverage-type tag |
 | `npm run test:responsive` | Filter by `@responsive` coverage-type tag |
-| `npm run report:allure:generate` | Generate `allure-report/` from `allure-results/` |
+| `npm run report:allure:generate` | Generate `reports/allure/html/` from `reports/allure/results/` |
+| `npm run report:allure:open` | Open generated Allure HTML report |
+| `npm run report:allure:serve` | Generate and open report from raw results |
 
 `npm test` is a **baseline run**, not a full browser/mobile matrix. `test:smoke`, `test:regression`, and `test:visual` are baseline-scoped tag runs. `test:cross-browser` and `test:responsive` are explicit opt-in coverage paths. Browser and viewport execution depends on Playwright projects in `playwright.config.ts`.
 
-After test runs, Playwright writes `playwright-report/` and Allure writes `allure-results/`. Run `npm run report:allure:generate` to build `allure-report/`. Failure screenshots, traces, and videos are retained on failure only.
+After test runs, Playwright writes `playwright-report/` and Allure writes `reports/allure/results/`. Run `npm run report:allure:generate` then `npm run report:allure:open` to view the report. Failure screenshots, traces, and videos are retained on failure only under `test-results/`.
 
 ---
 
@@ -204,8 +206,8 @@ The starter CI workflow is starter-safe and stays valid in zero-test repositorie
 - Maps repository variables to Playwright env when matrix jobs run (empty fallback when unset)
 - Runs cross-browser UI coverage with `@cross-browser` on `ui-chromium`, `ui-firefox`, and `ui-webkit`
 - Runs responsive UI coverage with `@responsive` on `ui-mobile-chromium`
-- Uploads generated artifacts when present: `playwright-report/`, `test-results/`, `allure-results/`, `allure-report/`
-- Generates Allure HTML report when `allure-results/` exists after test runs
+- Uploads generated artifacts when present: `playwright-report/`, `test-results/`, `reports/allure/results/`, `reports/allure/html/`
+- Generates Allure HTML report when `reports/allure/results/` exists after test runs
 - Keeps TMS publishing and GitHub Pages publishing out of scope by default
 
 Playwright HTML and Allure reporting are enabled for local and CI artifacts only. Allure is **not** TMS result publishing. Step-level custom Allure screenshots in specs are project-specific and not enabled by default. Zero-test repositories still pass — matrix jobs and report uploads are skipped when no tests exist.
@@ -303,6 +305,7 @@ Source of truth for structure, tags, projects, apps, services, and env names: `.
 | Document | Purpose |
 |----------|---------|
 | [Quick Reference](docs/QUICK_REFERENCE.md) | Daily-use workflow cheat sheet |
+| [Cross-Browser and Visual Testing](docs/CROSS_BROWSER_AND_VISUAL_TESTING.md) | Browser/viewport matrix policy and visual checkpoint / baseline rules |
 | [API Collection Integration](docs/API_COLLECTION_INTEGRATION.md) | Bruno collection, API contract, planning, and audit guidance |
 | [Helper Recipes](docs/HELPER_RECIPES.md) | Reusable helper patterns (documentation only; no shipped source) |
 | [Start a New Project](docs/START_NEW_PROJECT.md) | Detailed onboarding guide |

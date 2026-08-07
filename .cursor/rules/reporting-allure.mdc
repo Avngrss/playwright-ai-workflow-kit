@@ -89,6 +89,21 @@ Do not hardcode project-specific labels in framework core.
 
 Project-specific labels belong to the project layer or project map.
 
+## Default Metadata Policy
+
+For newly created or updated UI/API specs, Allure metadata should be added by default using the shared helper:
+
+- `src/test/reporting/allure-metadata.helper.ts`
+
+Use this placement:
+
+- `beforeEach` for shared suite metadata (feature, suite, owner, layer, shared tags);
+- each test for scenario metadata (story, severity, and optional case-level links).
+
+Do not leave new specs without Allure metadata when the test is part of planned feature coverage.
+
+If metadata is intentionally omitted for a specific spec, document the reason in the implementation summary.
+
 ---
 
 ## Allure Steps vs Playwright test.step

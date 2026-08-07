@@ -337,6 +337,22 @@ Here:
 
 ---
 
+## Avoid Duplicate Contract Assertions
+
+When a non-trivial response is already validated through a feature-specific Zod assertion helper, treat that helper call as the primary contract assertion.
+
+Do not repeat large field-by-field manual assertions that only restate the same response shape already enforced by Zod.
+
+After schema validation, keep manual assertions focused on scenario behavior invariants, for example:
+
+- response identity or correlation with request data that expresses behavior under test;
+- security behavior such as omission of sensitive fields;
+- business-state expectations not modeled as pure structure.
+
+If a manual assertion adds no behavior value beyond Zod shape validation, remove it.
+
+---
+
 ## Pagination Schemas
 
 Reusable pagination envelopes should be modeled once when multiple endpoints use the same structure.
@@ -553,6 +569,7 @@ Avoid:
 - creating schemas for trivial one-off responses;
 - duplicating `safeParse` plus `expect` wrapper logic in every assertion helper;
 - calling the shared Zod assertion helper directly from specs when a feature-specific helper exists.
+- large field-by-field manual assertions that duplicate contract checks already covered by Zod.
 
 ---
 

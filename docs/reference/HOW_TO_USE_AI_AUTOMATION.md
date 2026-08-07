@@ -104,6 +104,8 @@ Cross-browser and responsive coverage are optional, focused layers for documente
 
 They are not a default browser/device matrix.
 
+**Full reference:** [Cross-Browser and Visual Testing](../CROSS_BROWSER_AND_VISUAL_TESTING.md)
+
 - do not run every UI or E2E test in every browser or viewport by default;
 - API and schema tests are browser-independent;
 - responsive scenarios must define viewport, user value, and expected visible behavior;
@@ -334,9 +336,9 @@ CI behavior:
 - uploads generated artifacts when present:
   - `playwright-report/`
   - `test-results/`
-  - `allure-results/`
-  - `allure-report/`;
-- generates Allure HTML report when `allure-results/` exists after test runs;
+  - `reports/allure/results/`
+  - `reports/allure/html/`;
+- generates Allure HTML report when `reports/allure/results/` exists after test runs;
 - does not configure TMS publishing;
 - does not configure GitHub Pages publishing.
 
@@ -344,9 +346,9 @@ The clean starter does not require configured CI variables or secrets.
 
 Reporting (Playwright HTML + Allure):
 
-- reporters configured in `playwright.config.ts`: `list`, HTML (`playwright-report/`), Allure (`allure-results/`);
+- reporters configured in `playwright.config.ts`: `list`, HTML (`playwright-report/`), Allure (`reports/allure/results/`);
 - failure screenshots, traces, and videos retained on failure only;
-- `npm run report:allure:generate` builds `allure-report/` locally or in CI when results exist;
+- `npm run report:allure:generate` builds `reports/allure/html/` locally or in CI when results exist;
 - Allure is for reporting artifacts only — **not** TMS result publishing;
 - step-level custom Allure screenshots in specs are project-specific and not enabled by default;
 - zero-test starter remains valid — matrix and report uploads skipped when no tests exist.

@@ -8,6 +8,14 @@ This skill analyzes the current UI structure, specs, Page Objects, existing Comp
 
 Do not modify files during discovery.
 
+If Playwright MCP, one-off scripts, or JSON dumps are used to inspect the live UI, those artifacts are temporary investigation tools only.
+
+After downstream implementation or healing completes, remove them.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 The result of this skill is a recommendation, not code changes.
 
 ---
@@ -41,6 +49,7 @@ Follow these rules:
 - UI Patterns Catalog;
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -392,7 +401,8 @@ This skill is complete when:
 - overengineering risk was considered;
 - recommendation is explicit;
 - affected files are listed;
-- minimal refactor plan is provided if extraction is justified.
+- minimal refactor plan is provided if extraction is justified;
+- any temporary discovery scripts or dumps created outside this read-only skill were removed after implementation, or preservation was explicitly requested.
 
 ---
 
@@ -406,6 +416,7 @@ Avoid:
 - creating a Page Object for a UI block inside a page;
 - recommending component fixtures by default;
 - using discovery to perform code changes;
+- leaving temporary `scripts/debug-*.mjs`, `scripts/discover-*.mjs`, or `discover-*-output.json` files in the repository after implementation;
 - recommending broad refactors;
 - ignoring route or screen boundaries;
 - ignoring the project map;

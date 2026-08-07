@@ -121,6 +121,7 @@ If a step name would not make sense to a product owner, QA reviewer, or support 
 - Do not repeat navigation already done in `beforeEach`.
 - Keep navigation-path tests in a separate `describe` block when needed.
 - Hook logic must stay small, explicit, and easy to reason about.
+- If the same page-open plus loaded-marker setup is repeated across tests in one `describe`, move that shared setup to `beforeEach`.
 
 For E2E specs, generic open or wait-for-ready setup in `beforeEach` is allowed.
 

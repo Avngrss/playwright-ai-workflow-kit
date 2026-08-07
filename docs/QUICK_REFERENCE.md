@@ -16,15 +16,36 @@ Daily-use cheat sheet for the Playwright AI Workflow Kit. For full onboarding, s
 
 ## Main Workflow Cheat Sheet
 
-### Feature workflow
+### Feature workflow (recommended order)
 
-1. `/plan-feature`
-2. `/review-generated`
-3. `/implement-api-batch`
-4. `/implement-ui-batch`
-5. `/implement-visual-checkpoint` — only when planned
-6. `/audit-test-coverage`
-7. `/review-generated`
+1. **`/plan-feature`** — create or update `specs/<feature>.md`
+   - decide test level per scenario: API, UI, schema, visual, cross-browser, responsive, not automated, blocked
+   - mark each scenario **ready to implement now** vs **blocked/postponed**
+   - document Feature Targets (UI URL, API URL, env names from project map)
+   - state explicitly when cross-browser, responsive, or visual coverage is **not needed**
+2. **`/review-generated`** — review the plan before implementation
+3. **`/implement-api-batch`** — implement API/schema scenarios marked ready
+4. **`/implement-ui-batch`** — implement UI scenarios marked ready
+5. **Verify** — run impacted tests and quality gate:
+
+   ```bash
+   npm run test:api    # or test:ui / test:e2e / npm test
+   npm run qa:gate
+   ```
+
+6. **`/implement-visual-checkpoint`** — **optional, after UI exists** — only when the plan marks visual coverage ready or you explicitly request it later
+7. **Cross-browser / responsive** — **optional, per test** — add `@cross-browser` or `@responsive` only when the plan documents browser/viewport risk; run `npm run test:cross-browser` or `npm run test:responsive`
+8. **Report** — after test runs:
+
+   ```bash
+   npm run report:allure:generate
+   npm run report:allure:open
+   ```
+
+9. **`/audit-test-coverage`** — compare plan vs implemented tests
+10. **`/review-generated`** — review generated code quality
+
+Visual and cross-browser are **not default steps**. They are added only when the feature plan says ready or you ask for them explicitly after functional coverage exists.
 
 ### E2E workflow
 
@@ -105,6 +126,10 @@ Daily-use cheat sheet for the Playwright AI Workflow Kit. For full onboarding, s
 | UI tests | `tests/ui/**` |
 | E2E tests | `tests/e2e/**` |
 | Implementation layer | `src/test/**` — created per real project only |
+| Allure raw results | `reports/allure/results/` |
+| Allure HTML report | `reports/allure/html/` |
+| Allure config | `reports/allure/allurerc.mjs` |
+| Allure metadata helper | `src/test/reporting/allure-metadata.helper.ts` |
 
 ---
 
@@ -137,10 +162,14 @@ Browser and viewport belong to Playwright projects, not Playwright tags.
 | `npm run test:visual` | Visual-tagged tests |
 | `npm run test:cross-browser` | Explicit cross-browser opt-in |
 | `npm run test:responsive` | Explicit responsive opt-in |
+| `npm run report:allure:generate` | Build `reports/allure/html/` from `reports/allure/results/` |
+| `npm run report:allure:open` | Open generated HTML report |
+| `npm run report:allure:serve` | Generate and open report from raw results (dev shortcut) |
 
 - `npm test` = baseline run.
 - Cross-browser and responsive scripts are explicit opt-in paths.
 - Zero-test starter state is valid.
+- Use **npm scripts** for Allure — do not call raw `allure` CLI with old v2 flags such as `--clean`.
 
 ---
 
@@ -169,10 +198,37 @@ Browser and viewport belong to Playwright projects, not Playwright tags.
 
 ## Cross-Browser / Responsive (Short)
 
-- Not a full matrix by default.
-- `@cross-browser` only when planned.
-- `@responsive` only when planned.
+- Not a full matrix by default — `npm test` runs `api` + `ui-chromium` + `e2e` only.
+- `@cross-browser` only when planned; runs on `ui-chromium`, `ui-firefox`, `ui-webkit` via `npm run test:cross-browser`.
+- `@responsive` only when planned; runs on `ui-mobile-chromium` via `npm run test:responsive`.
 - No full E2E viewport/browser matrix by default.
+- Do **not** use `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop` as tags — browser/viewport = Playwright projects.
+- API/schema tests are browser-independent — never duplicate per browser.
+- E2E cross-browser = very small smoke only, documented in `specs/e2e/<journey>.md`.
+
+Full reference: [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
+
+---
+
+## Visual / Screenshots (Short)
+
+Two different concepts:
+
+- **Failure artifacts** — automatic on failure (`test-results/`); not visual baselines.
+- **Visual checkpoints** — planned `toHaveScreenshot` in specs with `@visual` + functional assertion first.
+
+Rules:
+
+- use `/implement-visual-checkpoint` only when planned or explicitly requested
+- functional assertion before screenshot; smallest meaningful screenshot scope
+- baselines require explicit approval — never update snapshots silently
+- `@ui` + `@visual` + `@regression` by default; no `@smoke` unless requested
+- no `toHaveScreenshot` in Page Objects or Components
+- mask or stabilize dynamic content before screenshot; do not mask the element under test
+- cross-browser/responsive visual baselines need per-engine or per-viewport approval
+- do not add visual checks to `qa:gate` until baseline environment is stable
+
+Full reference: [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
 
 ---
 
@@ -190,8 +246,25 @@ Browser and viewport belong to Playwright projects, not Playwright tags.
 - CI is zero-test safe.
 - `qa:gate` + `test:list` always run.
 - Matrix runs when tests exist.
-- Playwright/Allure artifacts uploaded when generated.
+- Playwright artifacts: `playwright-report/`, `test-results/` (failure diagnostics only).
+- Allure raw results: `reports/allure/results/` — written during test runs.
+- Allure HTML: `reports/allure/html/` — built via `npm run report:allure:generate`.
 - TMS publishing is not enabled by default.
+
+### Allure readability defaults
+
+- Playwright reporter uses `detail: false` — only explicit `test.step` appear in the report (no click/expect noise).
+- Use `applyAllureMetadata(testInfo, { feature })` in specs for feature, story, layer, severity, and domain tags.
+- Use `test.step` for meaningful user-level phases in UI, E2E, and API specs.
+- Config: `reports/allure/allurerc.mjs` (Allure 3 — no `--clean` flag).
+
+Local workflow after tests:
+
+```bash
+npm test                        # or test:ui / test:api / test:e2e
+npm run report:allure:generate
+npm run report:allure:open
+```
 
 ---
 
@@ -216,6 +289,7 @@ Optional patterns when a project creates `src/test/**`: [Helper Recipes](HELPER_
 ## Links
 
 - [README.md](../README.md)
+- [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
 - [API Collection Integration](API_COLLECTION_INTEGRATION.md)
 - [Start a New Project](START_NEW_PROJECT.md)
 - [Helper Recipes](HELPER_RECIPES.md)

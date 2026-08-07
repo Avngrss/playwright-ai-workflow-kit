@@ -33,6 +33,7 @@ Follow these rules:
 - Project Map Rules;
 - Configuration and Secrets Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
+- Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -242,6 +243,12 @@ After the fix, run:
 2. related API specs if shared builders, generators, schemas, assertion helpers, API clients, or fixtures changed;
 3. the quality gate command from the project map.
 
+4. remove temporary discovery/debug artifacts created during healing.
+
+Rule reference:
+
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`
+
 If verification cannot be completed, report why.
 
 ---
@@ -297,7 +304,8 @@ This skill is complete when:
 - schemas are changed only when schema/contract mismatch is confirmed;
 - reusable invalid data is fixed in builders or generators;
 - impacted specs are rerun or documented as not run;
-- quality gate is rerun or documented as not run.
+- quality gate is rerun or documented as not run;
+- temporary debug scripts and discovery dumps created during healing were removed or explicitly preserved by user request.
 
 ---
 

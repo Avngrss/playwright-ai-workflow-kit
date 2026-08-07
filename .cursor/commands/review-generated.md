@@ -33,6 +33,7 @@ stop and report what information or decision is missing.
 
 After changes:
 run impacted specs/checks and quality gate from project map.
+remove temporary discovery/debug scripts and JSON dumps before finishing.
 
 Report:
 - files changed
