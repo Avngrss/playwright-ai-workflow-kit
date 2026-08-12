@@ -764,6 +764,7 @@ Registered feature/domain tags:
 - `@register` — customer registration UI/API coverage
 - `@registration` — registration journey or broader registration area coverage
 - `@checkout` — checkout and purchase E2E/UI coverage
+- `@contact` — contact form UI/API coverage
 
 ---
 

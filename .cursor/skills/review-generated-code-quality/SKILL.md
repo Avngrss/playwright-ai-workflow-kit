@@ -147,6 +147,7 @@ Flag as major when:
 
 - one or more ready scenarios from the plan are missing in generated tests;
 - a form/mutation feature includes only negative or only positive branch although both are ready in plan;
+- a form/mutation feature has only an optional-path positive (for example submit with attachment) and no plain happy-path submit with required fields only;
 - implementation report claims completion without a clear scenario-to-test mapping;
 - a scenario is silently skipped because "covered by another layer" without plan approval.
 
@@ -407,12 +408,25 @@ Accept UI tests that verify:
 
 For form and mutation-oriented UI features, verify that coverage includes both:
 
-- a positive user path;
+- a **plain positive** user path with required fields only;
 - a negative user-facing validation/conflict/error path.
+
+Plain positive is the core success path.
+
+Optional success variants are additive, not replacements.
+
+Examples of optional-path positives that must not be the only success coverage:
+
+- contact submit with attachment;
+- checkout with optional promo code;
+- profile save with optional avatar upload;
+- form submit with optional newsletter opt-in.
 
 Flag as major when:
 
 - feature is marked complete but has only positive or only negative UI branch despite both being planned ready;
+- only optional-path success exists and the plain happy path is missing;
+- smoke coverage uses only the optional variant while the plain happy path is absent or demoted without plan justification;
 - UI suite verifies only backend-like predicates and misses visible negative feedback state.
 
 If a branch is blocked by missing deterministic setup, require explicit blocked/postponed documentation instead of silently skipping.

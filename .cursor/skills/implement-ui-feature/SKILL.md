@@ -277,14 +277,40 @@ Do not expand UI coverage just because related controls or states exist on the p
 
 ### 4A. Positive And Negative UI Balance
 
-For form and mutation-oriented features (for example: login, registration, checkout, profile update), implement both:
+For form and mutation-oriented features (for example: login, registration, contact form, checkout, profile update), implement both:
 
-- at least one positive user path proving successful interaction;
+- at least one **plain positive** user path proving successful interaction;
 - at least one negative user-facing path proving visible validation, conflict, or error feedback.
 
-If a negative or positive branch is documented as ready to implement now in the feature plan, do not skip it.
+Plain positive means the core happy path with required fields only.
 
-If one branch is blocked (for example due to missing setup or unstable dependency), keep the implemented branch and report the blocker explicitly.
+Do **not** treat an optional-path success as the only positive coverage.
+
+Examples of optional-path positives that do not replace the plain happy path:
+
+- submit with optional file attachment;
+- submit with optional checkbox/newsletter;
+- submit with optional secondary field filled;
+- submit with an advanced or non-default option that is not required for success.
+
+Rules:
+
+- if successful form submit is ready to implement now, implement a plain positive test first;
+- keep optional success variants as separate tests when they cover a distinct risk;
+- prefer `@smoke` for the plain positive path;
+- prefer `@regression` for optional success variants unless the plan explicitly makes the optional path the critical smoke journey;
+- if a negative or positive branch is documented as ready to implement now, do not skip it;
+- if one branch is blocked, keep the implemented branch and report the blocker explicitly.
+
+Bad incomplete coverage:
+
+- only "submit valid form with attachment" exists;
+- no plain "submit valid form" success path.
+
+Good coverage split:
+
+- smoke: submit valid form and see success confirmation;
+- regression: submit valid form with optional empty `.txt` attachment and see success confirmation.
 
 ---
 
@@ -960,7 +986,8 @@ This skill is complete when:
 - selected UI scope was validated;
 - project map was followed;
 - scope did not expand to adjacent behavior;
-- form/mutation-style UI scenarios include both positive and negative user-facing coverage when both are planned as ready;
+- form/mutation-style UI scenarios include both plain positive and negative user-facing coverage when both are planned as ready;
+- optional success variants do not replace the plain happy path as the only positive coverage;
 - each implemented UI scenario has distinct user-facing value;
 - UI tests do not duplicate API/schema behavior without UI-specific risk;
 - required data was identified before tests;

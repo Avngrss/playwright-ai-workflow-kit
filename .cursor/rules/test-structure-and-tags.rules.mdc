@@ -631,6 +631,14 @@ The actual allowed tags must be documented by the project tag registry or projec
 - A test should not be tagged with both `@smoke` and `@regression` unless the project explicitly requires duplicated classification.
 - If smoke tests should also run during regression, configure the regression pipeline to include both `@smoke` and `@regression`.
 
+For form or mutation UI features, smoke should include the **plain happy path** when that success path is in scope.
+
+Plain happy path means required fields only and the core success confirmation.
+
+Optional success variants such as attachment upload, optional checkboxes, or optional secondary fields belong in `@regression` by default.
+
+Do not make an optional-path success the only smoke positive while the plain happy path is missing.
+
 ### Recommended CI filtering idea
 
 ```text

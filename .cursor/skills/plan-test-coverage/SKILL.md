@@ -598,11 +598,27 @@ Use parameterized cases or datasets when variants verify the same behavior with 
 
 Do not create one standalone scenario per data value unless each value has unique product risk.
 
+For form or mutation happy paths, keep the **plain successful submit** as its own ready scenario.
+
+Do not fold the only positive coverage into an optional variant.
+
+Optional extras such as:
+
+- file attachment;
+- optional checkboxes;
+- optional secondary fields;
+- non-default advanced options;
+
+must be planned as separate scenarios or clearly secondary variants.
+
+Do **not** write a single ready UI scenario that agents can implement only as "valid submit with optional attachment/extra field" and leave the plain happy path uncovered.
+
 Good separate scenarios:
 
 - invalid email feedback;
 - required field feedback;
 - successful submit;
+- successful submit with optional attachment, when attachment risk is distinct;
 - duplicate email feedback.
 
 Good parameterized or dataset cases:
@@ -931,6 +947,7 @@ This skill is complete when:
 - E2E is **not** included in the feature plan;
 - potential E2E journey candidates are noted with path to `specs/e2e/<journey>.md` when applicable;
 - UI scenarios include unique UI risk and why API/schema is not sufficient;
+- form/mutation happy paths keep a plain successful submit separate from optional success variants;
 - API tests cover contract or backend risks;
 - documented API negative/error behavior is planned or blocked/postponed with reason;
 - documented boundary behavior is planned or blocked/postponed with reason;

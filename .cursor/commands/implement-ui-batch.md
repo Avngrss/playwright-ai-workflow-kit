@@ -39,7 +39,8 @@ Tests:
 - avoid raw selector mechanics in specs
 - avoid inline random data
 - keep assertions in specs or dedicated assertion helpers
-- for form/mutation features, keep both positive and negative user-facing branches when both are planned ready
+- for form/mutation features, keep both plain positive and negative user-facing branches when both are planned ready
+- do not treat optional-path success (attachment, optional fields) as the only positive coverage; keep a plain happy path
 - move repeated page-open + loaded-marker setup into beforeEach when shared in one describe
 
 If blocked:
