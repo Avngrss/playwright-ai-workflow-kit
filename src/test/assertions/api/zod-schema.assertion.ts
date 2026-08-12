@@ -12,16 +12,13 @@ export function expectToMatchSchema<T>(
 ): T {
   const result = schema.safeParse(value);
 
-  expect(
-    result.success,
-    result.success
-      ? message
-      : `${message}\n${formatIssues(result.error.issues)}`,
-  ).toBeTruthy();
-
-  if (!result.success) {
-    throw new Error(message);
+  if (result.success) {
+    return result.data;
   }
 
-  return result.data;
+  const failureMessage = `${message}\n${formatIssues(result.error.issues)}`;
+
+  expect(result.success, failureMessage).toBe(true);
+
+  throw new Error(failureMessage);
 }
