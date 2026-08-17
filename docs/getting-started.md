@@ -19,7 +19,11 @@ Clone, install, env, and where files live. Then go to [Quick flow](quick-flow.md
    cp .env.example .env
    ```
 
-   Fill only what you use: `UI_BASE_URL` for browser tests, `API_BASE_URL` for API tests. Extra names must already exist in `.cursor/rules/00-project-map.mdc`. Specs must not read `process.env`. Never commit `.env`.
+   Simple project: fill `UI_BASE_URL` (browser) and `API_BASE_URL` (API).
+
+   Several UI apps or API services: uncomment only the names this product has in `.env.example` (for example `CUSTOMER_APP_URL`, `ADMIN_APP_URL`, `AUTH_API_URL`), then register the **same** names in `.cursor/rules/00-project-map.mdc` before tests use them. Do not invent names in specs. Do not derive an API host from a UI host.
+
+   Specs must not read `process.env`. Never commit `.env`.
 
 4. Confirm the empty starter:
 

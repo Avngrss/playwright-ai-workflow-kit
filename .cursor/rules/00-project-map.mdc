@@ -363,10 +363,12 @@ The project map is the source of truth for every registered target environment n
 
 Framework env template:
 
-- `.env.example` — provider-agnostic placeholders only; safe to commit
+- `.env.example` — starter defaults (`UI_BASE_URL`, `API_BASE_URL`) plus commented multi-target examples; safe to commit
 - `.env` — local values only; never commit
 
 Copy `.env.example` to `.env` locally and fill placeholders when needed.
+
+Commented names in `.env.example` (`CUSTOMER_APP_URL`, `ADMIN_APP_URL`, `AUTH_API_URL`, and similar) are **examples only**. They are not registered until this project map lists them as actual Feature Targets.
 
 ### Feature Targets / simple baseline model
 

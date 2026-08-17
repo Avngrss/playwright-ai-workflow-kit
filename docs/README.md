@@ -1,6 +1,7 @@
 # Documentation
 
 ```text
+What is this kit             →  ../README.md
 New machine or new clone     →  getting-started.md
 Implement a feature          →  quick-flow.md
 How tests get a session      →  auth-strategy.md
