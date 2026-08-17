@@ -186,8 +186,7 @@ GitHub repository:
 
 Root documentation entry point:
 
-- `README.md` — kit overview and quick start
-- `docs/README.md` — documentation index (which file to open)
+- `README.md` — kit overview, quick start, scripts, documentation links
 
 User-facing docs:
 
@@ -1035,7 +1034,7 @@ Playwright project status:
 
 User-facing workflow docs:
 
-- `docs/README.md` — documentation index
+- `README.md` — overview, quick start, links to guides below
 - `docs/getting-started.md`
 - `docs/quick-flow.md`
 - `docs/long-flow.md`
