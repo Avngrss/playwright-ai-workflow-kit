@@ -12,10 +12,9 @@ state/
 .playwright-mcp/
 .env
 .env.uat
-reports/*
-!reports/allure/
-reports/allure/*
-!reports/allure/allurerc.mjs
+# Allure generated output (config stays tracked under reports/allure/)
+reports/allure/results/
+reports/allure/html/
 allure-results/
 allure-report/
 .scannerwork/
@@ -28,4 +27,3 @@ discover-*-output.json
 scripts/debug-*.mjs
 scripts/discover-*.mjs
 scripts/scratch-*.mjs
-

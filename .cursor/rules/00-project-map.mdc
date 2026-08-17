@@ -668,7 +668,7 @@ Runtime artifact folders (gitignored):
 - `playwright-report/` — Playwright HTML report
 - `reports/allure/results/` — raw Allure results from test runs
 - `reports/allure/html/` — generated Allure HTML report
-- `reports/allure/allurerc.mjs` — Allure 3 config (committed; `output`, `hideLabels`, `groupBy: ["feature", "story"]`)
+- `reports/allure/allurerc.mjs` — Allure 3 config (committed; `output`, `hideLabels`, `groupBy: ["layer", "feature", "story"]`)
 
 Allure metadata helper (created per project when Allure metadata is first used):
 
