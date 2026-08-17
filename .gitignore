@@ -7,6 +7,8 @@ playwright-report/
 /playwright/.cache/
 /playwright/.auth/
 .auth/
+state/
+*.storage-state.json
 .playwright-mcp/
 .env
 .env.uat
@@ -25,4 +27,3 @@ discover-*-output.json
 scripts/debug-*.mjs
 scripts/discover-*.mjs
 scripts/scratch-*.mjs
-

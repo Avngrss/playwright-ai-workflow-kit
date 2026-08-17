@@ -1,415 +1,98 @@
-# AI Skills and Commands Playbook
+# Commands
 
-## Purpose
-
-This playbook explains how to use the AI skills and Cursor slash commands for the **Playwright AI Workflow Kit** — an AI-assisted workflow kit for Playwright automation projects.
-
-**npm package name:** `playwright-ai-workflow-kit`
-
-**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
-
-Use this document to decide:
-
-- which skill fits the task;
-- which command to run;
-- what to put into the command placeholders;
-- what the agent is allowed to change;
-- how to verify the result.
-
-The goal is to keep prompts short, avoid token waste, prevent scope creep, and make AI-generated code consistent with the workflow kit conventions.
-
-**New to the Playwright AI Workflow Kit?** Start with [Start a New Project](START_NEW_PROJECT.md) for setup, structure, and first-workflow commands. You can also use this repository as a **template for new automation projects**.
+Slash-command templates. When to run them: [Quick flow](quick-flow.md) or [Long flow](long-flow.md). Fuller prompts: [Prompts](prompts.md).
 
 ---
 
-## Core Model
+## Before you send a command
 
-```text
-Project Map = where things live
-Rules = what must never be violated
-Skills = how to do a specific task
-Commands = short launchers for common tasks
-Your added context = concrete task details
-Verification = proof that the result works
-```
+1. Which command?
+2. Which feature plan or files are the input?
+3. What scope is allowed?
+4. What should be verified after?
 
-Use one main skill per task.
-
-Do not use generic "write code" prompts.
-
-Choose the smallest skill that matches the task.
+Prefer Agent mode when the command must write a file (`specs/<feature>/<feature>.md`, tests, Page Objects).
 
 ---
 
-## Package Test Scripts
+## Command index
 
-Baseline-safe scripts (all use `--pass-with-no-tests`; zero tests is valid):
+| Command | Skill |
+|---------|--------|
+| [`/plan-feature`](#plan-feature) | `plan-test-coverage` |
+| [`/update-feature-plan`](#update-feature-plan) | `plan-test-coverage` |
+| [`/plan-from-tms`](#plan-from-tms) | `plan-from-tms` |
+| [`/align-plan-with-tms`](#align-plan-with-tms) | `align-plan-with-tms` |
+| [`/inspect-api-collection`](#inspect-api-collection) | `inspect-api-collection` |
+| [`/plan-from-api-collection`](#plan-from-api-collection) | `plan-from-api-collection` |
+| [`/audit-api-collection-coverage`](#audit-api-collection-coverage) | `audit-api-collection-coverage` |
+| [`/implement-api-batch`](#implement-api-batch) | `implement-api-feature` |
+| [`/implement-ui-batch`](#implement-ui-batch) | `implement-ui-feature` |
+| [`/plan-e2e-journey`](#plan-e2e-journey) | `plan-e2e-journey` |
+| [`/implement-e2e-flow`](#implement-e2e-flow) | `implement-e2e-flow` |
+| [`/implement-visual-checkpoint`](#implement-visual-checkpoint) | `implement-visual-test` |
+| [`/create-builder`](#create-builder) | `create-test-data-builder` |
+| [`/discover-ui-components`](#discover-ui-components) | `discover-ui-components` |
+| [`/create-page-object`](#create-page-object) | `create-page-object` |
+| [`/create-api-client`](#create-api-client) | `create-api-client` |
+| [`/create-fixture`](#create-fixture) | `create-fixture` |
+| [`/refactor-page-object-to-components`](#refactor-page-object-to-components) | `refactor-page-object-to-components` |
+| [`/review-generated`](#review-generated) | `review-generated-code-quality` |
+| [`/audit-test-data-strategy`](#audit-test-data-strategy) | `audit-test-data-strategy` |
+| [`/audit-test-stability`](#audit-test-stability) | `audit-test-stability` |
+| [`/audit-test-coverage`](#audit-test-coverage) | `audit-test-coverage` |
+| [`/review-ui-suite`](#review-ui-suite) | `review-ui-suite` |
+| [`/review-framework-change`](#review-framework-change) | `review-framework-change` |
+| [`/refactor-overengineering`](#refactor-overengineering) | `refactor-overengineering` |
+| [`/heal-api-test`](#heal-api-test) | `heal-api-test` |
+| [`/heal-ui-test`](#heal-ui-test) | `heal-ui-test` |
+| [`/run-verification`](#run-verification) | `run-verification` |
+| [`/update-project-map`](#update-project-map) | `update-project-map` |
+| [`/harden-rules`](#harden-rules) | `harden-rules-from-failure` |
+| [`/add-allure-metadata`](#add-allure-metadata) | `configure-allure-reporting` |
 
-| Script | Purpose |
-|--------|---------|
-| `npm run qa:gate` | Convention checks |
-| `npm test` | Baseline run: `api` + `ui-chromium` + `e2e` |
-| `npm run test:list` | List tests without executing |
-| `npm run test:api` | API project (`api`) |
-| `npm run test:ui` | UI project (`ui-chromium`) |
-| `npm run test:e2e` | E2E project (`e2e`) |
-| `npm run test:smoke` | Baseline `@smoke` run on `api` + `ui-chromium` + `e2e` |
-| `npm run test:regression` | Baseline `@regression` run on `api` + `ui-chromium` + `e2e` |
-| `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
-| `npm run test:cross-browser` | `@cross-browser` on `ui-chromium`, `ui-firefox`, `ui-webkit` |
-| `npm run test:responsive` | `@responsive` on `ui-mobile-chromium` |
-
-Rules:
-
-- `npm test` is baseline scope only (`api`, `ui-chromium`, `e2e`) and not a full browser/mobile matrix;
-- layer scripts use registered default execution projects: `api`, `ui-chromium`, `e2e`;
-- smoke/regression/visual scripts are baseline-scoped tag runs;
-- cross-browser/responsive scripts run planned coverage-type tags on registered UI projects only;
-- browser/viewport execution still depends on `playwright.config.ts` projects;
-- first real tests come from `/plan-feature`, `/plan-e2e-journey`, and implementation commands.
-
-Starter CI baseline (`.github/workflows/playwright.yml`):
-
-- enables npm dependency caching via `actions/setup-node` (`cache: npm`);
-- always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
-- detects test files and skips matrix execution in zero-test state;
-- maps repository variables to Playwright env when matrix jobs run (empty fallback when unset);
-- runs matrix jobs only when tests exist;
-- uploads generated Playwright artifacts when present (`playwright-report/`, `test-results/`);
-- generates and uploads Allure artifacts when present (`reports/allure/results/`, `reports/allure/html/`);
-- does not configure TMS publishing or GitHub Pages publishing by default.
-
-Reporting (Playwright HTML + Allure):
-
-- enabled in `playwright.config.ts` for local and CI artifacts only;
-- Allure is **not** TMS result publishing;
-- failure screenshots, traces, and videos are retained on failure only;
-- `npm run report:allure:generate` builds `reports/allure/html/` from `reports/allure/results/`;
-- CI generates/uploads Allure report only when results exist;
-- step-level custom Allure screenshots are project-specific and not enabled by default;
-- zero-test starter remains valid — no report folders required when matrix is skipped.
-
-CI variables and secrets model:
-
-- **Feature Target variables** (non-sensitive URLs): simple baseline `UI_BASE_URL` + `API_BASE_URL`; named targets only when registered in project map.
-- **Secrets** (tokens/passwords/credentials): user passwords, API tokens, service accounts, TMS tokens, external service credentials.
-- local `.env` corresponds conceptually to CI variables and secrets; never commit real `.env`.
-- never hardcode secrets in workflow YAML; prefer environment secrets for staging/production-like targets.
-- document required CI configuration per real project in `.cursor/rules/00-project-map.mdc`.
-- clean starter does not require configured variables or secrets; TMS publishing remains disabled unless explicitly planned.
-
-Each feature plan lists only the Feature Targets it uses: UI/application, API/service, external/partner, and setup/cleanup when relevant. Do not assume a global precondition API URL.
+Skills live under `.cursor/skills/<name>/SKILL.md`. Commands stay short; skills own the procedure.
 
 ---
 
-## Starter Baseline Cleanup
+## Catalog
 
-Use when converting the repository into a reusable **Playwright AI Workflow Kit** baseline or cleaning project-specific artifacts from a copied template.
-
-Rule:
-
-- `.cursor/rules/framework-starter-boundary.rules.mdc`
-
-Keep:
-
-- rules, skills, commands, reusable docs, generic scripts, and domain-neutral framework mechanisms
-
-Remove or exclude unless explicitly approved as templates:
-
-- project tests, specs, and the full `src/test/**` implementation layer (Page Objects, fixtures, schemas, helpers, data, reporting helpers, and related assets)
-- product-specific docs
-
-The clean starter baseline intentionally omits `src/test/**`. Skills such as `create-fixture`, `create-page-object`, and implementation skills create required structure per application.
-
-Do not delete:
-
-- ambiguous files without user decision;
-- framework docs/rules/skills/commands;
-- package/config files without explicit review
-
-Generated/runtime artifacts such as `.playwright-mcp/**`, reports, and local run output are not framework source content.
-
-Cleanup work must produce a report with removed files, preserved files, unsure files, verification, and remaining risks.
+The sections below are the command templates. Fill placeholders. Do not paste full rules into the prompt.
 
 ---
 
-## Test Data Generation Baseline Policy
+## Register auth in the project map (before features)
 
-The clean starter baseline ships without `src/test/data/**`.
+Not a slash command. Tell the agent once, then plan features.
 
-Create project data files only when implementation needs reusable generated data:
+Guide: [Auth strategy](auth-strategy.md)
 
-- `src/test/data/builders/**` for reusable structured domain data;
-- `src/test/data/generators/**` for primitive unique values.
+### Template
 
-Rules:
+```md
+Update project map Auth Strategy in `.cursor/rules/00-project-map.mdc`.
 
-- do not generate random data directly in specs;
-- do not call faker directly in specs;
-- `@faker-js/faker` is optional and should be added only for a real project need;
-- if faker is added, keep generation deterministic enough for repeatable debugging.
+Follow: @.cursor/rules/authentication-strategy.rules.mdc
 
-Rule:
+Do not store tokens, passwords, or session JSON in the map, specs, or git.
 
-- `.cursor/rules/test-data-generation.rules.mdc`
+How API tests get a session:
+<helper path, or "create a user via this API then login">
 
----
+How UI tests get a session:
+<session file path per role, inject, or create user>
 
-## Planning Layers
+Roles:
+<product role names>
 
-Two planning layers exist. Do not mix them.
+Default for new features:
+signed-in precondition | no session
 
-### Feature coverage plans
-
-- location: `specs/<feature>.md`
-- levels: API, UI, schema/contract, visual, not automated
-- do **not** include E2E
-
-### E2E journey plans
-
-- location: `specs/e2e/<journey>.md`
-- full user or business flows only
-- may reuse API/UI capabilities but must not duplicate their coverage
-
----
-
-## Test Levels
-
-Use the lowest reliable level that proves the behavior.
-
-- **API** — backend contract, validation, auth, data predicates, negative and boundary behavior
-- **UI** — focused user-facing browser behavior, visible feedback, page/form/control interaction
-- **E2E** — critical full user or business journeys crossing multiple states, pages, or system boundaries; planned separately in `specs/e2e/<journey>.md`
-- **visual** — meaningful layout or appearance regression inside stable UI states
-- **schema/contract** — response or payload shape validation
-- **not automated** — manual, unstable, duplicate, or low-value automation
-
-Cross-browser and responsive coverage are **not** default matrix expansion.
-
-They are focused additions for documented browser or viewport risks on top of normal UI coverage.
-
-**Full reference:** [Cross-Browser and Visual Testing](CROSS_BROWSER_AND_VISUAL_TESTING.md)
-
-- do not run every UI or E2E test in every browser or viewport by default
-- API and schema tests are browser-independent
-- E2E cross-browser should stay limited to very small smoke journeys and be planned in `specs/e2e/<journey>.md`
-- responsive coverage should use functional assertions unless planned visual coverage with approved baselines exists
-
-Rule:
-
-- `.cursor/rules/browser-and-responsive-testing.rules.mdc`
-
-Tag and metadata policy:
-
-- Playwright tags describe test intent: layer (`@api`, `@ui`, `@e2e`, `@visual`), execution scope (`@smoke`, `@regression`), optional registered coverage type (`@cross-browser`, `@responsive`);
-- do not use browser or device names as tags: `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop`;
-- browser and viewport belong to Playwright projects (`api`, `ui-chromium`, `ui-firefox`, `ui-webkit`, `ui-mobile-chromium`, `e2e`) and Allure reporting metadata;
-- Allure metadata must not replace Playwright tags.
-
-Not every UI test is E2E.
-
-Feature plans use ready to implement now / blocked-postponed for API, UI, schema, visual, and not automated levels.
-
-E2E journey plans use the same readiness classification for full-journey scenarios.
-
-Recommended next commands are informational only during planning.
-
-Feature plans should recommend `/plan-e2e-journey` (not `/implement-e2e-flow`) when a full journey candidate exists.
-
-Recommend `/implement-e2e-flow` only from an approved E2E journey plan at `specs/e2e/<journey>.md` with at least one ready-to-implement-now scenario.
-
----
-
-## Commands vs Skills
-
-### Skill
-
-A skill is the procedure.
-
-Examples:
-
-- how to implement UI feature tests;
-- how to implement E2E flow tests;
-- how to implement API tests;
-- how to heal a failing UI test;
-- how to review generated code;
-- how to plan coverage.
-
-### Command
-
-A command is a short launcher for a skill.
-
-Examples:
-
-- `/plan-feature`
-- `/plan-from-tms`
-- `/align-plan-with-tms`
-- `/implement-api-batch`
-- `/implement-ui-batch`
-- `/plan-e2e-journey`
-- `/implement-e2e-flow`
-- `/review-generated`
-- `/audit-test-coverage`
-- `/audit-test-data-strategy`
-- `/audit-test-stability`
-- `/heal-api-test`
-
-Commands should stay short. Do not copy full rules or full skills into commands.
-
-Good command structure:
-
-```text
-Use Skill: <skill path>
-
-Target / Feature plan:
-<placeholder>
-
-Implementation scope / Task:
-<placeholder>
-
-Context:
-<placeholder>
-
-Report:
-<short report fields>
+Stop after the project map is updated.
+Do not implement tests in this step.
 ```
 
 ---
-
-## Golden Workflow For New Features
-
-### Normal planning (UI/API/requirements)
-
-```text
-/plan-feature
-→ review plan (optional, use /review-generated on specs/<feature>.md)
-→ /create-builder, only if needed
-→ /implement-api-batch (all API coverage ready to implement now)
-→ /implement-ui-batch (all UI coverage ready to implement now)
-→ /implement-visual-checkpoint, only if planned/requested
-→ /review-generated
-→ /audit-test-coverage (optional; plan vs implemented coverage alignment)
-→ /audit-test-data-strategy (optional; before destructive flows or shared-data review)
-→ /audit-test-stability (optional; flaky patterns before commit)
-→ /run-verification
-→ /refactor-overengineering or /heal-api-test / /heal-ui-test only if needed
-```
-
-### E2E journey planning (separate from feature coverage)
-
-```text
-/plan-e2e-journey
-→ review journey plan
-→ /audit-test-data-strategy (optional; E2E data/cleanup/isolation before implementation)
-→ /implement-e2e-flow specs/e2e/<journey>.md (only when journey plan has ready-to-implement-now scenarios)
-→ /review-generated
-→ /audit-test-coverage (optional; journey plan vs E2E specs)
-→ /audit-test-data-strategy (optional; E2E data policy vs implementation)
-→ /audit-test-stability (optional; E2E stability patterns before commit)
-→ /run-verification
-```
-
-E2E is **not** part of `/plan-feature` output. Plan full journeys separately when a critical cross-boundary flow needs automation beyond API and UI coverage.
-
-### No existing feature plan (TMS is primary input)
-
-```text
-/plan-from-tms
-→ review generated plan
-→ implement selected ready API/UI coverage (same implementation commands as above)
-→ plan E2E journeys separately in specs/e2e/ when needed
-```
-
-### Existing feature plan + TMS alignment
-
-```text
-/plan-feature (or plan already exists)
-→ /align-plan-with-tms
-→ review aligned plan
-→ implement selected ready API/UI coverage
-→ plan E2E journeys separately in specs/e2e/ when needed
-```
-
-Planning creates the full coverage picture.
-
-Implementation executes **ready to implement now** scope from the plan.
-
-Do not implement **blocked/postponed** coverage without contract or product clarification.
-
-Do not implement API and UI in one run unless explicitly approved.
-
-Do not implement E2E together with API or UI in one run unless explicitly approved.
-
-Do not implement directly from TMS cases — use feature plans and selected ready coverage.
-
-Do not add E2E scenarios to feature plans — use `specs/e2e/<journey>.md` instead.
-
----
-
-## TMS Planning Conventions
-
-- TMS integration is optional and provider-agnostic at the workflow kit level.
-- **Qase** is a currently supported example provider via user/global Cursor MCP when configured (server name `qase`); other TMS providers may be added later.
-- TMS credentials belong in user/global MCP settings or local secret storage — not in repository env files or committed MCP config.
-- Project MCP (`.cursor/mcp.json`): `playwright` only — project-level; safe to commit.
-- Default mode: **read-only** (list/read cases; no writes, runs, or result publishing without explicit approval).
-- TMS cases are **planning input and traceability** — do not assume 1 TMS case = 1 Playwright test.
-- TMS Source and TMS Mapping live in `specs/<feature>.md` (TMS-aligned plan).
-- TMS reporter/result publishing is **not configured** — separate from read-only TMS planning; do not add reporter integration by default.
-- Never commit or document real TMS tokens in repo files.
-
-| Command | When |
-|---|---|
-| `/plan-from-tms` | No `specs/<feature>.md` yet; TMS cases are main input |
-| `/align-plan-with-tms` | Plan exists; align with TMS suite/cases |
-| `/plan-feature` | Plan from UI/API/requirements (not TMS-first) |
-
----
-
-## Execution Mode Guidance
-
-### `/plan-feature`
-
-Use Agent mode when the expected output is a `specs/<feature>.md` file.
-
-Do not use Cursor Plan mode `Build` for planning-only tasks.
-
-Reason:
-
-```text
-Build can start implementation.
-```
-
-Expected result:
-
-```text
-Only specs/<feature>.md is created or updated.
-```
-
-### Implementation commands
-
-Use Agent mode.
-
-Examples:
-
-- `/implement-api-batch`
-- `/implement-ui-batch`
-- `/implement-e2e-flow`
-- `/create-builder`
-- `/implement-visual-checkpoint`
-- `/refactor-overengineering`
-- `/heal-api-test`
-- `/heal-ui-test`
-
-### Review commands
-
-Use review-only mode/intent.
-
-The agent must not modify files when running review commands.
-
----
-
-# Command Catalog
 
 ## `/plan-feature`
 
@@ -434,7 +117,7 @@ The plan should classify coverage as:
 
 - starting a new feature;
 - deciding API/UI/visual/schema coverage;
-- creating or updating `specs/<feature>.md`;
+- creating or updating `specs/<feature>/<feature>.md`;
 - avoiding duplicate coverage across layers.
 
 ### Do Not Use When
@@ -462,10 +145,11 @@ Create a full feature coverage plan.
 
 Scope:
 - planning only
-- allowed change: create/update only specs/<feature>.md
-- do not include E2E — E2E journeys are planned separately in specs/e2e/<journey>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
+- do not include E2E — E2E journeys are planned separately in specs/e2e/<area>/<journey>.md
 
 Output:
+- Auth Strategy (required, role, auth as, API/UI modes from the project map)
 - coverage matrix
 - smoke/regression split
 - API coverage ready to implement now
@@ -501,10 +185,66 @@ Stop condition:
 - recommended next commands are output only, not permission to execute
 
 Execution mode guidance:
-- prefer Agent mode for this command when the expected output is a specs/<feature>.md file
+- prefer Agent mode for this command when the expected output is a specs/<feature>/<feature>.md file
 - do not use Cursor Plan mode Build for planning-only tasks
 - do not require a separate Build step or follow-up implementation step to write the plan file
 ```
+
+---
+
+## `/update-feature-plan`
+
+### Purpose
+
+Refresh an **existing** feature plan after product, contract, locator, or requirement change.
+
+Use this before implementing or healing tests when the app changed — not for a first-time plan (`/plan-feature`) or a pure technical heal.
+
+`What changed` may be `unknown`. The agent then discovers the delta from the plan vs the app, contract, or failing tests.
+
+Requirements may be attached the same way as `/plan-feature` (`requirements/specs`, a path, a link, pasted text, or `@file`). When present, they are the intended behavior for the refresh. If they disagree with the live app, the agent records the drift instead of guessing.
+
+`Layer to refresh` may be `api`, `ui`, `both`, or omitted. Specifying a layer is helpful; the agent still checks the other layer for side effects.
+
+For E2E journey changes, use `/plan-e2e-journey`, not this command.
+
+### Skill
+
+```text
+@.cursor/skills/plan-test-coverage/SKILL.md
+```
+
+### Use When
+
+- requirements, validation, or UI flow changed;
+- API contract or status expectations changed;
+- controls or screens were added or removed;
+- failing tests may reflect requirement drift, not just locators;
+- TMS, OpenAPI, or product docs disagree with the current plan;
+- something broke and the exact product change is not known.
+
+### Do Not Use When
+
+- the plan is current and only a locator/timing fix is needed (`/heal-ui-test` or `/heal-api-test`);
+- creating a net-new feature with no existing plan (`/plan-feature`);
+- the failing coverage is a full E2E journey (`/plan-e2e-journey`).
+
+### Template
+
+See `.cursor/commands/update-feature-plan.md`.
+
+### After Update
+
+```text
+/update-feature-plan
+→ review specs/<feature>/<feature>.md
+→ /implement-api-batch and/or /implement-ui-batch (ready items only)
+→ /heal-* only for technical drift against the updated plan
+→ npm run qa:gate
+→ /review-generated
+```
+
+Rule: `.cursor/rules/feature-change-lifecycle.rules.mdc`
 
 ---
 
@@ -512,7 +252,7 @@ Execution mode guidance:
 
 ### Purpose
 
-Create `specs/<feature>.md` from TMS cases when **no feature plan exists**.
+Create `specs/<feature>/<feature>.md` from TMS cases when **no feature plan exists**.
 
 ### Skill
 
@@ -523,11 +263,11 @@ Create `specs/<feature>.md` from TMS cases when **no feature plan exists**.
 ### Use When
 
 - TMS suite/cases are the primary planning input;
-- `specs/<feature>.md` does not exist yet.
+- `specs/<feature>/<feature>.md` does not exist yet.
 
 ### Do Not Use When
 
-- `specs/<feature>.md` already exists (use `/align-plan-with-tms`);
+- `specs/<feature>/<feature>.md` already exists (use `/align-plan-with-tms`);
 - implementing tests or modifying TMS entities.
 
 ### Template
@@ -548,10 +288,10 @@ TMS:
 Scope:
 - planning only
 - TMS read-only
-- allowed change: create/update only specs/<feature>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
 
 Stop condition:
-- stop after creating/updating specs/<feature>.md
+- stop after creating/updating specs/<feature>/<feature>.md
 - do not implement tests
 - do not create/update TMS entities, runs, or publish results
 ```
@@ -562,7 +302,7 @@ Stop condition:
 
 ### Purpose
 
-Align an **existing** `specs/<feature>.md` with TMS cases.
+Align an **existing** `specs/<feature>/<feature>.md` with TMS cases.
 
 ### Skill
 
@@ -586,7 +326,7 @@ Align an **existing** `specs/<feature>.md` with TMS cases.
 Use Skill: @.cursor/skills/align-plan-with-tms/SKILL.md
 
 Feature plan:
-specs/<feature>.md
+specs/<feature>/<feature>.md
 
 TMS:
 - provider: <TMS provider, e.g. Qase>
@@ -644,7 +384,7 @@ Inspect API collection sources as planning and audit input without modifying fil
 
 ### Purpose
 
-Create or update `specs/<feature>.md` from a Bruno collection and optional OpenAPI/Swagger source.
+Create or update `specs/<feature>/<feature>.md` from a Bruno collection and optional OpenAPI/Swagger source.
 
 ### Inputs
 
@@ -781,7 +521,7 @@ Report:
 /implement-api-batch
 
 Feature plan:
-@specs/<feature>.md
+@specs/<feature>/<feature>.md
 
 Implementation scope:
 Implement all API coverage from the plan that is currently safe and unblocked.
@@ -861,7 +601,7 @@ Report:
 /implement-ui-batch
 
 Feature plan:
-@specs/<feature>.md
+@specs/<feature>/<feature>.md
 
 Implementation scope:
 Implement all UI coverage from the plan that is currently safe and unblocked.
@@ -877,7 +617,7 @@ If a signed-in scenario requires missing approved auth/setup, report it as block
 
 ### Purpose
 
-Create or update a dedicated E2E journey plan in `specs/e2e/<journey>.md`.
+Create or update a dedicated E2E journey plan in `specs/e2e/<area>/<journey>.md`.
 
 ### Skill
 
@@ -893,7 +633,7 @@ Create or update a dedicated E2E journey plan in `specs/e2e/<journey>.md`.
 
 ### Do Not Use When
 
-- task is feature-level planning in `specs/<feature>.md`;
+- task is feature-level planning in `specs/<feature>/<feature>.md`;
 - task is a short UI functional check;
 - task is E2E implementation.
 
@@ -903,7 +643,7 @@ Create or update a dedicated E2E journey plan in `specs/e2e/<journey>.md`.
 Use Skill: @.cursor/skills/plan-e2e-journey/SKILL.md
 
 E2E journey plan:
-specs/e2e/<journey>.md
+specs/e2e/<area>/<journey>.md
 
 Task:
 Create or update the E2E journey plan only.
@@ -917,6 +657,7 @@ Scope:
 Output:
 - business goal and journey summary
 - E2E boundary (covered/not covered)
+- Auth Strategy (required, role, auth as, modes from the project map)
 - data/setup/cleanup strategy
 - external dependencies and blockers
 - implementation target under tests/e2e/... with @e2e tag
@@ -946,7 +687,7 @@ Do not convert short UI functional tests into E2E.
 
 ### Use When
 
-- `specs/e2e/<journey>.md` exists and includes a ready-to-implement-now scenario;
+- `specs/e2e/<area>/<journey>.md` exists and includes a ready-to-implement-now scenario;
 - setup, data, cleanup or isolation, and final assertion are documented;
 - the scenario is a critical full user or business journey.
 
@@ -1022,7 +763,7 @@ If no runner matches the intended E2E spec path or pattern, stop and report the 
 Use Skill: @.cursor/skills/implement-e2e-flow/SKILL.md
 
 E2E journey plan:
-<path to specs/e2e/<journey>.md>
+<path to specs/e2e/<area>/<journey>.md>
 
 Implementation scope:
 Implement only E2E coverage marked ready to implement now.
@@ -1686,7 +1427,7 @@ Audit/review only — does **not** implement tests.
 Use Skill: @.cursor/skills/audit-test-coverage/SKILL.md
 
 Plan:
-<specs/<feature>.md and/or specs/e2e/<journey>.md>
+<specs/<feature>/<feature>.md and/or specs/e2e/<area>/<journey>.md>
 
 Optional test paths:
 <tests paths or empty>
@@ -1963,29 +1704,35 @@ Investigate and fix a failing UI test.
 
 ```md
 Use Skill: @.cursor/skills/heal-ui-test/SKILL.md
+Follow: @.cursor/rules/feature-change-lifecycle.rules.mdc
 
 Failing test output:
 <insert failure output>
 
+Target:
+<spec/page/component/fixture/data files involved>
+
 Task:
-Heal only the failing UI test.
+Heal only the failing UI test with the smallest correct fix.
 
 Scope:
 - minimal fix only
 - do not refactor unrelated files
-- do not change expected behavior without evidence
+- do not change expected behavior without plan or product evidence
 - do not use waitForTimeout
+- if requirement drift: stop and use /update-feature-plan
 
 Context:
 <any important environment/setup/details>
 
 After fix:
-run impacted spec.
+run impacted UI spec and quality gate from project map.
 
 Report:
 - root cause
 - files changed
 - minimal fix applied
+- whether plan refresh was required instead
 - verification result
 - remaining risks
 ```
@@ -2202,558 +1949,3 @@ Report:
 ```
 
 ---
-
-# Skill Catalog
-
-## configure-allure-reporting
-
-### Purpose
-
-Configure or normalize Allure reporting usage.
-
-### Use When
-
-- adding metadata helper usage;
-- normalizing feature/story/severity/owner labels;
-- updating reporting conventions;
-- adding safe reporting artifacts when explicitly requested.
-
-### Do Not Use When
-
-- test behavior needs to change;
-- Page Objects, API clients, builders, or generators are the target;
-- attachments would include secrets or sensitive data.
-
----
-
-## create-api-client
-
-### Purpose
-
-Create a thin API client only when endpoint call reuse or request composition duplication justifies it.
-
-### Use When
-
-- multiple tests call the same endpoint group;
-- request composition is duplicated;
-- a thin client improves readability.
-
-### Do Not Use When
-
-- one direct `request` call is enough;
-- the client would hide assertions;
-- the client would become a service hierarchy.
-
----
-
-## create-fixture
-
-### Purpose
-
-Create or update fixtures.
-
-### Use When
-
-- reuse is meaningful;
-- fixture is thin;
-- fixture belongs to the correct layer;
-- final fixture entry point remains the spec entry point.
-
-### Do Not Use When
-
-- one-off value is enough;
-- fixture hides business flow or action under test;
-- component is being exposed by default without justification.
-
----
-
-## create-page-object
-
-### Purpose
-
-Create minimal Page Object for a real page, route, screen, or navigation boundary.
-
-### Use When
-
-- current tests need a page abstraction;
-- no existing Page Object covers the route/screen.
-
-### Do Not Use When
-
-- target is a UI block inside an existing page;
-- methods are speculative;
-- a component ownership decision is needed first.
-
----
-
-## create-test-data-builder
-
-### Purpose
-
-Create reusable structured test data.
-
-### Use When
-
-- data is reused;
-- variants/overrides are needed;
-- unique/formatted values are needed.
-
-### Do Not Use When
-
-- small deterministic local constant is enough.
-
----
-
-## discover-ui-components
-
-### Purpose
-
-Decide Page Object vs Component Object ownership.
-
-### Use When
-
-- ownership is unclear;
-- block is reused;
-- Page Object is too large;
-- component extraction is proposed but not justified.
-
-### Do Not Use When
-
-- simple page-specific form can stay in Page Object.
-
----
-
-## harden-rules-from-failure
-
-### Purpose
-
-Decide whether guidance should be hardened after repeated mistakes.
-
-### Use When
-
-- same issue appears repeatedly;
-- rules/skills/commands are missing a guardrail.
-
-### Do Not Use When
-
-- issue is one-off.
-
----
-
-## heal-ui-test
-
-### Purpose
-
-Fix failing UI tests.
-
-### Use When
-
-- UI test fails;
-- root cause must be classified;
-- locator/timing/navigation/data/setup issue is suspected.
-
-### Do Not Use When
-
-- the task is planned implementation;
-- the task is architecture cleanup only.
-
----
-
-## implement-api-feature
-
-### Purpose
-
-Implement API tests from a feature plan.
-
-### Use When
-
-- API implementation scope is selected;
-- endpoint behavior or contract should be tested.
-
-### Do Not Use When
-
-- task is UI-only;
-- contract is too unclear to implement safely.
-
-### Key Rule
-
-Do not create separate tests just to exercise helpers, builders, or clients.
-
----
-
-## implement-ui-feature
-
-### Purpose
-
-Implement UI tests and minimal Page Object updates from a feature plan.
-
-### Use When
-
-- UI implementation scope is selected;
-- planned UI scenarios need automation.
-
-### Do Not Use When
-
-- task is API-only;
-- task is E2E-only;
-- component discovery is the only task;
-- failing test needs healing.
-
-### MCP Rule
-
-Playwright MCP/codegen is optional discovery only. It is not used by default.
-
----
-
-## plan-e2e-journey
-
-### Purpose
-
-Plan a full user/business E2E journey in `specs/e2e/<journey>.md`.
-
-### Use When
-
-- E2E planning is needed for a true cross-boundary journey;
-- lower-level API/UI/schema/visual coverage is insufficient.
-
-### Do Not Use When
-
-- feature-level planning in `specs/<feature>.md` is the task;
-- candidate is a short UI functional check.
-
-### Key Rules
-
-- planning only; no Playwright code;
-- define setup/data/cleanup/blockers;
-- define implementation target under `tests/e2e/...` with `@e2e` tag;
-- do not duplicate feature-level API/UI/schema/visual coverage.
-
----
-
-## implement-e2e-flow
-
-### Purpose
-
-Implement approved full-journey E2E coverage from an E2E journey plan at `specs/e2e/<journey>.md`.
-
-### Use When
-
-- an E2E journey plan exists with a scenario marked ready to implement now;
-- the scenario crosses multiple states, pages, or system boundaries;
-- setup, data, cleanup, and final assertion are documented.
-
-### Do Not Use When
-
-- task is short UI functional coverage;
-- task is API contract coverage;
-- scenario is blocked or postponed;
-- external dependency or runner/config support is missing.
-
-### Key Rules
-
-- location: `tests/e2e/**/*.e2e.spec.ts`
-- tags: `@e2e` plus `@smoke` or `@regression`
-- `@e2e` replaces `@ui` by default for full-journey E2E specs
-- keep journey steps visible in the spec
-- API setup is for preconditions or cleanup only
-- do not validate full API contracts inside E2E
-
----
-
-## implement-visual-test
-
-### Purpose
-
-Add, verify, or approve visual checkpoints.
-
-### Use When
-
-- visual checkpoint is planned or requested;
-- baseline needs explicit approval.
-
-### Do Not Use When
-
-- UI functional tests are the only task.
-
----
-
-## plan-test-coverage
-
-### Purpose
-
-Create a complete feature coverage plan for API, UI, schema, visual, and not automated levels.
-
-E2E is **not** part of feature coverage plans. Plan full journeys separately in `specs/e2e/<journey>.md`.
-
-### Use When
-
-- new feature needs coverage strategy;
-- choosing API/UI/visual/schema/not automated levels.
-
-### Do Not Use When
-
-- implementation already has an approved plan;
-- the task is to plan a full E2E journey (create or update `specs/e2e/<journey>.md` instead).
-
-### Key Rule
-
-Implementation details are not scenarios.
-
----
-
-## refactor-overengineering
-
-### Purpose
-
-Simplify working code without changing behavior.
-
-### Use When
-
-- review found concrete cleanup issue;
-- duplication/over-abstraction exists.
-
-### Do Not Use When
-
-- test is failing and needs healing.
-
----
-
-## refactor-page-object-to-components
-
-### Purpose
-
-Extract justified Component Objects from Page Objects.
-
-### Use When
-
-- component extraction is justified by reuse/complexity/ownership.
-
-### Do Not Use When
-
-- extraction is speculative.
-
----
-
-## review-framework-change
-
-### Purpose
-
-Review framework-level changes.
-
-### Use When
-
-- fixture/config/project map/reporting/rules/skills/core changed.
-
-### Do Not Use When
-
-- only feature tests changed.
-
----
-
-## audit-test-data-strategy
-
-### Purpose
-
-Audit test data safety, isolation, cleanup, and fixture/builder/generator usage.
-
-### Use When
-
-- before E2E or destructive flows;
-- before cleanup;
-- investigating shared mutable data or missing isolation.
-
-### Do Not Use When
-
-- builders/fixtures should be created in the same task;
-- only stability/flaky patterns are in scope.
-
----
-
-## audit-test-stability
-
-### Purpose
-
-Audit UI/E2E tests for flaky patterns and stability risks.
-
-### Use When
-
-- before committing UI/E2E test changes;
-- after UI/E2E implementation;
-- investigating suspected synchronization or hidden-flow issues.
-
-### Do Not Use When
-
-- tests should be fixed in the same task (use heal skills);
-- only coverage alignment is needed.
-
----
-
-## audit-test-coverage
-
-### Purpose
-
-Compare planned coverage vs implemented tests and optional TMS mappings.
-
-### Use When
-
-- checking plan-to-test alignment after implementation;
-- before cleanup or coverage reduction;
-- investigating duplicate, missing, stale, or wrong-layer coverage.
-
-### Do Not Use When
-
-- missing tests should be implemented in the same task;
-- only code quality of recent diffs is needed.
-
----
-
-## review-generated-code-quality
-
-### Purpose
-
-Review generated code for architecture and correctness risks.
-
-### Use When
-
-- before accepting generated implementation;
-- after implementation/refactor/heal.
-
-### Do Not Use When
-
-- files should be modified during the same task.
-
----
-
-## review-ui-suite
-
-### Purpose
-
-Review UI suite quality.
-
-### Use When
-
-- checking existing UI specs/Page Objects/fixtures for quality and flakiness risks.
-
-### Do Not Use When
-
-- framework-level review is needed instead.
-
----
-
-## run-verification
-
-### Purpose
-
-Run smallest sufficient verification.
-
-### Use When
-
-- after changes;
-- before acceptance.
-
-### Do Not Use When
-
-- root cause is unknown and needs healing first.
-
----
-
-## update-project-map
-
-### Purpose
-
-Update project map after structure/convention changes.
-
-### Use When
-
-- files/folders/scripts/tags/fixture entry points/conventions changed.
-
-### Do Not Use When
-
-- no project map impact exists.
-
----
-
-# Playwright MCP Usage
-
-Playwright MCP is optional.
-
-Use MCP only when repository files and existing Page Objects are not enough to understand:
-
-- actual UI structure;
-- stable locators;
-- visible page state;
-- validation messages;
-- route changes;
-- behavior after an action.
-
-Do not use MCP by default for every UI task.
-
-Do not commit raw generated/codegen output.
-
-MCP discoveries must be converted into project architecture:
-
-- locators in Page Objects or Components;
-- assertions in specs;
-- no raw selector mechanics in specs.
-
----
-
-# API Setup For UI Preconditions
-
-When UI tests need backend preconditions:
-
-- prefer approved API setup if it exists;
-- do not derive API host from UI host;
-- do not build API URLs manually in specs;
-- do not read `process.env` in specs;
-- do not validate full API contracts in UI setup;
-- verify only that the precondition was created successfully;
-- avoid shared static credentials when fresh data is possible.
-
-If approved API setup does not exist:
-
-- use explicit UI setup temporarily;
-- or report a setup architecture gap;
-- do not invent host rewriting.
-
----
-
-# Visual Baseline Workflow
-
-```text
-Approve baseline: no
-→ run visual test once
-→ do not update snapshots
-→ report missing baseline or diff
-
-Approve baseline: yes
-→ run with --update-snapshots
-→ run same test again without update
-→ report created/updated baseline files
-```
-
----
-
-# Final Checklist Before Sending A Command
-
-```text
-1. Which command am I using?
-2. Which feature plan or files are the input?
-3. What implementation scope is allowed?
-4. What context is important for this run?
-5. What verification should be run?
-```
-
----
-
-# Golden Rule
-
-```text
-Plan full coverage.
-Implement clear scope.
-Review generated code.
-Refactor only real issues.
-Heal failing tests at the correct layer.
-Harden rules only for repeated mistakes.
-Verify before accepting.
-```

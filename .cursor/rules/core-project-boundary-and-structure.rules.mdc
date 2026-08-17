@@ -182,6 +182,16 @@ They belong to the project layer.
 
 ## Auth Boundary
 
+Declare the project's Auth Strategy in the project map before creating auth code.
+
+Rule:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
+
+The starter does not ship an AuthProvider.
+
+Create a project-layer provider, storageState wiring, or inject helper only when auth-as-precondition is reused.
+
 Framework core may provide generic authentication mechanisms.
 
 Allowed in core:

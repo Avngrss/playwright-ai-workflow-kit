@@ -147,7 +147,8 @@ When applicable, project map should define:
 - impacted test command format;
 - rules location;
 - skills location;
-- auth provider entry point.
+- auth provider entry point;
+- Auth Strategy (API/UI modes, roles, token placement, capture paths).
 
 ---
 

@@ -12,12 +12,19 @@ These rules define how UI and E2E specs must be structured in a universal Playwr
 The main goals are:
 
 - keep UI and E2E tests readable;
+- keep specs grouped by feature folder;
 - make reports and traces easy to analyze;
 - prevent hidden behavior in hooks;
 - keep test scenarios explicit;
 - standardize tags for CI filtering and reporting;
 - avoid project-specific tag chaos;
 - keep reusable technical helper logic out of specs.
+
+Specs must live in feature folders. Do not add `tests/ui/*.ui.spec.ts` or `tests/api/*.api.spec.ts` at the layer root.
+
+Rule reference:
+
+- `.cursor/rules/spec-feature-placement.rules.mdc`
 
 ---
 
@@ -38,7 +45,7 @@ The main goals are:
 test("sorts products by price", { tag: ["@ui", "@smoke", "@sorting"] }, async ({ homePage }) => {
   await test.step("Open product catalog", async () => {
     await homePage.open();
-    await homePage.expectLoaded();
+    await expect(homePage.heading).toBeVisible();
   });
 
   await test.step("Apply ascending price sorting", async () => {
@@ -133,7 +140,7 @@ Journey steps must remain visible in the spec and must not be hidden in `beforeE
 test.describe("Product sorting", { tag: ["@ui", "@regression", "@sorting"] }, () => {
   test.beforeEach(async ({ homePage }) => {
     await homePage.open();
-    await homePage.expectLoaded();
+    await expect(homePage.heading).toBeVisible();
   });
 
   test("sorts products by price", async ({ homePage }) => {
@@ -190,9 +197,13 @@ Rule reference:
 ## Authentication Setup
 
 - Do not perform UI login in `beforeEach` unless the suite explicitly tests login or navigation behavior.
-- For pre-authenticated UI tests, prefer storage state, API setup, or a project-level authenticated context.
-- Core framework may provide authentication mechanisms.
-- Concrete users, roles, credentials, and login flows must stay in the project layer.
+- For pre-authenticated UI tests, use the UI mode registered in the project map Auth Strategy (`storageState`, inject, or captured session).
+- Unauthenticated specs and login-as-action specs must not inherit an authenticated `storageState`.
+- Concrete users, roles, credentials, and login flows stay in the project layer.
+
+Rule reference:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
 
 ### Bad
 
@@ -214,7 +225,7 @@ test.describe("Authenticated product area", { tag: ["@ui", "@regression", "@auth
   test("shows user-specific products", async ({ homePage }) => {
     await test.step("Open product catalog", async () => {
       await homePage.open();
-      await homePage.expectLoaded();
+      await expect(homePage.heading).toBeVisible();
     });
   });
 });
@@ -234,7 +245,7 @@ test.describe("Authenticated product area", { tag: ["@ui", "@regression", "@auth
 test.describe("Product page content", { tag: ["@ui", "@regression", "@catalog"] }, () => {
   test.beforeEach(async ({ productPage }) => {
     await productPage.open();
-    await productPage.expectLoaded();
+    await expect(productPage.heading).toBeVisible();
   });
 
   test("shows product title", async ({ productPage }) => {
@@ -252,7 +263,7 @@ test.describe("Product navigation", { tag: ["@ui", "@regression", "@catalog"] },
   test("opens product details from catalog", async ({ catalogPage, productPage }) => {
     await test.step("Open product catalog", async () => {
       await catalogPage.open();
-      await catalogPage.expectLoaded();
+      await expect(catalogPage.heading).toBeVisible();
     });
 
     await test.step("Open first product details", async () => {
@@ -292,11 +303,22 @@ Move technical logic out of specs when it includes:
 - reusable array, table, list, card, or response validation;
 - large field-specific assertion branching;
 - repeated helper functions used by multiple tests;
+- local scenario orchestration such as `run*Scenario` or `execute*Flow`;
+- stability polling, signature waits, or `expect.poll` synchronization helpers;
+- reporting path builders such as `buildAllureSuitePath`;
 - logic that makes the scenario hard to read.
+
+Before creating helper logic, search existing helpers under `src/test/assertions/**`, `src/test/reporting/**`, and related project layers. Reuse or extend existing helpers instead of duplicating them in specs.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
 
 Preferred destinations:
 
 - assertion helpers for reusable or non-trivial assertions;
+- UI stability helpers under `src/test/assertions/ui/**` for poll/signature synchronization;
+- reporting helpers under `src/test/reporting/**` for Allure metadata and suite path builders;
 - test data datasets for reusable scenario cases;
 - generators for unique primitive values;
 - builders for reusable structured data;
@@ -630,6 +652,14 @@ The actual allowed tags must be documented by the project tag registry or projec
 - `@regression` identifies broader coverage.
 - A test should not be tagged with both `@smoke` and `@regression` unless the project explicitly requires duplicated classification.
 - If smoke tests should also run during regression, configure the regression pipeline to include both `@smoke` and `@regression`.
+
+For form or mutation UI features, smoke should include the **plain happy path** when that success path is in scope.
+
+Plain happy path means required fields only and the core success confirmation.
+
+Optional success variants such as attachment upload, optional checkboxes, or optional secondary fields belong in `@regression` by default.
+
+Do not make an optional-path success the only smoke positive while the plain happy path is missing.
 
 ### Recommended CI filtering idea
 

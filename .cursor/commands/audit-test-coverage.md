@@ -1,7 +1,7 @@
 Use Skill: @.cursor/skills/audit-test-coverage/SKILL.md
 
 Plan:
-<path to specs/<feature>.md and/or specs/e2e/<journey>.md>
+<path to specs/<feature>/<feature>.md and/or specs/e2e/<area>/<journey>.md>
 
 Optional test paths:
 <tests/api/... tests/ui/... tests/e2e/... or leave empty for plan-derived scope>

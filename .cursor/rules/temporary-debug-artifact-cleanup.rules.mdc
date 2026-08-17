@@ -101,7 +101,7 @@ It is part of task completion.
 3. Delete all **remove** files.
 4. Transfer any still-useful findings into the proper layer before deletion:
    - locators and routes -> Page Objects / Components;
-   - scenario decisions -> `specs/<feature>.md` or `specs/e2e/<journey>.md`;
+   - scenario decisions -> `specs/<feature>/<feature>.md` or `specs/e2e/<area>/<journey>.md`;
    - reusable commands -> approved scripts only when justified.
 5. Report removed files in the final summary.
 

@@ -43,6 +43,63 @@ When project implementation starts:
 
 Do not place reusable data generation logic in specs, Page Objects, Components, API clients, or random helpers.
 
+Do not duplicate the same reusable payload, form object, default profile, or shared constant across multiple specs, setup helpers, or builders.
+
+---
+
+## Duplication Policy
+
+Before adding test data inline in a spec or setup helper, check whether the same shape already exists in:
+
+- another spec;
+- a setup helper such as `src/test/setup/**`;
+- an existing builder;
+- an existing dataset;
+- another layer representation of the same entity.
+
+### Must centralize
+
+Move to the project data layer when the same data appears in two or more places:
+
+- full valid API payloads;
+- full valid UI form objects;
+- shared default profiles for registration, login, contact, or other entities;
+- shared passwords, dates of birth, and other reused auth defaults;
+- shared invalid or boundary values used by both API and UI coverage;
+- local spec helper functions that build reusable business data.
+
+Preferred ownership:
+
+```text
+src/test/data/builders/**   -> valid structured payloads/forms by layer
+src/test/data/datasets/**   -> shared constants and invalid/boundary values
+src/test/data/generators/** -> unique primitive values such as email
+src/test/setup/**           -> setup orchestration only; consume builders/datasets
+```
+
+### Keep local in specs
+
+Allowed directly in specs:
+
+- small deterministic scenario constants;
+- one-off invalid overrides that are unique to one scenario;
+- table-driven scenario metadata such as field names or expected error text;
+- calls to approved builders, generators, and datasets from `src/test/data/**`.
+
+### Layer split rule
+
+When the same business entity has different contracts across layers, do not force one combined builder.
+
+Use separate builders per layer and share only neutral constants through datasets.
+
+Examples:
+
+- API registration payload builder for snake_case request bodies;
+- UI registration form builder for camelCase form data;
+- shared auth defaults dataset for password and date-of-birth values.
+
+Setup helpers such as disposable user registration must consume the API builder instead of owning a parallel payload object.
+
 ---
 
 ## Spec-Level Usage Rules
@@ -168,7 +225,11 @@ Reviews should flag:
 - non-deterministic data generation that harms repeatability;
 - shared mutable users/accounts without explicit approval;
 - builders created for one-off deterministic values;
-- generated data that may affect real external systems.
+- generated data that may affect real external systems;
+- duplicated payload or form objects across specs;
+- duplicated local `createValid...` helpers in specs;
+- setup helpers that own parallel copies of builder-owned payloads;
+- hardcoded shared passwords or invalid values repeated outside datasets.
 
 ---
 
@@ -183,7 +244,10 @@ Avoid:
 - one-off builders with no reuse;
 - opaque unique values that are hard to debug;
 - missing cleanup for persisted generated data;
-- shared mutable test accounts in E2E by default.
+- shared mutable test accounts in E2E by default;
+- copy-pasting `base...Data` objects or `createValid...` helpers between specs;
+- keeping full registration/login/contact payloads inline in specs when a builder exists;
+- duplicating API setup payloads inside `src/test/setup/**` instead of reusing builders.
 
 ---
 

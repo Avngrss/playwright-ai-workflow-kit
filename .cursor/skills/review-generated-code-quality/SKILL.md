@@ -20,6 +20,7 @@ Follow these rules:
 - Temporary Debug Artifact Cleanup Rules;
 - Test Strategy and Test Pyramid Rules;
 - Test Structure and Tags Rules;
+- Spec Feature Placement Rules;
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
 - Fixtures and Test Data Rules;
@@ -31,6 +32,7 @@ Follow these rules:
 - Allure Reporting Rules;
 - Visual Testing Rules;
 - Cross-Browser and Responsive Testing Rules;
+- Sorting and Filtering Assertion Strategy;
 - Examples Policy.
 
 If this skill conflicts with a rule or the project map, follow the project map and the more specific rule.
@@ -147,6 +149,7 @@ Flag as major when:
 
 - one or more ready scenarios from the plan are missing in generated tests;
 - a form/mutation feature includes only negative or only positive branch although both are ready in plan;
+- a form/mutation feature has only an optional-path positive (for example submit with attachment) and no plain happy-path submit with required fields only;
 - implementation report claims completion without a clear scenario-to-test mapping;
 - a scenario is silently skipped because "covered by another layer" without plan approval.
 
@@ -205,6 +208,10 @@ Do not flag small local scenario constants that improve readability.
 
 Review local helper functions.
 
+Before flagging missing extraction, verify whether an equivalent helper already exists under `src/test/assertions/**`, `src/test/reporting/**`, or related project layers.
+
+Flag as **major** when specs define any local function that is not a allowed one-off exception.
+
 Flag helpers that:
 
 - duplicate shared helpers;
@@ -213,15 +220,39 @@ Flag helpers that:
 - hide the action under test;
 - hide assertions;
 - contain non-trivial reusable technical logic;
+- use `run*Scenario`, `execute*Flow`, or similar orchestration naming;
+- contain stability polling or signature waits;
 - belong in a builder, generator, dataset, reporting helper, fixture, assertion helper, or API client.
 
-Do not flag one-line one-off helpers unless they reduce readability.
+Do not flag one-line one-off helpers unless they reduce readability or violate spec helper policy.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
 
 ---
 
-### 6. Check Spec Readability And Helper Extraction
+### 6. Check Spec Feature Placement
+
+New or moved specs must live in a feature folder:
+
+- `tests/ui/<feature>/<feature>.ui.spec.ts`
+- `tests/api/<feature>/<feature>.api.spec.ts`
+- `tests/e2e/<area>/<journey>.e2e.spec.ts`
+
+Flag as **major** when a spec is added at `tests/ui/` or `tests/api/` root, or when unrelated features share one dump folder.
+
+Rule reference:
+
+- `.cursor/rules/spec-feature-placement.rules.mdc`
+
+---
+
+### 6A. Check Spec Readability And Helper Extraction
 
 When reviewing generated specs, check whether specs are overloaded with technical helper logic.
+
+Flag as **major** when specs contain local `function` or `async function` declarations before `test.describe`.
 
 Flag as major when specs contain non-trivial reusable logic such as:
 
@@ -230,11 +261,23 @@ Flag as major when specs contain non-trivial reusable logic such as:
 - repeated assertion predicates;
 - reusable array, table, list, card, or response validation;
 - large field-specific assertion branching;
-- helper functions that obscure the scenario.
+- helper functions that obscure the scenario;
+- `run*Scenario` orchestration helpers;
+- inline `expect.poll` / stability polling helpers;
+- duplicated Allure suite path builders.
 
 Prefer moving such logic to dedicated assertion helpers or data utilities.
 
-Do not flag small local scenario constants or simple one-off values as issues.
+For sorting and filtering coverage, also verify:
+
+- invariant checks live in assertion helpers, not specs;
+- successful verification uses the shared sort/filter console helper;
+- specs do not contain ad-hoc `console.log` for sort/filter proof;
+- console diagnostics include operation kind, label, item count, and checked sequence or sample.
+
+Flag as major when sort/filter tests pass without approved assertion-layer console diagnostics.
+
+Do not flag approved `console.info` output inside sort/filter assertion helpers as debug noise.
 
 Specs should show:
 
@@ -407,12 +450,25 @@ Accept UI tests that verify:
 
 For form and mutation-oriented UI features, verify that coverage includes both:
 
-- a positive user path;
+- a **plain positive** user path with required fields only;
 - a negative user-facing validation/conflict/error path.
+
+Plain positive is the core success path.
+
+Optional success variants are additive, not replacements.
+
+Examples of optional-path positives that must not be the only success coverage:
+
+- contact submit with attachment;
+- checkout with optional promo code;
+- profile save with optional avatar upload;
+- form submit with optional newsletter opt-in.
 
 Flag as major when:
 
 - feature is marked complete but has only positive or only negative UI branch despite both being planned ready;
+- only optional-path success exists and the plain happy path is missing;
+- smoke coverage uses only the optional variant while the plain happy path is absent or demoted without plan justification;
 - UI suite verifies only backend-like predicates and misses visible negative feedback state.
 
 If a branch is blocked by missing deterministic setup, require explicit blocked/postponed documentation instead of silently skipping.

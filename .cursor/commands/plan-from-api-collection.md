@@ -7,7 +7,7 @@ Optional OpenAPI/Swagger path:
 <path or none>
 
 Output feature plan:
-<specs/<feature>.md>
+<specs/<feature>/<feature>.md>
 
 Optional TMS/requirements context:
 <path, link, or none>

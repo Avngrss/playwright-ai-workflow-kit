@@ -38,6 +38,7 @@ Identify:
 - user-facing behavior;
 - primary scenarios;
 - negative or edge scenarios when relevant;
+- Auth Strategy (no session, login-as-action, or precondition mechanism from the project map);
 - affected pages;
 - affected components;
 - required data;
@@ -135,6 +136,10 @@ Reusable UI blocks are represented without over-abstraction.
 
 Implement specs only after data and structure are defined.
 
+Place UI specs at `tests/ui/<feature>/<feature>.ui.spec.ts`.
+
+Do not add specs at the `tests/ui/` root.
+
 Tests must:
 
 - use `test.step` for meaningful user-level phases;
@@ -146,12 +151,15 @@ Tests must:
 
 Scenario-specific assertions belong in specs.
 
-Page Objects and Components may expose small structural assertions such as:
+Page Objects and Components must not use Playwright `expect`.
 
-- `expectLoaded`;
-- `expectVisible`;
-- `expectReady`;
-- `expectNoActiveFilters`.
+They may expose locators, loaded markers, state readers, and user actions.
+
+Specs assert readiness, for example:
+
+```ts
+await expect(loginPage.heading).toBeVisible();
+```
 
 Output:
 
@@ -275,6 +283,22 @@ Even for small changes, do not violate core rules:
 - do not add raw selector chaos;
 - do not add project-specific logic to core;
 - do not skip verification.
+
+---
+
+## Product Change / Plan Refresh
+
+When the application changed — not just a flaky locator — refresh the plan before tests.
+
+Use `/update-feature-plan` or `/plan-feature` to update `specs/<feature>/<feature>.md`.
+
+Then implement ready items and heal only technical drift.
+
+Rule reference:
+
+- `.cursor/rules/feature-change-lifecycle.rules.mdc`
+
+Do not heal requirement drift without updating the plan first.
 
 ---
 

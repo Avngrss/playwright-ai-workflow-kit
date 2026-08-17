@@ -76,7 +76,7 @@ Good candidates:
 
 - E2E cross-browser coverage must be limited to very small smoke journeys only.
 - Do not run full E2E regression matrices across browsers by default.
-- If an E2E journey needs cross-browser coverage, document it explicitly in `specs/e2e/<journey>.md`.
+- If an E2E journey needs cross-browser coverage, document it explicitly in `specs/e2e/<area>/<journey>.md`.
 - Do not add cross-browser E2E expansion during normal E2E implementation unless the journey plan says so.
 
 ### When Cross-Browser Coverage Is Not Needed
@@ -141,7 +141,7 @@ Examples:
 
 ## Planning Rules
 
-Feature coverage plans at `specs/<feature>.md` may include:
+Feature coverage plans at `specs/<feature>/<feature>.md` may include:
 
 - Cross-browser coverage;
 - Responsive coverage;
@@ -151,7 +151,7 @@ Feature coverage plans at `specs/<feature>.md` may include:
 Planning requirements:
 
 - document browser or viewport risk before recommending cross-browser or responsive coverage;
-- do not mix cross-browser or responsive expansion into E2E unless explicitly planned in `specs/e2e/<journey>.md`;
+- do not mix cross-browser or responsive expansion into E2E unless explicitly planned in `specs/e2e/<area>/<journey>.md`;
 - if no browser-specific or viewport-specific risk exists, state that no extra cross-browser or responsive coverage is needed;
 - cross-browser and responsive items must specify ready to implement now, blocked, postponed, or not automated;
 - do not duplicate normal UI scenarios across browsers or viewports without a documented distinct risk.

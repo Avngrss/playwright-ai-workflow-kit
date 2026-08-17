@@ -14,7 +14,7 @@ Create a full feature coverage plan.
 
 Scope:
 - planning only
-- allowed change: create/update only specs/<feature>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
 - do not implement tests
 
 Optional scope boundary:
@@ -23,7 +23,8 @@ Optional scope boundary:
 - out of scope: <fill only if needed>
 
 Output:
-- create or update specs/<feature>.md
+- create or update specs/<feature>/<feature>.md
+- include Auth Strategy (required, role, auth as, API/UI modes from the project map)
 - include coverage matrix
 - include ready to implement now vs blocked/postponed coverage
 - include API/UI/visual/schema/not automated decisions
@@ -33,17 +34,17 @@ Output:
 - do not include E2E coverage sections
 - do not include E2E implementation briefs
 - do not recommend /implement-e2e-flow directly
-- if E2E is relevant, recommend /plan-e2e-journey for specs/e2e/<journey>.md first
+- if E2E is relevant, recommend /plan-e2e-journey for specs/e2e/<area>/<journey>.md first
 - include recommended next commands
 
 Stop condition:
-- stop after creating or updating specs/<feature>.md
+- stop after creating or updating specs/<feature>/<feature>.md
 - do not start implementation
 - do not run recommended next commands
 - recommended next commands are informational only
 
 Execution mode:
-- use Agent mode when the expected output is a specs/<feature>.md file
+- use Agent mode when the expected output is a specs/<feature>/<feature>.md file
 - do not use Cursor Plan mode Build for planning-only tasks
 
 Report:

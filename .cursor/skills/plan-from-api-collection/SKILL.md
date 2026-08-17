@@ -4,20 +4,20 @@
 
 Create or update a feature API coverage plan from API collection input without implementing tests.
 
-Bruno supplies executable request examples. OpenAPI/Swagger is the contract source of truth when available. `specs/<feature>.md` is the automation source of truth.
+Bruno supplies executable request examples. OpenAPI/Swagger is the contract source of truth when available. `specs/<feature>/<feature>.md` is the automation source of truth.
 
 ## Inputs
 
 - Bruno collection path under `collections/bruno/**`;
 - optional OpenAPI/Swagger path;
-- optional existing `specs/<feature>.md`;
+- optional existing `specs/<feature>/<feature>.md`;
 - optional TMS or requirements context;
 - project map.
 
 ## Scope
 
 - planning only;
-- create or update `specs/<feature>.md` only when explicitly requested;
+- create or update `specs/<feature>/<feature>.md` only when explicitly requested;
 - do not create tests or `src/test/**` files;
 - do not install dependencies or execute requests;
 - do not update Bruno, OpenAPI/Swagger, or TMS.
@@ -56,6 +56,7 @@ Bruno supplies executable request examples. OpenAPI/Swagger is the contract sour
 - Do not generate tests directly from Bruno collections.
 - Do not guess undocumented fields, statuses, schemas, parameters, or auth behavior.
 - Make target API service and environment ownership explicit.
+- Document Auth Strategy using modes registered in the project map. Missing auth for protected requests → blocked.
 - Require a cleanup or isolation strategy for destructive/stateful requests.
 - Treat secrets, tokens, passwords, and cookies as prohibited collection content.
 - TMS or requirements context informs planning but is not modified.

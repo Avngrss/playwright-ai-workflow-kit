@@ -472,6 +472,16 @@ Avoid:
 
 Prefer adding visual assertions to existing UI scenario tests.
 
+Place those specs at `tests/ui/<feature>/<feature>.ui.spec.ts`.
+
+Snapshot folders stay next to the spec:
+
+```text
+tests/ui/<feature>/<feature>.ui.spec.ts-snapshots/
+```
+
+Do not create a visual spec at the `tests/ui/` root.
+
 Visual checks should be scenario state checkpoints, not separate tests by default.
 
 Do not create a separate visual spec unless separate execution or isolation is clearly justified.

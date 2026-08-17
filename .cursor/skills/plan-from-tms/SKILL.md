@@ -2,9 +2,9 @@
 
 ## Goal
 
-Use this skill when `specs/<feature>.md` does not exist yet and TMS/Qase cases are the main planning input.
+Use this skill when `specs/<feature>/<feature>.md` does not exist yet and TMS/Qase cases are the main planning input.
 
-The goal is to create a complete feature coverage plan from TMS test intent, add traceability, choose automation ownership by risk, and write `specs/<feature>.md` without implementing tests.
+The goal is to create a complete feature coverage plan from TMS test intent, add traceability, choose automation ownership by risk, and write `specs/<feature>/<feature>.md` without implementing tests.
 
 This skill does not replace Plan Test Coverage when UI/API requirements are the primary source.
 
@@ -24,6 +24,7 @@ Follow these rules:
 - API Schema Validation Rules;
 - Visual Testing Rules;
 - Project Map Rules;
+- Authentication Strategy Rules;
 - Agent Workflow;
 - Examples Policy.
 
@@ -37,10 +38,10 @@ For TMS access, discovery, negative/boundary policy, and reporter separation, fo
 
 Use Plan From TMS when:
 
-- `specs/<feature>.md` does not exist;
+- `specs/<feature>/<feature>.md` does not exist;
 - TMS cases are the main planning source for the feature.
 
-Use Align Feature Plan With TMS (`.cursor/skills/align-plan-with-tms/SKILL.md`) when `specs/<feature>.md` already exists.
+Use Align Feature Plan With TMS (`.cursor/skills/align-plan-with-tms/SKILL.md`) when `specs/<feature>/<feature>.md` already exists.
 
 Use Plan Test Coverage when creating a feature plan primarily from UI/API requirements without TMS as the main source.
 
@@ -54,7 +55,7 @@ Use this skill when:
 
 - no feature plan exists for the target feature;
 - Qase or another TMS contains the primary test intent for the feature;
-- a new `specs/<feature>.md` must be created from TMS cases;
+- a new `specs/<feature>/<feature>.md` must be created from TMS cases;
 - TMS cases are UI/manual but automation level must be decided by risk;
 - traceability to TMS cases is required before implementation.
 
@@ -64,7 +65,7 @@ Use this skill when:
 
 Do not use this skill when:
 
-- `specs/<feature>.md` already exists and only needs TMS alignment;
+- `specs/<feature>/<feature>.md` already exists and only needs TMS alignment;
 - the task is to implement tests;
 - the task is to create or update TMS cases;
 - the task is to create a Qase run;
@@ -80,7 +81,7 @@ If a feature plan already exists, stop and use Align Feature Plan With TMS inste
 Use available context:
 
 - feature name;
-- target plan path, normally `specs/<feature>.md`;
+- target plan path, normally `specs/<feature>/<feature>.md`;
 - TMS provider;
 - Qase project code;
 - suite id or suite path/name;
@@ -149,7 +150,7 @@ When access mode is read-only MCP only, record that in the feature plan TMS Sour
 
 ### 1. Confirm Plan Does Not Exist
 
-Confirm the target feature plan path, normally `specs/<feature>.md`.
+Confirm the target feature plan path, normally `specs/<feature>/<feature>.md`.
 
 If the file already exists and the task is to align rather than recreate, stop and use Align Feature Plan With TMS.
 
@@ -296,7 +297,7 @@ If no related automation exists, state that in the plan summary.
 
 ### 9. Write Feature Plan
 
-Create or update only `specs/<feature>.md` unless the prompt provides another approved path.
+Create or update only `specs/<feature>/<feature>.md` unless the prompt provides another approved path.
 
 Include TMS sections and the normal feature coverage plan sections listed below.
 
@@ -314,7 +315,7 @@ Stop after writing the feature plan.
 
 ## Required Feature Plan Structure
 
-Write `specs/<feature>.md` with these sections in a practical order.
+Write `specs/<feature>/<feature>.md` with these sections in a practical order.
 
 ### Feature / Area
 
@@ -325,6 +326,7 @@ Write `specs/<feature>.md` with these sections in a practical order.
 - out of scope;
 - UI target;
 - API contract source;
+- Auth Strategy (required, role, auth as, modes from project map);
 - requirements/specs.
 
 ### TMS Source
@@ -602,7 +604,7 @@ This skill is complete when:
 
 - the target feature plan did not already exist, or overwrite was explicitly approved;
 - TMS cases were read in read-only mode;
-- `specs/<feature>.md` was created or updated;
+- `specs/<feature>/<feature>.md` was created or updated;
 - TMS Source was documented;
 - TMS Mapping was added;
 - normal feature coverage plan sections were included;

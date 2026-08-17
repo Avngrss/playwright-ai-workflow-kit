@@ -1,0 +1,125 @@
+---
+description: Feature plans and Playwright specs must live in feature folders
+alwaysApply: true
+---
+
+# Spec Feature Placement
+
+## Purpose
+
+Keep feature coverage plans and Playwright specs grouped by feature slug.
+
+Do not dump plans at `specs/*.md` or tests at `tests/ui/*.spec.ts` / `tests/api/*.spec.ts`.
+
+## Required Layout
+
+### Feature coverage plans
+
+```text
+specs/<feature>/<feature>.md
+specs/e2e/<area>/<journey>.md
+```
+
+Example:
+
+```text
+specs/contact/contact.md
+specs/sort-product/sort-product.md
+specs/e2e/auth/registration-to-login.md
+```
+
+The plan slug must match the test feature slug:
+
+```text
+specs/contact/contact.md
+tests/ui/contact/contact.ui.spec.ts
+tests/api/contact/contact.api.spec.ts
+```
+
+### Playwright specs
+
+```text
+tests/api/<feature>/<feature>.api.spec.ts
+tests/ui/<feature>/<feature>.ui.spec.ts
+tests/e2e/<area>/<journey>.e2e.spec.ts
+```
+
+`<feature>` and `<area>` must be kebab-case.
+
+The same product feature uses the same slug across layers:
+
+```text
+tests/api/contact/contact.api.spec.ts
+tests/ui/contact/contact.ui.spec.ts
+```
+
+Visual checkpoints stay inside the feature UI spec. Snapshot folders stay next to that spec:
+
+```text
+tests/ui/contact/contact.ui.spec.ts
+tests/ui/contact/contact.ui.spec.ts-snapshots/
+```
+
+## Multiple Specs For One Feature
+
+Keep extra specs in the same feature folder. The filename must match the folder or start with `<feature>-`:
+
+```text
+tests/ui/contact/contact.ui.spec.ts
+tests/ui/contact/contact-attachment.ui.spec.ts
+```
+
+Do not create a second feature folder for the same behavior.
+
+## Forbidden
+
+```text
+specs/contactUs.md
+specs/login.md
+specs/sort-product.md              # flat at specs/ root
+tests/ui/contact.ui.spec.ts
+tests/api/login.api.spec.ts
+tests/ui/misc/contact.ui.spec.ts
+tests/api/shared/login.api.spec.ts
+tests/ui/catalog/sort-product.ui.spec.ts   # when sort-product is its own feature
+```
+
+Do not use dump folders: `misc`, `common`, `shared`, `all`, `other`, `temp`, `helpers`.
+
+Do not mix unrelated features in one folder.
+
+Do not place UI specs under `tests/api` or API specs under `tests/ui`.
+
+Do not place full E2E journeys under `tests/ui` or `tests/api`.
+
+## How To Choose The Folder Name
+
+1. Use the existing feature folder if this feature already has API, UI, or E2E specs.
+2. Otherwise use a kebab-case slug from the spec filename stem: `sort-product.ui.spec.ts` -> `sort-product`.
+3. Keep API and UI slugs identical for the same feature.
+4. Align with `specs/<feature>/<feature>.md` when practical, but do not invent a third name if specs already exist.
+
+Catalog-like areas stay separate when they have separate feature plans: `sort-product`, `search-product`, `filter-by-category`, `price-range`, `compare-product`.
+
+## Agent Rule
+
+Before creating a plan or spec:
+
+1. check the project map;
+2. check existing `specs/<feature>/` and `tests/<layer>/<feature>/` folders;
+3. reuse the same kebab-case slug across plan, API spec, and UI spec.
+
+Create the feature folder if it does not exist.
+
+Do not add a flat plan at `specs/<name>.md`.
+
+Do not add a new spec at the `tests/ui/` or `tests/api/` root.
+
+When the product changes, update the plan first — see `.cursor/rules/feature-change-lifecycle.rules.mdc`.
+
+Rule references:
+
+- `.cursor/rules/00-project-map.mdc`
+- `.cursor/rules/feature-change-lifecycle.rules.mdc`
+- `.cursor/rules/e2e-testing.rules.mdc`
+- `.cursor/rules/visual-testing.mdc`

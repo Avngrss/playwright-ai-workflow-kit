@@ -1,7 +1,7 @@
 Use Skill: @.cursor/skills/align-plan-with-tms/SKILL.md
 
 Feature plan:
-<path to specs/<feature>.md>
+<path to specs/<feature>/<feature>.md>
 
 TMS:
 - provider: Qase

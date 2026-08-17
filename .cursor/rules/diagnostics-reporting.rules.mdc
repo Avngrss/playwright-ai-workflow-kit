@@ -15,6 +15,7 @@ These rules define how failures should be made actionable.
 
 - Failure messages must be actionable.
 - Custom helpers and assertion helpers should provide meaningful error context.
+- Sort and filter assertion helpers must emit concise success diagnostics to the console after invariant checks pass.
 - Do not hide errors with broad `try/catch`.
 - Do not swallow exceptions.
 - Do not replace real failures with generic messages.
@@ -45,7 +46,8 @@ Avoid:
 - fake fallback values after failures;
 - generic errors like `Something went wrong`;
 - hiding original stack traces;
-- logging sensitive data.
+- logging sensitive data;
+- treating approved sort/filter console diagnostics in assertion helpers as temporary debug noise.
 
 ---
 

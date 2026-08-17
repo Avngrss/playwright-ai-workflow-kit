@@ -1,7 +1,7 @@
 import { defineConfig } from "allure";
 
 export default defineConfig({
-  name: "Playwright Test Report",
+  name: "Playwright AI Workflow Kit",
   output: "./reports/allure/html",
   hideLabels: [
     "host",

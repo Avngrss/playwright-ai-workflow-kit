@@ -71,16 +71,25 @@ A test should clearly show:
 
 Do not create spec-local helper functions when the logic is reusable across multiple tests or specs.
 
+Before adding a local helper, search existing helpers under `src/test/assertions/**`, `src/test/reporting/**`, and related project layers.
+
 Move reusable helper logic to the correct shared layer.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
 
 Examples:
 
 - repeated Allure metadata logic -> reporting helper;
+- repeated Allure suite path building -> `buildAllureSuitePath` in reporting helper;
+- stability polling for UI lists -> assertion/sync helper under `src/test/assertions/ui/**`;
 - repeated test data object -> builder;
 - repeated upload file path -> dataset or test asset helper;
 - repeated dialog handling -> page/spec helper only if it does not hide behavior;
 - repeated API payload -> builder;
-- repeated API request composition -> thin API client if justified.
+- repeated API request composition -> thin API client if justified;
+- matrix/table-driven scenario orchestration -> keep `test.step` in the spec body; do not create `run*Scenario` helpers in specs.
 
 Spec-local helpers are allowed only when:
 
@@ -88,7 +97,8 @@ Spec-local helpers are allowed only when:
 - they improve readability;
 - they do not hide the action under test;
 - they do not duplicate an existing shared helper;
-- they are not likely to be reused elsewhere.
+- they are not likely to be reused elsewhere;
+- they are at most three lines and contain no parsing, polling, comparison, or orchestration logic.
 
 ---
 
@@ -196,6 +206,10 @@ Do not use `.env`, secrets, or project root files as test upload files.
 Do not duplicate reporting metadata logic in every spec.
 
 Use shared reporting helpers when metadata setup repeats.
+
+Use `buildAllureSuitePath(rootSuite, ...segments)` from `src/test/reporting/allure-metadata.helper.ts` for nested Allure suite paths.
+
+Do not redefine Allure suite path builders in specs or feature-specific files.
 
 Concrete metadata values may stay in specs.
 

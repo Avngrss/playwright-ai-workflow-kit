@@ -95,6 +95,10 @@ For newly created or updated UI/API specs, Allure metadata should be added by de
 
 - `src/test/reporting/allure-metadata.helper.ts`
 
+Use `buildAllureSuitePath(rootSuite, ...segments)` from the same helper for nested suite paths.
+
+Do not redefine suite path builders in specs.
+
 Use this placement:
 
 - `beforeEach` for shared suite metadata (feature, suite, owner, layer, shared tags);
@@ -103,6 +107,28 @@ Use this placement:
 Do not leave new specs without Allure metadata when the test is part of planned feature coverage.
 
 If metadata is intentionally omitted for a specific spec, document the reason in the implementation summary.
+
+---
+
+## Runtime API Import Policy
+
+Per [Allure Playwright docs](https://allurereport.org/docs/playwright/):
+
+- reporting helpers import Runtime API from `allure-js-commons`:
+
+```ts
+import * as allure from "allure-js-commons";
+```
+
+- do **not** import `{ allure }` from `allure-playwright` — that export is deprecated;
+- specs call `applyAllureMetadata()` from `src/test/reporting/allure-metadata.helper.ts` instead of direct Allure imports;
+- direct `allure-js-commons` usage in specs is allowed only when no shared helper covers the need.
+
+Package roles:
+
+- `allure-playwright` — Playwright reporter in `playwright.config.ts` only;
+- `allure-js-commons` — Runtime metadata API in reporting helpers;
+- `allure` — Allure 3 CLI for `npm run report:allure:*` scripts.
 
 ---
 
@@ -215,6 +241,48 @@ Do not:
 
 ---
 
+## Artifact Cleanup Policy
+
+Allure raw results and generated HTML are runtime artifacts.
+
+Do not accumulate stale Allure files across local runs or report generations.
+
+### Required cleanup behavior
+
+- before every Playwright test run that writes Allure results, clear `reports/allure/results/`;
+- before every Allure HTML generation, clear `reports/allure/html/`;
+- use the shared cleanup script: `scripts/clean-allure-artifacts.mjs`.
+
+### npm script ownership
+
+- `report:allure:clean` — remove both results and HTML;
+- all `test*` scripts that execute Playwright tests must run `scripts/clean-allure-artifacts.mjs --results` first;
+- `report:allure:generate` and `report:allure:serve` must run `scripts/clean-allure-artifacts.mjs --html` before `allure generate`;
+- `test:report` — run tests, then generate and open a fresh Allure report;
+- do not add separate npm scripts for `--results` or `--html` cleanup.
+
+### Why this matters
+
+`allure generate` reads every file in `reports/allure/results/`.
+
+If old result files remain, the report mixes passed, failed, and skipped outcomes from unrelated runs and shows inflated skipped/failed counts.
+
+### Agent workflow
+
+When running tests and then opening Allure locally, prefer:
+
+```bash
+npm run test:report
+```
+
+Do not manually accumulate results across multiple partial test runs unless the user explicitly asks to preserve them.
+
+Do not call `allure generate` directly without going through the npm scripts that enforce cleanup.
+
+CI jobs use fresh checkouts, but local workflows must rely on the cleanup scripts.
+
+---
+
 ## Main Principle
 
 Allure improves diagnostics and traceability.
@@ -224,3 +292,5 @@ It must not own test behavior.
 It must not leak secrets.
 
 It must not pollute Page Objects, Components, clients, or data layers.
+
+Allure report folders must stay fresh; stale runtime artifacts must not be merged into new reports.

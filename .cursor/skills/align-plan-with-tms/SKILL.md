@@ -24,6 +24,7 @@ Follow these rules:
 - API Schema Validation Rules;
 - Visual Testing Rules;
 - Project Map Rules;
+- Authentication Strategy Rules;
 - Agent Workflow;
 - Examples Policy.
 
@@ -59,7 +60,7 @@ Use Plan Test Coverage when creating a feature plan from UI/API requirements.
 
 Use Plan From TMS (`.cursor/skills/plan-from-tms/SKILL.md`) when no feature plan exists and TMS is the main planning source.
 
-Use this Align Feature Plan With TMS skill when `specs/<feature>.md` already exists.
+Use this Align Feature Plan With TMS skill when `specs/<feature>/<feature>.md` already exists.
 
 Use Implement API Feature From Plan or Implement UI Feature From Plan only after the aligned feature plan is accepted.
 
@@ -285,7 +286,7 @@ Do not implement or plan guessed negative API tests.
 
 ### 7. Update Feature Plan
 
-Update only `specs/<feature>.md` unless the prompt provides another feature plan path.
+Update only `specs/<feature>/<feature>.md` unless the prompt provides another feature plan path.
 
 Add or update in that feature plan:
 

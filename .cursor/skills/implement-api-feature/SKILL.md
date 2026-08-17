@@ -26,6 +26,8 @@ Follow these rules:
 - Project Map Rules;
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
+- Authentication Strategy Rules;
+- Sorting and Filtering Assertion Strategy;
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
@@ -146,6 +148,7 @@ Read the feature plan and identify:
 - required test data;
 - contract gaps or blockers;
 - API/service Feature Target and env name from project map;
+- Auth Strategy (required, role, auth as, API mode);
 - verification command.
 
 Use only the API/service Feature Target listed in the feature plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL` or a generic `API_BASE_URL` when the project map defines a specific service target.
@@ -153,6 +156,12 @@ Use only the API/service Feature Target listed in the feature plan. Do not fall 
 If the required API/service Feature Target is missing from the plan, stop and report:
 
 "API/service Feature Target is missing from the feature plan. Update the plan and project map before implementation."
+
+If the scenario needs a session and Auth Strategy is missing from the plan, or the API mode is not registered in the project map, stop and report:
+
+"Auth Strategy is missing from the feature plan. Update the plan and project map before implementation."
+
+Do not invent login, tokens, or headers.
 
 Do not invent env variable names.
 
@@ -182,6 +191,14 @@ Before creating or modifying files, check the project map for:
 - registered API service env names.
 
 Do not invent folders, aliases, commands, or naming conventions.
+
+Place new API specs at `tests/api/<feature>/<feature>.api.spec.ts`.
+
+Do not create API specs at the `tests/api/` root.
+
+Rule reference:
+
+- `.cursor/rules/spec-feature-placement.rules.mdc`
 
 If the project map defines multiple API services, bind clients and requests to the service documented in the feature plan through the approved config layer.
 
@@ -357,6 +374,10 @@ Invalid or negative data must be explicit through overrides.
 
 Do not define reusable `buildData`, `buildPayload`, `buildFormData`, or similar factory functions inside specs.
 
+Before adding inline payloads, search existing builders, datasets, generators, and setup helpers for the same entity shape.
+
+Do not duplicate API registration/login/contact payloads across specs and `src/test/setup/**`; consume shared builders instead.
+
 Do not create a builder for one-off deterministic payloads.
 
 Do not create a separate test only because a helper, builder, dataset, or schema exists.
@@ -468,11 +489,56 @@ Bad helper responsibilities:
 - create entity and verify full workflow;
 - hide setup, action, and assertion together.
 
+For sorting/filtering/list invariants, assertion helpers must also emit approved success diagnostics to the console after invariant checks pass.
+
+Use the shared sort/filter console helper from the assertion layer.
+
+Do not add ad-hoc `console.log` in API specs for sort/filter proof.
+
+Required console content:
+
+- operation kind: `sort` or `filter`;
+- readable label such as field/direction or predicate summary;
+- item count checked;
+- checked sequence or sample in display order.
+
+---
+
+### 10.5 Spec Helper And Reuse Check
+
+Before writing API specs, search existing helpers under:
+
+- `src/test/assertions/**`
+- `src/test/reporting/**`
+- `src/test/data/**`
+- `src/test/schemas/**`
+
+Reuse or extend existing helpers before creating new ones or adding local functions to specs.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
+
+API specs must not define local helper functions for:
+
+- `run*Scenario` orchestration;
+- repeated request/response assertion blocks;
+- schema validation plumbing already covered by assertion helpers;
+- Allure suite path builders.
+
+For table-driven API tests, keep request execution, status checks, and behavior assertions visible inside each `test(...)` body.
+
+Use `buildAllureSuitePath(rootSuite, ...segments)` from `src/test/reporting/allure-metadata.helper.ts` for nested suite paths.
+
 ---
 
 ### 11. Implement API Tests
 
 Implement tests for the selected API scope only.
+
+Create or update the spec at `tests/api/<feature>/<feature>.api.spec.ts`.
+
+Do not add a flat spec under `tests/api/`.
 
 API tests must:
 

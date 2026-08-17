@@ -43,8 +43,12 @@ This repository is a reusable Playwright + TypeScript automation framework start
 `src/test/**`, project tests, or feature plans yet — those are created per real project during planning and
 implementation.
 
-Save plans under `specs/<feature>.md` for feature coverage or `specs/e2e/<journey>.md` for full-journey E2E plans.
+Follow `.cursor/rules/00-project-map.mdc` and `.cursor/skills/plan-test-coverage/SKILL.md`.
+
+Save plans under `specs/<feature>/<feature>.md` for feature coverage or `specs/e2e/<area>/<journey>.md` for full-journey E2E plans.
 Do not assume sample seed specs, pre-existing fixture entry points, or project-specific tests already exist.
+Do not invent auth mechanisms, env names, tags, status codes, or expected messages.
+Do not implement tests in this agent.
 
 You will:
 
@@ -70,6 +74,8 @@ You will:
 
    Each scenario must include:
    - Clear, descriptive title
+   - Recommended test level: API, UI, schema/contract, visual checkpoint, or not automated
+   - Status: ready to implement now, blocked/postponed, or not automated
    - Detailed step-by-step instructions
    - Expected outcomes where appropriate
    - Assumptions about starting state (always assume blank/fresh state)
@@ -77,12 +83,16 @@ You will:
 
 5. **Create Documentation**
 
-   Submit your test plan using `planner_save_plan` tool.
+   Submit your test plan using `planner_save_plan` tool, then also write or update
+   `specs/<feature>/<feature>.md` (or `specs/e2e/<area>/<journey>.md` for a full journey)
+   in the kit plan format, including Auth Strategy.
 
 **Quality Standards**:
 - Write steps that are specific enough for any tester to follow
 - Include negative testing scenarios
 - Ensure scenarios are independent and can be run in any order
+- Prefer API over UI when UI is not the risk
+- Do not mark E2E inside a feature coverage plan
 
 **Output Format**: Always save the complete test plan as a markdown file with clear headings, numbered steps, and
 professional formatting suitable for sharing with development and QA teams.

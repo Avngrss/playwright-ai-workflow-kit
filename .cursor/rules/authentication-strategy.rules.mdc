@@ -1,0 +1,204 @@
+---
+description: Declare how tests get API tokens and UI sessions; do not invent login or storage injection
+alwaysApply: true
+---
+
+# Authentication Strategy Rules
+
+## Purpose
+
+Stop agents from inventing login, tokens, `storageState`, or storage injection.
+
+The project map declares **how this project authenticates**.
+
+Feature plans declare **whether this scenario needs a session**.
+
+Roles, endpoints, storage keys, and secret names are project decisions. Do not treat any product role or login style as a kit default.
+
+---
+
+## Core Principle
+
+**Auth as action** and **auth as precondition** are different.
+
+| `auth as` | Meaning | Where login/token lives |
+|-----------|---------|-------------------------|
+| `none` | No session | Nowhere |
+| `action` | Login or token issuance is the behavior under test | Visible in the spec |
+| `precondition` | Scenario is not about login, but needs a session | Mechanism registered in the project map |
+
+Do not UI-login in `beforeEach` when login is not the behavior under test.
+
+Do not create `loggedInPage` fixtures.
+
+If the needed mechanism is missing from the project map, mark the scenario **blocked**. Do not guess.
+
+---
+
+## Source Of Truth
+
+```text
+project map Auth Strategy  = registered mechanisms, roles, token placement, storage keys, capture paths
+specs/<feature>/<feature>.md  = this feature needs a session or not
+src/test/setup/auth/**     = project helpers, created only when this project needs them
+state/                     = gitignored captured sessions (never commit)
+```
+
+Agents must not invent:
+
+- role names;
+- env token names;
+- login endpoints;
+- `localStorage` / `sessionStorage` keys;
+- storageState paths.
+
+Register them in the project map first.
+
+---
+
+## What The Project Map Must Declare
+
+When the project uses authentication, register at least:
+
+- API mechanism (how API tests get a credential);
+- UI mechanism (how browser tests get a session);
+- where the session lives (cookie, `localStorage`, `sessionStorage`, header, mixed);
+- token or header placement, or storage key;
+- roles, only if this project has named roles;
+- isolation or capture rules.
+
+If the project has no authenticated coverage yet, register that unauthenticated is the default. Do not invent roles to fill the section.
+
+---
+
+## Example Mechanism Names
+
+These names are illustrative. Use them only after the project map registers them. Do not copy them into a new project unless they match that app.
+
+API examples:
+
+| Name | Meaning |
+|------|---------|
+| `none` | No credential |
+| `password-login` | Token from a login API |
+| `token-from-env` | Token from a registered secret |
+| `client-credentials` | OAuth client credentials |
+| `api-key` | Static header from a registered secret |
+| `custom-header` | Project-specific header contract |
+| `manual-captured` | Human obtained the credential; tests only consume it |
+
+UI examples:
+
+| Name | Meaning |
+|------|---------|
+| `none` | No session |
+| `auth-as-action` | Login UI is the test |
+| `cookie-storage-state` | Session is cookies; Playwright `storageState` |
+| `localStorage-storage-state` | Session is `localStorage`; `storageState` `origins[]` |
+| `sessionStorage-init-script` | Session is `sessionStorage` (not in `storageState`) |
+| `api-token-then-inject` | Obtain token via API, inject **before** first navigation |
+| `manual-captured` | Human logged in once; tests reuse gitignored state |
+
+A project may register a different name if the map explains it. Do not invent a name in a spec or helper first.
+
+`storageState` covers cookies and `localStorage`. It does **not** cover `sessionStorage`.
+
+Inject with `addInitScript` **before** `goto`. Do not `evaluate` after the app already booted without a session.
+
+Unauthenticated specs and login-as-action specs must not inherit an authenticated `storageState`.
+
+---
+
+## Planning
+
+Every feature plan and E2E journey plan must include **Auth Strategy**.
+
+```md
+## Auth Strategy
+
+- required: yes | no
+- role: <only if registered in the project map; omit when no session>
+- auth as: none | action | precondition
+- API mode: <registered name, or none>
+- UI mode: <registered name, or none>
+- persistence: none | cookies | localStorage | sessionStorage | mixed
+- token placement: <header or storage key from project map>
+- isolation: <from project map, or none>
+- capture / secrets: <path or env name from project map, or none>
+```
+
+Rules:
+
+- features with no session still write this section (`required: no`, modes `none`);
+- do not invent a role such as guest or admin to fill the template;
+- authenticated coverage without a registered mechanism is **blocked**;
+- SSO / MFA / captcha stays `manual-captured` or **blocked** — do not fake it;
+- login / logout / token-issuance scenarios use `auth as: action`.
+
+How-to: `docs/auth-strategy.md`.
+
+---
+
+## Implementation
+
+Before implementing an authenticated scenario:
+
+1. Read Auth Strategy in the plan.
+2. Read Auth Strategy in the project map.
+3. If either is missing or the mechanism is unregistered, stop.
+
+Stop messages:
+
+```text
+Auth Strategy is missing from the feature plan. Update the plan and project map before implementation.
+```
+
+```text
+Required auth mode is not registered in the project map. Do not invent login, storageState, or storage injection.
+```
+
+Login specs may perform login.
+
+Other specs must not duplicate that login. Use the declared precondition mechanism.
+
+Create `src/test/auth/**` or `auth.fixture.ts` only when auth-as-precondition is reused.
+
+Do not put tokens, cookies, or storageState files in git, Allure, or upload assets.
+
+---
+
+## Manual Capture
+
+When login cannot be automated:
+
+1. A person obtains a session once.
+2. Save it to a gitignored path or registered secret from the project map.
+3. Tests only load that artifact.
+4. If CI cannot refresh the session, authenticated tests stay **blocked**.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- UI login as hidden setup;
+- `loggedInPage` fixtures;
+- hardcoded tokens;
+- inventing roles, storage keys, or env secret names;
+- one authenticated `storageState` on all UI projects;
+- `page.evaluate` after navigation to plant a token;
+- assuming every app uses cookies;
+- assuming every app uses password login;
+- treating guest / admin / customer as kit roles;
+- implementing SSO/MFA as a guessed UI flow.
+
+---
+
+## Main Principle
+
+The kit owns the questions.
+
+The project map owns the answers.
+
+Declare the session. Do not invent it.

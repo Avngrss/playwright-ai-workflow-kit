@@ -1,0 +1,194 @@
+---
+description: Spec helper extraction policy — keep specs scenario-focused, reuse existing helpers, forbid local orchestration logic
+alwaysApply: true
+---
+
+# Spec Helper Extraction Policy
+
+## Purpose
+
+Specs must read as user scenarios.
+
+Reusable technical logic must not live in `.spec.ts` files as local functions.
+
+Agents must search existing project helpers before creating new ones.
+
+---
+
+## Core Principle
+
+**Spec owns the scenario.**
+
+**Helper owns reusable technical mechanics.**
+
+Before adding any helper logic, check whether an equivalent already exists under `src/test/**`.
+
+---
+
+## Reuse-Before-Create Checklist
+
+Before writing helper logic in a spec or creating a new helper file, search:
+
+```text
+src/test/assertions/**     — contract, invariant, stability, UI/API assertions
+src/test/reporting/**      — Allure metadata, suite path builders
+src/test/data/**           — builders, datasets, generators, types
+src/test/pages/**          — Page Object actions and state readers
+src/test/components/**     — Component Object actions and state readers
+src/test/setup/**          — approved setup orchestration
+src/test/schemas/**        — Zod/runtime contracts
+```
+
+If an existing helper covers the same responsibility, reuse or extend it.
+
+Do not duplicate:
+
+- Allure suite path builders;
+- stability polling / signature waits;
+- sort/filter/search invariant checks;
+- schema validation wrappers;
+- auth failure or response-shape assertions;
+- reporting metadata mechanics.
+
+When extending an existing helper is clearer than creating a parallel file, extend the existing helper.
+
+---
+
+## Forbidden In Spec Files
+
+Do not define local functions in specs for:
+
+- `run*Scenario`, `execute*Flow`, `perform*Workflow` orchestration;
+- `waitForStable*`, signature polling, or other synchronization mechanics;
+- `buildAllureSuitePath` or other reporting path builders;
+- parsing, normalization, comparison, or sorting algorithms;
+- reusable predicate checks used by multiple tests;
+- schema validation plumbing;
+- repeated request/response assertion blocks.
+
+Matrix or table-driven tests must still keep `test.step`, actions, and verification visible inside each `test(...)` body.
+
+### Bad
+
+```ts
+async function runVisibleProductSearchScenario(catalogPage, queryCase, submitSearch) {
+  await applyAllureMetadata({ ... });
+  await test.step("Search", async () => submitSearch(catalogPage, queryCase.q));
+  await test.step("Verify", async () => {
+    const names = await waitForStableVisibleProductSearchMatch(catalogPage, queryCase.q);
+    expectVisibleProductSearchMatch(names, queryCase.q);
+  });
+}
+
+test("...", async ({ catalogPage }) => {
+  await runVisibleProductSearchScenario(catalogPage, queryCase, ...);
+});
+```
+
+### Good
+
+```ts
+test("...", async ({ catalogPage }) => {
+  await applyAllureMetadata({
+    story: `${queryCase.label} (q=${queryCase.q})`,
+    suite: buildAllureSuitePath(ROOT_SUITE, "Matching queries"),
+    severity: "CRITICAL",
+  });
+
+  await test.step(`Search for ${queryCase.q}`, async () => {
+    await catalogPage.searchByButton(queryCase.q);
+  });
+
+  await test.step("Verify visible products match the search query", async () => {
+    const names = await waitForStableVisibleProductSearchMatch(catalogPage, queryCase.q);
+    expectVisibleProductSearchMatch(names, queryCase.q);
+  });
+});
+```
+
+---
+
+## Allowed In Spec Files
+
+Specs may contain:
+
+- imports;
+- feature/suite constants such as `FEATURE`, `ROOT_SUITE`;
+- small deterministic scenario arrays used only in that spec;
+- `test.describe`, `test.beforeEach`, `test`, `test.step`;
+- calls to Page Objects, builders, datasets, generators, fixtures, reporting helpers, assertion helpers;
+- direct scenario-specific assertions that are not reusable.
+
+Local functions in specs are forbidden by default.
+
+The only narrow exception is a truly one-off helper that is:
+
+- used once in the same file;
+- at most three lines;
+- not hiding the action under test;
+- not likely to be reused;
+- not technical parsing/comparison/sync logic.
+
+If unsure, extract to the correct layer instead of keeping a local function.
+
+---
+
+## Helper Placement
+
+| Responsibility | Preferred location |
+|---|---|
+| response shape validation | `src/test/schemas/api/**` |
+| reusable API/UI assertions | `src/test/assertions/api/**`, `src/test/assertions/ui/**` |
+| sort/filter/search invariants | `src/test/assertions/**` |
+| UI stability polling | `src/test/assertions/ui/*-stability.helper.ts` |
+| Allure metadata and suite paths | `src/test/reporting/allure-metadata.helper.ts` |
+| reusable payloads/forms | `src/test/data/builders/**` |
+| reusable scenario cases | `src/test/data/datasets/**` |
+| unique primitive values | `src/test/data/generators/**` |
+| locators and user actions | Page Objects / Component Objects |
+| setup orchestration | `src/test/setup/**` |
+
+Do not create new top-level helper folders without a real grouping need.
+
+Prefer extending an existing helper in the same domain over creating a near-duplicate.
+
+---
+
+## Matrix And Table-Driven Tests
+
+Allowed:
+
+- loop over dataset in `test.describe` or `test(...)` declaration;
+- shared `beforeEach` for safe navigation only;
+- repeated `test.step` blocks inside each generated test.
+
+Not allowed:
+
+- local scenario runner that hides steps, actions, or assertions;
+- moving matrix orchestration into spec-local functions;
+- hiding the primary action under test inside a helper because the suite is parameterized.
+
+Parameterization reduces duplication of **data**, not of **scenario visibility**.
+
+---
+
+## Review Gate
+
+Reject spec changes when:
+
+- the spec defines non-trivial local functions;
+- the spec duplicates an existing helper;
+- the spec contains stability polling or signature logic inline;
+- the spec uses `run*Scenario` orchestration helpers;
+- matrix tests no longer show action and verification in the test body;
+- a new helper was added without checking existing helpers in `src/test/**`.
+
+---
+
+## Main Principle
+
+Specs stay readable because the scenario is visible.
+
+Helpers stay reusable because technical logic lives once in the correct project layer.
+
+Always reuse existing helpers before creating new ones.

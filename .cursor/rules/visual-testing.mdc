@@ -339,8 +339,8 @@ Use separate visual specs only when:
 - project map defines a separate visual test location.
 
 
-- `tests/ui/<area>/<feature>.visual.spec.ts`
-- `tests/ui/<area>/<feature>.ui.spec.ts` if visual checks are part of the same feature suite.
+- `tests/ui/<feature>/<feature>.visual.spec.ts` only when a separate visual spec is justified
+- `tests/ui/<feature>/<feature>.ui.spec.ts` when visual checks belong to the same feature suite
 
 
 Follow the project map.

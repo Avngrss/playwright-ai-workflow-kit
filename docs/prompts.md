@@ -1,81 +1,8 @@
-# AI Agent Prompt Templates
+# Prompts
 
-## Purpose
+Copy-paste templates. When to run them: [Quick flow](quick-flow.md) or [Long flow](long-flow.md). Slash-command forms: [Commands](commands.md).
 
-Reusable prompt templates for working with AI agents in the **Playwright AI Workflow Kit** — an AI-assisted workflow kit for Playwright automation projects.
-
-**npm package name:** `playwright-ai-workflow-kit`
-
-**GitHub repository:** https://github.com/Avngrss/playwright-ai-workflow-kit
-
-A good prompt defines:
-
-- skill or command;
-- task;
-- inputs;
-- scope;
-- stop conditions;
-- expected output;
-- verification.
-
-Keep prompts short.
-
-Put methodology into skills.
-
-Put permanent constraints into rules.
-
-Put project-specific structure into the project map.
-
----
-
-## Default Workflow For A New Feature
-
-```text
-1. Plan Feature Coverage
-2. Review the feature plan if the feature is broad, risky, or has API/UI overlap
-3. Create or validate Test Data Builder, if needed
-4. Implement selected API coverage marked ready to implement now, if present
-5. Implement selected UI coverage marked ready to implement now, if present
-6. Add visual checkpoints later, if planned and explicitly selected
-7. Review Generated Code Quality
-8. Refactor / Heal / Harden only if needed
-```
-
-For critical full journeys, plan and implement separately:
-
-```text
-1. /plan-e2e-journey
-2. Review the E2E journey plan
-3. Implement selected E2E coverage marked ready to implement now, if present
-4. Review Generated Code Quality
-5. Run Verification
-```
-
-Planning separation:
-
-```text
-specs/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
-specs/e2e/<journey>.md = E2E journey plans (full user/business flows only)
-```
-
-Rules of thumb:
-
-- Do not implement API and UI in one agent run.
-- Do not implement E2E together with API or UI in one agent run unless explicitly approved.
-- Feature coverage plans do not include E2E.
-- Use one main skill per task.
-- Do not create builders, clients, fixtures, schemas, components, or helpers speculatively.
-- Use ready to implement now / blocked-postponed, not first batch / later batch.
-- API should own backend contract, schema, negative, boundary, auth, filtering, sorting, and data predicate risks.
-- UI should own distinct user-facing browser behavior.
-- E2E should own critical full journeys with safe setup, data, cleanup, and meaningful final assertions.
-- Visual checks should cover visual risk only.
-- Cross-browser and responsive coverage should be planned only for documented browser or viewport risks; broad browser/device matrix is not the default.
-- Playwright tags describe test intent and coverage type; browser and viewport belong to Playwright projects and Allure reporting metadata.
-- Use `@cross-browser` and `@responsive` only when explicitly planned; do not invent browser or device tags such as `@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, or `@desktop`.
-- If the plan is too vague for UI or API implementation, refine the relevant implementation brief before coding.
-- If a test fails, use healing before refactoring.
-- If the framework reveals a repeated failure pattern, harden rules or skills only after confirming it is not a one-off.
+A prompt should name the skill or command, the task, inputs, scope, stop condition, and verification. Keep it short. Put methodology in skills, constraints in rules, and paths in the project map.
 
 ---
 
@@ -86,7 +13,7 @@ Use this prefix when starting most AI-agent tasks.
 ```text
 You are working in a Playwright + TypeScript automation project using the Playwright AI Workflow Kit.
 
-Follow the project map as the source of truth for paths, commands, aliases, tags, fixture entry points, and ownership.
+Follow the project map as the source of truth for paths, commands, aliases, tags, fixture entry points, Auth Strategy, and ownership.
 
 Follow all repository rules.
 
@@ -107,6 +34,35 @@ If required information is missing, do not invent architecture or behavior. Repo
 
 # 1. Planning Prompts
 
+## Register how tests sign in (before features)
+
+Do this once per project when you already know auth. Do not paste tokens or passwords.
+
+```text
+Update project map Auth Strategy in `.cursor/rules/00-project-map.mdc`.
+
+Follow: @.cursor/rules/authentication-strategy.rules.mdc
+
+Do not store tokens, passwords, or session JSON in the map, specs, or git.
+
+How API tests get a session:
+<helper path, or "create a user via this API then login">
+
+How UI tests get a session:
+<session file path per role, or inject, or create user>
+
+Roles:
+<product role names>
+
+Default for new features:
+signed-in precondition | no session
+
+Stop after the project map Auth Strategy section is updated.
+Do not implement tests in this step.
+```
+
+Guide: [Auth strategy](auth-strategy.md).
+
 ## MCP ownership (planning with TMS)
 
 - project `.cursor/mcp.json` — `playwright` only (project-level; safe to commit)
@@ -121,7 +77,7 @@ If required information is missing, do not invent architecture or behavior. Repo
 
 Use this as the main entry point for a new feature.
 
-Use **Agent mode** when the expected output is a `specs/<feature>.md` file.
+Use **Agent mode** when the expected output is a `specs/<feature>/<feature>.md` file.
 
 Do not use Cursor Plan mode Build for planning-only tasks that must write the plan file.
 
@@ -142,7 +98,7 @@ Create a full feature coverage plan.
 
 Scope:
 - planning only
-- allowed change: create/update only specs/<feature>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
 
 Optional scope boundary:
 - source of truth: <fill only if needed>
@@ -150,14 +106,15 @@ Optional scope boundary:
 - out of scope: <fill only if needed>
 
 Output:
-- create or update specs/<feature>.md
+- create or update specs/<feature>/<feature>.md
+- include Auth Strategy (required, role, auth as, API/UI modes from the project map)
 - include coverage matrix
 - include ready to implement now vs blocked/postponed coverage
 - include API/UI/visual/schema/not automated decisions
 - include cross-browser/responsive decisions or explicit no-extra-coverage note when relevant
 - include API Implementation Brief
 - include UI Implementation Brief
-- note that E2E is planned separately in specs/e2e/<journey>.md when a full journey may be needed later
+- note that E2E is planned separately in specs/e2e/<area>/<journey>.md when a full journey may be needed later
 - include E2E Note only (no E2E scenarios or implementation brief)
 - do not recommend /implement-e2e-flow directly from feature plans
 - if E2E is relevant, recommend /plan-e2e-journey first
@@ -166,13 +123,13 @@ Output:
 Do not include E2E Coverage in feature plans.
 
 Stop condition:
-- stop after creating or updating specs/<feature>.md
+- stop after creating or updating specs/<feature>/<feature>.md
 - do not start implementation
 - do not run recommended next commands
 - recommended next commands are informational only
 
 Execution mode:
-- use Agent mode when the expected output is a specs/<feature>.md file
+- use Agent mode when the expected output is a specs/<feature>/<feature>.md file
 - do not use Cursor Plan mode Build for planning-only tasks
 ```
 
@@ -200,7 +157,7 @@ The generated feature plan must still include:
 
 ## Prompt: Plan From TMS (No Existing Plan)
 
-Use when TMS cases are the primary input and `specs/<feature>.md` does not exist.
+Use when TMS cases are the primary input and `specs/<feature>/<feature>.md` does not exist.
 
 ```text
 /plan-from-tms
@@ -219,7 +176,7 @@ TMS:
 Scope:
 - planning only
 - TMS read-only
-- allowed change: create/update only specs/<feature>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
 - do not create/update TMS entities, runs, or publish results
 - do not add reporter integration
 ```
@@ -237,13 +194,13 @@ TMS rules:
 
 ## Prompt: Align Plan With TMS (Existing Plan)
 
-Use when `specs/<feature>.md` exists and must be aligned with TMS cases.
+Use when `specs/<feature>/<feature>.md` exists and must be aligned with TMS cases.
 
 ```text
 /align-plan-with-tms
 
 Feature plan:
-specs/<feature>.md
+specs/<feature>/<feature>.md
 
 TMS:
 - provider: <TMS provider, e.g. Qase>
@@ -256,7 +213,7 @@ TMS:
 Scope:
 - planning only
 - TMS read-only
-- allowed change: update TMS Source and TMS Mapping in specs/<feature>.md only
+- allowed change: update TMS Source and TMS Mapping in specs/<feature>/<feature>.md only
 - do not create/update TMS entities, runs, or publish results
 - do not add reporter integration
 ```
@@ -315,7 +272,7 @@ Optional OpenAPI/Swagger path:
 <path or none>
 
 Output feature plan:
-specs/<feature>.md
+specs/<feature>/<feature>.md
 
 Scope:
 - planning only
@@ -341,7 +298,7 @@ Collection path:
 collections/bruno/<service-or-domain>/**
 
 Feature plan path:
-specs/<feature>.md
+specs/<feature>/<feature>.md
 
 API tests path:
 tests/api/**
@@ -374,7 +331,7 @@ Use this before implementation when the feature is broad, risky, or has API/UI o
 /review-generated
 
 Review changes in:
-specs/<feature>.md
+specs/<feature>/<feature>.md
 
 Context:
 This is a feature coverage plan review before implementation.
@@ -388,7 +345,7 @@ Focus:
 - schema validation decision is present for non-trivial API response shapes
 - UI scenarios have unique user-facing value
 - UI does not duplicate API/schema coverage without visible UI risk
-- E2E is not part of feature coverage plans — full journeys belong in specs/e2e/<journey>.md
+- E2E is not part of feature coverage plans — full journeys belong in specs/e2e/<area>/<journey>.md
 - ready now vs blocked/postponed is clear
 - implementation details are not listed as scenarios
 - recommended next commands are informational only
@@ -823,8 +780,8 @@ Report:
 E2E is planned separately from feature coverage.
 
 ```text
-specs/<feature>.md     = API, UI, schema, visual, not automated
-specs/e2e/<journey>.md = full user/business journeys only
+specs/<feature>/<feature>.md     = API, UI, schema, visual, not automated
+specs/e2e/<area>/<journey>.md = full user/business journeys only
 ```
 
 Do not add E2E scenarios to feature plans.
@@ -839,7 +796,7 @@ Use when a critical full user or business journey needs automation beyond API an
 /plan-e2e-journey
 
 E2E journey plan path:
-specs/e2e/<journey>.md
+specs/e2e/<area>/<journey>.md
 
 Journey:
 <short journey name, e.g. checkout, registration-login>
@@ -849,7 +806,7 @@ Create an E2E journey plan for the selected full user/business flow.
 
 Scope:
 - planning only
-- allowed change: create/update only specs/e2e/<journey>.md
+- allowed change: create/update only specs/e2e/<area>/<journey>.md
 - do not implement tests
 - do not add E2E to feature coverage plans
 
@@ -893,13 +850,13 @@ Forgot password (feature plan stays API + UI only):
 
 ## Prompt: Implement E2E Flow From Journey Plan
 
-Use this after `specs/e2e/<journey>.md` includes at least one scenario marked ready to implement now.
+Use this after `specs/e2e/<area>/<journey>.md` includes at least one scenario marked ready to implement now.
 
 ```text
 /implement-e2e-flow
 
 E2E journey plan:
-<path to specs/e2e/<journey>.md>
+<path to specs/e2e/<area>/<journey>.md>
 
 Implementation scope:
 Implement only E2E coverage marked ready to implement now.
@@ -1653,17 +1610,5 @@ At the end, report:
 - next recommended step
 ```
 
-Use this file to choose the correct workflow, skill, task boundary, and expected output.
-
----
-
-## Mental Model
-
-```text
-Project Map = where things live
-Rules = what must never be violated
-Skills = how to perform a task
-Command = reusable task launcher
-Prompt = the current task ticket
-```
+When to run which skill: [Quick flow](quick-flow.md) or [Long flow](long-flow.md).
 

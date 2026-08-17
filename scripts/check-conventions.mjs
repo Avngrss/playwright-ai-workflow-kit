@@ -93,6 +93,135 @@ function skip(message) {
   console.log(`- SKIP: ${message}`);
 }
 
+const FORBIDDEN_FEATURE_FOLDERS = new Set([
+  "misc",
+  "common",
+  "shared",
+  "all",
+  "other",
+  "temp",
+  "helpers",
+  "tests",
+]);
+
+function checkFeaturePlanPlacement() {
+  const SPECS_DIR = path.join(ROOT, "specs");
+  const E2E_PLANS_DIR = path.join(SPECS_DIR, "e2e");
+
+  if (!fs.existsSync(SPECS_DIR)) {
+    skip("No specs/ directory. Feature plan placement checks were not executed.");
+    return;
+  }
+
+  const kebab = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  for (const entry of fs.readdirSync(SPECS_DIR, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".md")) {
+      continue;
+    }
+
+    fail(
+      `Feature plan must live at specs/<feature>/<feature>.md, not flat at specs/: specs/${entry.name}`,
+    );
+  }
+
+  for (const entry of fs.readdirSync(SPECS_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === "e2e") {
+      continue;
+    }
+
+    const featureDir = path.join(SPECS_DIR, entry.name);
+    const plans = fs
+      .readdirSync(featureDir, { withFileTypes: true })
+      .filter((item) => item.isFile() && item.name.endsWith(".md"));
+
+    if (plans.length === 0) {
+      fail(`Feature plan folder has no .md plan: specs/${entry.name}/`);
+    }
+
+    if (!kebab.test(entry.name)) {
+      fail(`Feature plan folder must be kebab-case: specs/${entry.name}/`);
+    }
+
+    if (FORBIDDEN_FEATURE_FOLDERS.has(entry.name)) {
+      fail(`Do not dump feature plans into generic folder '${entry.name}'.`);
+    }
+
+    for (const plan of plans) {
+      const stem = plan.name.slice(0, -3);
+
+      if (stem !== entry.name && !stem.startsWith(`${entry.name}-`)) {
+        fail(
+          `Feature plan filename must match folder '${entry.name}' or start with '${entry.name}-': specs/${entry.name}/${plan.name}`,
+        );
+      }
+    }
+  }
+
+  if (fs.existsSync(E2E_PLANS_DIR)) {
+    for (const entry of fs.readdirSync(E2E_PLANS_DIR, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".md")) {
+        fail(
+          `E2E journey plan must live at specs/e2e/<area>/<journey>.md, not flat: specs/e2e/${entry.name}`,
+        );
+      }
+    }
+  }
+
+  ok("All feature plans live in specs/<feature>/<feature>.md folders.");
+}
+
+function checkSpecFeaturePlacement(specs, layerDir, layer) {
+  if (specs.length === 0) {
+    skip(
+      `No ${layer.toUpperCase()} spec files found. Feature-folder placement checks were not executed.`,
+    );
+    return;
+  }
+
+  const kebab = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  const suffix = `.${layer}.spec.ts`;
+
+  for (const spec of specs) {
+    const relFromLayer = path.relative(layerDir, spec);
+    const parts = relFromLayer.split(path.sep);
+
+    if (parts.length !== 2) {
+      fail(
+        `${layer.toUpperCase()} spec must live at tests/${layer}/<feature>/<name>.${layer}.spec.ts, not flat or deeper: ${rel(spec)}`,
+      );
+    }
+
+    const [featureFolder, fileName] = parts;
+
+    if (!kebab.test(featureFolder)) {
+      fail(`Feature folder must be kebab-case: ${rel(spec)}`);
+    }
+
+    if (FORBIDDEN_FEATURE_FOLDERS.has(featureFolder)) {
+      fail(
+        `Do not dump specs into generic folder '${featureFolder}': ${rel(spec)}`,
+      );
+    }
+
+    if (!fileName.endsWith(suffix)) {
+      fail(`Spec filename must end with ${suffix}: ${rel(spec)}`);
+    }
+
+    if (layer !== "e2e") {
+      const stem = fileName.slice(0, -suffix.length);
+
+      if (stem !== featureFolder && !stem.startsWith(`${featureFolder}-`)) {
+        fail(
+          `Spec filename must match feature folder '${featureFolder}' or start with '${featureFolder}-': ${rel(spec)}`,
+        );
+      }
+    }
+  }
+
+  ok(`All ${layer.toUpperCase()} specs live in tests/${layer}/<feature>/ folders.`);
+}
+
 function checkNoPattern(files, pattern, messageFactory) {
   for (const file of files) {
     const content = read(file);
@@ -338,6 +467,22 @@ function checkNoAllureInForbiddenLayers(files) {
   ok("No forbidden Allure usage in pages, components, data, or API clients.");
 }
 
+function checkDeprecatedAllureImports(specFiles) {
+  if (specFiles.length === 0) {
+    skip("No spec files found for deprecated Allure import checks.");
+    return;
+  }
+
+  checkNoPattern(
+    specFiles,
+    /from\s*["']allure-playwright["']/,
+    (file) =>
+      `Spec imports deprecated allure-playwright runtime API. Use applyAllureMetadata() from src/test/reporting/allure-metadata.helper.ts: ${rel(file)}`,
+  );
+
+  ok("No specs import deprecated allure-playwright runtime API.");
+}
+
 const SRC_TEST_DIR = path.join(ROOT, "src", "test");
 const FIXTURE_ENTRY_POINT = path.join(SRC_TEST_DIR, "fixtures", "test.ts");
 
@@ -409,6 +554,10 @@ function main() {
   const dataFiles = listFiles(DATA_DIR, (file) => file.endsWith(".ts"));
   const apiClientFiles = listFiles(API_CLIENTS_DIR, (file) => file.endsWith(".ts"));
 
+  checkFeaturePlanPlacement();
+  checkSpecFeaturePlacement(uiSpecs, UI_TESTS_DIR, "ui");
+  checkSpecFeaturePlacement(apiSpecs, API_TESTS_DIR, "api");
+  checkSpecFeaturePlacement(e2eSpecs, E2E_TESTS_DIR, "e2e");
   checkUiSpecs(uiSpecs);
   checkApiSpecs(apiSpecs);
   checkRegisteredTags([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
@@ -420,6 +569,8 @@ function main() {
     ...dataFiles,
     ...apiClientFiles,
   ]);
+
+  checkDeprecatedAllureImports([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
 
   console.log("\nConvention checks passed.\n");
 }

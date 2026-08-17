@@ -165,7 +165,7 @@ Classify findings into these categories:
 
 - `throw new Error("debug...")` or similar debug throws left in code
 - `page.pause()`
-- console-only diagnostics left in committed tests or Page Objects
+- console-only diagnostics left in committed tests or Page Objects, except approved sort/filter success diagnostics in assertion helpers
 - temporary debug scripts referenced by tests
 - screenshots, traces, or videos used as test logic instead of diagnostics
 
@@ -304,6 +304,7 @@ Examples:
 Examples:
 
 - debug `console.log` left in spec;
+- approved sort/filter `console.info` diagnostics missing from assertion helpers when sort/filter coverage was added or changed;
 - slightly weak step naming that hides verification intent;
 - broad network wait that currently passes but is fragile;
 - missing `test.step` structure without direct sync risk.

@@ -16,7 +16,7 @@ Create a feature coverage plan from TMS cases.
 Scope:
 - planning only
 - TMS read-only
-- allowed change: create/update only specs/<feature>.md
+- allowed change: create/update only specs/<feature>/<feature>.md
 - do not implement tests
 - do not create or update Qase entities
 - do not create Qase runs
@@ -31,10 +31,10 @@ Rules:
 - treat TMS cases as test intent and traceability source
 - map each TMS case to API / UI / schema-contract / visual / not automated / blocked / postponed
 - do not guess undocumented status codes, response bodies, validation messages, or boundary limits
-- if specs/<feature>.md already exists, use /align-plan-with-tms instead
+- if specs/<feature>/<feature>.md already exists, use /align-plan-with-tms instead
 
 Output:
-- create or update specs/<feature>.md
+- create or update specs/<feature>/<feature>.md
 - include TMS Source
 - include TMS Mapping
 - include coverage matrix
@@ -45,7 +45,7 @@ Output:
 - include recommended next commands
 
 Stop condition:
-- stop after creating or updating specs/<feature>.md
+- stop after creating or updating specs/<feature>/<feature>.md
 - do not start implementation
 - recommended next commands are informational only
 
