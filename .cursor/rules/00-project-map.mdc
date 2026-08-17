@@ -149,7 +149,6 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
     - 📄 long-flow.md
     - 📄 prompts.md
     - 📄 quick-flow.md
-    - 📄 README.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
     - 📄 clean-allure-artifacts.mjs
