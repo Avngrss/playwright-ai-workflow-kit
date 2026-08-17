@@ -55,6 +55,26 @@ Do not create abstractions speculatively for future scenarios.
 
 ---
 
+## Reuse Before Creating Helpers
+
+Before adding helper logic to a spec or creating a new helper file, inspect existing project helpers under:
+
+- `src/test/assertions/**`
+- `src/test/reporting/**`
+- `src/test/data/**`
+- `src/test/setup/**`
+- `src/test/schemas/**`
+
+Reuse or extend an existing helper when it already owns the same responsibility.
+
+Do not duplicate Allure suite path builders, stability polling helpers, sort/filter/search invariant checks, or response assertion wrappers across specs or parallel helper files.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
+
+---
+
 ## Helper Creation Rules
 
 Do not create a helper for:

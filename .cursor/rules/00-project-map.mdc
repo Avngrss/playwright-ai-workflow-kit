@@ -15,6 +15,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 audit-test-data-strategy.md
       - 📄 audit-test-stability.md
       - 📄 heal-api-test.md
+      - 📄 heal-ui-test.md
       - 📄 implement-api-batch.md
       - 📄 implement-e2e-flow.md
       - 📄 implement-ui-batch.md
@@ -26,6 +27,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 plan-from-tms.md
       - 📄 refactor-overengineering.md
       - 📄 review-generated.md
+      - 📄 update-feature-plan.md
     - 📁 rules/
       - 📁 ui/
         - 📄 component-extraction.rules.mdc
@@ -40,6 +42,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 api-architecture.mdc
       - 📄 api-collection-integration.rules.mdc
       - 📄 api-schema-validation.rules.mdc
+      - 📄 authentication-strategy.rules.mdc
       - 📄 browser-and-responsive-testing.rules.mdc
       - 📄 code-quality-cleanliness.mdc
       - 📄 configuration-secrets.rules.mdc
@@ -48,6 +51,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 diagnostics-reporting.rules.mdc
       - 📄 e2e-testing.rules.mdc
       - 📄 examples-policy.mdc
+      - 📄 feature-change-lifecycle.rules.mdc
       - 📄 feature-lifecycle.mdc
       - 📄 fixtures-data.mdc
       - 📄 flakiness-policy.rules.mdc
@@ -56,12 +60,14 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 project-scaling.mdc
       - 📄 reporting-allure.mdc
       - 📄 sorting-filtering.mdc
+      - 📄 spec-feature-placement.rules.mdc
+      - 📄 spec-helper-policy.rules.mdc
+      - 📄 temporary-debug-artifact-cleanup.rules.mdc
       - 📄 test-abstraction-hygiene.rules.mdc
       - 📄 test-data-generation.rules.mdc
       - 📄 test-isolation-state.rules.mdc
       - 📄 test-strategy-pyramid.rules.mdc
       - 📄 test-structure-and-tags.rules.mdc
-      - 📄 temporary-debug-artifact-cleanup.rules.mdc
       - 📄 tms-integration.rules.mdc
       - 📄 visual-testing.mdc
     - 📁 skills/
@@ -137,26 +143,29 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
     - 📁 bruno/
       - 📄 README.md
   - 📁 docs/
-    - 📁 reference/
-      - 📄 AI_AGENT_PROMPTS.md
-      - 📄 AI_WORKFLOW_MAP.md
-      - 📄 HOW_TO_USE_AI_AUTOMATION.md
-    - 📄 AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md
-    - 📄 API_COLLECTION_INTEGRATION.md
-    - 📄 HELPER_RECIPES.md
-    - 📄 QUICK_REFERENCE.md
-    - 📄 START_NEW_PROJECT.md
+    - 📄 auth-strategy.md
+    - 📄 commands.md
+    - 📄 getting-started.md
+    - 📄 long-flow.md
+    - 📄 prompts.md
+    - 📄 quick-flow.md
+    - 📄 README.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
+    - 📄 clean-allure-artifacts.mjs
+    - 📄 ensure-playwright-browsers.mjs
     - 📄 project-cartographer.mjs
-  - 📁 specs/
   - 📁 tests/
+    - 📄 .gitkeep
   - 📄 .env.example
   - 📄 .gitignore
+  - 📄 AGENTS.md
+  - 📄 LICENSE
   - 📄 package-lock.json
   - 📄 package.json
   - 📄 playwright.config.ts
   - 📄 README.md
+  - 📄 tsconfig.json
 
 <!-- PROJECT_MAP_END -->
 
@@ -177,27 +186,16 @@ GitHub repository:
 
 Root documentation entry point:
 
-- `README.md` — high-level workflow kit overview, quick start, and workflow summary
+- `README.md` — kit overview and quick start
+- `docs/README.md` — documentation index (which file to open)
 
-Daily-use quick reference cheat sheet:
+User-facing docs:
 
-- `docs/QUICK_REFERENCE.md` — commands, workflows, tags, scripts, and guardrails at a glance
-
-Cross-browser, responsive, and visual testing guide:
-
-- `docs/CROSS_BROWSER_AND_VISUAL_TESTING.md` — browser/viewport matrix policy, visual checkpoints, baseline approval, and screenshot rules
-
-API collection integration guidance:
-
-- `docs/API_COLLECTION_INTEGRATION.md` — Bruno collection, OpenAPI/Swagger contract, planning, and audit hierarchy
-
-Helper recipe documentation (not shipped source helpers):
-
-- `docs/HELPER_RECIPES.md` — reusable helper patterns for future projects; documentation only — create `src/test/**` helpers per project when needed
-
-Detailed new-project onboarding guide:
-
-- `docs/START_NEW_PROJECT.md`
+- `docs/getting-started.md` — clone, install, env, scripts
+- `docs/quick-flow.md` — typical feature (plan → API/UI → review)
+- `docs/long-flow.md` — extra-command menu: TMS, collections, audit, later extras, E2E, heal
+- `docs/commands.md` — slash-command templates
+- `docs/prompts.md` — prompt templates
 
 The clean starter baseline intentionally has **no project implementation layer** under `src/test/`.
 
@@ -220,18 +218,33 @@ Expected project implementation locations (created per application; **absent in 
 - `src/test/api/clients/**` — thin API clients (when justified)
 - `src/test/assets/files/**` — safe synthetic upload assets
 
-Current empty project locations (add coverage when implementing a concrete product):
+Current spec locations (group by feature, never dump specs at the layer root):
 
 - `tests/` — test specs root
-- `tests/api/` — API specs (`*.api.spec.ts`)
-- `tests/ui/` — UI specs (`*.ui.spec.ts`)
-- `tests/e2e/` — E2E specs (`*.e2e.spec.ts`)
-- `specs/` — feature coverage plans (`specs/<feature>.md`)
-- `specs/e2e/` — E2E journey plans (`specs/e2e/<journey>.md`)
+- `tests/api/<feature>/` — API specs (`*.api.spec.ts`)
+- `tests/ui/<feature>/` — UI specs (`*.ui.spec.ts`)
+- `tests/e2e/<area>/` — E2E specs (`*.e2e.spec.ts`)
+- `specs/` — feature coverage plans (`specs/<feature>/<feature>.md`)
+- `specs/e2e/<area>/` — E2E journey plans (`specs/e2e/<area>/<journey>.md`)
+
+Rule:
+
+- `.cursor/rules/spec-feature-placement.rules.mdc`
+
+Required examples:
+
+- `tests/ui/contact/contact.ui.spec.ts`
+- `tests/api/contact/contact.api.spec.ts`
+- `tests/e2e/auth/registration-to-login.e2e.spec.ts`
+
+Forbidden:
+
+- `tests/ui/contact.ui.spec.ts`
+- `tests/api/login.api.spec.ts`
 
 Quality gate:
 
-- `npm run qa:gate`
+- `npm run qa:gate` — convention checks plus `tsc --noEmit`
 
 Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is valid):
 
@@ -247,7 +260,10 @@ Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is 
 | `npm run test:visual` | Baseline `@visual` run on `ui-chromium` |
 | `npm run test:cross-browser` | Run `@cross-browser` on UI browser projects: `ui-chromium`, `ui-firefox`, `ui-webkit` |
 | `npm run test:responsive` | Run `@responsive` on `ui-mobile-chromium` |
-| `npm run report:allure:generate` | Generate `reports/allure/html/` from `reports/allure/results/` |
+| `npm run report:allure:generate` | Clean `reports/allure/html/`, then generate from `reports/allure/results/` |
+| `npm run report:allure:serve` | Clean HTML, generate, and open Allure report |
+| `npm run test:report` | Run baseline tests, then generate and open fresh Allure report |
+| `npm run report:allure:clean` | Remove stale Allure results and HTML artifacts |
 
 Rules:
 
@@ -281,7 +297,7 @@ Coverage audit (review only; does not implement tests):
 
 - skill: `.cursor/skills/audit-test-coverage/SKILL.md`
 - command: `/audit-test-coverage`
-- compares feature plans (`specs/<feature>.md`), E2E journey plans (`specs/e2e/<journey>.md`), implemented tests, optional TMS mappings, and project map conventions
+- compares feature plans (`specs/<feature>/<feature>.md`), E2E journey plans (`specs/e2e/<area>/<journey>.md`), implemented tests, optional TMS mappings, and project map conventions
 - use after planning/implementation batches or before cleanup or baseline conversion
 - reports missing ready coverage, unplanned tests, duplicate/wrong-layer coverage, blocked/postponed violations, TMS gaps, tag issues, and stale coverage-tied artifacts
 - does not modify files, implement tests, delete tests, update TMS, or publish results unless explicitly requested in the same task
@@ -306,8 +322,11 @@ Rule references:
 Test data generation policy (starter baseline):
 
 - clean starter does not ship `src/test/data/**`;
-- create `src/test/data/builders/**` and `src/test/data/generators/**` only when a concrete project needs reusable generated data;
+- create `src/test/data/builders/**`, `src/test/data/datasets/**`, and `src/test/data/generators/**` only when a concrete project needs reusable generated data;
 - do not use inline random or faker calls directly in specs;
+- do not duplicate reusable payloads, form objects, or shared constants across specs or setup helpers;
+- when the same entity exists in API and UI layers, use separate builders per layer and shared datasets for neutral constants such as passwords and dates;
+- setup helpers under `src/test/setup/**` must consume builders instead of owning parallel default payloads;
 - `@faker-js/faker` is optional and project-driven, not installed by default.
 
 Stability audit (review only; does not heal tests):
@@ -412,6 +431,55 @@ Multi-target rules:
 
 ---
 
+## Auth Strategy
+
+Rule:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
+
+How-to:
+
+- `docs/auth-strategy.md`
+
+The project map is the source of truth for how **this** project authenticates.
+
+Register before use: API mechanism, UI mechanism, session persistence, token/header/storage key, optional roles, isolation, capture paths.
+
+Agents must not invent roles, login flows, Bearer tokens, `storageState` paths, or storage keys.
+
+Feature plans and E2E journey plans must include an **Auth Strategy** section even when no session is required.
+
+Starter default until this project registers otherwise:
+
+```text
+required: no
+auth as: none
+API mode: none
+UI mode: none
+```
+
+Do not invent a role to represent "not signed in".
+
+### Registered in this project
+
+None yet. Keep the starter default until a concrete application registers mechanisms.
+
+When adding authenticated coverage, update this list with the project's choices:
+
+- roles, only if the app has named roles;
+- API mechanisms;
+- UI mechanisms;
+- persistence and token or storage placement;
+- isolation or capture paths.
+
+Do not invent those names in specs first.
+
+Add `auth.fixture.ts` or `src/test/setup/auth/**` only when auth-as-precondition is reused.
+
+Captured session files belong in gitignored `state/`. Never commit them.
+
+---
+
 ## CI Environment / Secrets
 
 Workflow file:
@@ -452,6 +520,7 @@ Secrets guidance (document per real project; do not commit values):
 
 - user passwords for authenticated flows;
 - API tokens and service account credentials;
+- captured storageState / session files (local `state/`, CI Secrets — never repo files);
 - TMS provider tokens (local MCP, extension settings, or CI Secrets — not repo files);
 - external service credentials (email, payment, third-party auth, etc.).
 
@@ -470,6 +539,7 @@ Rule references:
 
 - `.cursor/rules/configuration-secrets.rules.mdc`
 - `.cursor/rules/multi-target-environment.rules.mdc`
+- `.cursor/rules/authentication-strategy.rules.mdc`
 
 ---
 
@@ -485,7 +555,7 @@ Import pattern:
 import { test, expect } from "../../src/test/fixtures/test";
 ```
 
-### Fixture chain (current project)
+### Fixture chain (created per project)
 
 Use layered fixture composition. Specs import only from `test.ts`.
 
@@ -501,8 +571,8 @@ Layer ownership:
 | File | Responsibility |
 |------|----------------|
 | `base.fixture.ts` | Playwright `test` + `expect` only |
-| `api.fixture.ts` | cross-target API setup transport (`apiSetupRequest` for UI preconditions against `API_BASE_URL`) |
-| `pages.fixture.ts` | Page Object wiring (`loginPage`, `registerPage`, `accountPage`) |
+| `api.fixture.ts` | API setup transport when UI or E2E needs API preconditions |
+| `pages.fixture.ts` | Page Object wiring |
 | `test.ts` | public entry point for specs |
 
 Auth setup helpers (not fixtures) live under:
@@ -516,6 +586,10 @@ Add `auth.fixture.ts` only when auth wiring becomes a real fixture need, for exa
 - reusable token/session fixture.
 
 Do **not** add fixtures that hide login or other action-under-test flows (for example `loggedInPage`).
+
+Rule:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
 
 Rules:
 
@@ -580,9 +654,13 @@ Failure artifacts (Playwright `use` defaults):
 
 Allure report generation:
 
-- script: `npm run report:allure:generate` — generates `reports/allure/html/` from `reports/allure/results/` using `reports/allure/allurerc.mjs`
-- CI runs this step only when `reports/allure/results/` exists after test execution
+- cleanup script: `scripts/clean-allure-artifacts.mjs`
+- all Playwright `test*` execution scripts clear `reports/allure/results/` before the run
+- script: `npm run report:allure:generate` — clears `reports/allure/html/`, then generates from current `reports/allure/results/` using `reports/allure/allurerc.mjs`
+- script: `npm run test:report` — baseline test run plus fresh Allure serve
+- CI runs generate only when `reports/allure/results/` exists after test execution; fresh checkout avoids local-style accumulation
 - step-level custom Allure screenshots in specs are project-specific and not enabled by default
+- do not accumulate stale Allure result files locally; `allure generate` merges every file in results
 
 Runtime artifact folders (gitignored):
 
@@ -590,11 +668,14 @@ Runtime artifact folders (gitignored):
 - `playwright-report/` — Playwright HTML report
 - `reports/allure/results/` — raw Allure results from test runs
 - `reports/allure/html/` — generated Allure HTML report
-- `reports/allure/allurerc.mjs` — Allure 3 config (`singleFile`, `hideLabels`, readable `groupBy`)
+- `reports/allure/allurerc.mjs` — Allure 3 config (committed; `output`, `hideLabels`, `groupBy: ["feature", "story"]`)
 
-Allure metadata helper (created per project when custom metadata is implemented):
+Allure metadata helper (created per project when Allure metadata is first used):
 
-- `src/test/reporting/allure-metadata.helper.ts` — applies feature, story, layer, severity, and domain tags from Playwright tags
+- `src/test/reporting/allure-metadata.helper.ts` — applies feature, story, suite hierarchy, layer, severity, owner, and domain tags via `allure-js-commons` Runtime API
+- specs call `applyAllureMetadata({ ... })` — no `testInfo` argument
+- do not import deprecated `{ allure }` from `allure-playwright` in specs or helpers
+- the clean starter does not ship this helper; implementation skills create it when needed
 
 Allure configuration skill:
 
@@ -622,7 +703,7 @@ Future extension:
 
 Visual tests:
 
-- UI visual tests live under `tests/ui/` unless another location is defined here.
+- UI visual tests live under `tests/ui/<feature>/` inside the feature UI spec unless another location is defined here.
 
 Visual tag:
 
@@ -654,7 +735,7 @@ Environment variables:
 
 API documentation / contract source:
 
-- define in project-specific feature plans at `specs/<feature>.md`;
+- define in project-specific feature plans at `specs/<feature>/<feature>.md`;
 - do not hardcode product API URLs in the starter baseline.
 
 API collection input (optional per project):
@@ -665,12 +746,12 @@ API collection input (optional per project):
 - the clean starter ships with no real API collection requests;
 - Bruno provides executable request examples and planning/audit input;
 - OpenAPI/Swagger remains the API contract source of truth when available;
-- `specs/<feature>.md` remains the automation source of truth.
+- `specs/<feature>/<feature>.md` remains the automation source of truth.
 
 Bruno workflows:
 
 - inspect: `.cursor/skills/inspect-api-collection/SKILL.md` / `/inspect-api-collection` — read-only collection inventory and drift review;
-- plan: `.cursor/skills/plan-from-api-collection/SKILL.md` / `/plan-from-api-collection` — creates or updates only `specs/<feature>.md` when explicitly requested;
+- plan: `.cursor/skills/plan-from-api-collection/SKILL.md` / `/plan-from-api-collection` — creates or updates only `specs/<feature>/<feature>.md` when explicitly requested;
 - audit: `.cursor/skills/audit-api-collection-coverage/SKILL.md` / `/audit-api-collection-coverage` — read-only collection, plan, and API-test alignment audit;
 - do not generate tests directly from collections;
 - use OpenAPI/Swagger to resolve contract details when available and report Bruno/OpenAPI drift instead of guessing;
@@ -678,7 +759,7 @@ Bruno workflows:
 
 API specs (when added):
 
-- `tests/api/**/*.api.spec.ts`
+- `tests/api/<feature>/**/*.api.spec.ts`
 
 API Playwright project:
 
@@ -760,11 +841,8 @@ Feature or domain tags may be added only when registered in this project map or 
 
 Registered feature/domain tags:
 
-- `@login` — authentication login UI/API coverage
-- `@register` — customer registration UI/API coverage
-- `@registration` — registration journey or broader registration area coverage
-- `@checkout` — checkout and purchase E2E/UI coverage
-- `@contact` — contact form UI/API coverage
+- none in the clean starter
+- add a tag here before using it in specs
 
 ---
 
@@ -807,7 +885,7 @@ Tag policy:
 Planning:
 
 - feature plans may include Cross-browser coverage, Responsive coverage, or an explicit note that no extra coverage is needed;
-- E2E cross-browser expansion belongs in `specs/e2e/<journey>.md`, not feature coverage plans;
+- E2E cross-browser expansion belongs in `specs/e2e/<area>/<journey>.md`, not feature coverage plans;
 - do not invent browser, device, or unregistered coverage-type tags.
 
 Skills:
@@ -832,14 +910,19 @@ Rules:
 Planning layers:
 
 ```text
-specs/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
-specs/e2e/<journey>.md = E2E journey plans (full user/business flows only)
+specs/<feature>/<feature>.md     = feature coverage (API, UI, schema, visual, not automated)
+specs/e2e/<area>/<journey>.md = E2E journey plans (full user/business flows only)
 ```
 
 Workflow split:
 
-- feature workflow: `/plan-feature` -> `/implement-api-batch` -> `/implement-ui-batch` -> `/implement-visual-checkpoint`
-- E2E workflow: `/plan-e2e-journey` -> `specs/e2e/<journey>.md` -> `/implement-e2e-flow specs/e2e/<journey>.md` -> `tests/e2e/.../*.e2e.spec.ts`
+- new feature: `/plan-feature` -> `/implement-api-batch` -> `/implement-ui-batch` -> `/implement-visual-checkpoint`
+- product change: `/update-feature-plan` -> `/implement-api-batch` / `/implement-ui-batch` -> `/heal-*` (technical only) -> `qa:gate`
+- E2E workflow: `/plan-e2e-journey` -> `specs/e2e/<area>/<journey>.md` -> `/implement-e2e-flow specs/e2e/<area>/<journey>.md` -> `tests/e2e/<area>/*.e2e.spec.ts`
+
+Feature change rule:
+
+- `.cursor/rules/feature-change-lifecycle.rules.mdc`
 
 Skill:
 
@@ -855,19 +938,19 @@ Rule:
 
 Intended E2E spec location:
 
-- `tests/e2e/**/*.e2e.spec.ts`
+- `tests/e2e/<area>/**/*.e2e.spec.ts`
 - no E2E specs implemented yet
 - create only the minimal directory path needed when the first approved E2E spec is implemented
 
 E2E journey plan location:
 
-- `specs/e2e/<journey>.md`
-- E2E is **not** part of feature coverage plans at `specs/<feature>.md`
+- `specs/e2e/<area>/<journey>.md`
+- E2E is **not** part of feature coverage plans at `specs/<feature>/<feature>.md`
 
 Planning separation:
 
-- `specs/<feature>.md` = API, UI, schema, visual, not automated coverage
-- `specs/e2e/<journey>.md` = full user/business journey plans only
+- `specs/<feature>/<feature>.md` = API, UI, schema, visual, not automated coverage
+- `specs/e2e/<area>/<journey>.md` = full user/business journey plans only
 
 E2E journey plan content must include:
 
@@ -910,7 +993,7 @@ What E2E covers:
 
 Planning requirements for E2E scenarios:
 
-- documented in `specs/e2e/<journey>.md`, not in feature coverage plans;
+- documented in `specs/e2e/<area>/<journey>.md`, not in feature coverage plans;
 - business value;
 - user journey;
 - systems or states crossed;
@@ -930,7 +1013,7 @@ E2E journey planning:
 
 - skill: `.cursor/skills/plan-e2e-journey/SKILL.md`
 - command: `.cursor/commands/plan-e2e-journey.md`
-- output: `specs/e2e/<journey>.md`
+- output: `specs/e2e/<area>/<journey>.md`
 
 Implementation skill:
 
@@ -943,19 +1026,19 @@ Implementation command:
 Playwright project status:
 
 - dedicated Playwright `e2e` project is configured in `playwright.config.ts`;
-- E2E project targets `tests/e2e/**/*.e2e.spec.ts`;
+- E2E project targets `tests/e2e/<area>/**/*.e2e.spec.ts`;
 - E2E project retains trace/screenshots/videos on failure;
 - E2E retries are CI-aware (`CI ? 1 : 0`);
 - if no runner matches the intended E2E spec path or pattern, stop and report the config gap.
 
 User-facing workflow docs:
 
-- `docs/QUICK_REFERENCE.md` — daily-use quick reference cheat sheet
-- `docs/HELPER_RECIPES.md` — helper pattern recipes; documentation only, not shipped `src/test/**` implementations
-- `docs/reference/AI_WORKFLOW_MAP.md`
-- `docs/reference/HOW_TO_USE_AI_AUTOMATION.md`
-- `docs/reference/AI_AGENT_PROMPTS.md`
-- `docs/AI_SKILLS_COMMANDS_PLAYBOOK_FULL.md`
+- `docs/README.md` — documentation index
+- `docs/getting-started.md`
+- `docs/quick-flow.md`
+- `docs/long-flow.md`
+- `docs/commands.md`
+- `docs/prompts.md`
 
 ---
 
@@ -995,7 +1078,7 @@ Default mode:
 
 Feature plan mapping location:
 
-- `specs/<feature>.md`
+- `specs/<feature>/<feature>.md`
 
 Required TMS sections in feature plans:
 
@@ -1018,12 +1101,18 @@ No-existing-plan workflow:
 2. review generated plan
 3. implement selected ready API/UI coverage
 
-Existing-plan workflow:
+Existing-plan workflow (TMS alignment):
 
-1. `/plan-feature`
-2. `/align-plan-with-tms`
-3. review aligned plan
-4. implement selected ready API/UI coverage
+1. `/align-plan-with-tms`
+2. review aligned plan
+3. implement selected ready API/UI coverage
+
+Existing-plan workflow (product change):
+
+1. `/update-feature-plan`
+2. review updated `specs/<feature>/<feature>.md`
+3. implement selected ready API/UI coverage
+4. heal technical drift only; do not heal requirement drift without plan update
 
 Principles:
 
@@ -1073,7 +1162,7 @@ Reusable framework content normally includes:
 Project-specific artifacts normally include:
 
 - `tests/api/**`, `tests/ui/**`, `tests/e2e/**`
-- `specs/<feature>.md`, `specs/e2e/<journey>.md`
+- `specs/<feature>/<feature>.md`, `specs/e2e/<area>/<journey>.md`
 - current-app Page Objects, schemas, assertion helpers, builders, generators, fixtures, and visual baselines
 - product-specific project map entries until generalized
 

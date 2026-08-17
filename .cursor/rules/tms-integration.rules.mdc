@@ -21,7 +21,7 @@ The goal is to use TMS cases as planning input, traceability source, and review 
 
 TMS cases describe test intent and traceability.
 
-Feature plans in `specs/<feature>.md` decide how that intent should be automated.
+Feature plans in `specs/<feature>/<feature>.md` decide how that intent should be automated.
 
 Automated tests implement only the selected ready coverage.
 
@@ -52,7 +52,7 @@ Do not let TMS structure force poor automation design.
 
 When TMS cases exist, prefer this workflow:
 
-1. Create or update the normal feature coverage plan in `specs/<feature>.md`.
+1. Create or update the normal feature coverage plan in `specs/<feature>/<feature>.md`.
 2. Align that feature plan with TMS cases.
 3. Review the aligned feature plan.
 4. Implement selected API coverage marked ready to implement now.
@@ -125,7 +125,7 @@ When access mode is read-only MCP only, record that in the feature plan TMS Sour
 
 ## TMS Source In Feature Plans
 
-When a feature plan uses TMS cases, include a TMS Source section in `specs/<feature>.md`.
+When a feature plan uses TMS cases, include a TMS Source section in `specs/<feature>/<feature>.md`.
 
 The feature plan should document:
 
@@ -154,7 +154,7 @@ Example fields:
 
 ## TMS Mapping In Feature Plans
 
-When using TMS as planning input, add TMS Mapping to `specs/<feature>.md`.
+When using TMS as planning input, add TMS Mapping to `specs/<feature>/<feature>.md`.
 
 For each reviewed TMS case, capture:
 
@@ -274,7 +274,7 @@ If the TMS case describes a useful negative or boundary idea but the contract is
 
 ## Alignment With Existing Feature Plans
 
-When a feature plan already exists in `specs/<feature>.md`, do not replace it blindly with TMS cases.
+When a feature plan already exists in `specs/<feature>/<feature>.md`, do not replace it blindly with TMS cases.
 
 Instead:
 
@@ -311,7 +311,7 @@ Prefer mapping existing automation to TMS intent when behavior is equivalent.
 
 ## Linking Automated Tests To TMS
 
-TMS IDs may be added to specs or tests only after TMS mapping has been reviewed in `specs/<feature>.md`.
+TMS IDs may be added to specs or tests only after TMS mapping has been reviewed in `specs/<feature>/<feature>.md`.
 
 Adding TMS IDs should follow project-approved metadata and reporting conventions.
 

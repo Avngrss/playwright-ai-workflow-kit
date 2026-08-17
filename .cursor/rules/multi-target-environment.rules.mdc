@@ -100,7 +100,7 @@ If a needed env name is missing from the project map, stop and request a project
 
 ## Planning Requirements
 
-Feature plans at `specs/<feature>.md` must document Feature Targets when more than one URL or system is involved.
+Feature plans at `specs/<feature>/<feature>.md` must document Feature Targets when more than one URL or system is involved.
 
 Required when applicable:
 
@@ -115,7 +115,7 @@ If targets are unclear, mark the scenario blocked or postponed, or ask for clari
 
 Do not implement until target ownership is explicit in the plan and project map.
 
-E2E journey plans at `specs/e2e/<journey>.md` must document:
+E2E journey plans at `specs/e2e/<area>/<journey>.md` must document:
 
 - every UI app crossed;
 - every API service crossed;
@@ -151,6 +151,20 @@ E2E implementation:
 Setup or cleanup may use a different target from the UI flow, but the target must be explicit in the plan and visible in setup code comments or fixture naming only when needed for clarity — not to hide journey steps.
 
 If a required Feature Target is unclear, stop and ask for clarification or mark the scenario blocked/postponed. Do not fall back to `UI_PRECONDITION_API_BASE_URL` and do not derive an API host from a UI host.
+
+---
+
+## Auth Strategy Ownership
+
+Authentication modes are project conventions — not agent inventions.
+
+Declare them in the project map Auth Strategy section.
+
+Feature plans and E2E journey plans select only the auth mode they need.
+
+Rule:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
 
 ---
 

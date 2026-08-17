@@ -4,7 +4,7 @@
 
 Use this skill when a true end-to-end user or business journey needs planning.
 
-The goal is to create or update an E2E journey plan at `specs/e2e/<journey>.md` without implementing Playwright tests.
+The goal is to create or update an E2E journey plan at `specs/e2e/<area>/<journey>.md` without implementing Playwright tests.
 
 This skill defines journey intent, boundary, setup/data/cleanup strategy, blockers, and implementation target.
 
@@ -21,6 +21,7 @@ Follow these rules:
 - Fixtures and Test Data Rules;
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
+- Authentication Strategy Rules;
 - Test Isolation and State Rules;
 - Project Map Rules;
 - Agent Workflow.
@@ -44,7 +45,7 @@ Use this skill when:
 
 Do not use this skill when:
 
-- the scope is a feature-level plan (`specs/<feature>.md`);
+- the scope is a feature-level plan (`specs/<feature>/<feature>.md`);
 - the scope is a short UI check (page render, field visibility, single validation, simple feedback);
 - the task is to implement tests;
 - the task is to create Playwright code;
@@ -59,14 +60,14 @@ If the candidate is not truly E2E, redirect back to feature coverage planning.
 Use relevant context:
 
 - candidate journey name and business goal;
-- related feature plans in `specs/<feature>.md` (for coverage boundary only);
+- related feature plans in `specs/<feature>/<feature>.md` (for coverage boundary only);
 - project map and E2E rules;
 - existing routes/pages/fixtures/helpers;
 - known setup, data, cleanup, and environment constraints.
 
 Output path must be:
 
-- `specs/e2e/<journey>.md`
+- `specs/e2e/<area>/<journey>.md`
 
 ---
 
@@ -119,6 +120,24 @@ Do not derive API host from UI host.
 
 Do not invent env variable names.
 
+### 2b. Document Auth Strategy
+
+Follow Authentication Strategy Rules and the project map.
+
+Document for the journey:
+
+- required: yes or no;
+- role only if the project map registers roles and this journey uses one;
+- auth as: `none`, `action`, or `precondition`;
+- UI and API mechanisms from the project map;
+- whether login is a journey step (`action`) or a setup session (`precondition`).
+
+If the journey needs a signed-in start and the UI/API mode is not registered, mark the journey **blocked**.
+
+Do not use storageState or UI login as hidden setup when login is a journey step.
+
+How-to examples: `docs/auth-strategy.md`.
+
 ### 3. Define Setup/Data/Cleanup Strategy
 
 Plan only allowed setup:
@@ -166,7 +185,7 @@ No Playwright code in the journey plan.
 
 ## Output Format
 
-Use this exact structure in `specs/e2e/<journey>.md`:
+Use this exact structure in `specs/e2e/<area>/<journey>.md`:
 
 ```md
 # <Journey Name> E2E Journey
@@ -209,6 +228,21 @@ Setup/cleanup targets (only when needed):
 If only one UI app and one API service exist, state defaults from project map.
 
 If ownership is unclear, status must be **blocked**.
+
+## Auth Strategy
+
+- required:
+- role: <only if registered in the project map; omit when no session>
+- auth as: none | action | precondition
+- API mode:
+- UI mode:
+- persistence:
+- isolation:
+- capture / secrets:
+
+Login as a journey step uses `auth as: action`. Do not hide it behind storageState.
+
+If a signed-in start is required and the mode is not in the project map, status must be **blocked**.
 
 ## Expected Outcome
 
@@ -338,7 +372,7 @@ Do not:
 
 E2E cross-browser and responsive expansion is **not** the default.
 
-- document browser or viewport variants in `specs/e2e/<journey>.md` only when a documented browser or viewport risk exists;
+- document browser or viewport variants in `specs/e2e/<area>/<journey>.md` only when a documented browser or viewport risk exists;
 - limit cross-browser E2E to very small smoke journeys;
 - do not plan full E2E regression matrices across browsers or viewports by default;
 - if no browser-specific or viewport-specific E2E risk exists, state that no extra cross-browser or responsive E2E coverage is needed.
@@ -349,12 +383,14 @@ E2E cross-browser and responsive expansion is **not** the default.
 
 This skill is complete when:
 
-- `specs/e2e/<journey>.md` was created/updated;
+- `specs/e2e/<area>/<journey>.md` was created/updated;
 - candidate is validated as true E2E (or redirected);
 - boundary is explicit (covered vs not covered);
 - setup/data/cleanup strategy is defined;
 - determinism guarantees are documented;
 - target UI apps and API services are documented with env names from project map;
+- Auth Strategy is documented;
+- signed-in start without a registered auth mode is **blocked**;
 - final assertion marker is explicit;
 - status is exactly **ready to implement now** or **blocked** (no conditional wording);
 - readiness checklist was applied;

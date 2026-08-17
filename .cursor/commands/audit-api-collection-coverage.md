@@ -4,7 +4,7 @@ Collection path:
 <collections/bruno/<service-or-domain>/**>
 
 Feature plan path:
-<specs/<feature>.md>
+<specs/<feature>/<feature>.md>
 
 API tests path:
 <tests/api/**>

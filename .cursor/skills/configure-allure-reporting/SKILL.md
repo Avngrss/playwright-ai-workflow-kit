@@ -104,6 +104,16 @@ Do not leave new planned feature tests without Allure metadata unless there is a
 
 ---
 
+## Runtime API Import Policy
+
+- `src/test/reporting/allure-metadata.helper.ts` uses `import * as allure from "allure-js-commons"`.
+- Do not import `{ allure }` from `allure-playwright` in specs or helpers — deprecated.
+- Specs call `applyAllureMetadata({ ... })` — no `testInfo` argument.
+- `allure-playwright` is configured only as a reporter in `playwright.config.ts`.
+- Allure 3 report layout: `reports/allure/allurerc.mjs` (`output`, `hideLabels`, `groupBy`).
+
+---
+
 ### Metadata Placement
 
 When adding Allure metadata to specs:
@@ -254,6 +264,7 @@ Use the shared Allure metadata helper for both UI and API tests.
 Current shared helper:
 
 - `src/test/reporting/allure-metadata.helper.ts`
+- `buildAllureSuitePath(rootSuite, ...segments)` for nested suite paths
 
 Do not create a separate API metadata helper unless metadata behavior truly differs.
 
@@ -268,3 +279,41 @@ Builders, generators, auth providers, and non-reporting fixtures must not call A
 Future optional helper:
 
 - `src/test/reporting/allure-api-diagnostics.helper.ts`
+
+---
+
+## Artifact Cleanup Policy
+
+Allure folders are runtime artifacts and must not accumulate across runs.
+
+### Required behavior
+
+- clear `reports/allure/results/` before Playwright test runs that write Allure output;
+- clear `reports/allure/html/` before `allure generate`;
+- use `scripts/clean-allure-artifacts.mjs` — do not leave manual cleanup to the user.
+
+### npm scripts
+
+- `report:allure:clean` — remove results and HTML;
+- all Playwright `test*` execution scripts run `scripts/clean-allure-artifacts.mjs --results` first;
+- `report:allure:generate` and `report:allure:serve` run `scripts/clean-allure-artifacts.mjs --html` before generation;
+- `test:report` — tests plus fresh Allure serve;
+- do not add separate npm scripts for `--results` or `--html` cleanup.
+
+### Local workflow default
+
+Prefer:
+
+```bash
+npm run test:report
+```
+
+Do not generate Allure HTML from stale accumulated results.
+
+`allure generate` merges every file in `reports/allure/results/`; mixed old runs produce incorrect skipped/failed totals.
+
+### Agent rule
+
+When asked to run tests and open Allure, use project npm scripts that enforce cleanup.
+
+Do not call raw `allure generate` unless cleanup is explicitly handled first.

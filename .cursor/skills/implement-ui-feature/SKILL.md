@@ -39,6 +39,8 @@ Follow these rules:
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
+- Authentication Strategy Rules;
+- Sorting and Filtering Assertion Strategy;
 - Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
@@ -122,7 +124,7 @@ Use relevant available context:
 
 Default feature plan location may be:
 
-- `specs/<feature>.md`
+- `specs/<feature>/<feature>.md`
 
 Use the project map as the source of truth.
 
@@ -178,6 +180,7 @@ Read the feature plan and identify:
 - explicit note that no extra cross-browser or responsive coverage is needed;
 - UI/application Feature Target and env name from project map;
 - setup/cleanup Feature Targets only when the plan requires them;
+- Auth Strategy (required, role, auth as, UI mode);
 - verification command.
 
 Use only the UI/application and optional setup/cleanup Feature Targets listed in the feature plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL` or generic starter env names when the project map defines named targets.
@@ -185,6 +188,12 @@ Use only the UI/application and optional setup/cleanup Feature Targets listed in
 If a required UI/application or setup/cleanup Feature Target is missing from the plan, stop and report:
 
 "Required Feature Target is missing from the feature plan. Update the plan and project map before implementation."
+
+If the scenario needs a signed-in browser and Auth Strategy is missing, or the UI mode is not registered in the project map, stop and report:
+
+"Auth Strategy is missing from the feature plan. Update the plan and project map before implementation."
+
+Do not invent `storageState`, `localStorage` keys, or UI login as hidden setup.
 
 Do not invent env variable names.
 
@@ -215,6 +224,14 @@ Before creating or modifying files, check the project map for:
 - quality gate command.
 
 Do not invent folders, aliases, commands, tags, or naming conventions.
+
+Place new UI specs at `tests/ui/<feature>/<feature>.ui.spec.ts`.
+
+Do not create UI specs at the `tests/ui/` root.
+
+Rule reference:
+
+- `.cursor/rules/spec-feature-placement.rules.mdc`
 
 ---
 
@@ -389,6 +406,8 @@ Before writing UI tests:
 
 - identify whether the scenario needs structured form data;
 - reuse an existing builder, generator, dataset, or local scenario cases when available;
+- search other specs and setup helpers for the same payload/form shape before creating a new inline object or local factory;
+- extract duplicated `base...Data` blocks or `createValid...` helpers to the data layer instead of copying them into another spec;
 - create or update a dedicated test data builder only if reusable structured data is needed;
 - do not define reusable `buildData`, `buildFormData`, `buildRegistrationData`, or similar factory functions inside specs;
 - do not export form data types from Page Objects or Component Objects.
@@ -573,6 +592,14 @@ Examples of setup data:
 
 The UI test should focus on the user-facing behavior under test.
 
+When UI tests need a signed-in session:
+
+- use the UI mode from the plan and project map Auth Strategy;
+- `auth as: action` → keep login visible in the spec;
+- `auth as: precondition` → use the registered mode (`storageState`, inject, captured session);
+- do not UI-login in `beforeEach` when login is not the behavior under test;
+- do not plant tokens with `page.evaluate` after the app already loaded without a session.
+
 When UI tests need backend preconditions:
 
 - prefer an approved API setup mechanism when it exists;
@@ -605,6 +632,10 @@ Setup code must not:
 ### 10. Implement Tests
 
 Implement tests for the selected UI scope only.
+
+Create or update the spec at `tests/ui/<feature>/<feature>.ui.spec.ts`.
+
+Do not add a flat spec under `tests/ui/`.
 
 Tests must:
 
@@ -694,6 +725,18 @@ Avoid:
 
 ### 11. Spec Helper And Assertion Logic Check
 
+Before writing UI specs, search existing helpers under:
+
+- `src/test/assertions/**`
+- `src/test/reporting/**`
+- `src/test/data/**`
+
+Reuse or extend existing helpers before creating new ones or adding local functions to specs.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
+
 Before writing UI specs, keep specs focused on scenario flow.
 
 Specs may contain:
@@ -705,6 +748,8 @@ Specs may contain:
 - calls to assertion helpers;
 - direct scenario assertions.
 
+Specs must not define local helper functions by default.
+
 Specs must not accumulate reusable technical helper logic.
 
 Move reusable or non-trivial logic to dedicated helpers when it includes:
@@ -714,14 +759,21 @@ Move reusable or non-trivial logic to dedicated helpers when it includes:
 - parsing logic used by assertions;
 - repeated predicate checks;
 - field-specific assertion branching;
-- reusable validation of arrays, tables, lists, cards, or API-like structures.
+- reusable validation of arrays, tables, lists, cards, or API-like structures;
+- UI stability polling or signature waits;
+- Allure suite path builders;
+- matrix/table-driven scenario orchestration such as `run*Scenario`.
 
 Preferred destinations:
 
 - assertion helpers for reusable or non-trivial assertions;
+- UI stability helpers under `src/test/assertions/ui/**`;
+- reporting helpers under `src/test/reporting/**`;
 - test data datasets for reusable scenario cases;
 - generators for unique primitive values;
 - builders for reusable structured data.
+
+For table-driven UI tests, keep `test.step`, actions, and verification inside each `test(...)` body.
 
 Do not create helper files for one-line one-off logic.
 
@@ -775,6 +827,28 @@ Avoid method patterns such as:
 - `sortAndVerify`;
 - `loginAndExpectSuccess`;
 - `submitAndValidate`;
+
+---
+
+## Sorting And Filtering Console Diagnostics
+
+When implementing or updating sorting or filtering UI coverage, follow Sorting and Filtering Assertion Strategy.
+
+Required:
+
+- invariant-based sort or filter assertions live in assertion helpers, not specs;
+- successful verification emits a concise console summary through the shared sort/filter console helper;
+- console output includes operation kind, label, item count, and checked sequence or sample;
+- specs do not add ad-hoc `console.log` for sort/filter proof.
+
+Implementation checklist:
+
+1. extract comparable values through Page Object or Component state readers;
+2. assert monotonic order or filter predicate in a reusable assertion helper;
+3. call `logSortFilterVerification(...)` only after the invariant assertion passes;
+4. keep failure details in Playwright `expect` messages, not console output.
+
+Review must fail when sort/filter tests pass silently without console diagnostics from the assertion helper layer.
 - `createAndCheck`.
 
 Keep action and verification explicit in the spec.

@@ -1,6 +1,6 @@
 ---
 name: playwright-test-generator
-description: 'Use this agent when you need to create automated browser tests using Playwright. Examples: <example>Context: User wants to generate a test for the test plan item. <test-suite><!-- Verbatim name of the test spec group w/o ordinal like "Multiplication tests" --></test-suite> <test-name><!-- Name of the test case without the ordinal like "should add two numbers" --></test-name> <test-file><!-- Name of the file to save the test into, like tests/ui/<area>/<feature>.ui.spec.ts --></test-file> <body><!-- Test case content including steps and expectations --></body></example>'
+description: 'Use this agent when you need to create automated browser tests using Playwright. Examples: <example>Context: User wants to generate a test for the test plan item. <test-suite><!-- Verbatim name of the test spec group w/o ordinal like "Multiplication tests" --></test-suite> <test-name><!-- Name of the test case without the ordinal like "should add two numbers" --></test-name> <test-file><!-- Name of the file to save the test into, like tests/ui/<feature>/<feature>.ui.spec.ts --></test-file> <body><!-- Test case content including steps and expectations --></body></example>'
 tools:
   - search
   - playwright-test/browser_click
@@ -42,9 +42,26 @@ This repository is a reusable Playwright + TypeScript automation framework start
 `src/test/**` yet — Page Objects, fixtures, schemas, and other implementation files are created per real project during
 first implementation through framework skills and commands.
 
-Generate tests from approved plans in `specs/<feature>.md` or `specs/e2e/<journey>.md`, place files under the project's
-test layout, and import from the final fixture entry point at `src/test/fixtures/test.ts` once the project fixture chain
-exists. Do not assume a repository seed spec or pre-existing fixture entry point in a fresh starter.
+Follow `.cursor/rules/00-project-map.mdc` and the matching implementation skill:
+
+- UI: `.cursor/skills/implement-ui-feature/SKILL.md`
+- API: `.cursor/skills/implement-api-feature/SKILL.md`
+- E2E: `.cursor/skills/implement-e2e-flow/SKILL.md`
+
+Generate tests only from approved plans in `specs/<feature>/<feature>.md` or `specs/e2e/<area>/<journey>.md`.
+Implement only scenarios marked ready to implement now.
+Place files under `tests/<layer>/<feature>/`. Do not add specs at `tests/ui/` or `tests/api/` root.
+Import from the final fixture entry point at `src/test/fixtures/test.ts` once the project fixture chain exists.
+Do not assume a repository seed spec or pre-existing fixture entry point in a fresh starter.
+
+Playwright generator MCP output is a draft. Before finishing:
+
+- move application locators into Page Objects or Components;
+- keep assertions in the spec or a dedicated assertion helper;
+- use `test.step` for user-level phases;
+- add required tags (`@ui` or `@api` or `@e2e`, plus `@smoke` or `@regression`);
+- do not leave raw `page.locator` / `page.getByRole` for application UI in committed specs;
+- do not hide the action under test in fixtures or hooks.
 
 # For each test you generate
 - Obtain the test plan with all the steps and verification specification
@@ -54,43 +71,8 @@ exists. Do not assume a repository seed spec or pre-existing fixture entry point
   - Use the step description as the intent for each Playwright tool call.
 - Retrieve generator log via `generator_read_log`
 - Immediately after reading the test log, invoke `generator_write_test` with the generated source code
-  - File should contain single test
-  - File name must be fs-friendly scenario name
-  - Test must be placed in a describe matching the top-level test plan item
+  - Place the file at `tests/ui/<feature>/<feature>.ui.spec.ts` (or the matching API/E2E path)
+  - Group scenarios for one feature in that feature folder
   - Test title must match the scenario name
-  - Includes a comment with the step text before each step execution. Do not duplicate comments if step requires
-    multiple actions.
-  - Always use best practices from the log when generating tests.
-
-   <example-generation>
-   For following plan:
-
-   ```markdown file=specs/<feature>.md
-   ### 1. User Sign In
-   **Setup note:** navigate to the target page or use approved fixture setup from the feature plan.
-
-   #### 1.1 Valid credentials sign in
-   **Steps:**
-   1. Open the sign-in page
-   2. Enter valid credentials
-   3. Submit the form
-
-   #### 1.2 Invalid credentials feedback
-   ...
-   ```
-
-   Following file is generated:
-
-   ```ts file=sign-in.ui.spec.ts
-   // spec: specs/<feature>.md
-
-   test.describe('User Sign In', () => {
-     test('Valid credentials sign in', async ({ page }) => {
-       // 1. Open the sign-in page
-       await page.goto(...);
-
-       ...
-     });
-   });
-   ```
-   </example-generation>
+  - Always use best practices from the log when generating tests
+  - Then rewrite the draft onto Page Objects, fixtures, and kit conventions before considering the work done

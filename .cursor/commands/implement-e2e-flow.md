@@ -1,17 +1,17 @@
 Use Skill: @.cursor/skills/implement-e2e-flow/SKILL.md
 
 Usage:
-/implement-e2e-flow specs/e2e/<journey>.md
+/implement-e2e-flow specs/e2e/<area>/<journey>.md
 
 Input:
-- existing E2E journey plan only: specs/e2e/<journey>.md
+- existing E2E journey plan only: specs/e2e/<area>/<journey>.md
 - scenario must come from that journey plan
 
 Task:
 Implement only E2E coverage marked ready to implement now.
 
 If input plan is missing:
-"E2E journey plan is required. Create it first with /plan-e2e-journey under specs/e2e/<journey>.md."
+"E2E journey plan is required. Create it first with /plan-e2e-journey under specs/e2e/<area>/<journey>.md."
 
 If the journey plan is blocked:
 "This E2E journey is blocked: <reason>. Resolve the blocker or create a different E2E journey plan."

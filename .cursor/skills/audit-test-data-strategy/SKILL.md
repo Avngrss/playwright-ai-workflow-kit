@@ -87,8 +87,8 @@ Collect relevant available context:
 
 ### Plans
 
-- `specs/<feature>.md` — data/setup notes, ready/blocked status, target service ownership when documented
-- `specs/e2e/<journey>.md` — setup strategy, test data strategy, cleanup or isolation strategy, external dependencies
+- `specs/<feature>/<feature>.md` — data/setup notes, ready/blocked status, target service ownership when documented
+- `specs/e2e/<area>/<journey>.md` — setup strategy, test data strategy, cleanup or isolation strategy, external dependencies
 
 ### Tests
 
@@ -471,7 +471,7 @@ Grouped batches only — do not execute during audit.
 
 Examples:
 
-- update `specs/e2e/<journey>.md` data/cleanup section;
+- update `specs/e2e/<area>/<journey>.md` data/cleanup section;
 - `/plan-e2e-journey` to document isolation;
 - `/create-test-data-builder` when reuse is justified;
 - `/create-fixture` for thin precondition wiring;

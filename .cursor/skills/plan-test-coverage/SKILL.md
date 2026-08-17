@@ -8,7 +8,7 @@ The goal is to choose the right test level before implementation and produce a c
 
 The plan must describe the full coverage picture for API, UI, schema, visual, and not automated levels — not E2E.
 
-E2E is a separate planning layer. Full user or business journeys are planned in `specs/e2e/<journey>.md`, not in feature coverage plans.
+E2E is a separate planning layer. Full user or business journeys are planned in `specs/e2e/<area>/<journey>.md`, not in feature coverage plans.
 
 Do not implement tests during this skill.
 
@@ -25,6 +25,7 @@ Follow these rules:
 - Visual Testing Rules;
 - Cross-Browser and Responsive Testing Rules;
 - Multi-Target Environment Rules;
+- Authentication Strategy Rules;
 - Test Structure and Tags Rules;
 - Project Map Rules;
 - Agent Workflow;
@@ -39,13 +40,14 @@ If this skill conflicts with a rule or the project map, follow the project map a
 Use this skill when:
 
 - creating a new feature test plan;
+- refreshing an existing feature plan after product, contract, or requirement change;
 - deciding whether behavior should be covered by UI, API, visual, schema, or not automated;
 - reviewing too many proposed UI tests;
 - splitting smoke and regression coverage;
 - avoiding duplicate coverage across layers;
 - creating API and UI implementation briefs before coding.
 
-Do **not** use this skill to plan E2E journeys. E2E belongs in `specs/e2e/<journey>.md`.
+Do **not** use this skill to plan E2E journeys. E2E belongs in `specs/e2e/<area>/<journey>.md`.
 
 ---
 
@@ -57,7 +59,56 @@ Do not use this skill when:
 - test level is already clear;
 - a failing test needs healing;
 - implementation has already been approved and scoped;
-- the task is only to implement tests from an existing plan.
+- the task is only to implement tests from an existing plan that is already current.
+
+Use `/update-feature-plan` when the product changed and the plan may be stale.
+
+---
+
+## Updating An Existing Plan
+
+Use this path when automation already exists and the product, contract, or requirements changed.
+
+Inputs:
+
+- existing plan at `specs/<feature>/<feature>.md`;
+- description of what changed, or `unknown`;
+- optional layer scope: `api`, `ui`, `both`, or `unknown`;
+- optional requirements/specs (path, link, pasted text, or attached file) — same input as `/plan-feature`;
+- optional failing test paths;
+- optional TMS, OpenAPI, or UI discovery inputs.
+
+Attached requirements are a first-class refresh input. When present, use them as intended product behavior and compare:
+
+```text
+old plan  vs  attached requirements  vs  live app / contract / failing tests
+```
+
+Do not invent fields, messages, or status codes that the requirements do not define.
+
+If requirements and live app disagree, record the drift in Change log and mark unclear items blocked/postponed. Do not silently pick one side.
+
+Unknown delta is allowed when requirements are missing. Discover observed differences from the plan vs live app/contract/failing tests. Do not invent requirements.
+
+If layer scope is `api` or `ui`, refresh that layer first and scan the other layer only for side effects.
+
+Steps:
+
+1. Read the current plan and existing tests for the feature slug.
+2. Compare observed or reported product behavior with planned scenarios.
+3. If `What changed` is unknown, run discovery and record observed delta; if the plan is still correct, stop and recommend heal.
+4. Add a **Change log** entry with date or sprint note and a short delta summary.
+5. Update scenario statuses: ready to implement now, blocked, postponed, not automated, removed.
+6. Refresh Implementation Briefs only for ready items affected by the change.
+7. Note obsolete tests or helpers that implementation should remove or rewrite.
+
+Do not implement tests during this skill.
+
+After the plan is updated, implementation and heal follow `.cursor/rules/feature-change-lifecycle.rules.mdc`:
+
+```text
+/update-feature-plan → /implement-*-batch → /heal-* (technical only) → qa:gate
+```
 
 ---
 
@@ -151,6 +202,35 @@ Document target ownership in the feature plan even when only one app and one ser
 
 ---
 
+### 2b. Identify Auth Strategy
+
+Follow Authentication Strategy Rules and the project map Auth Strategy section.
+
+Before recommending coverage, decide how this feature authenticates.
+
+For every feature plan, document:
+
+- required: yes or no;
+- role only if the project map registers roles and this scenario uses one;
+- auth as: `none`, `action`, or `precondition`;
+- API mechanism from the project map;
+- UI mechanism from the project map;
+- persistence and token placement only when a session is used;
+- isolation from the project map, or none.
+
+Rules:
+
+- features with no session still write Auth Strategy (`required: no`, modes `none`);
+- do not invent role names to fill the template;
+- login / token-issuance coverage uses `auth as: action`;
+- other authenticated coverage uses `auth as: precondition` and a registered mechanism;
+- do not invent env token names, `localStorage` keys, storageState paths, or login endpoints;
+- if a scenario needs a session and the mechanism is not in the project map, mark it **blocked**.
+
+How-to examples: `docs/auth-strategy.md`.
+
+---
+
 ### 3. Classify Risk
 
 For each behavior, classify the main risk:
@@ -184,7 +264,7 @@ For each behavior, choose one primary test level:
 - schema/contract;
 - not automated.
 
-Do **not** assign E2E in feature coverage plans. If a behavior requires a critical full user or business journey, note that it may need a separate E2E journey plan in `specs/e2e/<journey>.md` later.
+Do **not** assign E2E in feature coverage plans. If a behavior requires a critical full user or business journey, note that it may need a separate E2E journey plan in `specs/e2e/<area>/<journey>.md` later.
 
 Use the lowest reliable level that proves the behavior.
 
@@ -196,7 +276,7 @@ UI coverage is justified only when the risk is user-facing, browser-visible, or 
 
 Prefer API, UI, schema, and visual coverage for broad coverage.
 
-Use E2E sparingly for high-value journeys — but plan E2E separately in `specs/e2e/<journey>.md`, not in this feature plan.
+Use E2E sparingly for high-value journeys — but plan E2E separately in `specs/e2e/<area>/<journey>.md`, not in this feature plan.
 
 Block or postpone E2E journey planning when mailbox, reset-link, reset-token, payment, or other external dependencies are missing, unstable, or lack safe cleanup.
 
@@ -248,7 +328,7 @@ Do **not** recommend:
 E2E cross-browser coverage:
 
 - limit to very small smoke journeys only;
-- plan separately in `specs/e2e/<journey>.md`, not in feature coverage plans;
+- plan separately in `specs/e2e/<area>/<journey>.md`, not in feature coverage plans;
 - do not mix cross-browser E2E expansion into normal feature plans unless noting a future journey-plan candidate.
 
 For each cross-browser or responsive item, specify:
@@ -457,7 +537,7 @@ Group coverage by:
 - schema/contract checks;
 - not automated or blocked items.
 
-Do **not** group E2E coverage in feature plans. E2E is planned separately in `specs/e2e/<journey>.md`.
+Do **not** group E2E coverage in feature plans. E2E is planned separately in `specs/e2e/<area>/<journey>.md`.
 
 For each group, classify items as:
 
@@ -488,7 +568,7 @@ Implementation commands should later select a level-specific implementation scop
 - all UI coverage ready to implement now;
 - visual checkpoints planned now.
 
-E2E is planned separately via `/plan-e2e-journey` at `specs/e2e/<journey>.md`.
+E2E is planned separately via `/plan-e2e-journey` at `specs/e2e/<area>/<journey>.md`.
 
 Recommended implementation commands are informational only during planning.
 
@@ -500,7 +580,7 @@ Create implementation briefs that are actionable for implementation agents.
 
 The plan must not leave API or UI details for implementation agents to invent.
 
-If a full journey may need E2E later, add a short note pointing to a future `specs/e2e/<journey>.md` — do not include E2E scenarios or E2E Implementation Brief in the feature plan.
+If a full journey may need E2E later, add a short note pointing to a future `specs/e2e/<area>/<journey>.md` — do not include E2E scenarios or E2E Implementation Brief in the feature plan.
 
 API Implementation Brief should include:
 
@@ -551,7 +631,7 @@ A scenario must represent one of:
 - integration risk;
 - not automated risk.
 
-Do not list E2E journeys in feature coverage plans. E2E belongs in `specs/e2e/<journey>.md`.
+Do not list E2E journeys in feature coverage plans. E2E belongs in `specs/e2e/<area>/<journey>.md`.
 
 Do not list implementation details as standalone scenarios.
 
@@ -659,6 +739,7 @@ For each variant group, specify:
 - in scope:
 - out of scope:
 - Feature Targets:
+- Auth Strategy:
 - target env names (from project map):
 - API contract source:
 - requirements/specs:
@@ -686,6 +767,32 @@ Rules:
 - plans must name targets explicitly when more than one app or service exists;
 - do not invent env names;
 - if ownership is unclear, mark blocked/postponed or ask for clarification.
+
+### Auth Strategy
+
+Required in every feature plan, including features with no session.
+
+```md
+## Auth Strategy
+
+- required: yes | no
+- role: <only if registered in the project map; omit when no session>
+- auth as: none | action | precondition
+- API mode: <from project map, or none>
+- UI mode: <from project map, or none>
+- persistence: none | cookies | localStorage | sessionStorage | mixed
+- token placement: <header or storage key from project map>
+- isolation: <from project map, or none>
+- capture / secrets: <path or env name from project map, or none>
+```
+
+Rules:
+
+- use only mechanisms and roles registered in the project map;
+- do not invent guest, admin, or other role names;
+- login/token issuance = `auth as: action`;
+- already-signed-in coverage = `auth as: precondition`;
+- missing mechanism → blocked, do not invent.
 
 ### Coverage Matrix
 
@@ -743,6 +850,9 @@ For each API scenario:
 - boundary coverage decision:
 - builder decision:
 - API client decision:
+- auth required:
+- auth as:
+- API mode (from project map):
 - assertion helper decision:
 - contract gaps/blockers:
 
@@ -770,6 +880,9 @@ For each UI scenario:
 - UI/application Feature Target:
 - setup/cleanup Feature Target (if needed):
 - env names (from project map):
+- auth required:
+- auth as:
+- UI mode (from project map):
 - tags:
 - preconditions:
 - test data:
@@ -866,7 +979,7 @@ Potential E2E journey candidate:
 - <journey name>
 
 Suggested journey plan path:
-- specs/e2e/<journey>.md
+- specs/e2e/<area>/<journey>.md
 
 Reason:
 - <why lower-level coverage is not enough>
@@ -930,7 +1043,7 @@ Examples:
 - `/implement-visual-checkpoint`;
 - `/create-builder`.
 
-Do **not** recommend `/implement-e2e-flow` from feature coverage plans. E2E requires a separate journey plan at `specs/e2e/<journey>.md`.
+Do **not** recommend `/implement-e2e-flow` from feature coverage plans. E2E requires a separate journey plan at `specs/e2e/<area>/<journey>.md`.
 
 Recommended commands are output only.
 
@@ -945,7 +1058,7 @@ This skill is complete when:
 - each behavior has a recommended primary test level;
 - UI tests are justified by distinct user-facing value;
 - E2E is **not** included in the feature plan;
-- potential E2E journey candidates are noted with path to `specs/e2e/<journey>.md` when applicable;
+- potential E2E journey candidates are noted with path to `specs/e2e/<area>/<journey>.md` when applicable;
 - UI scenarios include unique UI risk and why API/schema is not sufficient;
 - form/mutation happy paths keep a plain successful submit separate from optional success variants;
 - API tests cover contract or backend risks;
@@ -972,4 +1085,6 @@ This skill is complete when:
 - cross-browser and responsive decisions are documented, including explicit no-extra-coverage note when applicable;
 - cross-browser or responsive items specify browser project or viewport, user value, and expected visible behavior when planned.
 - required Feature Targets (UI/application, API/service, external/partner, and setup/cleanup when relevant) are documented, or simple-project defaults are stated;
+- Auth Strategy is documented (required, role, auth as, API/UI modes from the project map);
+- authenticated coverage without a registered auth mode is blocked;
 - unclear target ownership is marked blocked/postponed or clarified before implementation.

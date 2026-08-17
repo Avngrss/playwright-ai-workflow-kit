@@ -14,7 +14,7 @@ API client collections are planning and audit inputs for API automation. Bruno i
 ```text
 OpenAPI / Swagger      = API contract: endpoints, schemas, status codes, parameters, and auth
 Bruno collections      = executable request examples, manual client requests, payload examples, and request flows
-specs/<feature>.md     = reviewed automation plan and source of truth for what is automated
+specs/<feature>/<feature>.md     = reviewed automation plan and source of truth for what is automated
 tests/api/**           = Playwright implementation
 ```
 
@@ -32,7 +32,7 @@ If Bruno and OpenAPI/Swagger disagree, report contract or source drift. Do not g
 - Do not generate tests directly from Bruno collections.
 - Bruno informs planning; it does not decide automation coverage.
 - Use collections to identify request examples, auth variables, service ownership, payload examples, request flows, and possible coverage gaps.
-- Every automated API test must originate from a reviewed `specs/<feature>.md` plan.
+- Every automated API test must originate from a reviewed `specs/<feature>/<feature>.md` plan.
 - Collection examples may inform payloads or builders, but do not replace API schema or contract validation.
 
 ## Secrets And Environment Variables
@@ -50,7 +50,7 @@ If Bruno and OpenAPI/Swagger disagree, report contract or source drift. Do not g
 
 ## API Plan Usage
 
-- Collections may be used to create or update `specs/<feature>.md`.
+- Collections may be used to create or update `specs/<feature>/<feature>.md`.
 - Plans must classify candidate coverage as `ready to implement now`, `blocked/postponed`, or `not automated`.
 - Do not infer undocumented request fields, status codes, or behavior from a collection alone.
 

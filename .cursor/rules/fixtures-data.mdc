@@ -343,6 +343,16 @@ This rule applies to:
 
 Test data must come from test data modules defined by the project map.
 
+Before adding inline payloads or local factory helpers in API specs, check:
+
+- existing builders under `src/test/data/builders/**`;
+- existing datasets under `src/test/data/datasets/**`;
+- setup helpers under `src/test/setup/**`.
+
+Reuse builders/datasets instead of duplicating registration, login, contact, or other entity payloads across specs and setup code.
+
+Setup helpers must consume builders; they must not own parallel default payload objects.
+
 Examples:
 
 - datasets;

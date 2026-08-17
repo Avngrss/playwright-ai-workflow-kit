@@ -1,0 +1,261 @@
+---
+description: Workflow when product requirements, locators, or feature scope change
+alwaysApply: true
+---
+
+# Feature Change Lifecycle
+
+## Purpose
+
+Product features change often: requirements shift, controls are added or removed, locators change, API contracts evolve.
+
+Automation must stay fresh without turning every failure into blind locator patching or weakened assertions.
+
+The feature coverage plan is the source of truth for what should be automated.
+
+Tests, Page Objects, helpers, and data follow the updated plan — not the other way around.
+
+---
+
+## Core Principle
+
+When the product changes, refresh the plan first, then align tests and support layers to the updated plan.
+
+Do not guess new requirements during heal.
+
+Do not weaken assertions to match undocumented product drift.
+
+---
+
+## Two Paths
+
+### Path A — Plan Refresh (product or requirement change)
+
+Use when one or more is true:
+
+- user-visible behavior changed;
+- validation rules changed;
+- API contract or status expectations changed;
+- a control, field, step, or screen was added or removed;
+- scenario is no longer valid or needs new coverage;
+- failure reason is unclear and may be requirement drift;
+- TMS, OpenAPI, or product docs disagree with the current plan;
+- heal would change expected behavior without plan approval.
+
+Workflow:
+
+```text
+/update-feature-plan  (or /plan-feature for net-new scope)
+→ review updated specs/<feature>/<feature>.md
+→ /implement-api-batch and/or /implement-ui-batch on ready items only
+→ heal only remaining technical drift against the updated plan
+→ npm run qa:gate
+→ /review-generated
+```
+
+### Path B — Technical Heal (stable requirement, unstable test)
+
+Use when the plan is still correct and the failure is technical only:
+
+- locator rename or DOM move with same user behavior;
+- timing or async readiness;
+- flaky setup or fixture wiring;
+- wrong test data shape with unchanged contract;
+- environment or config issue;
+- test isolation bug.
+
+Workflow:
+
+```text
+/heal-ui-test or /heal-api-test
+→ verify impacted specs
+→ npm run qa:gate
+```
+
+If heal would change scenario intent, expected messages, status codes, or coverage scope, stop and switch to Path A.
+
+---
+
+## Unknown Delta
+
+The user does not always know what changed.
+
+That is a valid input. Do not block the refresh because `What changed` is incomplete.
+
+When the delta is unknown:
+
+1. Read the current plan and the failing or related tests.
+2. Read attached requirements/specs when the user provided them — same input as `/plan-feature`.
+3. Discover current product behavior (UI snapshot/route, API contract/collection, TMS if given).
+4. Compare old plan vs attached requirements vs observed behavior.
+5. Write a Change log of **observed or requirement-backed** differences, not guessed requirements.
+6. Update only scenarios with evidence.
+7. Mark remaining uncertainty as blocked/postponed with the missing source of truth.
+
+Attached requirements are optional but preferred when available. They do not replace discovery when the live app may still differ.
+
+Do not invent new expected messages, status codes, or steps.
+
+If discovery shows the plan is still correct and only locators/timing/setup broke, stop the plan refresh and recommend `/heal-ui-test` or `/heal-api-test`.
+
+Unknown-delta prompt example:
+
+```text
+/update-feature-plan
+Feature: contact
+Existing plan: specs/contact/contact.md
+What changed: unknown — tests started failing
+Failing tests: tests/ui/contact/contact.ui.spec.ts
+```
+
+---
+
+## Layer Scope
+
+The user may know that only API or only UI changed.
+
+Optional input: `Layer to refresh: api | ui | both | unknown`.
+
+Rules:
+
+- specifying a layer is helpful, not required;
+- if omitted or `unknown`, discover which layers actually drifted;
+- if `api` or `ui` is specified, refresh that layer first;
+- still scan the other layer for side effects (shared validation, schema, Page Object used by both);
+- do not rewrite unaffected ready scenarios;
+- recommended next command should be only the affected implement/heal command.
+
+Examples:
+
+- API contract changed, UI text unchanged → refresh API section, then `/implement-api-batch`;
+- UI control renamed, API same → refresh UI section, then `/implement-ui-batch` or `/heal-ui-test` if behavior is unchanged;
+- both unclear → discover, then recommend the matching layer commands.
+
+---
+
+## Plan-First Gate
+
+Before healing or implementing:
+
+1. Read `specs/<feature>/<feature>.md` (or the relevant `specs/e2e/<area>/<journey>.md`).
+2. Confirm the scenario still exists and is marked ready to implement now.
+3. If the plan is stale, incomplete, or contradicts observed product behavior, update the plan before changing tests.
+
+Healing skills must not:
+
+- remove scenarios silently;
+- mark blocked items as passed;
+- change expected behavior without plan update;
+- invent new coverage during heal.
+
+---
+
+## Updating An Existing Plan
+
+When refreshing a plan, capture at minimum:
+
+- what changed in the product or contract;
+- scenarios added, updated, removed, blocked, or postponed;
+- layer impact: API, UI, schema, visual, not automated;
+- locator or Page Object notes when UI discovery is needed;
+- whether existing tests should be updated, removed, or left unchanged temporarily.
+
+Prefer a short **Change log** section at the top of the plan when the feature already has automation.
+
+Do not delete historical coverage decisions without recording why.
+
+---
+
+## Implementation After Plan Update
+
+Implement only items marked **ready to implement now** in the updated plan.
+
+Order:
+
+1. data / builders / datasets when contracts changed;
+2. Page Objects / Components / API clients for new or moved UI/API surface;
+3. specs — add, update, or remove scenarios to match the plan;
+4. heal residual technical failures that do not require another plan change;
+5. visual baseline updates only with explicit baseline approval.
+
+Remove or rewrite tests that no longer match the plan.
+
+Do not keep obsolete scenarios "just in case".
+
+---
+
+## E2E Journeys
+
+`/update-feature-plan` is for feature coverage plans only: `specs/<feature>/<feature>.md`.
+
+Full journeys use `specs/e2e/<area>/<journey>.md`.
+
+When an E2E test fails or a journey step/outcome changed:
+
+```text
+/plan-e2e-journey specs/e2e/<area>/<journey>.md
+→ review the updated journey plan
+→ /implement-e2e-flow
+```
+
+Unknown E2E delta is allowed. Discover from the journey plan vs the failing E2E spec and the live flow. Do not invent missing mailbox, payment, or cleanup capabilities.
+
+If the E2E failure is caused by a feature-level change (login form, registration contract, catalog control):
+
+1. refresh the related feature plan with `/update-feature-plan`;
+2. then refresh the journey plan with `/plan-e2e-journey`;
+3. then implement the feature layer and/or the E2E flow.
+
+Do not patch long E2E specs to match undocumented product changes.
+Do not treat a focused UI/API failure as an E2E plan refresh.
+
+---
+
+## Frequent Change Checklist
+
+```text
+Don't know what changed?
+  → /update-feature-plan (or /plan-e2e-journey) with What changed: unknown + failing tests
+  → agent discovers observed delta
+  → if technical only, switch to /heal-*
+
+Only API or only UI changed?
+  → say Layer to refresh: api or ui
+  → agent still checks the other layer for side effects
+
+E2E failed?
+  → /plan-e2e-journey on specs/e2e/<area>/<journey>.md
+  → if a feature step also drifted, /update-feature-plan first
+
+Product changed?
+  yes → update plan → implement ready items → verify
+  no  → classify heal vs config vs data
+
+Plan contradicts app?
+  yes → update plan first
+  no  → heal technical issue
+```
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- healing failing tests without reading the plan;
+- updating locators while requirements are unknown;
+- weakening assertions to match new UI without plan update;
+- adding tests for behavior not marked ready in the plan;
+- leaving removed product behavior covered by stale tests;
+- full rewrites in heal when the plan should have changed first;
+- mixing plan refresh and large implementation in one unreviewed step without updating the plan file.
+
+---
+
+## Main Principle
+
+Plans describe intended coverage.
+
+Tests prove the current product against that intent.
+
+When the product changes, update intent first, then automation.

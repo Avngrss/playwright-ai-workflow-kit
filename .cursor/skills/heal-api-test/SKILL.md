@@ -33,6 +33,7 @@ Follow these rules:
 - Project Map Rules;
 - Configuration and Secrets Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
+- Sorting and Filtering Assertion Strategy;
 - Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
 
@@ -163,6 +164,26 @@ Classify the root cause as one of:
 
 ---
 
+## Plan-First Gate
+
+Before applying a heal fix:
+
+1. Read `specs/<feature>/<feature>.md` for the feature under test.
+2. Confirm the failing scenario still exists and matches planned intent.
+3. If status codes, response shape, or behavior expectations changed versus the plan, **stop healing**.
+
+Report:
+
+```text
+Plan refresh required. Use /update-feature-plan for specs/<feature>/<feature>.md before changing tests.
+```
+
+For undocumented contract change without plan update, do not widen schemas or weaken assertions to force green.
+
+Follow `.cursor/rules/feature-change-lifecycle.rules.mdc`.
+
+---
+
 ### 4. Choose The Correct Fix Layer
 
 Fix at the lowest correct layer.
@@ -176,7 +197,7 @@ Use this mapping:
 - schema too strict without contract support -> schema strictness;
 - behavior assertion wrong -> assertion helper or spec;
 - auth/setup issue -> approved setup layer;
-- product contract changed -> update test only with contract evidence;
+- product contract changed -> update plan at `specs/<feature>/<feature>.md` first, then tests;
 - unclear behavior -> report blocked instead of forcing pass.
 
 Do not fix API failures by weakening assertions without evidence.
@@ -216,6 +237,13 @@ Builder defaults must be valid by default.
 Invalid or negative data must be explicit through overrides.
 
 Do not put reusable data generation directly into specs.
+
+For sorting/filtering API failures:
+
+- keep invariant checks in assertion helpers;
+- preserve or add approved console success diagnostics through the shared sort/filter console helper after checks pass;
+- use console sequence output to compare actual checked values with expected order or predicate;
+- do not move sort/filter proof into ad-hoc spec `console.log`.
 
 ---
 

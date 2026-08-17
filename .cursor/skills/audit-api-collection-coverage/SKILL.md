@@ -9,7 +9,7 @@ This is audit-only. It does not create or modify plans, collections, tests, Open
 ## Inputs
 
 - `collections/bruno/**`;
-- `specs/<feature>.md`;
+- `specs/<feature>/<feature>.md`;
 - `tests/api/**`;
 - optional OpenAPI/Swagger source;
 - project map.

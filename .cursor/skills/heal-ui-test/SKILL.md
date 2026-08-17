@@ -22,6 +22,7 @@ Follow these rules:
 - Locator Strategy Rules;
 - Fixtures and Test Data Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
+- Sorting and Filtering Assertion Strategy;
 - Configuration and Secrets Rules;
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
@@ -161,6 +162,45 @@ Collect more evidence or report the blocker.
 
 ---
 
+## Plan-First Gate
+
+Before applying a heal fix:
+
+1. Read `specs/<feature>/<feature>.md` for the feature under test.
+2. Confirm the failing scenario still exists and matches planned intent.
+3. If observed behavior differs from the plan, or the plan has no record of the change, **stop healing**.
+
+Report:
+
+```text
+Plan refresh required. Use /update-feature-plan for specs/<feature>/<feature>.md before changing tests.
+```
+
+Then follow `.cursor/rules/feature-change-lifecycle.rules.mdc`.
+
+---
+
+### Product Requirement or Application Behavior Change
+
+Signs:
+
+- validation messages or required fields changed;
+- user flow steps added or removed;
+- success or error criteria changed;
+- API status or body expectations changed per product docs;
+- heal would require changing expected behavior not documented in the current plan.
+
+Fix location:
+
+- `specs/<feature>/<feature>.md` first;
+- then implementation or technical heal.
+
+Do not patch tests to match undocumented product drift.
+
+Do not weaken assertions without plan update.
+
+---
+
 ## Root Cause Guidance
 
 ### Locator Issue
@@ -272,6 +312,13 @@ Preferred fix:
 - add data preconditions where behavior requires enough data.
 
 Do not mask insufficient data with fake assertions.
+
+For sorting/filtering failures:
+
+- keep invariant checks in assertion helpers;
+- preserve or add approved console success diagnostics through the shared sort/filter console helper after checks pass;
+- do not move sort/filter proof into ad-hoc spec `console.log`;
+- use console output to confirm which values were checked when investigating false positives or negatives.
 
 ---
 

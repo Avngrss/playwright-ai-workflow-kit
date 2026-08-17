@@ -20,6 +20,7 @@ The goal is to keep changes small, intentional, reviewable, and aligned with the
 - Do not modify unrelated files.
 - Do not perform opportunistic refactoring while solving a targeted task.
 - Follow the project map before creating files, folders, imports, tags, scripts, or abstractions.
+- Place new specs in `tests/<layer>/<feature>/`, never at the `tests/ui/` or `tests/api/` root.
 - Do not invent architecture when an existing convention exists.
 - Do not overengineer abstractions.
 
@@ -65,8 +66,15 @@ Before implementing, identify:
 - affected layer;
 - existing relevant files;
 - reusable project abstractions;
+- existing helpers under `src/test/assertions/**`, `src/test/reporting/**`, and related project layers;
 - required data;
 - required verification command.
+
+Before adding helper logic to specs, search existing project helpers and reuse or extend them.
+
+Rule reference:
+
+- `.cursor/rules/spec-helper-policy.rules.mdc`
 
 For large changes or refactors, first explain:
 

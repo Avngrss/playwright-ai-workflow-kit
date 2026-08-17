@@ -78,15 +78,19 @@ It must not contain:
 
 ## Authentication Strategy
 
-- Authentication must be implemented through a reusable auth provider.
-- Tests must not perform login directly.
-- Do not duplicate login logic across tests.
-- Do not hardcode tokens.
-- Do not hardcode credentials.
-- Authentication must go through the auth provider.
-- Token or session reuse strategy must be applied.
-- Token reuse must be scoped explicitly.
-- Token refresh or recreation must be handled by the auth provider when required.
+Follow Authentication Strategy Rules and the project map Auth Strategy section.
+
+- Login / token-issuance tests use **auth as action**. Those specs may call the login endpoint.
+- Other API tests that need a session use **auth as precondition** through the registered API mode.
+- Do not duplicate login in every authenticated spec.
+- Do not hardcode tokens or credentials.
+- Do not invent an AuthProvider, env token name, or header when the project map has no Auth Strategy.
+- Create a project-layer auth provider only when token acquisition is reused.
+- Token reuse, when used, must be scoped by environment, role, and worker as needed.
+
+Rule:
+
+- `.cursor/rules/authentication-strategy.rules.mdc`
 
 ---
 
@@ -136,7 +140,7 @@ const token = await authProvider.getToken({
 const token = "eyJhbGciOi...";
 ```
 
-### Bad
+### Bad for auth-as-precondition
 
 ```ts
 test("gets users", async ({ request }) => {
@@ -151,6 +155,8 @@ test("gets users", async ({ request }) => {
   expect(response.status()).toBe(200);
 });
 ```
+
+Login / token-issuance specs may call the login endpoint. Other specs must not copy that login.
 
 ---
 
@@ -398,8 +404,8 @@ Avoid:
 
 - hardcoded tokens;
 - hardcoded credentials;
-- login in every test;
-- login directly inside specs;
+- login in every test that is not a login test;
+- duplicating login inside authenticated specs;
 - API tests using Page Objects;
 - API tests using UI components;
 - clients with hidden assertions;

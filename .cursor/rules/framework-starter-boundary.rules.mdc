@@ -106,8 +106,8 @@ Do not preserve sample tests as framework content unless they are explicitly mar
 
 ### Plans and product docs
 
-- `specs/<feature>.md`
-- `specs/e2e/<journey>.md`
+- `specs/<feature>/<feature>.md`
+- `specs/e2e/<area>/<journey>.md`
 - product-specific docs tied to the current app only
 
 ### Application-bound implementation under `src/test/`

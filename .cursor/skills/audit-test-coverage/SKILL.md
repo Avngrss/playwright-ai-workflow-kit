@@ -31,6 +31,7 @@ Follow these rules:
 - Test Structure and Tags Rules;
 - TMS Integration Rules;
 - Cross-Browser and Responsive Testing Rules;
+- Authentication Strategy Rules;
 - Test Abstraction Hygiene Rules;
 - Agent Workflow;
 - Project Map Rules;
@@ -81,8 +82,8 @@ Collect relevant available context:
 
 ### Plans
 
-- `specs/<feature>.md` — feature coverage plan (API, UI, schema, visual, not automated)
-- `specs/e2e/<journey>.md` — E2E journey plan (full user/business flows only)
+- `specs/<feature>/<feature>.md` — feature coverage plan (API, UI, schema, visual, not automated)
+- `specs/e2e/<area>/<journey>.md` — E2E journey plan (full user/business flows only)
 
 ### Implemented tests
 
@@ -105,7 +106,7 @@ Optional narrow scope:
 
 ### Project conventions
 
-- `.cursor/rules/00-project-map.mdc` — tags, projects, paths, env ownership, fixture entry point
+- `.cursor/rules/00-project-map.mdc` — tags, projects, paths, env ownership, Auth Strategy, fixture entry point
 
 Do not read `process.env` in specs during audit.
 
@@ -130,6 +131,7 @@ Classify findings into these categories:
 9. **Tests with missing/wrong tags** — missing required layer or execution tags, forbidden browser/device tags, unregistered feature tags, E2E tagged `@ui`, full journey missing `@e2e`
 10. **Tests not matching project map conventions** — wrong spec location, wrong suffix, wrong Playwright project target, fixture import bypass, env read in spec
 11. **Stale helpers or implementation artifacts** — only when directly tied to removed or unplanned coverage (unused Page Object, schema, helper, or client with no spec consumer)
+12. **Auth strategy gap** — authenticated test without plan Auth Strategy, invented token/`storageState`/`localStorage` not in the project map, or UI login used as hidden setup
 
 ---
 
@@ -445,7 +447,7 @@ This skill is complete when:
 - findings were classified into audit categories with evidence;
 - coverage matrix was produced;
 - missing ready coverage and unplanned tests were listed;
-- duplicate, wrong-layer, blocked/postponed, TMS, tag, and stale-artifact issues were reported when applicable;
+- duplicate, wrong-layer, blocked/postponed, TMS, tag, stale-artifact, and auth-strategy issues were reported when applicable;
 - recommended next command was named;
 - no files were modified unless explicitly requested.
 

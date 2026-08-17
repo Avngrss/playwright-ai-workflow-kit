@@ -73,7 +73,24 @@ Do not invent folders, aliases, or naming conventions.
 
 ---
 
-### 2. Identify Data Shape
+### 2. Check Existing Data Layer First
+
+Before creating new data, search for existing:
+
+- builders under `src/test/data/builders/**`;
+- datasets under `src/test/data/datasets/**`;
+- generators under `src/test/data/generators/**`;
+- setup helpers under `src/test/setup/**`.
+
+Reuse or extend existing builders/datasets when the shape already exists.
+
+Do not create a second builder or inline payload for the same entity unless the layer contract truly differs.
+
+If the same helper or base object appears in more than one spec, extract it to the data layer before adding a third copy.
+
+---
+
+### 3. Identify Data Shape
 
 Identify all required fields for the target:
 
@@ -98,7 +115,7 @@ Expected output:
 
 ---
 
-### 3. Identify Unique Fields
+### 4. Identify Unique Fields
 
 Identify fields that must be unique.
 
@@ -116,7 +133,7 @@ Do not generate unique values inline in specs.
 
 ---
 
-### 4. Create or Update Type
+### 5. Create or Update Type
 
 Create or update the type in the project-defined type location.
 
@@ -141,7 +158,7 @@ Do not create this exact type unless it matches the project domain.
 
 ---
 
-### 5. Create or Update Generator If Needed
+### 6. Create or Update Generator If Needed
 
 Create or update a generator only when unique or formatted primitive values are needed.
 
@@ -174,7 +191,7 @@ Use existing project generator conventions.
 
 ---
 
-### 6. Create or Update Builder
+### 7. Create or Update Builder
 
 Create or update the builder in the project-defined builder location.
 
@@ -189,6 +206,10 @@ Builder must:
 - avoid direct environment access;
 - avoid hidden setup;
 - stay in the project layer when domain-specific.
+
+When the same entity exists in API and UI forms, create separate builders per layer and share only neutral constants through datasets.
+
+Setup helpers must consume builders instead of owning parallel default payloads.
 
 Example pattern:
 
@@ -316,6 +337,10 @@ Avoid:
 - inline `Date.now()` in specs;
 - inline `Math.random()` in specs;
 - duplicated payload objects across specs;
+- copy-pasted `base...Data` blocks between UI, E2E, and API specs;
+- local `createValid...` helpers duplicated across specs;
+- setup helpers that redefine builder-owned payloads;
+- hardcoded shared passwords/constants outside datasets;
 - builders that require all fields every time;
 - builders that create invalid data by default;
 - builders that perform UI actions;

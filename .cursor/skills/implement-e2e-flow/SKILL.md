@@ -4,7 +4,7 @@
 
 Use this skill when an E2E journey plan already exists and approved E2E automation must be implemented.
 
-The goal is to implement selected E2E coverage from an accepted E2E journey plan at `specs/e2e/<journey>.md` while keeping journeys readable, isolated, stable, and aligned with E2E Testing Rules.
+The goal is to implement selected E2E coverage from an accepted E2E journey plan at `specs/e2e/<area>/<journey>.md` while keeping journeys readable, isolated, stable, and aligned with E2E Testing Rules.
 
 E2E means a full user or business flow crossing multiple states, pages, or system boundaries.
 
@@ -49,6 +49,7 @@ Follow these rules:
 - Test Isolation, Flakiness, and Diagnostics Rules;
 - Configuration and Secrets Rules;
 - Multi-Target Environment Rules;
+- Authentication Strategy Rules;
 - Reporting Allure Rules;
 - Temporary Debug Artifact Cleanup Rules;
 - Examples Policy.
@@ -67,7 +68,7 @@ Use this skill as an implementation workflow for approved E2E scenarios.
 
 Expected flow:
 
-- E2E journey plan at `specs/e2e/<journey>.md` defines E2E scenarios;
+- E2E journey plan at `specs/e2e/<area>/<journey>.md` defines E2E scenarios;
 - this skill implements E2E coverage marked ready to implement now from the journey plan;
 - Plan Test Coverage skill owns feature coverage plans (API, UI, schema, visual) — not E2E;
 - Implement UI Feature skill owns focused UI functional coverage;
@@ -86,7 +87,7 @@ It does not replace planning or lower-level implementation skills.
 
 Use this skill when:
 
-- `specs/e2e/<journey>.md` exists and includes a ready-to-implement-now scenario;
+- `specs/e2e/<area>/<journey>.md` exists and includes a ready-to-implement-now scenario;
 - setup strategy is clear;
 - test data strategy is clear;
 - cleanup or isolation strategy is clear;
@@ -101,7 +102,7 @@ Use this skill when:
 
 Do not use this skill when:
 
-- no E2E journey plan exists at `specs/e2e/<journey>.md`;
+- no E2E journey plan exists at `specs/e2e/<area>/<journey>.md`;
 - the task is only to plan feature coverage (use Plan Test Coverage for API/UI/schema/visual);
 - the task is only to create an E2E journey plan without implementation;
 - the E2E scenario is blocked;
@@ -116,7 +117,7 @@ Do not use this skill when:
 
 If no E2E journey plan exists, stop with:
 
-"E2E journey plan is required. Create it first with /plan-e2e-journey under specs/e2e/<journey>.md."
+"E2E journey plan is required. Create it first with /plan-e2e-journey under specs/e2e/<area>/<journey>.md."
 
 Do not invent missing requirements.
 
@@ -150,7 +151,7 @@ Use Refactor Overengineering when behavior-preserving cleanup is the only task.
 
 Use relevant available context:
 
-- E2E journey plan at `specs/e2e/<journey>.md`;
+- E2E journey plan at `specs/e2e/<area>/<journey>.md`;
 - selected E2E implementation scope;
 - project map;
 - existing E2E specs, if any;
@@ -165,9 +166,9 @@ Use relevant available context:
 
 Default E2E journey plan location:
 
-- `specs/e2e/<journey>.md`
+- `specs/e2e/<area>/<journey>.md`
 
-Do not read E2E scenarios from feature coverage plans at `specs/<feature>.md`.
+Do not read E2E scenarios from feature coverage plans at `specs/<feature>/<feature>.md`.
 
 Use the project map as the source of truth for:
 
@@ -189,7 +190,7 @@ Implement only the selected E2E scope.
 
 Preferred implementation scope is:
 
-- all E2E coverage marked as ready to implement now in the E2E journey plan at `specs/e2e/<journey>.md`.
+- all E2E coverage marked as ready to implement now in the E2E journey plan at `specs/e2e/<area>/<journey>.md`.
 
 Do not implement:
 
@@ -239,7 +240,7 @@ Stop with:
 
 ### 1. Read The E2E Journey Plan
 
-Read `specs/e2e/<journey>.md` and run **Strict Plan Validation** first.
+Read `specs/e2e/<area>/<journey>.md` and run **Strict Plan Validation** first.
 
 Identify:
 
@@ -260,6 +261,7 @@ Identify:
 - flakiness risks;
 - external dependencies;
 - Feature Targets (UI/application, API/service, external, and setup/cleanup when relevant) with env names from project map;
+- Auth Strategy (required, role, auth as, UI/API modes);
 - required tags;
 - affected pages or flows;
 - verification command.
@@ -269,6 +271,12 @@ If the journey plan is missing a required Feature Target, stop and report:
 "Required Feature Target is missing from the E2E journey plan. Update the plan and project map before implementation."
 
 Use only Feature Targets listed in the E2E journey plan. Do not fall back to `UI_PRECONDITION_API_BASE_URL`.
+
+If the journey needs a signed-in start and Auth Strategy is missing, or the mode is not registered in the project map, stop and report:
+
+"Auth Strategy is missing from the E2E journey plan. Update the plan and project map before implementation."
+
+Do not hide a login journey step behind storageState or a logged-in fixture.
 
 Do not guess targets.
 
@@ -359,7 +367,9 @@ Before creating or modifying files, check the project map for:
 
 Default E2E spec location unless the project map says otherwise:
 
-- `tests/e2e/**/*.e2e.spec.ts`
+- `tests/e2e/<area>/<journey>.e2e.spec.ts`
+
+Do not create E2E specs at the `tests/e2e/` root.
 
 Use the Playwright E2E project defined in the project map and `playwright.config.ts`.
 
@@ -574,7 +584,7 @@ If the failure reveals missing mailbox, reset-link, cleanup, or external depende
 
 Do not:
 
-- implement without reading the E2E journey plan at `specs/e2e/<journey>.md`;
+- implement without reading the E2E journey plan at `specs/e2e/<area>/<journey>.md`;
 - read E2E scenarios from feature coverage plans;
 - create E2E scenarios from scratch during implementation;
 - convert short UI tests into E2E;
@@ -605,7 +615,7 @@ Do not:
 
 E2E cross-browser and responsive expansion is **not** the default.
 
-- implement E2E on the primary browser project and default viewport unless `specs/e2e/<journey>.md` explicitly plans browser or viewport variants;
+- implement E2E on the primary browser project and default viewport unless `specs/e2e/<area>/<journey>.md` explicitly plans browser or viewport variants;
 - only planned small smoke journeys may be expanded across browsers or viewports;
 - if the journey plan does not document cross-browser or responsive expansion, do not add a browser or viewport matrix during implementation.
 
@@ -671,7 +681,7 @@ When reporting implementation, use this structure:
 
 This skill is complete when:
 
-- E2E journey plan at `specs/e2e/<journey>.md` was read;
+- E2E journey plan at `specs/e2e/<area>/<journey>.md` was read;
 - **Strict Plan Validation** passed;
 - selected E2E scope was validated as **ready to implement now** only;
 - scenario was confirmed as truly E2E;
@@ -696,7 +706,7 @@ This skill is complete when:
 
 ## Main Principle
 
-E2E journey plan at `specs/e2e/<journey>.md` defines the scenario and readiness.
+E2E journey plan at `specs/e2e/<area>/<journey>.md` defines the scenario and readiness.
 
 This skill implements only approved full-journey E2E coverage from the journey plan.
 

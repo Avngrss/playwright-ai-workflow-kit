@@ -7,10 +7,15 @@ playwright-report/
 /playwright/.cache/
 /playwright/.auth/
 .auth/
+state/
+*.storage-state.json
 .playwright-mcp/
 .env
 .env.uat
-reports/
+reports/*
+!reports/allure/
+reports/allure/*
+!reports/allure/allurerc.mjs
 allure-results/
 allure-report/
 .scannerwork/

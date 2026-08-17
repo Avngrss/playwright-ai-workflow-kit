@@ -3,17 +3,21 @@ description: Generic sorting and filtering assertion strategy
 alwaysApply: false
 globs:
   - tests/ui/**/*.spec.ts
+  - tests/api/**/*.spec.ts
+  - src/test/assertions/sorting/**
+  - src/test/assertions/**/*sort*
+  - src/test/assertions/**/*filter*
 ---
 
 # Sorting and Filtering Assertion Strategy
 
 ## Purpose
 
-These rules define how sorting and filtering behavior should be asserted in UI tests.
+These rules define how sorting and filtering behavior should be asserted in UI and API tests.
 
-The goal is to verify behavior through stable invariants instead of fragile exact datasets.
+The goal is to verify behavior through stable invariants instead of fragile exact datasets, and to make successful verification visible in the console without opening reports or traces.
 
-These rules apply to lists, tables, grids, catalogs, search results, and any UI that displays sortable or filterable collections.
+These rules apply to lists, tables, grids, catalogs, search results, and any UI or API surface that exposes sortable or filterable collections.
 
 ---
 
@@ -24,6 +28,112 @@ These rules apply to lists, tables, grids, catalogs, search results, and any UI 
 - Do not depend on a specific static dataset unless the test owns or explicitly prepares that dataset.
 - Do not mask insufficient data with fake assertions.
 - Assertions must prove the sorting or filtering behavior, not merely that some UI element exists.
+- Successful sort and filter verification must emit a concise console summary so local runs and CI logs show what was checked.
+
+---
+
+## Console Diagnostics
+
+Sorting and filtering assertions must make successful verification visible in the console.
+
+This is required for both UI and API tests.
+
+### Why
+
+- local runs should show checked values without opening HTML reports;
+- CI logs should prove the assertion inspected real data, not only passed silently;
+- reviewers and debuggers should see field, direction or predicate, item count, and checked sequence at a glance.
+
+### Where console output belongs
+
+- reusable sort/filter assertion helpers;
+- shared sort/filter console helper in the assertion layer.
+
+Console diagnostics must not live in:
+
+- specs as ad-hoc `console.log`;
+- Page Objects or Component Objects;
+- API clients;
+- builders, generators, or fixtures.
+
+Use the shared helper pattern:
+
+```ts
+logSortFilterVerification({
+  kind: "sort",
+  label: "price asc",
+  itemCount: values.length,
+  checkedValues: values.map(String),
+});
+```
+
+For filtering:
+
+```ts
+logSortFilterVerification({
+  kind: "filter",
+  label: "brand=Nike",
+  itemCount: items.length,
+  checkedValues: items.map((item) => item.name),
+  extra: { predicate: "brand === Nike" },
+});
+```
+
+### Required console content on success
+
+Every successful sort or filter verification should log:
+
+- operation kind: `sort` or `filter`;
+- readable label: field and direction, or filter predicate summary;
+- item count checked;
+- checked sequence or sample of checked values in display order.
+
+Optional:
+
+- truncation marker when only the first N values are printed;
+- extra metadata such as endpoint, sort key, or filter parameter when it improves readability.
+
+### Console output rules
+
+- log only after the invariant assertion passes;
+- use `console.info`, not `console.log`, for approved diagnostics;
+- keep output concise; prefer sequence preview over dumping full payloads;
+- do not log secrets, tokens, passwords, cookies, or personal data;
+- do not log on failure instead of actionable assertion messages; failure details belong in Playwright `expect` messages;
+- do not add console output in specs when a reusable assertion helper already owns the check.
+
+### Good
+
+```ts
+export function expectPricesSorted(
+  prices: number[],
+  direction: SortDirection,
+): void {
+  assertMonotonicOrder(/* ... */);
+
+  logSortFilterVerification({
+    kind: "sort",
+    label: `price ${direction}`,
+    itemCount: prices.length,
+    checkedValues: prices.map(String),
+  });
+}
+```
+
+### Bad
+
+```ts
+test("sorts products by price", async ({ catalogPage }) => {
+  const prices = await catalogPage.getVisiblePrices();
+
+  expect(isMonotonicAscending(prices)).toBeTruthy();
+  console.log("sorted prices:", prices);
+});
+```
+
+### Why this is bad
+
+Console output is duplicated in the spec, may drift from the shared assertion helper, and will be flagged as debug noise in other suites.
 
 ---
 
@@ -150,7 +260,7 @@ await test.step("Verify reset restores broader results", async () => {
   const resetItems = await productList.getVisibleItems();
 
   expect(resetItems.length).toBeGreaterThanOrEqual(filteredItems.length);
-  await filters.expectNoActiveFilters();
+  expect(await filters.hasActiveFilters()).toBe(false);
 });
 ```
 
@@ -232,7 +342,10 @@ Avoid:
 - ignoring insufficient test data;
 - comparing prices, dates, or percentages as raw strings;
 - claiming global sorting/filtering while checking only the first visible page;
-- using reset assertions that depend on unstable item order.
+- using reset assertions that depend on unstable item order;
+- sort/filter checks that pass without any console summary of checked values;
+- ad-hoc `console.log` in specs for sort/filter verification;
+- logging full API payloads or sensitive values for diagnostics.
 
 ---
 
@@ -245,5 +358,7 @@ Sorting proves order.
 Filtering proves predicate satisfaction.
 
 Reset proves controls and result scope were restored.
+
+Successful verification must also be visible in the console through shared assertion-layer diagnostics.
 
 The test should not depend on fragile, uncontrolled, project-specific data.

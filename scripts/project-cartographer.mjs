@@ -22,6 +22,7 @@ const IGNORE_DIRS = new Set([
 
   "allure-results",
   "allure-report",
+  "reports",
 
   "dist",
   "build",
@@ -29,7 +30,9 @@ const IGNORE_DIRS = new Set([
 ]);
 
 const IGNORE_FILES = new Set([
-  ".DS_Store"
+  ".DS_Store",
+  ".env",
+  ".env.uat",
 ]);
 
 function isIgnored(name, isDirectory) {
@@ -38,6 +41,10 @@ function isIgnored(name, isDirectory) {
   }
 
   if (!isDirectory && IGNORE_FILES.has(name)) {
+    return true;
+  }
+
+  if (!isDirectory && name.startsWith(".env.") && name !== ".env.example") {
     return true;
   }
 

@@ -106,13 +106,13 @@ Client must not:
 
 ### 5. Keep Auth Centralized
 
-Use project-approved auth provider or authenticated request fixture.
+Use project-approved auth provider or authenticated request fixture when Auth Strategy is `precondition`.
+
+Follow Authentication Strategy Rules and the project map.
 
 Do not duplicate login logic.
 
-Do not assume fixture names.
-
-Do not hardcode tokens.
+Do not invent tokens, header names, or login endpoints.
 
 ---
 
