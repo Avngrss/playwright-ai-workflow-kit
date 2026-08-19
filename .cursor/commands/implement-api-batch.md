@@ -33,6 +33,7 @@ stop and report missing contract, builder, auth, setup, or response details.
 
 After changes:
 run impacted API spec and quality gate from project map.
+Then run `/review-generated` on the changed files (includes embedded security posture review — do not call `/audit-security` separately).
 
 Report:
 - files changed

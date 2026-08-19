@@ -2,11 +2,13 @@
 
 ## Goal
 
-Use this skill to review recently generated or modified code for correctness, readability, duplication, unnecessary abstractions, scope creep, layer ownership, and maintainability issues.
+Use this skill to review recently generated or modified code for correctness, readability, duplication, unnecessary abstractions, scope creep, layer ownership, maintainability issues, and **security / sensitive-data exposure**.
 
 This is a review-only skill.
 
 Do not modify files.
+
+**Security posture review is mandatory and embedded** in this skill (workflow step **15A**). Do not run a separate security audit command after a normal implementation batch unless the user explicitly requests a repository-wide security-only scan.
 
 ---
 
@@ -30,6 +32,7 @@ Follow these rules:
 - API Architecture Rules;
 - API Schema Validation Rules;
 - Allure Reporting Rules;
+- Security and Sensitive Data Handling Rules;
 - Visual Testing Rules;
 - Cross-Browser and Responsive Testing Rules;
 - Sorting and Filtering Assertion Strategy;
@@ -572,6 +575,56 @@ Flag ad-hoc tags as major when they affect filtering/reporting consistency.
 
 ---
 
+### 15A. Security And Data Exposure (embedded security audit)
+
+**Always run this step** when reviewing changed specs, helpers, reporting, visual checkpoints, auth flows, `playwright.config.ts`, or CI workflow files.
+
+Do not delegate to a separate `/audit-security` command in the normal plan → implement → verify → review flow.
+
+Never print discovered secret values — report paths, categories, and remediation only.
+
+#### Changed-code checks
+
+- no raw `console.log` / `console.debug` / `console.info` in specs or helpers (use or create `safeLogger` when logging is needed);
+- no `process.env` reads in specs;
+- no hardcoded tokens, JWTs, or passwords in tests;
+- Allure / `testInfo.attach` uses project sanitize/redact helpers when attachments exist;
+- no raw login/register response attachments;
+- `@visual` filled-form states use explicit `mask:` locators from plan-backed `visualMaskTargets`, or documented empty-state-only strategy;
+- Page Objects with generated/sensitive UI fields expose `visualMaskTargets` from discovered locators when visual coverage exists;
+- sensitive-field datasets list plan/contract fields only — no guessed JSON keys or default mask selectors in the clean starter;
+- feature plan includes **Sensitive Data & Visual Masking** when UI/visual covers forms or auth;
+- no `.env` or storage state used as test assets;
+- no scratch debug dumps (`scripts/debug-*.mjs`, `discover-*-output.json`) with sensitive content.
+
+#### Config and artifact checks (when config/CI changed or auth/form UI added)
+
+Review `playwright.config.ts`:
+
+- `screenshot` / `trace` / `video` retention on failure;
+- Allure `environmentInfo` exposes hosts only, not secrets.
+
+Review `.github/workflows/**` when present:
+
+- artifact upload folders (`test-results/`, `playwright-report/`, Allure);
+- note if CI may publish sensitive failure artifacts without retention/access policy in project map.
+
+#### Convention gate alignment
+
+Note whether findings are already blocked by `npm run qa:gate` security checks or are review-only gaps (trace risk, missing plan section, missing `visualMaskTargets`).
+
+#### Severity
+
+Use **critical** for: hardcoded secrets; raw auth attachments; logging credential responses; committed session files.
+
+Use **major** for: console logging in specs; missing visual masks on generated data; missing plan **Sensitive Data** section; auth/form flows with trace on failure and no documented mitigation.
+
+Use **minor** for: helpers exist but unused; artifact retention not documented yet.
+
+Standalone deep-dive procedure (full repo, security-only): `.cursor/skills/audit-security-posture/SKILL.md` — **not** part of the default workflow.
+
+---
+
 ### 16. Check Workarounds
 
 Look for:
@@ -692,6 +745,18 @@ Only include minor findings when worth fixing now.
 - critical findings:
 - major findings:
 - minor findings:
+- security posture: pass | findings | not applicable
+
+### Security Posture (embedded)
+
+When step 15A applied:
+
+- exposure risks found: yes | no
+- critical / major / minor security items (paths only, no secret values):
+- qa:gate coverage vs review-only gaps:
+- artifact/trace notes (if auth, forms, or config changed):
+
+If no specs/helpers/config changed, state `not applicable`.
 
 ### Critical Findings
 

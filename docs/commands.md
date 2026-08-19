@@ -40,6 +40,7 @@ Prefer Agent mode when the command must write a file (`specs/<feature>/<feature>
 | [`/review-generated`](#review-generated) | `review-generated-code-quality` |
 | [`/audit-test-data-strategy`](#audit-test-data-strategy) | `audit-test-data-strategy` |
 | [`/audit-test-stability`](#audit-test-stability) | `audit-test-stability` |
+| [`/audit-security`](#audit-security) | `audit-security-posture` |
 | [`/audit-test-coverage`](#audit-test-coverage) | `audit-test-coverage` |
 | [`/review-ui-suite`](#review-ui-suite) | `review-ui-suite` |
 | [`/review-framework-change`](#review-framework-change) | `review-framework-change` |
@@ -1192,7 +1193,7 @@ Report:
 
 ### Purpose
 
-Review AI-generated or modified code.
+Review AI-generated or modified code. **Includes embedded security posture review** (logging, attachments, visual masks, artifacts) — no separate `/audit-security` needed in the normal flow.
 
 ### Skill
 
@@ -1275,7 +1276,7 @@ Recommended next step must be one of:
 - request changes
 ```
 
-**Note:** `/review-generated` (Review Generated Code Quality) is the **primary** post-implementation code review. Use `/audit-test-coverage` for plan-to-test coverage alignment. Use `/audit-test-data-strategy` for test data safety, isolation, and cleanup policy review. Use `/audit-test-stability` for flaky-pattern and synchronization audits before commit. Use `/review-ui-suite` only for broader UI suite audits.
+**Note:** `/review-generated` (Review Generated Code Quality) is the **primary** post-implementation code review and **includes embedded security posture review** (step 15A). Use `/audit-test-coverage` for plan-to-test coverage alignment. Use `/audit-test-data-strategy` for test data safety, isolation, and cleanup policy review. Use `/audit-test-stability` for flaky-pattern and synchronization audits before commit. Use `/audit-security` only for a **security-only full-repo scan** outside a normal review batch. Use `/review-ui-suite` only for broader UI suite audits.
 
 ---
 
@@ -1331,6 +1332,40 @@ Report:
 - fixture findings
 - E2E data risks
 - recommended next actions
+```
+
+---
+
+## Security audit (standalone)
+
+> **Default:** security posture is reviewed inside `/review-generated` (step 15A). You do not need this command after a normal implement → `qa:gate` → review batch.
+
+### Purpose
+
+Full-repository **security-only** exposure scan without code-quality review.
+
+### Skill
+
+```text
+@.cursor/skills/audit-security-posture/SKILL.md
+```
+
+### Use When
+
+- onboarding before enabling CI artifact sharing;
+- periodic repo-wide scan outside an implementation batch;
+- user explicitly asks for security-only audit.
+
+### Do Not Use When
+
+- reviewing recent implementation — use `/review-generated` (security is already embedded).
+
+### Template
+
+```text
+/audit-security
+
+Scope: all
 ```
 
 ---

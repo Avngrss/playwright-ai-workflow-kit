@@ -16,6 +16,8 @@ Follow these rules:
 - Page Object and Component Assertion Rules;
 - Component Extraction Rules;
 - Locator Strategy Rules;
+- Visual Testing Rules;
+- Security and Sensitive Data Handling Rules;
 - Fixtures and Test Data Rules;
 - Core / Project Boundary and Structure Rules;
 - Project Map Rules;
@@ -114,6 +116,26 @@ Page Object must not include:
 Do not create components by default.
 
 Create components only when reuse, complexity, semantic UI boundary, or Page Object growth justifies it.
+
+---
+
+### 5A. Visual Mask Targets (forms with generated or sensitive data)
+
+When the page has a form or fields that may show **generated email/phone/id** or **sensitive values** in `@visual` checkpoints, expose readonly mask locators for specs:
+
+```ts
+readonly visualMaskTargets = [
+  this.emailInput,
+  this.confirmationCode,
+];
+```
+
+Rules:
+
+- locators only — no `toHaveScreenshot`, no `expect`;
+- specs use `mask: page.visualMaskTargets` (or a project mask helper created during implementation);
+- omit `visualMaskTargets` when visual coverage is empty-state-only (document in feature plan);
+- default password/OTP masks come from `screenshot-masks.helper.ts` when `{ page }` is passed.
 
 ---
 

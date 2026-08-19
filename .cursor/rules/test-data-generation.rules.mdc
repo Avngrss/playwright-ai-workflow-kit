@@ -25,9 +25,9 @@ When needed, generators and builders belong to the project data layer, not specs
 
 ## Starter Baseline Rule
 
-The clean starter baseline ships with no `src/test/**` implementation layer and no project data layer.
+The clean starter baseline ships with no project data layer and no `src/test/**` implementation beyond the **fixture skeleton** (`src/test/fixtures/**`).
 
-Do not create `src/test/data/**` until a concrete project needs reusable generated data.
+Do not create `src/test/data/**`, security helpers, or reporting helpers until a concrete project needs them.
 
 Do not install data-generation libraries in advance.
 
@@ -175,6 +175,12 @@ Prefer safe reserved domains for emails when possible, such as `example.test` or
 If external email, SMS, payment, or other external systems are involved, generated data must be approved by the project plan.
 
 Do not include real user data, secrets, or production identifiers in generated test data.
+
+When generated data appears on screen, document mask or stable-state strategy in the feature plan (see Security and Sensitive Data Handling Rules).
+
+Rule reference:
+
+- `.cursor/rules/security-data-handling.rules.mdc`
 
 ---
 

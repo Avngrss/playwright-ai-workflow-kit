@@ -13,6 +13,7 @@ The goal is to run the smallest useful verification first, then broader checks w
 Follow these rules:
 
 - Agent Workflow;
+- Security and Sensitive Data Handling Rules;
 - Project Map Rules;
 - Temporary Debug Artifact Cleanup Rules;
 - Test Isolation, Flakiness, and Diagnostics Rules;
@@ -84,7 +85,7 @@ Examples:
 - related suite;
 - TypeScript check;
 - lint;
-- unit check if present.
+- unit tests for reusable helpers only when the agent adds or changes non-trivial logic under `src/test/**` (not part of the clean starter baseline).
 
 Use commands from project map.
 
@@ -114,7 +115,19 @@ Run the repository quality gate command defined by the project map.
 
 If the project map defines `npm run qa:gate`, use it.
 
+Static **security convention checks** are part of `qa:gate` (console patterns, hardcoded tokens, etc.).
+
 If no quality gate exists, report that it is missing.
+
+---
+
+### 4A. Review Before Acceptance (default batch completion)
+
+After `qa:gate` passes on an implementation or heal batch, run **Review Generated Code Quality** (`/review-generated`) on changed files unless the user explicitly skipped review.
+
+That review includes **embedded security posture** (step 15A). Do not run `/audit-security` as a second mandatory step.
+
+Skip review only when the user asked for verification-only or the change set is trivial and explicitly out of scope.
 
 ---
 
@@ -215,6 +228,7 @@ This skill is complete when:
 - targeted verification was selected;
 - related verification was considered;
 - quality gate was run or documented as not run;
+- review was run or documented as skipped when acceptance review applies (`/review-generated`, includes security posture);
 - temporary debug artifacts were removed or explicitly preserved by user request;
 - results are reported clearly;
 - failures are not hidden.

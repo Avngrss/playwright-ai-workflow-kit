@@ -11,6 +11,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 add-allure-metadata.md
       - 📄 align-plan-with-tms.md
       - 📄 audit-api-collection-coverage.md
+      - 📄 audit-security.md
       - 📄 audit-test-coverage.md
       - 📄 audit-test-data-strategy.md
       - 📄 audit-test-stability.md
@@ -59,6 +60,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 multi-target-environment.rules.mdc
       - 📄 project-scaling.mdc
       - 📄 reporting-allure.mdc
+      - 📄 security-data-handling.rules.mdc
       - 📄 sorting-filtering.mdc
       - 📄 spec-feature-placement.rules.mdc
       - 📄 spec-helper-policy.rules.mdc
@@ -74,6 +76,8 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📁 align-plan-with-tms/
         - 📄 SKILL.md
       - 📁 audit-api-collection-coverage/
+        - 📄 SKILL.md
+      - 📁 audit-security-posture/
         - 📄 SKILL.md
       - 📁 audit-test-coverage/
         - 📄 SKILL.md
@@ -149,17 +153,25 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
     - 📄 long-flow.md
     - 📄 prompts.md
     - 📄 quick-flow.md
+    - 📄 security-data-handling.md
   - 📁 scripts/
     - 📄 check-conventions.mjs
     - 📄 clean-allure-artifacts.mjs
     - 📄 ensure-playwright-browsers.mjs
     - 📄 project-cartographer.mjs
+  - 📁 src/
+    - 📁 test/
+      - 📁 fixtures/
+        - 📄 api.fixture.ts
+        - 📄 base.fixture.ts
+        - 📄 data.fixture.ts
+        - 📄 pages.fixture.ts
+        - 📄 README.md
+        - 📄 test.ts
   - 📁 tests/
     - 📄 .gitkeep
   - 📄 .env.example
   - 📄 .gitignore
-  - 📄 AGENTS.md
-  - 📄 LICENSE
   - 📄 package-lock.json
   - 📄 package.json
   - 📄 playwright.config.ts
@@ -195,9 +207,15 @@ User-facing docs:
 - `docs/commands.md` — slash-command templates
 - `docs/prompts.md` — prompt templates
 
-The clean starter baseline intentionally has **no project implementation layer** under `src/test/`.
+The clean starter baseline intentionally has **no full project implementation layer** under `src/test/`.
 
-Skills and commands create the required `src/test/**` structure when implementation starts on a concrete application.
+Starter ships only a **fixture skeleton**:
+
+- `src/test/fixtures/**` — `base` → `api` → `pages` → `test.ts` (empty extends until project wiring)
+
+Security, logging, and reporting helpers (`src/test/security/**`, `src/test/logging/**`, `src/test/reporting/**`) are **not** pre-shipped. Agents create them during implementation when the feature plan documents sensitive fields and the scenario needs logging, attachments, or visual masks. Field names and locators come from the plan, contract, or UI discovery — not guessed lists.
+
+Skills extend fixtures, pages, assertions, helpers, and tests when implementation starts on a concrete application.
 
 The clean starter baseline also intentionally ships with no `src/test/data/**` data layer.
 
@@ -207,7 +225,7 @@ Expected project implementation locations (created per application; **absent in 
 
 - `src/test/pages/**` — Page Objects
 - `src/test/components/**` — Component Objects
-- `src/test/fixtures/**` — fixture chain (`base` -> `api` -> `pages` -> `test.ts`)
+- `src/test/fixtures/**` — fixture chain skeleton (`base` → `api` → `pages` → `test.ts`; extend layers per project)
 - `src/test/setup/auth/**` — auth precondition helpers (disposable user setup)
 - `src/test/assertions/**` — assertion helpers (API and UI)
 - `src/test/schemas/**` — API Zod schemas
@@ -242,7 +260,7 @@ Forbidden:
 
 Quality gate:
 
-- `npm run qa:gate` — convention checks plus `tsc --noEmit`
+- `npm run qa:gate` — convention checks (includes security checks) and `tsc --noEmit`
 
 Package scripts (baseline-safe; all use `--pass-with-no-tests` so zero tests is valid):
 
@@ -276,17 +294,20 @@ Rules:
 
 First real project tests are created through planning and implementation commands (`/plan-feature`, `/plan-e2e-journey`, `/implement-api-batch`, `/implement-ui-batch`, `/implement-e2e-flow`) — not shipped with the starter baseline.
 
+Unit tests for reusable framework helpers (`tests/unit/**/*.test.ts`) are **not** part of the clean starter. Add them during implementation when a helper under `src/test/**` has non-trivial logic worth locking in (redaction, parsing, masking). Register a `unit` Playwright project in `playwright.config.ts` and optional `test:unit` script only when such tests exist.
+
 Starter CI baseline (`.github/workflows/playwright.yml`):
 
 - enables npm dependency caching via `actions/setup-node` (`cache: npm`);
 - always runs `npm ci`, `npm run qa:gate`, and `npm run test:list`;
+- runs Gitleaks secret scan on baseline job;
 - detects whether any `tests/**/*.spec.ts` or `tests/**/*.test.ts` files exist;
 - skips matrix test jobs when no tests exist (clean starter still passes);
 - maps starter compatibility variables to Playwright env when matrix jobs run (`UI_BASE_URL`, `API_BASE_URL`; empty fallback when unset);
 - does not require configured variables or secrets in zero-test state;
 - runs API/UI/E2E/tag-based jobs when tests exist;
 - includes focused cross-browser UI jobs and responsive mobile UI job via registered projects and coverage-type tags;
-- uploads artifacts when generated: `playwright-report/`, `test-results/`, `reports/allure/results/`, `reports/allure/html/`;
+- uploads artifacts when generated: `playwright-report/`, `test-results/`, `reports/allure/results/`, `reports/allure/html/` (retention: 14 days);
 - generates Allure HTML report via `npm run report:allure:generate` when `reports/allure/results/` exists after test runs;
 - does not configure TMS result publishing;
 - does not configure GitHub Pages publishing.
@@ -340,6 +361,45 @@ Stability audit (review only; does not heal tests):
 Rule reference:
 
 - `.cursor/rules/flakiness-policy.rules.mdc`
+
+---
+
+## Security And Sensitive Data
+
+Rule:
+
+- `.cursor/rules/security-data-handling.rules.mdc`
+
+Human guide:
+
+- `docs/security-data-handling.md`
+
+Starter policy (domain-neutral; **not** pre-shipped in clean kit):
+
+- create `src/test/security/**`, `src/test/logging/**`, and reporting sanitize/mask helpers during implementation when needed;
+- populate sensitive-field lists from feature plan / contract only;
+- `visualMaskTargets` from discovered Page Object locators only.
+
+Convention enforcement:
+
+- `scripts/check-conventions.mjs` — security checks in `npm run qa:gate`
+
+Audit (review only):
+
+- **default:** embedded in `/review-generated` (step 15A) — run after implement/heal batches; do not call `/audit-security` separately in the normal flow
+- **exception:** `/audit-security` — full-repository security-only scan when explicitly requested (skill: `.cursor/skills/audit-security-posture/SKILL.md`)
+
+Feature plans with UI or `@visual` coverage must include **Sensitive Data & Visual Masking** (see plan-test-coverage skill).
+
+Failure artifacts (`screenshot` / `trace` / `video` on failure) may capture sensitive UI or network data — document mitigation in plans and restrict CI artifact access in real projects.
+
+Rule references:
+
+- `.cursor/rules/configuration-secrets.rules.mdc`
+- `.cursor/rules/diagnostics-reporting.rules.mdc`
+- `.cursor/rules/reporting-allure.mdc`
+- `.cursor/rules/visual-testing.mdc`
+- `.cursor/rules/test-data-generation.rules.mdc`
 
 ---
 
@@ -555,16 +615,30 @@ Import pattern:
 import { test, expect } from "../../src/test/fixtures/test";
 ```
 
-### Fixture chain (created per project)
+### Fixture chain (starter skeleton + project extensions)
 
 Use layered fixture composition. Specs import only from `test.ts`.
 
 ```text
 base.fixture.ts
   -> api.fixture.ts
-    -> pages.fixture.ts
-      -> test.ts
+    -> data.fixture.ts
+      -> pages.fixture.ts
+        -> test.ts
 ```
+
+Starter ships empty `extend({})` pass-through layers in `api.fixture.ts`, `data.fixture.ts`, and `pages.fixture.ts`.
+
+Extend the **lowest owning layer** when adding fixtures. See `src/test/fixtures/README.md`.
+
+Convention checks enforce:
+
+- `test.ts` re-exports from `pages.fixture` or `auth.fixture`;
+- `api.fixture` imports `./base.fixture`;
+- `data.fixture` imports `./api.fixture` when present;
+- `pages.fixture` imports `./data.fixture` when `data.fixture.ts` exists (otherwise `./api.fixture`);
+- `auth.fixture` imports `./pages.fixture` when present, and `test.ts` re-exports from it;
+- `base.fixture` must not import Page Objects.
 
 Layer ownership:
 
@@ -572,6 +646,7 @@ Layer ownership:
 |------|----------------|
 | `base.fixture.ts` | Playwright `test` + `expect` only |
 | `api.fixture.ts` | API setup transport when UI or E2E needs API preconditions |
+| `data.fixture.ts` | builders / generators wired as fixtures when reused across specs |
 | `pages.fixture.ts` | Page Object wiring |
 | `test.ts` | public entry point for specs |
 
@@ -596,10 +671,11 @@ Rules:
 - specs must import only from the final fixture entry point;
 - do not import intermediate fixture layers from specs;
 - Page Object fixtures belong in `pages.fixture.ts`;
+- data builder/generator fixtures belong in `data.fixture.ts`;
 - API precondition transport belongs in `api.fixture.ts`;
 - auth precondition helpers belong in `src/test/setup/auth/**`, not inside page fixtures;
-- skills such as `create-fixture` and implementation skills create or extend this chain;
-- the clean baseline does not ship a fixture entry point.
+- skills such as `create-fixture` and implementation skills extend this chain;
+- the starter ships the skeleton chain; do not replace `test.ts` import path in specs.
 
 ---
 
@@ -694,9 +770,9 @@ Rules:
 - attachments must be sanitized;
 - secrets, tokens, cookies, passwords, `.env`, and storage state files must never be attached.
 
-Future extension:
+Sanitized API attachments (create during implementation when needed):
 
-- create `src/test/reporting/allure-api-diagnostics.helper.ts` only when sanitized API request/response attachments are required.
+- `src/test/reporting/sanitize-http.helper.ts` and optional `allure-api-diagnostics.helper.ts` — field lists from plan/contract only
 
 ---
 ## Visual Testing

@@ -20,6 +20,7 @@ Follow these rules:
 - Locator Strategy Rules
 - Test Isolation, Flakiness, and Diagnostics Rules
 - Configuration and Secrets Rules
+- Security and Sensitive Data Handling Rules
 - Allure Reporting Rules
 - Project Map Rules
 - Examples Policy
@@ -213,8 +214,18 @@ For each visual checkpoint:
 1. Reach the target UI state through normal user actions.
 2. Assert the state functionally.
 3. Ensure dynamic content is masked or avoided.
-4. Take a scoped screenshot.
-5. Use a stable screenshot name.
+4. Pass `visualMaskTargets` in `toHaveScreenshot({ mask: ... })`. Create `screenshot-masks.helper.ts` only when dedupe/reuse justifies it — no guessed default selectors.
+5. Include Page Object `visualMaskTargets` when forms show generated email, phone, or ids.
+6. Take a scoped screenshot.
+7. Use a stable screenshot name.
+
+Example:
+
+```ts
+await expect(formSection).toHaveScreenshot("contact-form-filled.png", {
+  mask: contactPage.visualMaskTargets,
+});
+```
 
 Good checkpoint examples:
 

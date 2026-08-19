@@ -48,6 +48,7 @@ stop and report missing locator, data, fixture, page ownership, or behavior deta
 
 After changes:
 run impacted UI spec and quality gate from project map.
+Then run `/review-generated` on the changed files (includes embedded security posture review — do not call `/audit-security` separately).
 
 Report:
 - files changed

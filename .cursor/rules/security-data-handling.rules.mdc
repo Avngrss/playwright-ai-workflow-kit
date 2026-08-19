@@ -1,0 +1,251 @@
+---
+description: Security, secrets, logging, artifacts, and sensitive data handling
+alwaysApply: true
+---
+
+# Security and Sensitive Data Handling Rules
+
+## Purpose
+
+These rules define how credentials, tokens, personal data, and other sensitive values must be handled across tests, logs, reports, failure artifacts, and visual checkpoints.
+
+The goal is to prevent secrets and sensitive data from appearing in console output, Allure attachments, Playwright HTML reports, traces, failure screenshots, videos, CI artifacts, debug dumps, or git history.
+
+Rule references (detail lives here; do not duplicate policy elsewhere):
+
+- `.cursor/rules/configuration-secrets.rules.mdc` — env and config injection
+- `.cursor/rules/diagnostics-reporting.rules.mdc` — actionable failures without leaking data
+- `.cursor/rules/reporting-allure.mdc` — Allure attachment policy
+- `.cursor/rules/visual-testing.mdc` — visual mask policy
+- `.cursor/rules/test-data-generation.rules.mdc` — safe generated data
+- `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc` — debug dump cleanup
+
+Human guide:
+
+- `docs/security-data-handling.md`
+
+---
+
+## Core Principle
+
+**Protect by default.**
+
+Assume failure artifacts and logs will be shared (CI artifacts, Allure, support tickets).
+
+Never print, attach, or commit raw secrets.
+
+Prefer prevention (safe data, no logging, masked screenshots) over post-hoc redaction of traces.
+
+---
+
+## Sensitive Data Classes
+
+| Class | Examples | Console / logs | Assertion messages | Allure attach | Visual baseline | Failure screenshot / trace |
+|-------|----------|----------------|-------------------|---------------|-----------------|---------------------------|
+| **Secret** | password, API key, Bearer token, cookie value, storageState, `.env` | never | redact | never | always mask if visible | highest risk — avoid capturing state when possible |
+| **PII / generated identity** | email, phone, name, address from generators | avoid; use `safeLogger` if needed | ok if not secret | sanitize | mask when generated / unstable | mask when filled forms are screenshot |
+| **Session** | auth header, refresh token, session id | never | redact | never attach raw | mask token display fields | trace network is high risk |
+| **Config** | env var **names** | ok | ok | ok (names only) | n/a | n/a |
+| **Config value** | URL, non-secret host | ok (hosts only in Allure env) | ok | sanitize | n/a | n/a |
+
+---
+
+## Clean starter vs implementation
+
+The **clean kit** ships only `src/test/fixtures/**` (fixture chain skeleton).
+
+It does **not** ship security/logging/reporting helper implementations, sensitive-field lists, default visual mask selectors, or guessed JSON keys or locators.
+
+During **implementation**, when the feature plan section **Sensitive Data & Visual Masking** (or API contract) defines fields:
+
+1. Create helpers under `src/test/security/**`, `src/test/logging/**`, `src/test/reporting/**` only when the scenario needs them.
+2. Populate `sensitive-fields.dataset.ts` (or equivalent) with **plan/contract-backed names only** — never invent keys or headers.
+3. Set Page Object `visualMaskTargets` from **discovered UI locators** for those fields — never guess `[data-test*="token"]` or similar.
+4. Use explicit `mask:` locators in specs for `@visual` filled states, or document empty-state-only with `visual-empty-state-no-mask` in the spec.
+
+Do not reimplement redaction inline in specs once shared helpers exist for that project.
+
+Do not log raw `request.headers()`, `response.json()`, or `process.env` values.
+
+---
+
+## Framework helpers (create when needed)
+
+| Helper (project layer) | When to create | Source of field names / masks |
+|--------|----------------|------------------------------|
+| `redact.helper.ts` | logging or attachments need redaction | plan + contract; generic Bearer/JWT string patterns only where format is known |
+| `sensitive-fields.dataset.ts` | redaction/sanitize needs named keys | feature plan + OpenAPI/Bruno — **no guessed lists** |
+| `safe-logger.helper.ts` | intentional console diagnostics | wraps redact helper |
+| `sanitize-http.helper.ts` | Allure HTTP attachments | uses dataset + redact helper |
+| `allure-api-diagnostics.helper.ts` | sanitized request/response attach in specs | uses sanitize helper |
+| `screenshot-masks.helper.ts` | `@visual` with filled/generated data | **only** Page Object `visualMaskTargets`; no default guessed selectors |
+
+Reuse existing project helpers before creating new ones.
+
+Do not create helpers speculatively in the clean starter baseline.
+
+---
+
+## Console and Diagnostics
+
+### Allowed
+
+- environment **host** names (already in Allure `environmentInfo`);
+- scenario labels without secret values;
+- sanitized diagnostics through `safeLogger`;
+- sort/filter success diagnostics that contain no user secrets (see diagnostics rule).
+
+### Forbidden
+
+- `console.log` / `console.debug` / `console.info` with raw API bodies, headers, tokens, passwords, cookies, storage state, or full `.env` contents;
+- logging `process.env.SECRET_NAME` values in specs, Page Objects, Components, clients, or builders;
+- printing MCP/Qase/Bruno secret values during inspect or audit commands.
+
+### Required pattern (after helpers exist in the project)
+
+```ts
+import { safeLogger } from "../../src/test/logging/safe-logger.helper";
+
+safeLogger.info("Registration precondition created", { email: user.email });
+```
+
+Create `safe-logger.helper.ts` during implementation when logging is required — not shipped in the clean starter.
+
+Prefer Playwright assertion failures with redacted context over manual logging.
+
+---
+
+## Allure and Custom Attachments
+
+- Attach only **sanitized** HTTP diagnostics via `sanitize-http.helper.ts`.
+- Never attach: Authorization headers, cookies, passwords, tokens, storage state, full local/session storage, raw `.env`.
+- Do not attach failure response bodies from login/register/reset-password flows unless sanitized.
+- Page Objects, Components, API clients, builders, and generators must not call Allure.
+
+Future project helper:
+
+- `src/test/reporting/allure-api-diagnostics.helper.ts` — only when sanitized attachments are required; must use `sanitize-http.helper.ts`.
+
+---
+
+## Playwright Failure Artifacts (Trace / Screenshot / Video)
+
+Default config retains artifacts on failure. Treat them as **public-ish**.
+
+### Trace and network
+
+Playwright traces capture network headers and bodies. There is no built-in redaction.
+
+Policy:
+
+- **API specs:** do not rely on trace for debugging auth bodies; avoid custom network logging in specs.
+- **UI/E2E with auth or password fields:** prefer documenting trace risk in the feature plan; consider `trace: 'off'` or `'on-first-retry'` for sensitive suites when debugging does not require network (project decision in plan).
+- Never add hooks that dump network to console or Allure without sanitization.
+
+### Failure screenshots and video
+
+Filled forms and profile screens may expose generated PII.
+
+Policy:
+
+- prefer asserting before navigating to sensitive post-submit screens when the scenario allows;
+- for visual checkpoints on filled forms, use explicit `mask:` locators from Page Object `visualMaskTargets` (see Visual Masking);
+- do not weaken functional assertions to avoid screenshots; control **what state** is captured.
+
+### CI artifacts
+
+`test-results/`, `playwright-report/`, and Allure output may contain sensitive UI/network data.
+
+- restrict artifact retention and access in real projects;
+- never publish artifacts to public pages without review;
+- document required CI secret handling in project map.
+
+---
+
+## Visual Masking (Stability + Privacy)
+
+Masking serves two goals:
+
+1. **Stability** — generated emails, ids, timestamps do not break `@visual` baselines.
+2. **Privacy** — passwords, tokens, and sensitive PII do not appear in baseline PNGs.
+
+Priority (same as visual-testing rule):
+
+1. choose a stable UI state without sensitive/dynamic data;
+2. use deterministic test data;
+3. mask only non-behavior elements;
+4. postpone visual checkpoint if safe state is impossible.
+
+### Required conventions
+
+- Page Objects with generated or sensitive fields expose `visualMaskTargets: Locator[]` from **discovered UI** for fields listed in the plan;
+- specs pass those locators in `toHaveScreenshot({ mask: [...] })` or through a project `screenshot-masks.helper.ts` that **only** composes plan-backed targets (no guessed default selectors);
+- masking belongs in the **spec** `toHaveScreenshot` options, not in Page Objects.
+
+### Feature plan section
+
+Every feature plan with UI or visual coverage must include **Sensitive Data & Visual Masking** (see plan-test-coverage skill).
+
+---
+
+## Test Data
+
+- use safe non-routable domains (`example.test`, etc.) per test-data-generation rule;
+- do not use real user data or production identifiers;
+- classify fields in the plan: secret / PII / public;
+- do not use `.env`, storage state, or credential files as upload assets.
+
+Generated data that appears on screen must have a documented mask or stable-state strategy before `@visual` implementation.
+
+---
+
+## Static Enforcement
+
+`npm run qa:gate` runs security convention checks via `scripts/check-conventions.mjs`:
+
+- forbidden console usage patterns in tests and `src/test/**`;
+- hardcoded token-like strings;
+- `process.env` in specs;
+- raw sensitive Allure attachment patterns;
+- committed storage-state-like files.
+
+Fix violations before merging.
+
+Periodic review:
+
+- embedded in `/review-generated` (step 15A) after every implementation batch;
+- optional standalone full-repo scan: `.cursor/skills/audit-security-posture/SKILL.md` via `/audit-security` only when security-only audit is explicitly requested.
+
+---
+
+## Agent and Debug Workflow
+
+- MCP inspect/discovery: redact secrets in reports; never print real token values;
+- temporary debug JSON/scripts: delete before task completion; see temporary-debug-artifact-cleanup rule;
+- if a secret was printed or committed: rotate it; do not repeat the value in chat or reports.
+
+---
+
+## Anti-Patterns
+
+Avoid:
+
+- `console.log(await response.json())` in API specs;
+- `allure.attachment('response', JSON.stringify(body))` without sanitization;
+- failure screenshots of post-login account pages without mask plan;
+- broad masks that hide the layout under test;
+- logging to "debug auth" in CI;
+- committing `state/*.json` or Bruno env files with real secrets;
+- deriving false confidence from "we don't attach secrets manually" while traces capture them.
+
+---
+
+## Main Principle
+
+Secrets and sensitive data must not reach logs or reports.
+
+Use framework helpers, masks, safe data, and convention checks.
+
+Plan sensitive fields before UI/visual implementation.
+
+Treat failure artifacts as potentially leaking until proven otherwise.

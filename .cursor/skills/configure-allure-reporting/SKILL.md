@@ -276,7 +276,7 @@ API clients must not call Allure or reporting helpers.
 
 Builders, generators, auth providers, and non-reporting fixtures must not call Allure.
 
-Future optional helper:
+Future optional helper (create during implementation when sanitized attachments are required):
 
 - `src/test/reporting/allure-api-diagnostics.helper.ts`
 

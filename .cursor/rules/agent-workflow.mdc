@@ -33,8 +33,10 @@ For UI feature work, follow the dedicated Feature Lifecycle rule.
 Default cycle:
 
 ```text
-plan -> data -> Page Objects/components -> tests -> verify -> cleanup temporary debug artifacts -> heal -> harden
+plan -> data -> Page Objects/components -> tests -> verify -> review -> cleanup temporary debug artifacts -> heal -> harden
 ```
+
+Review means `/review-generated` (includes embedded security posture review). Do not add a separate security audit step in the default cycle.
 
 Rule reference for cleanup:
 
@@ -48,7 +50,7 @@ Examples:
 
 ```text
 API:
-plan -> payload/data -> client/request -> tests -> verify -> heal -> harden
+plan -> payload/data -> client/request -> tests -> verify -> review -> heal -> harden
 ```
 
 ```text

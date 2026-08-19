@@ -26,6 +26,10 @@ Rules:
 Runner gap handling:
 - if no Playwright runner matches tests/e2e/**/*.e2e.spec.ts, stop and report the config gap
 
+After changes:
+run impacted E2E spec and quality gate from project map.
+Then run `/review-generated` on the changed files (includes embedded security posture review — do not call `/audit-security` separately).
+
 Cleanup:
 - remove temporary discovery/debug scripts and JSON dumps before finishing
 - rule: `.cursor/rules/temporary-debug-artifact-cleanup.rules.mdc`

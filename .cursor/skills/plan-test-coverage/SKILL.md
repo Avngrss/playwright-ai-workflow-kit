@@ -26,6 +26,7 @@ Follow these rules:
 - Cross-Browser and Responsive Testing Rules;
 - Multi-Target Environment Rules;
 - Authentication Strategy Rules;
+- Security and Sensitive Data Handling Rules;
 - Test Structure and Tags Rules;
 - Project Map Rules;
 - Agent Workflow;
@@ -793,6 +794,28 @@ Rules:
 - login/token issuance = `auth as: action`;
 - already-signed-in coverage = `auth as: precondition`;
 - missing mechanism → blocked, do not invent.
+
+### Sensitive Data & Visual Masking
+
+Required when the feature has UI or `@visual` coverage, or when forms/auth/profile data appears on screen.
+
+```md
+## Sensitive Data & Visual Masking
+
+- sensitive fields: <password, token, email, phone, etc.>
+- generated/unstable fields: <email, id, timestamp, etc.>
+- mask in @visual: <fields/locators or "none — default empty state only">
+- mask reason: <privacy | baseline stability | both>
+- failure artifacts: <avoid post-submit screen | mask targets | trace note for auth flows>
+- Page Object mask targets: <visualMaskTargets plan, or postpone visual>
+```
+
+Rules:
+
+- secrets must never appear in logs, attachments, or baselines;
+- generated emails/ids on filled forms require mask or empty-state visual strategy;
+- if safe visual state is impossible, mark visual checkpoint blocked/postponed;
+- reference explicit `visualMaskTargets` and `mask:` convention from security rule.
 
 ### Coverage Matrix
 

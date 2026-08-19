@@ -94,7 +94,7 @@ npm run test:api    # or test:ui
 npm run qa:gate
 ```
 
-Then `/review-generated`. Review is read-only.
+Then `/review-generated`. Review is read-only and **includes embedded security posture review** (no separate `/audit-security` in this flow).
 
 ---
 

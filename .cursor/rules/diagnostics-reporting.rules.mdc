@@ -9,6 +9,12 @@ alwaysApply: true
 
 These rules define how failures should be made actionable.
 
+Security and redaction policy:
+
+- `.cursor/rules/security-data-handling.rules.mdc`
+
+Use `safeLogger` from `src/test/logging/safe-logger.helper.ts` when intentional diagnostics are required — create that helper during implementation; not shipped in the clean starter.
+
 ---
 
 ## Rules

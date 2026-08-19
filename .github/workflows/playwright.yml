@@ -23,6 +23,10 @@ jobs:
         run: npm ci
       - name: Run quality gate
         run: npm run qa:gate
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Verify Playwright test discovery
         run: npm run test:list
       - name: Detect test files
@@ -108,21 +112,25 @@ jobs:
         with:
           name: playwright-report-${{ matrix.name }}
           path: playwright-report/
+          retention-days: 14
       - name: Upload Playwright test results
         if: always() && hashFiles('test-results/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.name }}
           path: test-results/
+          retention-days: 14
       - name: Upload Allure results
         if: always() && hashFiles('reports/allure/results/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-results-${{ matrix.name }}
           path: reports/allure/results/
+          retention-days: 14
       - name: Upload Allure report
         if: always() && hashFiles('reports/allure/html/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-${{ matrix.name }}
           path: reports/allure/html/
+          retention-days: 14

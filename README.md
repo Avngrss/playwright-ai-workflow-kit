@@ -100,9 +100,3 @@ If tests need a session, declare **Auth Strategy** in the project map first: [do
 - [Long flow](docs/long-flow.md) — TMS, collections, audit, E2E, heal
 - [Commands](docs/commands.md) — slash-command templates
 - [Prompts](docs/prompts.md) — paste-ready prompts
-
----
-
-## License
-
-ISC — see [LICENSE](LICENSE).

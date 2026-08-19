@@ -11,6 +11,11 @@ These rules define how Allure reporting should be used in the Playwright + TypeS
 
 The goal is to keep reporting useful, structured, and separated from test logic.
 
+Security policy for attachments and sanitized diagnostics:
+
+- `.cursor/rules/security-data-handling.rules.mdc`
+- create `src/test/reporting/sanitize-http.helper.ts` and `allure-api-diagnostics.helper.ts` during implementation when sanitized attachments are required
+
 ---
 
 ## Core Principle

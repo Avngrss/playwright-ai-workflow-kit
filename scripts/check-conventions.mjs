@@ -303,6 +303,31 @@ function checkUiSpecs(uiSpecs) {
 
   for (const spec of uiSpecs) {
     const content = read(spec);
+
+    if (!content.includes("toHaveScreenshot(")) {
+      continue;
+    }
+
+    if (!content.includes(".fill(")) {
+      continue;
+    }
+
+    const hasMaskStrategy =
+      content.includes("buildVisualMasks") ||
+      content.includes("mask:") ||
+      content.includes("visual-empty-state-no-mask");
+
+    if (!hasMaskStrategy) {
+      fail(
+        `UI spec uses form fill and toHaveScreenshot() without mask strategy. Use explicit mask: locators from Page Object visualMaskTargets, or document empty-state-only with visual-empty-state-no-mask: ${rel(spec)}`,
+      );
+    }
+  }
+
+  ok("UI specs with fill + toHaveScreenshot() declare a visual mask strategy.");
+
+  for (const spec of uiSpecs) {
+    const content = read(spec);
     const hasBeforeEach = /test\.beforeEach\s*\(/.test(content);
     const openCalls = content.match(/await\s+[a-zA-Z_$][\w$]*\.open\(\);/g) ?? [];
 
@@ -486,6 +511,126 @@ function checkDeprecatedAllureImports(specFiles) {
 const SRC_TEST_DIR = path.join(ROOT, "src", "test");
 const FIXTURE_ENTRY_POINT = path.join(SRC_TEST_DIR, "fixtures", "test.ts");
 
+const SECURITY_HELPER_ALLOWLIST = new Set(
+  listFiles(path.join(SRC_TEST_DIR, "logging"), (f) => f.endsWith(".ts"))
+    .concat(listFiles(path.join(SRC_TEST_DIR, "security"), (f) => f.endsWith(".ts"))),
+);
+
+function listSecurityScanFiles(specFiles, pageFiles, componentFiles, dataFiles, apiClientFiles) {
+  const extraDirs = [
+    path.join(SRC_TEST_DIR, "assertions"),
+    path.join(SRC_TEST_DIR, "setup"),
+    path.join(SRC_TEST_DIR, "reporting"),
+    path.join(SRC_TEST_DIR, "fixtures"),
+  ];
+
+  const files = new Set([
+    ...specFiles,
+    ...pageFiles,
+    ...componentFiles,
+    ...dataFiles,
+    ...apiClientFiles,
+  ]);
+
+  for (const dir of extraDirs) {
+    for (const file of listFiles(dir, (candidate) => candidate.endsWith(".ts"))) {
+      files.add(file);
+    }
+  }
+
+  return [...files].filter((file) => !SECURITY_HELPER_ALLOWLIST.has(file));
+}
+
+function checkSecurityConventions(
+  specFiles,
+  pageFiles,
+  componentFiles,
+  dataFiles,
+  apiClientFiles,
+) {
+  const scanFiles = listSecurityScanFiles(
+    specFiles,
+    pageFiles,
+    componentFiles,
+    dataFiles,
+    apiClientFiles,
+  );
+
+  if (scanFiles.length === 0) {
+    skip("No spec or src/test files found for security convention checks.");
+  } else {
+    checkNoPattern(
+      scanFiles,
+      /console\.(log|debug|info)\s*\(/,
+      (file) =>
+        `Forbidden console diagnostics. Use safeLogger (create src/test/logging/safe-logger.helper.ts when logging is needed): ${rel(file)}`,
+    );
+
+    ok("No forbidden raw console.log/debug/info in tests or project helpers.");
+  }
+
+  if (specFiles.length === 0) {
+    skip("No spec files found for spec-level security checks.");
+  } else {
+    checkNoPattern(
+      specFiles,
+      /process\.env/,
+      (file) =>
+        `Spec reads process.env directly. Resolve env through fixtures/config: ${rel(file)}`,
+    );
+
+    ok("No specs read process.env directly.");
+
+    checkNoPattern(
+      specFiles,
+      /(?:Bearer\s+eyJ[A-Za-z0-9\-._~+/]+|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/,
+      (file) =>
+        `Spec appears to contain a hardcoded token or JWT. Use config/auth providers: ${rel(file)}`,
+    );
+
+    ok("No specs contain hardcoded Bearer/JWT-like secrets.");
+  }
+
+  const attachmentFiles = scanFiles.filter((file) => {
+    const content = read(file);
+    return /(?:allure\.attachment|testInfo\.attach)\s*\(/.test(content);
+  });
+
+  for (const file of attachmentFiles) {
+    const content = read(file);
+
+    if (
+      !/(?:sanitize|redact|buildSanitizedHttpSnapshot|formatSanitizedHttpForAttachment|attachSanitized)/.test(
+        content,
+      )
+    ) {
+      fail(
+        `Attachment usage must go through sanitize/redact helpers (create under src/test/reporting/ or src/test/security/ when attachments are needed): ${rel(file)}`,
+      );
+    }
+  }
+
+  if (attachmentFiles.length === 0) {
+    skip("No custom attachment usage found for sanitize helper checks.");
+  } else {
+    ok("Custom attachments reference sanitize/redact helpers.");
+  }
+
+  const committedStorageStateFiles = listFiles(ROOT, (file) =>
+    /(?:storage-state|storageState)\.json$/i.test(file),
+  ).filter((file) => !file.includes("node_modules"));
+
+  if (committedStorageStateFiles.length > 0) {
+    fail(
+      `Committed storage state files are forbidden. Keep sessions in gitignored state/: ${committedStorageStateFiles
+        .map(rel)
+        .join(", ")}`,
+    );
+  }
+
+  ok("No committed storage-state JSON files at repository root.");
+}
+
 function hasProjectImplementationLayer() {
   return fs.existsSync(SRC_TEST_DIR);
 }
@@ -523,12 +668,82 @@ function checkFinalFixtureEntryPoint() {
   }
 
   const baseFixturePath = path.join(SRC_TEST_DIR, "fixtures", "base.fixture.ts");
+  const apiFixturePath = path.join(SRC_TEST_DIR, "fixtures", "api.fixture.ts");
+  const dataFixturePath = path.join(SRC_TEST_DIR, "fixtures", "data.fixture.ts");
+  const pagesFixturePath = path.join(SRC_TEST_DIR, "fixtures", "pages.fixture.ts");
+  const authFixturePath = path.join(SRC_TEST_DIR, "fixtures", "auth.fixture.ts");
+
   if (fs.existsSync(baseFixturePath)) {
     const baseFixtureContent = read(baseFixturePath);
 
     if (baseFixtureContent.includes("../pages/")) {
       fail(
         "base.fixture.ts must not import Page Objects. Move page wiring to pages.fixture.ts.",
+      );
+    }
+  }
+
+  if (fs.existsSync(apiFixturePath)) {
+    const apiFixtureContent = read(apiFixturePath);
+
+    if (
+      !apiFixtureContent.includes('"./base.fixture"') &&
+      !apiFixtureContent.includes("'./base.fixture'")
+    ) {
+      fail("api.fixture.ts must import from ./base.fixture.ts");
+    }
+
+    if (apiFixtureContent.includes("../pages/")) {
+      fail("api.fixture.ts must not import Page Objects. Use pages.fixture.ts.");
+    }
+  }
+
+  if (fs.existsSync(dataFixturePath)) {
+    const dataFixtureContent = read(dataFixturePath);
+
+    if (
+      !dataFixtureContent.includes('"./api.fixture"') &&
+      !dataFixtureContent.includes("'./api.fixture'")
+    ) {
+      fail("data.fixture.ts must import from ./api.fixture.ts");
+    }
+
+    if (dataFixtureContent.includes("../pages/")) {
+      fail("data.fixture.ts must not import Page Objects. Use pages.fixture.ts.");
+    }
+  }
+
+  if (fs.existsSync(pagesFixturePath)) {
+    const pagesFixtureContent = read(pagesFixturePath);
+
+    if (fs.existsSync(dataFixturePath)) {
+      if (
+        !pagesFixtureContent.includes('"./data.fixture"') &&
+        !pagesFixtureContent.includes("'./data.fixture'")
+      ) {
+        fail("pages.fixture.ts must import from ./data.fixture.ts when data.fixture.ts exists");
+      }
+    } else if (
+      !pagesFixtureContent.includes('"./api.fixture"') &&
+      !pagesFixtureContent.includes("'./api.fixture'")
+    ) {
+      fail("pages.fixture.ts must import from ./api.fixture.ts when data.fixture.ts is absent");
+    }
+  }
+
+  if (fs.existsSync(authFixturePath)) {
+    const authFixtureContent = read(authFixturePath);
+
+    if (
+      !authFixtureContent.includes('"./pages.fixture"') &&
+      !authFixtureContent.includes("'./pages.fixture'")
+    ) {
+      fail("auth.fixture.ts must import from ./pages.fixture.ts");
+    }
+
+    if (!content.includes("./auth.fixture")) {
+      fail(
+        "auth.fixture.ts exists but test.ts does not re-export from ./auth.fixture — update src/test/fixtures/test.ts",
       );
     }
   }
@@ -571,6 +786,14 @@ function main() {
   ]);
 
   checkDeprecatedAllureImports([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
+
+  checkSecurityConventions(
+    [...uiSpecs, ...apiSpecs, ...e2eSpecs],
+    pageFiles,
+    componentFiles,
+    dataFiles,
+    apiClientFiles,
+  );
 
   console.log("\nConvention checks passed.\n");
 }

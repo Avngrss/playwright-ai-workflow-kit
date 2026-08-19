@@ -25,7 +25,9 @@ Rules:
 - do not create standalone visual spec by default
 - do not put screenshot assertions in Page Objects or Components
 - check dynamic content before screenshot
-- mask only dynamic content that is not relevant to the visual risk
+- use explicit `mask:` locators from Page Object `visualMaskTargets` when filled forms or generated data are visible (create optional `screenshot-masks.helper.ts` only when reuse justifies it)
+- expose/use Page Object visualMaskTargets for non-default mask fields
+- mask only dynamic or sensitive content that is not the layout under test
 - do not update baselines unless Approve baseline is yes
 
 If Approve baseline is no:

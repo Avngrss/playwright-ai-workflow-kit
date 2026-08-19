@@ -189,7 +189,7 @@ Visual baselines should be generated and verified in a controlled environment, b
 
 ---
 
-## Visual Dynamic Content Stabilization## Visual Dynamic unstable dynamic content.
+## Visual Dynamic Content Stabilization
 
 Before adding a screenshot assertion, identify dynamic or environment-dependent content, such as:
 
@@ -220,10 +220,77 @@ Do not use broad masks that hide meaningful layout or content regressions.
 
 Masking belongs in the spec screenshot assertion.
 
-Page Objects and Components may expose locators for dynamic elements, but they must not contain screenshot assertions.
+Use explicit `mask:` locators from Page Object `visualMaskTargets` (plan-backed fields only). Optionally create `screenshot-masks.helper.ts` during implementation to dedupe locators — **without** guessed default selectors.
+
+Page Objects may expose `visualMaskTargets` locators for masking; they must not contain screenshot assertions.
+
+Security policy:
+
+- `.cursor/rules/security-data-handling.rules.mdc`
 
 If dynamic data cannot be stabilized safely, postpone the visual checkpoint and report the reason.
 
+---
+
+## Visual Baseline Masking (toHaveScreenshot)
+
+This section applies to **`@visual` regression baselines** in specs, not Playwright failure screenshots.
+
+### When mask is required
+
+Use explicit `mask:` locators in every `toHaveScreenshot({ mask })` when **any** of these is true:
+
+- the screenshot captures a **filled** form or profile area;
+- generated email, phone, name, id, order number, or timestamp is visible;
+- password or token fields listed in the plan may appear;
+- the plan marks fields under **Sensitive Data & Visual Masking**.
+
+### When mask may be omitted
+
+Empty/default stable states with no generated or sensitive visible data, for example:
+
+- blank form before input;
+- static layout with no user-specific values.
+
+Document in the feature plan: `mask in @visual: none — default empty state only`.
+
+### Required pattern
+
+Page Object (when form/generated fields exist):
+
+```ts
+readonly visualMaskTargets = [
+  this.emailInput,
+  this.phoneInput,
+];
+```
+
+Spec:
+
+```ts
+await expect(formSection).toHaveScreenshot("contact-form-filled.png", {
+  mask: contactPage.visualMaskTargets,
+});
+```
+
+Optional project helper: `screenshot-masks.helper.ts` to dedupe locators when many masks are reused — create during implementation, not in the clean starter.
+
+Page Objects expose locators only — no `toHaveScreenshot` inside Page Objects.
+
+---
+
+## Failure Screenshots (Playwright config)
+
+Playwright `screenshot: only-on-failure` is **not** a visual baseline and **cannot** use `toHaveScreenshot` masks.
+
+Policy:
+
+- prefer functional assertions before navigating to screens heavy with generated PII;
+- document trace/screenshot risk in **Sensitive Data & Visual Masking** for auth/form flows;
+- restrict CI artifact access for `test-results/` and reports;
+- do not treat failure PNGs as approved visual baselines.
+
+There is no framework auto-redaction for failure screenshots today — prevention via test flow and plan, not post-processing.
 
 ---
 
