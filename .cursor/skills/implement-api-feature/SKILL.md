@@ -551,6 +551,16 @@ API tests must:
 - avoid process.env access in specs;
 - avoid full API contract validation in setup steps;
 - avoid over-abstracting early.
+
+### Readable failure wiring (first API batch only)
+
+Before the first API spec in a project, if `src/test/fixtures/reporting.fixture.ts` does not exist:
+
+- run `.cursor/skills/configure-readable-failures/SKILL.md` once;
+- then continue with specs below.
+
+Do not re-run on every feature.
+
 - add Allure metadata through `src/test/reporting/allure-metadata.helper.ts` by default for new or updated specs.
 
 Allure metadata placement for API specs:

@@ -44,6 +44,42 @@ When applicable, failures should make it clear:
 
 ---
 
+## Readable Allure Failures
+
+Failures must be understandable in Allure without opening a trace first.
+
+### Empty starter
+
+- `allure-metadata.helper.ts` ships in the kit;
+- readable auto-failure attachments do **not** ship until the first UI/API batch;
+- policy and wiring steps: `docs/failure-reporting.md`, `.cursor/skills/configure-readable-failures/SKILL.md`.
+
+### After first UI/API batch (wired once)
+
+- `reporting.fixture.ts` attaches **Failure summary (readable)** on every failed test;
+- optional `failureContext` fixture for business-readable scenario notes;
+- reuse `failure-summary.helper.ts` in custom assertion helpers when created.
+
+### Assertion and helper messages
+
+- custom assertion helpers must use readable expected/actual wording once helpers exist;
+- Playwright `expect` remains the source of truth.
+
+### Flaky and retry signal
+
+- when `testInfo.retry > 0`, failure summaries must mention retry attempt and suggest trace comparison;
+- do not hide instability by weakening messages or removing retry context.
+
+Human guide: `docs/failure-reporting.md`
+
+Rule reference:
+
+- `.cursor/rules/reporting-allure.mdc`
+- `.cursor/skills/configure-allure-reporting/SKILL.md`
+- `.cursor/skills/configure-readable-failures/SKILL.md`
+
+---
+
 ## Anti-Patterns
 
 Avoid:

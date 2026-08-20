@@ -647,6 +647,16 @@ Tests must:
 - avoid hidden behavior in hooks or fixtures;
 - avoid inline random data;
 - remain readable and minimal.
+
+### Readable failure wiring (first UI batch only)
+
+Before the first UI spec in a project, if `src/test/fixtures/reporting.fixture.ts` does not exist:
+
+- run `.cursor/skills/configure-readable-failures/SKILL.md` once;
+- then continue with specs below.
+
+Do not re-run on every feature.
+
 - add Allure metadata through `src/test/reporting/allure-metadata.helper.ts` by default for new or updated specs.
 
 Allure metadata placement for UI specs:

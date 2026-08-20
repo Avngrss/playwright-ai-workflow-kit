@@ -15,6 +15,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
       - 📄 audit-test-coverage.md
       - 📄 audit-test-data-strategy.md
       - 📄 audit-test-stability.md
+      - 📄 configure-readable-failures.md
       - 📄 heal-api-test.md
       - 📄 heal-ui-test.md
       - 📄 implement-api-batch.md
@@ -87,6 +88,8 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
         - 📄 SKILL.md
       - 📁 configure-allure-reporting/
         - 📄 SKILL.md
+      - 📁 configure-readable-failures/
+        - 📄 SKILL.md
       - 📁 create-api-client/
         - 📄 SKILL.md
       - 📁 create-fixture/
@@ -149,6 +152,7 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
   - 📁 docs/
     - 📄 auth-strategy.md
     - 📄 commands.md
+    - 📄 failure-reporting.md
     - 📄 getting-started.md
     - 📄 long-flow.md
     - 📄 prompts.md
@@ -161,6 +165,8 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
     - 📄 project-cartographer.mjs
   - 📁 src/
     - 📁 test/
+      - 📁 assertions/
+        - 📁 shared/
       - 📁 fixtures/
         - 📄 api.fixture.ts
         - 📄 base.fixture.ts
@@ -168,6 +174,8 @@ Generated section below is updated by `npm run project-map:update` (`scripts/pro
         - 📄 pages.fixture.ts
         - 📄 README.md
         - 📄 test.ts
+      - 📁 reporting/
+        - 📄 allure-metadata.helper.ts
   - 📁 tests/
     - 📄 .gitkeep
   - 📄 .env.example
@@ -213,7 +221,13 @@ Starter ships only a **fixture skeleton**:
 
 - `src/test/fixtures/**` — `base` → `api` → `pages` → `test.ts` (empty extends until project wiring)
 
-Security, logging, and reporting helpers (`src/test/security/**`, `src/test/logging/**`, `src/test/reporting/**`) are **not** pre-shipped. Agents create them during implementation when the feature plan documents sensitive fields and the scenario needs logging, attachments, or visual masks. Field names and locators come from the plan, contract, or UI discovery — not guessed lists.
+Security, logging, and selective reporting helpers:
+
+- **shipped in starter:** `src/test/reporting/allure-metadata.helper.ts` only;
+- **wire on first UI/API batch:** readable failure diagnostics (`reporting.fixture.ts`, `failure-*` helpers) via `.cursor/skills/configure-readable-failures/SKILL.md`;
+- **create on demand:** `src/test/security/**`, `src/test/logging/**`, sanitized HTTP attachments, sensitive-field datasets — when the feature plan requires them.
+
+Field names and locators come from the plan, contract, or UI discovery — not guessed lists.
 
 Skills extend fixtures, pages, assertions, helpers, and tests when implementation starts on a concrete application.
 
@@ -746,12 +760,17 @@ Runtime artifact folders (gitignored):
 - `reports/allure/html/` — generated Allure HTML report
 - `reports/allure/allurerc.mjs` — Allure 3 config (committed; `output`, `hideLabels`, `groupBy: ["layer", "feature", "story"]`)
 
-Allure metadata helper (created per project when Allure metadata is first used):
+Allure metadata helper (shipped in starter):
 
 - `src/test/reporting/allure-metadata.helper.ts` — applies feature, story, suite hierarchy, layer, severity, owner, and domain tags via `allure-js-commons` Runtime API
 - specs call `applyAllureMetadata({ ... })` — no `testInfo` argument
 - do not import deprecated `{ allure }` from `allure-playwright` in specs or helpers
-- the clean starter does not ship this helper; implementation skills create it when needed
+
+Readable failure diagnostics (wire on first UI/API batch — not in empty starter):
+
+- skill: `.cursor/skills/configure-readable-failures/SKILL.md`
+- creates: `reporting.fixture.ts`, `failure-summary.helper.ts`, `failure-context.helper.ts`, `allure-failure-diagnostics.helper.ts`
+- guide: `docs/failure-reporting.md`
 
 Allure configuration skill:
 

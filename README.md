@@ -125,14 +125,14 @@ E2E journeys stay **visible in the spec** — not hidden in fixtures, hooks, or 
 
 | Pattern | Location | Role |
 |---------|----------|------|
-| **Layered fixtures** | `src/test/fixtures/`: `base` → `api` → `data` → `pages` → [`auth`] → `test.ts` | One public import; optional `auth.fixture` when preconditions are registered |
+| **Layered fixtures** | `src/test/fixtures/`: `base` → `api` → `data` → `pages` → [`auth`] → `test.ts` | One public import; optional `reporting` layer after first UI/API batch; optional `auth.fixture` when preconditions are registered |
 | **Page Objects + Components** | `pages/**`, `components/**` | Route ownership; semantic locators (`getByRole` first); no `expect` in PO/Components |
 | **Assertion helpers** | `assertions/api/**`, `ui/**` | Contract/UI invariants; Zod shape wrapper; sort/filter/search helpers where shared |
 | **Zod schemas** | `schemas/api/**` | Runtime API contracts (on first API feature) |
 | **Test data** | `data/builders`, `generators`, `datasets` | Valid-by-default builders; centralized uniqueness; no random data in specs |
 | **API clients** | `api/clients/**` | Thin optional grouping; no assertions or Allure inside |
 | **Auth setup** | `setup/auth/**`, `state/` (gitignored) | `storageState`, inject-before-goto, disposable users — from project map |
-| **Reporting / security helpers** | `reporting/**`, `security/**`, `logging/**` | Allure metadata, sanitized HTTP attach, redaction — created when plans need them |
+| **Reporting / security helpers** | `reporting/**`, `security/**`, `logging/**` | Allure metadata in starter; readable failure diagnostics wired on first UI/API batch; sanitized HTTP/redaction when plans need them |
 | **Feature plans** | `specs/<feature>/<feature>.md` | Pyramid level, auth, masking, ready/blocked/postponed per scenario |
 | **E2E journey plans** | `specs/e2e/<area>/<journey>.md` | Journeys only — setup, cleanup, final assertion |
 | **Feature-grouped specs** | `tests/<layer>/<feature>/` | Enforced by convention checker |
@@ -154,7 +154,7 @@ Application URLs are **configuration**, not hardcoded in tests. Playwright proje
 
 ### Reporting
 
-Triple reporter: console + Playwright HTML + Allure raw results. Allure 3 (`allurerc.mjs`): groupBy **layer / feature / story**, severity charts, single-file HTML. Environment block: ui_host, api_host, OS, Node. Auto-clean stale Allure folders before each run/generate. Metadata via **`allure-js-commons`** helper pattern (not deprecated imports in specs).
+Triple reporter: console + Playwright HTML + Allure raw results. Allure 3 (`allurerc.mjs`): groupBy **layer / feature / story**, severity charts, single-file HTML. Environment block: ui_host, api_host, OS, Node. Auto-clean stale Allure folders before each run/generate. Metadata via **`allure-metadata.helper.ts`**. Readable failure summaries: wire once on first UI/API batch — [docs/failure-reporting.md](docs/failure-reporting.md).
 
 ### Quality gate, audit, and heal
 
@@ -198,7 +198,7 @@ Layer/matrix npm scripts: `test:api`, `test:ui`, `test:e2e`, smoke/regression, v
 
 | In the kit today | Added per application |
 |------------------|------------------------|
-| Playwright config (6 projects), fixture skeleton, Allure/CI/scripts, `.cursor/rules` + skills + commands, docs, MCP config, GitHub agents, Bruno folder, convention checker | `tests/**`, `specs/**`, Page Objects, Zod, schemas, assertions, builders, clients, auth artifacts, visual baselines, reporting/security helpers |
+| Playwright config (6 projects), fixture skeleton, **Allure metadata helper**, Allure/CI/scripts, `.cursor/rules` + skills + commands, docs, MCP config, GitHub agents, Bruno folder, convention checker | `tests/**`, `specs/**`, Page Objects, readable failure wiring, Zod, schemas, assertions, builders, clients, auth artifacts, visual baselines, sanitized HTTP/security helpers |
 
 ---
 
@@ -259,6 +259,7 @@ If tests need a session, declare **Auth Strategy** in the project map first: [do
 - [Getting started](docs/getting-started.md) — install, env, folders, CI
 - [Quick flow](docs/quick-flow.md) — plan → implement → review for one feature
 - [Auth strategy](docs/auth-strategy.md) — how login/session is declared per project
+- [Failure reporting](docs/failure-reporting.md) — readable Allure failures for QA and flaky analysis
 - [Long flow](docs/long-flow.md) — TMS, collections, audit, E2E, heal
 - [Commands](docs/commands.md) — slash-command templates
 - [Prompts](docs/prompts.md) — paste-ready prompts

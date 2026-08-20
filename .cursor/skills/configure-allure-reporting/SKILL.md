@@ -102,6 +102,8 @@ Placement policy:
 
 Do not leave new planned feature tests without Allure metadata unless there is an explicit documented exception.
 
+Readable failure diagnostics are **not** in the empty starter. Wire once on the first UI/API implement batch via `.cursor/skills/configure-readable-failures/SKILL.md`. Guide: `docs/failure-reporting.md`.
+
 ---
 
 ## Runtime API Import Policy
@@ -201,6 +203,23 @@ Allure attachments should help answer:
 - which environment was used.
 
 Do not attach noise just to make the report look rich.
+
+### Readable failures (first UI/API batch)
+
+Not automatic in the empty starter. After wiring via `configure-readable-failures` skill, failed tests receive:
+
+- Allure attachment **Failure summary (readable)**;
+- parameters: project, layer, viewport, retry attempt, current URL (UI/E2E);
+- optional **Scenario notes** when the spec uses `failureContext`.
+
+Implementers should:
+
+- run readable-failures wiring once before or with the first UI/API spec batch;
+- keep meaningful `test.step` names;
+- populate `failureContext` for complex business scenarios;
+- use readable assertion messages in custom helpers when those helpers are created.
+
+Guide: `docs/failure-reporting.md`
 
 ---
 

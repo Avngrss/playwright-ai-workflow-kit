@@ -12,6 +12,12 @@ base.fixture.ts    → Playwright test + expect (no project wiring)
         test.ts      → public entry point (re-export only)
 ```
 
+Optional after first UI/API batch (readable Allure failures):
+
+```text
+base.fixture.ts → reporting.fixture.ts → api.fixture.ts → …
+```
+
 ## Extension rules
 
 1. Add fixtures in the **lowest layer that owns the dependency**.

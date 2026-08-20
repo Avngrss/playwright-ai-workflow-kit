@@ -114,10 +114,22 @@ The preferred default chain is:
 
 ```text
 base.fixture.ts
-  -> data.fixture.ts
-    -> pages.fixture.ts
-      -> test.ts
+ -> api.fixture.ts
+ -> data.fixture.ts
+ -> pages.fixture.ts
+ -> test.ts
 ```
+
+Optional readable-failure layer (wire once on first UI/API batch):
+
+```text
+base.fixture.ts
+ -> reporting.fixture.ts
+ -> api.fixture.ts
+ -> ...
+```
+
+Skill: `.cursor/skills/configure-readable-failures/SKILL.md`
 
 ### Layer responsibilities
 
@@ -137,11 +149,21 @@ Examples:
 - generic utilities;
 - generic teardown helpers.
 
+#### `reporting.fixture.ts` (optional — first UI/API batch)
+
+Extends base fixtures with readable Allure failure diagnostics when wired.
+
+Examples:
+
+- auto `_failureDiagnostics` attachment on failure;
+- `failureContext` fixture for optional scenario notes;
+- no Page Objects or business flows.
+
+Not part of the empty starter. See `.cursor/skills/configure-readable-failures/SKILL.md`.
+
 #### `data.fixture.ts`
 
-Extends base fixtures with reusable test data fixtures.
-
-This layer may exist either in the core or project layer depending on what it contains.
+Extends upstream fixtures with reusable test data fixtures.
 
 Generic data helpers may live in core.
 
@@ -171,25 +193,27 @@ Allowed examples:
 
 ```text
 base.fixture.ts
-  -> api.fixture.ts
-    -> data.fixture.ts
-      -> pages.fixture.ts
-        -> test.ts
+ -> api.fixture.ts
+ -> data.fixture.ts
+ -> pages.fixture.ts
+ -> test.ts
 ```
 
 ```text
 base.fixture.ts
-  -> auth.fixture.ts
-    -> data.fixture.ts
-      -> pages.fixture.ts
-        -> test.ts
+ -> reporting.fixture.ts
+ -> api.fixture.ts
+ -> data.fixture.ts
+ -> pages.fixture.ts
+ -> test.ts
 ```
 
 ```text
 base.fixture.ts
-  -> services.fixture.ts
-    -> pages.fixture.ts
-      -> test.ts
+ -> auth.fixture.ts
+ -> data.fixture.ts
+ -> pages.fixture.ts
+ -> test.ts
 ```
 
 Additional layers are allowed only when they represent a real architectural boundary.

@@ -203,6 +203,18 @@ Allure attachments should help answer:
 
 Do not attach noise just to make the report look rich.
 
+### Readable failure attachments (first UI/API batch)
+
+Not shipped in the empty starter. Wire once via `.cursor/skills/configure-readable-failures/SKILL.md`:
+
+- `src/test/fixtures/reporting.fixture.ts` — auto **Failure summary (readable)** on failure;
+- `src/test/reporting/allure-failure-diagnostics.helper.ts`;
+- `src/test/reporting/failure-context.helper.ts` — optional scenario notes;
+- `src/test/reporting/failure-summary.helper.ts` — shared formatting for helpers and attachments;
+- `docs/failure-reporting.md` — human guide.
+
+Starter ships `allure-metadata.helper.ts` only. HTTP/body attachments still require sanitized helpers when implemented.
+
 ---
 
 ## Core vs Project Boundary

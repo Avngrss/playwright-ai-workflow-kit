@@ -600,7 +600,7 @@ function checkSecurityConventions(
     const content = read(file);
 
     if (
-      !/(?:sanitize|redact|buildSanitizedHttpSnapshot|formatSanitizedHttpForAttachment|attachSanitized)/.test(
+      !/(?:sanitize|redact|buildSanitizedHttpSnapshot|formatSanitizedHttpForAttachment|attachSanitized|attachTestFailureDiagnostics|attachReadableTextAttachment|attachReadableFailure)/.test(
         content,
       )
     ) {
@@ -668,6 +668,7 @@ function checkFinalFixtureEntryPoint() {
   }
 
   const baseFixturePath = path.join(SRC_TEST_DIR, "fixtures", "base.fixture.ts");
+  const reportingFixturePath = path.join(SRC_TEST_DIR, "fixtures", "reporting.fixture.ts");
   const apiFixturePath = path.join(SRC_TEST_DIR, "fixtures", "api.fixture.ts");
   const dataFixturePath = path.join(SRC_TEST_DIR, "fixtures", "data.fixture.ts");
   const pagesFixturePath = path.join(SRC_TEST_DIR, "fixtures", "pages.fixture.ts");
@@ -683,14 +684,32 @@ function checkFinalFixtureEntryPoint() {
     }
   }
 
-  if (fs.existsSync(apiFixturePath)) {
-    const apiFixtureContent = read(apiFixturePath);
+  if (fs.existsSync(reportingFixturePath)) {
+    const reportingFixtureContent = read(reportingFixturePath);
 
     if (
-      !apiFixtureContent.includes('"./base.fixture"') &&
-      !apiFixtureContent.includes("'./base.fixture'")
+      !reportingFixtureContent.includes('"./base.fixture"') &&
+      !reportingFixtureContent.includes("'./base.fixture'")
     ) {
-      fail("api.fixture.ts must import from ./base.fixture.ts");
+      fail("reporting.fixture.ts must import from ./base.fixture.ts");
+    }
+
+    if (reportingFixtureContent.includes("../pages/")) {
+      fail("reporting.fixture.ts must not import Page Objects. Use pages.fixture.ts.");
+    }
+  }
+
+  if (fs.existsSync(apiFixturePath)) {
+    const apiFixtureContent = read(apiFixturePath);
+    const expectedApiParent = fs.existsSync(reportingFixturePath)
+      ? "./reporting.fixture"
+      : "./base.fixture";
+
+    if (
+      !apiFixtureContent.includes(`"${expectedApiParent}"`) &&
+      !apiFixtureContent.includes(`'${expectedApiParent}'`)
+    ) {
+      fail(`api.fixture.ts must import from ${expectedApiParent}.ts`);
     }
 
     if (apiFixtureContent.includes("../pages/")) {

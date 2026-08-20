@@ -54,7 +54,7 @@ Prefer prevention (safe data, no logging, masked screenshots) over post-hoc reda
 
 The **clean kit** ships only `src/test/fixtures/**` (fixture chain skeleton).
 
-It does **not** ship security/logging/reporting helper implementations, sensitive-field lists, default visual mask selectors, or guessed JSON keys or locators.
+It does **not** ship security/logging helper implementations, sensitive-field lists, default visual mask selectors, or guessed JSON keys or locators. **Allure metadata helper** ships in the starter; **readable failure diagnostics** are wired on the first UI/API implement batch (see `docs/failure-reporting.md` and `.cursor/skills/configure-readable-failures/SKILL.md`). Sanitized HTTP attachments and redaction datasets are created when plans require them.
 
 During **implementation**, when the feature plan section **Sensitive Data & Visual Masking** (or API contract) defines fields:
 
