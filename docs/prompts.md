@@ -27,6 +27,8 @@ Do not modify unrelated files.
 
 Tags describe test intent and coverage type. Browser and viewport belong to Playwright projects and reporting metadata. Use `@cross-browser` and `@responsive` only when planned. Do not invent browser or device tags.
 
+`@wip` and `@flaky` are temporary quarantine tags. Default functional and focused overlay runs exclude them. Do not keep quarantine tags permanently.
+
 If required information is missing, do not invent architecture or behavior. Report the blocker and propose the smallest safe next step.
 ```
 

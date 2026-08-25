@@ -105,12 +105,18 @@ Optional steps **after** functional UI from quick flow exists, and only when tha
 
 Failure screenshots under `test-results/` are diagnostics, not baselines.
 
+Functional smoke/regression runs exclude `@visual` by default; run visuals through the dedicated visual command.
+
 **Extra browser or viewport** — only if the plan names a real engine or layout risk:
 
 - `@cross-browser` → `npm run test:cross-browser`
 - `@responsive` → `npm run test:responsive`
 
+Both focused overlay commands exclude quarantine tags (`@wip`, `@flaky`) by default.
+
 Do not tag `@firefox` or `@mobile`. Browser and viewport are Playwright projects. Do not run every test across every browser.
+
+`@wip` means work in progress and `@flaky` means unstable quarantine. Keep both temporary and return tests to `@smoke` or `@regression` after stabilization.
 
 Rules (detail): `.cursor/rules/visual-testing.mdc`, `.cursor/rules/browser-and-responsive-testing.rules.mdc`.
 

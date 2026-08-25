@@ -60,19 +60,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: API
-            browser: none
-            command: npm run test:api
-          - name: UI Chromium
-            browser: chromium
-            command: npm run test:ui
-          - name: E2E
-            browser: chromium
-            command: npm run test:e2e
-          - name: Smoke
+          - name: Functional Smoke
             browser: chromium
             command: npm run test:smoke
-          - name: Regression
+          - name: Functional Regression
             browser: chromium
             command: npm run test:regression
           - name: Visual
@@ -80,16 +71,16 @@ jobs:
             command: npm run test:visual
           - name: Cross-Browser Chromium
             browser: chromium
-            command: npx playwright test --project=ui-chromium --grep @cross-browser --pass-with-no-tests
+            command: npx playwright test --project=ui-chromium --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser Firefox
             browser: firefox
-            command: npx playwright test --project=ui-firefox --grep @cross-browser --pass-with-no-tests
+            command: npx playwright test --project=ui-firefox --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser WebKit
             browser: webkit
-            command: npx playwright test --project=ui-webkit --grep @cross-browser --pass-with-no-tests
+            command: npx playwright test --project=ui-webkit --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Responsive Mobile Chromium
             browser: chromium
-            command: npx playwright test --project=ui-mobile-chromium --grep @responsive --pass-with-no-tests
+            command: npx playwright test --project=ui-mobile-chromium --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

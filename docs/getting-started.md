@@ -74,7 +74,7 @@ Do not create `src/test/**` empty. Skills create it on first implementation.
 | `npm run test:list` | List tests |
 | `npm test` | Baseline: `api` + `ui-chromium` + `e2e` |
 | `npm run test:api` / `test:ui` / `test:e2e` | One layer |
-| `npm run test:smoke` / `test:regression` | Tag filters |
+| `npm run test:smoke` / `test:regression` | Functional tag filters (exclude `@visual`, `@cross-browser`, `@responsive`, `@wip`, `@flaky`) |
 | `npm run test:report` | Tests, then Allure |
 
 `npm test` is not a browser matrix. All scripts work with zero tests.

@@ -87,6 +87,13 @@ API owns contracts and data predicates. UI owns what the user sees. Do not copy 
 
 Tags on a typical spec: `@api` or `@ui`, plus `@smoke` or `@regression`.
 
+Quarantine tags:
+
+- `@wip` — work in progress, temporarily excluded from default runs;
+- `@flaky` — unstable test under investigation, temporarily excluded from default runs.
+
+Default functional runs (`test:smoke`, `test:regression`) exclude overlays (`@visual`, `@cross-browser`, `@responsive`) and quarantine tags (`@wip`, `@flaky`) to avoid duplicate/noisy execution.
+
 After each layer:
 
 ```bash

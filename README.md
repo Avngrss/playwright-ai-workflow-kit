@@ -99,7 +99,7 @@ Policy (in rules): use the **lowest reliable layer** — API/schema for contract
 | **Cross-browser** | `ui-chromium`, `ui-firefox`, `ui-webkit` + `@cross-browser` | same UI specs | Chromium / Firefox / WebKit matrix on demand |
 | **Responsive** | `ui-mobile-chromium` + `@responsive` | same UI specs | Pixel 5 viewport for breakpoint risks |
 
-Registered tags: `@api`, `@ui`, `@e2e`, `@visual`, `@smoke`, `@regression`, `@cross-browser`, `@responsive`.
+Registered tags: `@api`, `@ui`, `@e2e`, `@visual`, `@smoke`, `@regression`, `@cross-browser`, `@responsive`, `@wip`, `@flaky`.
 
 Execution defaults: `data-test` locators, headless, **fully parallel**, CI retries, `forbidOnly` in CI, E2E timeouts/actions tuned separately, **`--pass-with-no-tests`** on all npm test scripts (valid empty starter).
 
@@ -249,7 +249,7 @@ If tests need a session, declare **Auth Strategy** in the project map first: [do
 | `npm run test:list` | List tests (zero is valid) |
 | `npm test` | `api` + `ui-chromium` + `e2e` |
 | `npm run test:api` / `test:ui` / `test:e2e` | One layer |
-| `npm run test:smoke` / `test:regression` | Tag filters |
+| `npm run test:smoke` / `test:regression` | Functional tag filters (exclude `@visual`, `@cross-browser`, `@responsive`, `@wip`, `@flaky`) |
 | `npm run test:report` | Tests + fresh Allure report |
 
 ---

@@ -483,12 +483,18 @@ Do not use both `@ui` and `@e2e` on the same full-journey E2E spec by default.
 
 ### Required execution-scope tag
 
-Every UI and E2E test must have one of:
+By default, every UI and E2E test must have one of:
 
 ```text
 @smoke
 @regression
 ```
+
+Quarantine exception:
+
+- tests tagged `@wip` or `@flaky` may temporarily omit `@smoke`/`@regression`;
+- default functional and focused overlay runs must exclude `@wip` and `@flaky`;
+- do not keep `@wip` or `@flaky` permanently.
 
 ### Optional quality/type tags
 
@@ -652,6 +658,8 @@ The actual allowed tags must be documented by the project tag registry or projec
 - `@regression` identifies broader coverage.
 - A test should not be tagged with both `@smoke` and `@regression` unless the project explicitly requires duplicated classification.
 - If smoke tests should also run during regression, configure the regression pipeline to include both `@smoke` and `@regression`.
+- default functional runs should exclude focused overlays (`@visual`, `@cross-browser`, `@responsive`) to avoid duplicate execution with dedicated jobs.
+- default functional and focused overlay runs should exclude quarantine tags (`@wip`, `@flaky`).
 
 For form or mutation UI features, smoke should include the **plain happy path** when that success path is in scope.
 
@@ -665,16 +673,19 @@ Do not make an optional-path success the only smoke positive while the plain hap
 
 ```text
 UI smoke run:
-@ui AND @smoke
+@ui AND @smoke AND NOT (@visual OR @cross-browser OR @responsive OR @wip OR @flaky)
 
 UI regression run:
-@ui AND (@smoke OR @regression)
+@ui AND @regression AND NOT (@visual OR @cross-browser OR @responsive OR @wip OR @flaky)
 
 E2E smoke run:
-@e2e AND @smoke
+@e2e AND @smoke AND NOT (@wip OR @flaky)
 
 E2E regression run:
-@e2e AND (@smoke OR @regression)
+@e2e AND @regression AND NOT (@wip OR @flaky)
+
+Visual run:
+@ui AND @visual AND NOT (@wip OR @flaky)
 ```
 
 ---
@@ -728,9 +739,9 @@ Avoid:
 - repeating navigation already performed by `beforeEach`;
 - tags inside test title strings;
 - untagged UI or E2E tests;
-- UI tests without `@smoke` or `@regression`;
+- UI tests without `@smoke` or `@regression` when not quarantined by `@wip`/`@flaky`;
 - E2E tests without `@e2e`;
-- E2E tests without `@smoke` or `@regression`;
+- E2E tests without `@smoke` or `@regression` when not quarantined by `@wip`/`@flaky`;
 - tagging full-journey E2E specs with `@ui` by default;
 - random project-specific tags not defined in the tag registry;
 - mixing setup, action, and assertion in unclear steps;

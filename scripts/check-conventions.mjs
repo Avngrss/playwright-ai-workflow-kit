@@ -232,6 +232,25 @@ function checkNoPattern(files, pattern, messageFactory) {
   }
 }
 
+function validateExecutionScopeTags(content, filePath, layerTag) {
+  const hasSmoke = content.includes("@smoke");
+  const hasRegression = content.includes("@regression");
+  const hasWip = content.includes("@wip");
+  const hasFlaky = content.includes("@flaky");
+
+  if (hasSmoke && hasRegression) {
+    fail(
+      `${layerTag.toUpperCase()} spec must not use both @smoke and @regression in the same file: ${filePath}`,
+    );
+  }
+
+  if (!hasSmoke && !hasRegression && !hasWip && !hasFlaky) {
+    fail(
+      `${layerTag.toUpperCase()} spec is missing execution-scope coverage. Add @smoke or @regression, or quarantine with @wip/@flaky: ${filePath}`,
+    );
+  }
+}
+
 function checkUiSpecs(uiSpecs) {
   if (uiSpecs.length === 0) {
     skip("No UI spec files found under tests/ui. UI spec checks were not executed.");
@@ -289,16 +308,14 @@ function checkUiSpecs(uiSpecs) {
       fail(`UI spec is missing @ui tag coverage: ${rel(spec)}`);
     }
 
-    if (!content.includes("@smoke") && !content.includes("@regression")) {
-      fail(`UI spec is missing @smoke or @regression tag coverage: ${rel(spec)}`);
-    }
+    validateExecutionScopeTags(content, rel(spec), "ui");
 
     if (content.includes("toHaveScreenshot(") && !content.includes("@visual")) {
       fail(`UI spec uses toHaveScreenshot() but is missing @visual tag: ${rel(spec)}`);
     }
   }
 
-  ok("All UI specs have @ui and @smoke/@regression tag coverage.");
+  ok("All UI specs have @ui and valid execution-scope or quarantine tags.");
   ok("All UI specs with toHaveScreenshot() have @visual tag.");
 
   for (const spec of uiSpecs) {
@@ -363,6 +380,53 @@ function checkApiSpecs(apiSpecs) {
   );
 
   ok("No API specs reference .env as test asset.");
+
+  for (const spec of apiSpecs) {
+    const content = read(spec);
+
+    if (!content.includes("@api")) {
+      fail(`API spec is missing @api tag coverage: ${rel(spec)}`);
+    }
+
+    validateExecutionScopeTags(content, rel(spec), "api");
+  }
+
+  ok("All API specs have @api and valid execution-scope or quarantine tags.");
+}
+
+function checkE2eSpecs(e2eSpecs) {
+  if (e2eSpecs.length === 0) {
+    skip("No E2E spec files found under tests/e2e. E2E spec checks were not executed.");
+    return;
+  }
+
+  for (const spec of e2eSpecs) {
+    const content = read(spec);
+
+    if (!content.includes("test.step(")) {
+      fail(`E2E spec does not use test.step(): ${rel(spec)}`);
+    }
+
+    if (!content.includes("@e2e")) {
+      fail(`E2E spec is missing @e2e tag coverage: ${rel(spec)}`);
+    }
+
+    if (content.includes("@ui")) {
+      fail(`E2E spec must not use @ui layer tag. Use @e2e: ${rel(spec)}`);
+    }
+
+    validateExecutionScopeTags(content, rel(spec), "e2e");
+  }
+
+  checkNoPattern(
+    e2eSpecs,
+    /waitForTimeout\s*\(/,
+    (file) => `E2E spec uses waitForTimeout(): ${rel(file)}`,
+  );
+
+  ok("All E2E specs use test.step().");
+  ok("All E2E specs have @e2e and valid execution-scope or quarantine tags.");
+  ok("No E2E specs use waitForTimeout().");
 }
 
 function checkRegisteredTags(specFiles) {
@@ -794,6 +858,7 @@ function main() {
   checkSpecFeaturePlacement(e2eSpecs, E2E_TESTS_DIR, "e2e");
   checkUiSpecs(uiSpecs);
   checkApiSpecs(apiSpecs);
+  checkE2eSpecs(e2eSpecs);
   checkRegisteredTags([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
   checkUiModelFiles(pageFiles, componentFiles);
 

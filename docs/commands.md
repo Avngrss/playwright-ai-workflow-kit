@@ -708,6 +708,11 @@ tests/e2e/**/*.e2e.spec.ts
 @e2e replaces @ui by default for full-journey E2E specs
 ```
 
+Quarantine exception:
+
+- `@wip` or `@flaky` may temporarily replace `@smoke`/`@regression`;
+- default runs exclude quarantine tags.
+
 ### API Usage In E2E
 
 Allowed:
@@ -843,6 +848,8 @@ Rules:
 - use @visual tag
 - use @regression by default for visual checks
 - do not add @smoke to visual checks unless explicitly requested
+- default functional runs exclude @visual to avoid duplicate execution with visual-focused runs
+- default runs exclude quarantine tags @wip and @flaky
 - do not create standalone visual spec by default
 - do not put screenshot assertions in Page Objects or Components
 - check dynamic content before screenshot
