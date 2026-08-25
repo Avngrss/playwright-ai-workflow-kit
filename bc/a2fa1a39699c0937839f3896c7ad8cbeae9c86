@@ -1,0 +1,23 @@
+.cursor/rules/00-project-map.mdc
+  s_8bf9e1067f29d4::t_eb8241d20c25a0 556-581,1060-1070
+.cursor/rules/api-architecture.mdc
+  s_8bf9e1067f29d4::t_87a403f55eea2f 133,137-138,360,364-365,373
+docs/long-flow.md
+  s_8bf9e1067f29d4::t_19139f0d6664bb 166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "bca2fa1a39699c0937839f3896c7ad8cbeae9c86",
+  "prompts": {},
+  "sessions": {
+    "s_8bf9e1067f29d4": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "27a00c0d-3d0b-4632-a83a-85118d4d972d",
+        "model": "composer-2.5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
