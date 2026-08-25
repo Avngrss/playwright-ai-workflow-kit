@@ -121,10 +121,43 @@ If a step name would not make sense to a product owner, QA reviewer, or support 
 
 ## Hooks
 
-- `beforeEach` may only perform safe navigation and page-loaded checks.
+Hooks prepare safe context or guaranteed teardown.
+
+Hooks must not own the scenario under test.
+
+The action under test and scenario verification stay in `test(...)` and `test.step(...)`.
+
+Rule references:
+
+- `.cursor/rules/test-isolation-state.rules.mdc` — cleanup placement and parallel safety;
+- `.cursor/rules/fixtures-data.mdc` — fixture setup and teardown;
+- `.cursor/rules/authentication-strategy.rules.mdc` — auth preconditions.
+
+### Setup and cleanup mechanism priority
+
+Prefer the lowest mechanism that keeps tests isolated:
+
+1. disposable or unique data — no cleanup needed;
+2. `test.use({ storageState })` or setup project — auth-as-precondition;
+3. fixture teardown — reusable create + delete across tests;
+4. `src/test/setup/**` helper — orchestration called from spec or fixture;
+5. `beforeEach` — shared read-only context only (navigation + loaded marker, suite Allure metadata);
+6. explicit cleanup in the spec body — scenario-specific `test.step("Cleanup", ...)`;
+7. `afterEach` — rare idempotent cleanup that must run even on failure;
+8. `beforeAll` / `afterAll` — almost never in specs; serial suites only with documented reason;
+9. `globalSetup` / `globalTeardown` — config/infra layer only, not feature cleanup.
+
+If a mechanism higher in the list is sufficient, do not add a hook.
+
+### `beforeEach` — default allowed hook (UI / E2E)
+
+- `beforeEach` may perform safe navigation and page-loaded checks.
+- `beforeEach` may apply shared suite Allure metadata.
 - `beforeEach` must not perform the action under test.
 - `beforeEach` must not hide business flows or E2E journey steps.
 - `beforeEach` must not silently change application state unless the state is generic setup required for every test in the suite.
+- `beforeEach` must not create mutable shared entities used by parallel tests in the same file.
+- `beforeEach` must not perform UI login unless the suite explicitly tests login or navigation behavior.
 - Do not repeat navigation already done in `beforeEach`.
 - Keep navigation-path tests in a separate `describe` block when needed.
 - Hook logic must stay small, explicit, and easy to reason about.
@@ -133,6 +166,72 @@ If a step name would not make sense to a product owner, QA reviewer, or support 
 For E2E specs, generic open or wait-for-ready setup in `beforeEach` is allowed.
 
 Journey steps must remain visible in the spec and must not be hidden in `beforeEach`, other hooks, fixtures, Page Objects, or workflow wrappers.
+
+API specs may use `beforeEach` for shared suite Allure metadata only.
+
+Do not use `beforeEach` for API preconditions that mutate persisted state unless every test in the suite needs the same isolated entity and the plan documents parallel safety.
+
+### `afterEach` — allowed, not default
+
+Use `afterEach` only when cleanup must run even when the test fails and fixture teardown is not the better owner.
+
+Allowed:
+
+- idempotent cleanup safe to retry;
+- reset of test-scoped local state;
+- delete/cancel by id when the id is known before or during the test and cleanup must not depend on a successful assertion.
+
+Not allowed:
+
+- assertions or scenario verification;
+- cleanup that depends on the test having reached a specific success-only step without a known id;
+- cleanup of shared mutable resources across parallel workers;
+- business flows or journey rollback that hide scenario behavior.
+
+Prefer fixture teardown over `afterEach` when the same create + delete pair is reused.
+
+### `beforeAll` / `afterAll` — discouraged in specs
+
+Default Playwright execution is parallel across workers.
+
+Do not use `beforeAll` / `afterAll` for feature-level mutable setup or cleanup in parallel suites.
+
+Allowed only with explicit justification in the plan and:
+
+```ts
+test.describe.configure({ mode: "serial" });
+```
+
+Allowed rare cases:
+
+- one-time read-only bootstrap inside a serial describe;
+- expensive immutable reference data load;
+- infra reachability check when serial scope is documented.
+
+Not allowed:
+
+- shared users, orders, carts, or other mutable entities for parallel tests;
+- login once for all tests — use `storageState` or a setup project;
+- end-of-file cleanup instead of per-test isolation;
+- serial mode to mask flakiness instead of healing root cause.
+
+### Metadata hooks
+
+`beforeEach` for shared suite Allure metadata is allowed.
+
+Per-test story, severity, and case links stay on the test or in a local metadata block close to the scenario.
+
+Reporting hooks must not change application behavior.
+
+### `globalSetup` / `globalTeardown`
+
+Belong in the config layer (`playwright.config.ts`, approved setup scripts), not in feature specs.
+
+Use for one-time run-level infra only.
+
+Do not use for feature business cleanup or scenario preconditions.
+
+Feature plans document whether run-level setup is needed; default is none in the clean starter.
 
 ### Good
 
@@ -737,6 +836,13 @@ Avoid:
 - E2E journey steps hidden inside hooks, fixtures, or workflow wrappers;
 - UI login in `beforeEach` for non-login tests;
 - repeating navigation already performed by `beforeEach`;
+- mutable shared `beforeAll` / `afterAll` setup in parallel specs;
+- `beforeAll` / `afterAll` without documented serial need;
+- serial mode used to hide instability instead of healing root cause;
+- cleanup only on the happy path with no fixture teardown or `afterEach`;
+- assertions inside `afterEach`;
+- feature cleanup in `globalSetup` / `globalTeardown` instead of fixtures or spec steps;
+- choosing a hook when disposable data or fixture teardown is enough;
 - tags inside test title strings;
 - untagged UI or E2E tests;
 - UI tests without `@smoke` or `@regression` when not quarantined by `@wip`/`@flaky`;
@@ -761,7 +867,9 @@ Avoid:
 
 A UI or E2E spec should read like a clear user scenario.
 
-Hooks prepare safe context.
+Hooks prepare safe context or guaranteed idempotent teardown.
+
+They do not own the scenario.
 
 Steps describe user intent.
 

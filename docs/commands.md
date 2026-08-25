@@ -66,7 +66,7 @@ The sections below are the command templates. Fill placeholders. Do not paste fu
 
 Not a slash command. Tell the agent once, then plan features.
 
-Guide: [Auth strategy](auth-strategy.md)
+Guide: [Auth strategy](auth-strategy.md) — **How you use this (short walkthrough)** for copy-paste prompts; full illustrative example at the bottom of the same doc.
 
 ### Template
 
@@ -78,16 +78,32 @@ Follow: @.cursor/rules/authentication-strategy.rules.mdc
 Do not store tokens, passwords, or session JSON in the map, specs, or git.
 
 How API tests get a session:
-<helper path, or "create a user via this API then login">
+<helper path, or "create a user via this API then login", or token-from-env / api-key per role>
 
 How UI tests get a session:
-<session file path per role, inject, or create user>
+<session file path per role, inject, or create user — not one storageState on the whole UI project>
 
-Roles:
-<product role names>
+Roles (product slugs — not kit defaults):
+- <role-slug-a>: <scope / intent>
+- <role-slug-b>: <scope / intent>
+
+Optional role matrix (placeholders — fill only for roles that exist):
+
+| Role slug | Scope / intent | API mode | UI mode | Session artifact | Credentials ref |
+|-----------|----------------|----------|---------|------------------|-----------------|
+| <role-slug-a> | <from product> | <password-login | token-from-env | ...> | <cookie-storage-state | inject | ...> | state/<role-slug-a>.json | <ENV_NAME from map> |
+| <role-slug-b> | <from product> | ... | ... | state/<role-slug-b>.json | ... |
+
+Per role when API and UI differ:
+- <role-slug-a>: API <mode/ref> · UI state/<role-slug-a>.json (or inject)
 
 Default for new features:
 signed-in precondition | no session
+
+Multi-role rules:
+- same role slug in feature plan for API and UI scenarios that represent the same persona
+- API: scope token/creds by role — no one global token for all roles
+- UI: test.use({ storageState }) per describe or auth fixture — not globalSetup
 
 Stop after the project map is updated.
 Do not implement tests in this step.
@@ -150,7 +166,10 @@ Scope:
 - do not include E2E — E2E journeys are planned separately in specs/e2e/<area>/<journey>.md
 
 Output:
-- Auth Strategy (required, role, auth as, API/UI modes from the project map)
+- Feature Targets (UI/application and API/service from project map)
+- Auth Strategy (required, role slug from map when applicable, auth as, API/UI modes from the project map)
+- Setup & Cleanup Strategy (when persisted/shared state applies, or explicitly none/disposable-only)
+- Sensitive Data & Visual Masking (when UI or @visual applies)
 - coverage matrix
 - smoke/regression split
 - API coverage ready to implement now
@@ -168,6 +187,8 @@ Output:
 - UI Implementation Brief
 - note that E2E is planned separately when a full journey may be needed later
 - recommended next commands to run manually
+
+Multi-role: `role: <slug-from-map>` per scenario when precondition; API = token/creds/headers · UI = storageState/inject. Missing slug in map → blocked.
 
 Coverage grouping rule:
 - do not split coverage into first/later batches by default
@@ -220,6 +241,8 @@ For E2E journey changes, use `/plan-e2e-journey`, not this command.
 - requirements, validation, or UI flow changed;
 - API contract or status expectations changed;
 - controls or screens were added or removed;
+- auth, roles, permissions, or session behavior changed;
+- persisted state / cleanup / isolation requirements changed;
 - failing tests may reflect requirement drift, not just locators;
 - TMS, OpenAPI, or product docs disagree with the current plan;
 - something broke and the exact product change is not known.
@@ -230,6 +253,19 @@ For E2E journey changes, use `/plan-e2e-journey`, not this command.
 - creating a net-new feature with no existing plan (`/plan-feature`);
 - the failing coverage is a full E2E journey (`/plan-e2e-journey`).
 
+### Required sections after refresh
+
+The updated plan must keep these sections current (omit only when truly n/a; use placeholders from the skill when applicable):
+
+- **Change log**
+- **Feature Targets**
+- **Auth Strategy** — include `role: <role-slug-from-map>` when precondition; API mode + UI mode from map
+- **Setup & Cleanup Strategy** — or explicitly none/disposable-only
+- **Sensitive Data & Visual Masking** — when UI applies
+- coverage matrix, smoke/regression split, Implementation Briefs
+
+Multi-role: same role slug in plan for API/UI when same persona; **API** = token/creds/headers · **UI** = `storageState`/inject. If slug missing from project map → blocked + recommend map update.
+
 ### Template
 
 See `.cursor/commands/update-feature-plan.md`.
@@ -239,6 +275,7 @@ See `.cursor/commands/update-feature-plan.md`.
 ```text
 /update-feature-plan
 → review specs/<feature>/<feature>.md
+→ update project map Auth Strategy (if roles/mechanisms/paths changed)
 → /implement-api-batch and/or /implement-ui-batch (ready items only)
 → /heal-* only for technical drift against the updated plan
 → npm run qa:gate

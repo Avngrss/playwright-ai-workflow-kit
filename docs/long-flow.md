@@ -163,7 +163,7 @@ Create these only when the current plan needs them — not up front.
 | Unclear UI block | `/discover-ui-components` |
 | Page Object too large | `/refactor-page-object-to-components` |
 | Repeated wiring or setup | `/create-fixture` |
-| How tests sign in (roles, helper, session files) | Tell the agent to update project map **Auth Strategy** first. Guide: [Auth strategy](auth-strategy.md) |
+| How tests sign in (roles, helper, session files) | Tell the agent to update project map **Auth Strategy** first. Multi-role: role matrix in map; **API** = token/creds per slug · **UI** = `storageState`/inject. Guide: [Auth strategy](auth-strategy.md) |
 
 A helper is justified when logic is repeated or non-trivial (parse, sort, compare). Keep it next to its layer: `src/test/data/**`, `src/test/assertions/**`, Page Object for locators. Do not hide the user action or the E2E journey inside a helper. Do not add faker by default.
 

@@ -109,6 +109,87 @@ Unauthenticated specs and login-as-action specs must not inherit an authenticate
 
 ---
 
+## Multi-Role Applications
+
+Many applications expose **multiple authenticated personas** with different permissions, apps, or tenant contexts.
+
+The kit does not define role names, session files, or app contexts. The **project map** registers the role matrix; **feature and E2E plans** select one registered role per scenario when `auth as: precondition`.
+
+### Separation of concerns
+
+```text
+project map     = mechanisms + role registry (slugs, API/UI mode, paths, env names, refresh strategy)
+feature plan    = required: yes/no, auth as, role slug from map
+spec / fixture  = wiring only — test.use, setup project, or auth fixture — no new role names
+```
+
+Agents must not invent role slugs, `storageState` paths, or storage keys in specs first.
+
+Human guide: `docs/auth-strategy.md` (Multi-role applications).
+
+### What the project map must declare for multi-role
+
+When the product has more than one authenticated persona, register:
+
+- role slugs used in plans (product names, not kit defaults);
+- per-role or shared API mechanism;
+- per-role or shared UI mechanism;
+- per-role `storageState` path or inject helper binding when paths differ;
+- session refresh strategy: setup project, manual capture, or disposable user per test;
+- which suites stay unauthenticated (`auth as: none`);
+- explicit rule: **no single global `storageState` on all UI projects** unless every UI spec in that project is precondition-auth (rare — document why).
+
+Optional role matrix shape (illustrative — use product slugs and paths):
+
+```md
+| Role slug | Scope / intent | API mode | UI mode | Session artifact | Credentials ref |
+|-----------|----------------|----------|---------|------------------|-----------------|
+| <slug-a>  | ...            | ...      | ...     | state/<slug-a>.json | <env from map> |
+| <slug-b>  | ...            | ...      | ...     | state/<slug-b>.json | <env from map> |
+```
+
+Add rows only for roles that exist in the product. Do not fill the table with speculative personas.
+
+### Agent decision rules
+
+When implementing authenticated coverage:
+
+1. Read role slug from the feature or E2E plan.
+2. Confirm the slug exists in the project map role registry.
+3. Apply the registered UI/API mechanism for that slug — do not substitute another persona.
+4. Use `test.use({ storageState })` at describe scope, setup project output, or auth fixture inject — per map UI mode.
+5. Keep login-as-action and public specs free of inherited role sessions.
+
+Prefer **setup project** or **fixture/API inject** over **`globalSetup`** for role sessions.
+
+Prefer **disposable users** when parallel isolation is required and the API supports it.
+
+### API vs UI wiring (same slug, different transport)
+
+| | API spec | UI spec |
+|---|----------|---------|
+| Plan field | `role: <slug>` | `role: <slug>` |
+| Precondition | Token / header / creds from map | `storageState` / inject / captured session |
+| Typical wiring | `authProvider.getAuthHeaders({ role: "<slug>" })` or auth fixture | `test.use({ storageState: "state/<slug>.json" })` on describe |
+| Not used | `storageState` | API login duplicated in every spec |
+
+API multi-role is not a separate kit module — it is auth-as-precondition with role-scoped credentials. UI multi-role adds explicit browser-session recipes in `docs/auth-strategy.md`.
+
+If the plan names a role missing from the map → **blocked** until the map is updated from user-provided product facts.
+
+### Multi-role anti-patterns
+
+Avoid:
+
+- one `storageState` on the entire `ui-chromium` project when login or public specs exist;
+- `globalSetup` that logs in every role for all tests;
+- hardcoded role names in framework core or starter rules;
+- `loggedInPage` / `adminPage` fixtures that hide which role is active;
+- different roles in parallel tests sharing one mutable account without isolation plan;
+- inventing `<admin>` / `<customer>` style names because examples used them elsewhere.
+
+---
+
 ## Planning
 
 Every feature plan and E2E journey plan must include **Auth Strategy**.
@@ -187,6 +268,8 @@ Avoid:
 - hardcoded tokens;
 - inventing roles, storage keys, or env secret names;
 - one authenticated `storageState` on all UI projects;
+- `globalSetup` for per-role UI/API sessions (use setup project or fixture inject);
+- hardcoded persona names in specs instead of map-registered slugs;
 - `page.evaluate` after navigation to plant a token;
 - assuming every app uses cookies;
 - assuming every app uses password login;

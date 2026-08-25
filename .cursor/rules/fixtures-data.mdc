@@ -630,6 +630,50 @@ If such state is required, prefer explicit setup steps in the test or a clearly 
 
 ---
 
+## Fixture Teardown And Cleanup
+
+Fixture teardown is the preferred owner for reusable create + delete setup.
+
+Use fixture teardown when:
+
+- the same precondition and cleanup pair is reused across multiple tests;
+- cleanup must run even when the test fails;
+- the cleanup target is known from fixture setup (for example created user id).
+
+Good:
+
+```ts
+disposableUser: async ({ userApi, userBuilder }, use) => {
+  const user = await userApi.register(userBuilder.build());
+
+  await use(user);
+
+  await userApi.deleteUser(user.id);
+},
+```
+
+Fixture teardown must be:
+
+- thin;
+- idempotent or safe to retry;
+- limited to setup/teardown — not the action under test;
+- parallel-safe per test worker.
+
+Prefer fixture teardown over `afterEach` when both fit.
+
+Use explicit cleanup in the spec when cleanup is part of the scenario narrative or is one-off.
+
+Use `afterEach` only when fixture teardown cannot own idempotent cleanup.
+
+Do not put cleanup assertions in fixtures or hooks.
+
+Rule references:
+
+- `.cursor/rules/test-isolation-state.rules.mdc`
+- `.cursor/rules/test-structure-and-tags.rules.mdc`
+
+---
+
 ## Public Fixture API
 
 Treat the final fixture entry point as a public API for specs.

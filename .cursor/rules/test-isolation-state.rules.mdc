@@ -34,9 +34,38 @@ Use setup through:
 - API setup;
 - seeded datasets;
 - storage state;
-- project-approved test data providers.
+- project-approved test data providers;
+- `test.use({ storageState })` or setup projects for auth-as-precondition;
+- safe navigation in `beforeEach` when every test in the describe needs the same read-only page context.
 
 Do not perform hidden setup in unrelated helpers.
+
+Do not put the action under test in hooks or fixtures.
+
+Rule reference:
+
+- `.cursor/rules/test-structure-and-tags.rules.mdc`
+
+---
+
+## Cleanup placement priority
+
+When persisted or shared data is created, choose cleanup ownership in this order:
+
+1. **No cleanup** — disposable unique data that cannot affect other tests;
+2. **Fixture teardown** — preferred for reusable create + delete used by multiple tests;
+3. **Explicit spec step** — scenario-specific cleanup that should remain visible in the journey;
+4. **`afterEach`** — only when idempotent cleanup must run on failure and fixture teardown is not the better owner;
+5. **Blocked** — when safe cleanup or isolation is impossible; do not implement destructive flows without a plan decision.
+
+Cleanup must be:
+
+- idempotent;
+- safe to retry;
+- parallel-safe unless the suite is explicitly serial and documented;
+- owned by fixture, spec, or rare `afterEach` — not by Page Objects or API clients.
+
+Do not rely on test success to perform required cleanup unless a fixture/`afterEach` still guarantees it.
 
 ---
 
@@ -48,8 +77,33 @@ Cleanup may be done through:
 
 - API cleanup;
 - fixture teardown;
+- explicit cleanup step in the spec body;
+- rare idempotent `afterEach`;
 - database cleanup only if project-approved;
 - environment reset mechanisms.
+
+Do not use `beforeAll` / `afterAll` as the default feature cleanup mechanism in parallel specs.
+
+Do not use `globalSetup` / `globalTeardown` for per-feature business cleanup.
+
+Feature and E2E plans must document setup and cleanup strategy before destructive or stateful automation is marked ready.
+
+Rule reference:
+
+- `.cursor/skills/plan-test-coverage/SKILL.md`
+- `.cursor/skills/plan-e2e-journey/SKILL.md`
+
+---
+
+## Parallel and serial suites
+
+Tests must be safe for parallel execution unless explicitly marked otherwise.
+
+Use `test.describe.configure({ mode: "serial" })` only when parallel execution is genuinely unsafe and the plan documents why.
+
+Serial mode is not a substitute for isolation, disposable data, or proper teardown.
+
+Do not use global mutable state to coordinate tests across workers.
 
 ---
 

@@ -28,6 +28,7 @@ Follow these rules:
 - Authentication Strategy Rules;
 - Security and Sensitive Data Handling Rules;
 - Test Structure and Tags Rules;
+- Test Isolation and State Rules;
 - Project Map Rules;
 - Agent Workflow;
 - Examples Policy.
@@ -99,9 +100,27 @@ Steps:
 2. Compare observed or reported product behavior with planned scenarios.
 3. If `What changed` is unknown, run discovery and record observed delta; if the plan is still correct, stop and recommend heal.
 4. Add a **Change log** entry with date or sprint note and a short delta summary.
-5. Update scenario statuses: ready to implement now, blocked, postponed, not automated, removed.
-6. Refresh Implementation Briefs only for ready items affected by the change.
-7. Note obsolete tests or helpers that implementation should remove or rewrite.
+5. Refresh **Feature Targets** when URLs, apps, or services changed.
+6. Refresh **Auth Strategy** when login, session, token, role, or permission behavior changed.
+7. Refresh **Setup & Cleanup Strategy** when persisted/shared state, destructive flows, or isolation changed — or explicitly confirm none/disposable-only.
+8. Refresh **Sensitive Data & Visual Masking** when UI/forms/auth/profile visibility changed.
+9. Update scenario statuses: ready to implement now, blocked, postponed, not automated, removed.
+10. Refresh Implementation Briefs only for ready items affected by the change.
+11. Note obsolete tests or helpers that implementation should remove or rewrite.
+12. Cross-check project map Auth Strategy: if the plan needs a role slug or mechanism not registered → mark scenarios **blocked** and report map update needed (do not invent slugs in the plan).
+
+Auth / multi-role refresh rules:
+
+- `role: <slug>` must exist in the project map role matrix when `auth as: precondition`;
+- **API** scenarios: plan documents API mode; implement brief mentions token/creds/headers per slug — not `storageState`;
+- **UI** scenarios: plan documents UI mode; implement brief mentions `test.use({ storageState })`, inject, or auth fixture per slug;
+- if a new persona appears, recommend updating project map before marking scenarios ready.
+
+Setup / cleanup refresh rules:
+
+- destructive or mutating scenarios need explicit cleanup owner or disposable isolation;
+- if cleanup strategy is missing and state is persisted → **blocked**;
+- hook policy: safe `beforeEach` navigation only — not action under test; prefer fixture teardown over hidden cleanup.
 
 Do not implement tests during this skill.
 
@@ -218,6 +237,14 @@ For every feature plan, document:
 - UI mechanism from the project map;
 - persistence and token placement only when a session is used;
 - isolation from the project map, or none.
+
+Multi-role (when the product has several personas):
+
+- project map registers a **role matrix** — slugs, API mode, UI mode, session artifact paths, credential env refs;
+- feature plan sets `role: <slug from map>` when `auth as: precondition`;
+- **API** specs use token/creds/headers for that slug — not `storageState`;
+- **UI** specs use map UI mode — typically `test.use({ storageState })` per describe or inject;
+- do not invent slugs; one global API token or one global UI `storageState` for all roles is forbidden when roles differ.
 
 Rules:
 
@@ -741,6 +768,7 @@ For each variant group, specify:
 - out of scope:
 - Feature Targets:
 - Auth Strategy:
+- Setup & Cleanup Strategy:
 - target env names (from project map):
 - API contract source:
 - requirements/specs:
@@ -794,6 +822,34 @@ Rules:
 - login/token issuance = `auth as: action`;
 - already-signed-in coverage = `auth as: precondition`;
 - missing mechanism → blocked, do not invent.
+
+### Setup & Cleanup Strategy
+
+Required when scenarios create, mutate, or depend on persisted/shared state, or when E2E/feature destructive flows are in scope.
+
+For features with only read-only/disposable data, still document the decision explicitly.
+
+```md
+## Setup & Cleanup Strategy
+
+- persisted state: yes | no
+- parallel safe: yes | no | serial-only (document reason)
+- preferred isolation: disposable data | fixture teardown | spec step cleanup | afterEach | none
+- setup owner: none | fixture | API helper | beforeEach navigation | setup project | blocked
+- cleanup owner: none | fixture teardown | spec step | afterEach | blocked
+- entities created: <user, order, cart, etc. or none>
+- cleanup target/service: <Feature Target or none>
+- idempotent cleanup: yes | no | n/a
+- blocked reason / required unblocker: <only when cleanup or isolation is missing>
+```
+
+Rules:
+
+- prefer disposable data over cleanup when safe;
+- destructive E2E or mutation flows without cleanup/isolation → **blocked**;
+- do not defer cleanup ownership to implementation when the plan already knows the flow is stateful;
+- `beforeAll` / shared mutable setup requires serial mode and explicit plan justification;
+- run-level `globalSetup` is documented separately only when infra needs it — default is none in the clean starter.
 
 ### Sensitive Data & Visual Masking
 
@@ -1109,5 +1165,9 @@ This skill is complete when:
 - cross-browser or responsive items specify browser project or viewport, user value, and expected visible behavior when planned.
 - required Feature Targets (UI/application, API/service, external/partner, and setup/cleanup when relevant) are documented, or simple-project defaults are stated;
 - Auth Strategy is documented (required, role, auth as, API/UI modes from the project map);
+- Setup & Cleanup Strategy is documented when persisted/shared state or destructive flows are in scope, or explicitly marked none/disposable-only;
+- Sensitive Data & Visual Masking is documented when UI or @visual coverage applies;
+- Change log is present when refreshing an existing plan;
+- project map gaps (missing role slug or mechanism) are reported as blockers — not invented in the plan;
 - authenticated coverage without a registered auth mode is blocked;
 - unclear target ownership is marked blocked/postponed or clarified before implementation.

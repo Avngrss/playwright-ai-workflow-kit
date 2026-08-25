@@ -553,6 +553,32 @@ Add `auth.fixture.ts` or `src/test/setup/auth/**` only when auth-as-precondition
 
 Captured session files belong in gitignored `state/`. Never commit them.
 
+### Multi-role registry (when the product has several personas)
+
+Register only roles that exist in **this** application. Use product slugs in plans — not kit example names.
+
+When multi-role auth applies, extend **Registered in this project** with a role matrix, for example:
+
+```md
+| Role slug | Scope / intent | API mode | UI mode | Session artifact | Credentials ref |
+|-----------|----------------|----------|---------|------------------|-----------------|
+| <slug-a>  | <from product> | <from map mechanisms> | <from map mechanisms> | state/<slug-a>.json | <env name from map> |
+| <slug-b>  | <from product> | ... | ... | state/<slug-b>.json | ... |
+```
+
+Rules:
+
+- project map = mechanisms + role registry; feature plan = `role: <slug>` per scenario;
+- **API** precondition = token/creds/headers for that slug — not `storageState`;
+- **UI** precondition = map UI mode — typically `test.use({ storageState })` per describe or inject;
+- prefer setup project or fixture/API inject for sessions — not `globalSetup`;
+- do not set one global `storageState` on all UI projects when login, public, or mixed-role suites exist;
+- do not use one global API token for unrelated roles;
+- unauthenticated and login-as-action specs must not inherit a role session;
+- agent updates this matrix when the user describes roles — do not invent slugs during implement.
+
+Human guide: `docs/auth-strategy.md` (Multi-role applications).
+
 ---
 
 ## CI Environment / Secrets
@@ -1030,6 +1056,17 @@ Feature change rule:
 Skill:
 
 - `.cursor/skills/plan-test-coverage/SKILL.md` (feature coverage only)
+
+Spec hooks and cleanup:
+
+- rule: `.cursor/rules/test-structure-and-tags.rules.mdc` (Hooks section);
+- rule: `.cursor/rules/test-isolation-state.rules.mdc` (cleanup placement, parallel vs serial);
+- default: `beforeEach` for safe navigation/page-ready and shared suite Allure metadata only;
+- preferred cleanup: disposable data → fixture teardown → explicit spec step → rare idempotent `afterEach`;
+- `beforeAll` / `afterAll` in specs require `test.describe.configure({ mode: 'serial' })` and plan justification;
+- `globalSetup` / `globalTeardown` are config-layer run infra only — not feature cleanup; clean starter default is none;
+- feature plans document **Setup & Cleanup Strategy** when persisted/shared state or destructive flows are in scope;
+- convention checker flags `beforeAll`/`afterAll` without serial configure and UI login in `beforeEach` outside login/auth features.
 
 ---
 

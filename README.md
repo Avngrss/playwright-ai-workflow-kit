@@ -114,7 +114,10 @@ Stability policy (rules): web-first assertions, **no `waitForTimeout`**, UI stab
 | **`test.step`** | UI and E2E specs split into **user-intent phases** (open page, act, verify) — readable in Playwright and Allure reports |
 | **Steps vs Page Objects** | Steps name the scenario; PO/Components own locators and actions — no raw selectors in specs |
 | **Tags** | Layer + smoke/regression via Playwright `tag:` — not embedded in test titles |
-| **`beforeEach`** | Safe navigation / page-ready only — not the action under test |
+| **`beforeEach`** | Safe navigation / page-ready and shared suite Allure metadata — not the action under test |
+| **Hooks policy** | `afterEach` rare (idempotent cleanup); `beforeAll`/`afterAll` only in serial suites with plan reason; prefer fixture teardown over hooks for reusable cleanup |
+| **Cleanup priority** | Disposable data → fixture teardown → spec cleanup step → `afterEach` |
+| **`globalSetup`** | Config/run infra only — not feature cleanup; not shipped in clean starter by default |
 | **Allure metadata** | Feature, story, suite, severity via shared helper — reporting layer, not a replacement for `test.step` |
 | **API specs** | Request → status/behavior assert → optional Zod shape — no Page Objects |
 | **Test isolation** | Independent tests, parallel-safe data; no order dependency |
@@ -150,7 +153,8 @@ Application URLs are **configuration**, not hardcoded in tests. Playwright proje
 | **Conditional URL gate** | URLs required only when matching specs exist — empty starter runs without them |
 | **Injection boundary** | Resolved in `playwright.config.ts`, fixtures, Page Objects, clients — **never** `process.env` in specs |
 | **No host heuristics** | Do not derive API host from UI host (no `api.` + strip-`www` tricks) |
-| **Auth strategy registry** | none / action / precondition + mechanism (`storageState`, inject, password-login, …) in project map |
+| **Auth strategy registry** | none / action / precondition + mechanism in project map; **multi-role:** role matrix (`<role-slug>` → API mode + UI mode + artifacts); plans pick one slug; **API** = token/creds/headers · **UI** = `storageState`/inject |
+| **Hooks / cleanup** | `beforeEach` = navigation/page-ready only; cleanup priority: disposable → fixture teardown → spec step → rare `afterEach`; see `.cursor/rules/test-structure-and-tags.rules.mdc` |
 
 ### Reporting
 
@@ -237,7 +241,7 @@ API_BASE_URL=https://your-api-host.example
 
 Specs must not read `process.env`. Do not derive an API host from a UI host.
 
-If tests need a session, declare **Auth Strategy** in the project map first: [docs/auth-strategy.md](docs/auth-strategy.md).
+If tests need a session, declare **Auth Strategy** in the project map first: [docs/auth-strategy.md](docs/auth-strategy.md) — **How you use this (short walkthrough)**.
 
 ---
 
@@ -258,7 +262,7 @@ If tests need a session, declare **Auth Strategy** in the project map first: [do
 
 - [Getting started](docs/getting-started.md) — install, env, folders, CI
 - [Quick flow](docs/quick-flow.md) — plan → implement → review for one feature
-- [Auth strategy](docs/auth-strategy.md) — how login/session is declared per project
+- [Auth strategy](docs/auth-strategy.md) — short walkthrough + multi-role; map → bootstrap → plan → implement
 - [Failure reporting](docs/failure-reporting.md) — readable Allure failures for QA and flaky analysis
 - [Long flow](docs/long-flow.md) — TMS, collections, audit, E2E, heal
 - [Commands](docs/commands.md) — slash-command templates

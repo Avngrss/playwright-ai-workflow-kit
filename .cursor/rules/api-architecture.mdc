@@ -130,9 +130,11 @@ An auth provider must not:
 
 ```ts
 const token = await authProvider.getToken({
-  role: "admin",
+  role: "<role-slug-from-plan>",
 });
 ```
+
+Role slugs must come from the project map role registry — not kit example names.
 
 ### Bad
 
@@ -355,9 +357,11 @@ expect(body.error.code).toBe("VALIDATION_ERROR");
 
 ```ts
 const payload = userBuilder.build({
-  role: "admin",
+  role: "<business-field-if-contract-requires>",
 });
 ```
+
+Auth role for the request (who calls the API) comes from the plan/map separately — via `authProvider.getAuthHeaders({ role: "<role-slug-from-plan>" })` or equivalent.
 
 ### Bad
 
@@ -366,7 +370,7 @@ const payload = {
   email: `user-${Date.now()}@test.com`,
   firstName: "John",
   lastName: "Smith",
-  role: "admin",
+  role: "<business-field-if-contract-requires>",
 };
 ```
 

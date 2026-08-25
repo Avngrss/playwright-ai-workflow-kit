@@ -48,16 +48,26 @@ Follow: @.cursor/rules/authentication-strategy.rules.mdc
 Do not store tokens, passwords, or session JSON in the map, specs, or git.
 
 How API tests get a session:
-<helper path, or "create a user via this API then login">
+<helper path, or "create a user via this API then login", or token/creds/header per role slug>
 
 How UI tests get a session:
-<session file path per role, or inject, or create user>
+<session file path per role slug, inject, or create user — not one storageState on the whole UI project>
 
-Roles:
-<product role names>
+Roles (product slugs):
+- <role-slug-a>: <scope / intent>
+- <role-slug-b>: <scope / intent>
+
+Optional role matrix (placeholders — fill only for roles that exist):
+
+| Role slug | Scope / intent | API mode | UI mode | Session artifact | Credentials ref |
+|-----------|----------------|----------|---------|------------------|-----------------|
+| <role-slug-a> | <from product> | <from map> | <from map> | state/<role-slug-a>.json | <ENV_NAME from map> |
+| <role-slug-b> | <from product> | ... | ... | state/<role-slug-b>.json | ... |
 
 Default for new features:
 signed-in precondition | no session
+
+Multi-role: same slug in plans; API = token/creds/headers; UI = storageState/inject. Guide: docs/auth-strategy.md
 
 Stop after the project map Auth Strategy section is updated.
 Do not implement tests in this step.
@@ -110,6 +120,7 @@ Optional scope boundary:
 Output:
 - create or update specs/<feature>/<feature>.md
 - include Auth Strategy (required, role, auth as, API/UI modes from the project map)
+- include Setup & Cleanup Strategy (when persisted/shared state applies, or explicitly none/disposable-only)
 - include coverage matrix
 - include ready to implement now vs blocked/postponed coverage
 - include API/UI/visual/schema/not automated decisions
@@ -153,7 +164,74 @@ The generated feature plan must still include:
 
 - source of truth;
 - in scope;
-- out of scope.
+- out of scope;
+- Auth Strategy;
+- Setup & Cleanup Strategy (when persisted state applies, or explicitly none/disposable-only);
+- Sensitive Data & Visual Masking (when UI applies).
+
+---
+
+## Prompt: Update Feature Plan (product or requirement change)
+
+Use when `specs/<feature>/<feature>.md` already exists and the app, contract, auth, roles, or requirements may have changed.
+
+Use **Agent mode** when the expected output is an updated plan file.
+
+```text
+Use Playwright Planner.
+Use Skill: @.cursor/skills/plan-test-coverage/SKILL.md
+Follow: @.cursor/rules/feature-change-lifecycle.rules.mdc
+
+Feature:
+<feature slug>
+
+Existing plan:
+specs/<feature>/<feature>.md
+
+What changed:
+<known delta — or "unknown" / "tests started failing">
+
+Layer to refresh (optional):
+<api | ui | both | unknown>
+
+Sources to reconcile (optional):
+- requirements/specs: <path, link, or @file>
+- API contract: <link>
+- failing tests: <paths>
+- notes: <observed behavior>
+
+Task:
+Refresh the existing feature coverage plan. Planning only — update specs/<feature>/<feature>.md only.
+
+Required in the updated plan:
+- Change log entry
+- Feature Targets (when URLs/services changed)
+- Auth Strategy — role: <role-slug-from-map> when precondition; API mode + UI mode from project map
+- Setup & Cleanup Strategy — or explicitly none/disposable-only
+- Sensitive Data & Visual Masking — when UI applies
+- updated scenario statuses and Implementation Briefs for affected ready items
+
+Multi-role:
+- same role slug for API/UI when same persona
+- API = token/creds/headers per slug — not storageState
+- UI = storageState/inject per slug
+- if slug missing from project map → blocked; recommend map update before implement
+
+If delta is technical only (same behavior, locator/timing) → stop and recommend /heal-* instead of rewriting the plan.
+
+Stop after updating the plan. Do not implement or heal.
+
+Report:
+- delta summary
+- layers affected
+- project map gaps if any
+- ready / blocked / removed scenarios
+- recommended next commands
+```
+
+Command file: `.cursor/commands/update-feature-plan.md`
+
+Rule: `.cursor/rules/feature-change-lifecycle.rules.mdc`
 
 ---
 

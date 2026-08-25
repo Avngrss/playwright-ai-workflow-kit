@@ -89,4 +89,4 @@ URLs → GitHub Variables. Passwords and tokens → GitHub Secrets.
 
 ---
 
-Next: if the app needs login, tell the agent how (helper, roles, session files — not tokens) and update the project map. Guide: [Auth strategy](auth-strategy.md). Then [Quick flow](quick-flow.md). For readable Allure failures and flaky analysis, see [Failure reporting](failure-reporting.md). [Long flow](long-flow.md) is the extra-command menu.
+Next: if the app needs login, tell the agent how (helper, roles, session files — not tokens) and update the project map. Guide: [Auth strategy](auth-strategy.md) — **How you use this (short walkthrough)**. Then [Quick flow](quick-flow.md). See also [Failure reporting](failure-reporting.md), [Long flow](long-flow.md).

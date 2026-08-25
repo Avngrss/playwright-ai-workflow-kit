@@ -158,7 +158,18 @@ When refreshing a plan, capture at minimum:
 - scenarios added, updated, removed, blocked, or postponed;
 - layer impact: API, UI, schema, visual, not automated;
 - locator or Page Object notes when UI discovery is needed;
-- whether existing tests should be updated, removed, or left unchanged temporarily.
+- whether existing tests should be updated, removed, or left unchanged temporarily;
+- **Auth Strategy** refresh when login, session, token, role, or permission behavior changed;
+- **Setup & Cleanup Strategy** refresh when persisted state, destructive flows, or isolation changed;
+- **Sensitive Data & Visual Masking** refresh when UI/forms/auth/profile visibility changed;
+- **Feature Targets** refresh when URLs, apps, or services changed;
+- project map cross-check: new role slug or mechanism → blocked until map updated (do not invent in plan).
+
+Multi-role on refresh:
+
+- same `role: <slug>` from project map for API and UI when the scenario is the same persona;
+- API precondition = token/creds/headers per slug;
+- UI precondition = map UI mode (`storageState`, inject, etc.) per slug.
 
 Prefer a short **Change log** section at the top of the plan when the feature already has automation.
 

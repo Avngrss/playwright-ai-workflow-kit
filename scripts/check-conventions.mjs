@@ -429,6 +429,43 @@ function checkE2eSpecs(e2eSpecs) {
   ok("No E2E specs use waitForTimeout().");
 }
 
+function checkHookPolicy(specFiles) {
+  if (specFiles.length === 0) {
+    skip("No spec files found for hook policy checks.");
+    return;
+  }
+
+  for (const spec of specFiles) {
+    const content = read(spec);
+    const specPath = rel(spec).replace(/\\/g, "/");
+    const hasBeforeAll = /test\.beforeAll\s*\(/.test(content);
+    const hasAfterAll = /test\.afterAll\s*\(/.test(content);
+    const hasSerialConfigure = /describe\.configure\s*\(\s*\{\s*mode:\s*["']serial["']\s*\}/.test(
+      content,
+    );
+
+    if ((hasBeforeAll || hasAfterAll) && !hasSerialConfigure) {
+      fail(
+        `Spec uses beforeAll/afterAll without describe.configure({ mode: 'serial' }): ${specPath}`,
+      );
+    }
+
+    const isLoginOrAuthFeature = /\/(login|auth|sign-in)(\/|$)/.test(specPath);
+
+    if (
+      !isLoginOrAuthFeature &&
+      /test\.beforeEach\s*\([\s\S]*?\)\s*;/.test(content) &&
+      /test\.beforeEach[\s\S]*?\.login\s*\(/.test(content)
+    ) {
+      fail(
+        `Spec appears to perform UI login in beforeEach outside login/auth feature: ${specPath}`,
+      );
+    }
+  }
+
+  ok("Specs follow hook policy (beforeAll/afterAll require serial; no hidden login in beforeEach).");
+}
+
 function checkRegisteredTags(specFiles) {
   if (specFiles.length === 0) {
     skip("No spec files found for tag registry checks.");
@@ -859,6 +896,7 @@ function main() {
   checkUiSpecs(uiSpecs);
   checkApiSpecs(apiSpecs);
   checkE2eSpecs(e2eSpecs);
+  checkHookPolicy([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
   checkRegisteredTags([...uiSpecs, ...apiSpecs, ...e2eSpecs]);
   checkUiModelFiles(pageFiles, componentFiles);
 

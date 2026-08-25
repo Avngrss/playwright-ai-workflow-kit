@@ -45,7 +45,11 @@ E2E does **not** belong in this plan. If a full journey shows up, note it and pl
 
 Each scenario is **ready to implement now**, **blocked/postponed**, or **not automated**.
 
-Every plan has **Auth Strategy**. The map holds the mechanism; the plan picks `none`, `action`, or `precondition` and a role. Details: [Auth strategy](auth-strategy.md).
+Every plan has **Auth Strategy**. The map holds the mechanism; the plan picks `none`, `action`, or `precondition` and a **role slug** when applicable.
+
+Multi-role: one **role matrix** in the project map; each scenario picks `<role-slug>` from the map. **API** uses token/creds/headers; **UI** uses `test.use({ storageState })` or inject — not the same wiring. Details: [Auth strategy](auth-strategy.md).
+
+When scenarios create persisted data, the plan also includes **Setup & Cleanup Strategy** (or explicitly `none` / disposable-only). Hooks policy: safe `beforeEach` only; prefer fixture teardown over hidden cleanup.
 
 Stop after the plan file. Recommended next commands in the plan are a hint, not a green light to code.
 
@@ -64,6 +68,7 @@ E2E failures use `/plan-e2e-journey`, not `/update-feature-plan`. If a feature s
 ```text
 /update-feature-plan
 → review specs/<feature>/<feature>.md
+→ update project map Auth Strategy (if roles, mechanisms, paths, or creds refs changed)
 → /implement-api-batch and/or /implement-ui-batch (ready items only)
 → /heal-ui-test or /heal-api-test (technical drift only)
 → npm run qa:gate

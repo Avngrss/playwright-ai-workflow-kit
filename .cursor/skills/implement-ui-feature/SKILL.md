@@ -597,8 +597,12 @@ When UI tests need a signed-in session:
 - use the UI mode from the plan and project map Auth Strategy;
 - `auth as: action` → keep login visible in the spec;
 - `auth as: precondition` → use the registered mode (`storageState`, inject, captured session);
+- multi-role: apply the plan's `role: <slug>` via map path — typically `test.use({ storageState: "state/<slug>.json" })` on describe, setup project, or auth fixture inject;
+- do not set one global `storageState` on the whole UI Playwright project when login or public specs exist;
 - do not UI-login in `beforeEach` when login is not the behavior under test;
 - do not plant tokens with `page.evaluate` after the app already loaded without a session.
+
+Guide: `docs/auth-strategy.md` (UI wiring A–C).
 
 When UI tests need backend preconditions:
 

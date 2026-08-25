@@ -165,6 +165,17 @@ Do not invent login, tokens, or headers.
 
 Do not invent env variable names.
 
+Multi-role API wiring:
+
+- read `role: <slug>` from the feature plan;
+- confirm the slug exists in the project map role matrix;
+- apply the registered **API mode** for that slug — auth provider, fixture, or explicit headers/creds;
+- do not use one global token for unrelated roles;
+- do not use `storageState` in API specs;
+- login/token-issuance specs (`auth as: action`) keep login visible; other specs use precondition mechanism only.
+
+Guide: `docs/auth-strategy.md` (API wiring E–H).
+
 Do not derive API host from UI host.
 
 Do not implement scenarios that are unclear.

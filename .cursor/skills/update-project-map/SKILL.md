@@ -148,7 +148,7 @@ When applicable, project map should define:
 - rules location;
 - skills location;
 - auth provider entry point;
-- Auth Strategy (API/UI modes, roles, token placement, capture paths).
+- Auth Strategy (API/UI modes, role registry / role matrix when multi-role, token placement, capture paths, session refresh strategy).
 
 ---
 
