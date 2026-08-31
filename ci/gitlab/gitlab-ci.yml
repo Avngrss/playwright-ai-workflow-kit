@@ -1,0 +1,132 @@
+# GitLab counterpart of .github/workflows/playwright.yml
+# Same npm contract: qa:gate, test:list, then smoke / regression / visual /
+# cross-browser / responsive. URLs: GitLab CI/CD variables UI_BASE_URL, API_BASE_URL.
+#
+# This path is the etalon template. GitLab only runs a file named .gitlab-ci.yml
+# at the repository root — copy this file there at BMAD module install when CI=gitlab.
+
+stages:
+  - gate
+  - test
+
+variables:
+  FF_USE_FASTZIP: "true"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+default:
+  interruptible: true
+  image: node:20
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .npm/
+    - node_modules/
+
+baseline:
+  stage: gate
+  timeout: 20 minutes
+  script:
+    - npm ci
+    - npm run qa:gate
+    - npm run test:list
+    - |
+      set +e
+      count=$(find tests -type f \( -name '*.spec.ts' -o -name '*.test.ts' \) 2>/dev/null | wc -l)
+      set -e
+      if [ "${count:-0}" -gt 0 ]; then
+        echo "HAS_TESTS=true" > has-tests.env
+        echo "Detected ${count} test file(s)"
+      else
+        echo "HAS_TESTS=false" > has-tests.env
+        echo "No test files detected; matrix jobs will exit without running tests."
+      fi
+  artifacts:
+    reports:
+      dotenv: has-tests.env
+    expire_in: 1 day
+
+gitleaks:
+  stage: gate
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  timeout: 10 minutes
+  script:
+    - gitleaks detect --source . --verbose --redact
+  cache: []
+
+.playwright-job:
+  stage: test
+  timeout: 45 minutes
+  needs:
+    - job: baseline
+      artifacts: true
+  variables:
+    UI_BASE_URL: $UI_BASE_URL
+    API_BASE_URL: $API_BASE_URL
+  before_script:
+    - npm ci
+    - npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
+  after_script:
+    - |
+      if [ -d reports/allure/results ] && [ "$(ls -A reports/allure/results 2>/dev/null)" ]; then
+        npm run report:allure:generate || true
+      fi
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/allure/results/
+      - reports/allure/html/
+  script:
+    - |
+      if [ "$HAS_TESTS" != "true" ]; then
+        echo "No tests in repository; skipping."
+        exit 0
+      fi
+    - eval "$JOB_COMMAND"
+
+test:smoke:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    JOB_COMMAND: npm run test:smoke
+
+test:regression:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    JOB_COMMAND: npm run test:regression
+
+test:visual:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    JOB_COMMAND: npm run test:visual
+
+test:cross-browser-chromium:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    JOB_COMMAND: npx playwright test --project=ui-chromium --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+
+test:cross-browser-firefox:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: firefox
+    JOB_COMMAND: npx playwright test --project=ui-firefox --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+
+test:cross-browser-webkit:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: webkit
+    JOB_COMMAND: npx playwright test --project=ui-webkit --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+
+test:responsive:
+  extends: .playwright-job
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    JOB_COMMAND: npx playwright test --project=ui-mobile-chromium --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
