@@ -1,0 +1,206 @@
+---
+description: Fixtures and test data — the shared chain and an app's own fixtures, never hiding the action, the setup/cleanup ladder, recommending a fixture, disposable data and sweeps, builders, generators, datasets, each case's data source, the AQA marker, stand lookups, facts only another system knows, and the sign-in setup (the map's ```auth block, API modes, sessions, several apps)
+globs: src/data/**, src/fixtures/**, src/setup/**, tests/**
+alwaysApply: false
+---
+
+# Data and fixtures
+
+## The chain and an app's fixtures
+
+- The shared chain `base → reporting → api → auth → data → pages → test.ts` is the template's, changed
+  only on request (`02-guardrails.mdc` §Shared code); each layer imports the one before it. It holds mechanism only — `page`, `apiRequestContext`,
+  `storageState`, `authHeaders`, `cleanup`, `signIn`, `role`, `session`, `platform` — all following the
+  test's app, and knows no product.
+- A project's fixtures go to **its app's files**, from the first app on: data, bound clients of the
+  signed-in role, disposable records → `src/fixtures/<app>/data.fixture.ts` (built on `../test`; it has
+  `authHeaders` and `cleanup`); Page Objects → `pages.fixture.ts` (on `./data.fixture`); `test.ts`
+  re-exports them, and specs import `test` from it. `npm run app:add -- <app>` creates the three.
+- An app fixture never reuses a shared or Playwright name (`page`, `cleanup`, `authHeaders`, `storageState`,
+  `apiRequestContext`, `platform`, `role`, …) — it would silently replace it for that app's tests.
+- Components are reached through their page, never fixtures by default; a builder is a fixture only when
+  several specs reuse it; another role's client is another fixture only when a test needs it.
+
+## Never hide the action under test
+
+A fixture creates an object, wires a dependency or does setup that is not under test — never the scenario
+the test verifies, never a business flow, a check, a one-off value or a silent change of the app's state.
+
+```ts
+// bad — the test is about signing in, and signing in is now invisible
+loggedInPage: async ({ page }, use) => { await new LoginPage(page).signIn(user); await use(new HomePage(page)); },
+// good — the action stays in the test
+test("A customer signs in with a valid password", async ({ loginPage }) => { await loginPage.signIn(customer); … });
+```
+
+A name needing a past-tense verb (`sortedCatalogPage`, `createdOrder`) is the tell. Name a fixture for what
+it **provides**: `catalogPage`, `orders`, `disposableAddress`.
+
+## Setup and cleanup — the lowest mechanism that works
+
+1. disposable or unique data — no cleanup needed
+2. the `role` / `session` options — auth as precondition (`specs.mdc` §Signing in)
+3. fixture teardown — a reusable create + delete pair, runs even on failure
+4. a `src/setup/<app>/` helper called from a fixture or the spec
+5. `beforeEach` — shared read-only context only: open the page and wait for its loaded marker
+6. `cleanup.add(…)` right after a create, in the spec
+7. `afterEach` — rare, idempotent cleanup that fixture teardown cannot own
+8. `beforeAll`/`afterAll` — almost never; only with `mode: "serial"`, one-time read-only bootstrap
+9. `globalSetup`/`globalTeardown` — infrastructure only (the template's sweep)
+
+Reaching for a higher number when a lower one fits is a defect.
+
+## Adding a fixture
+
+A fixture the user asked for → add it. One you infer from repeated setup → recommend it first:
+
+```text
+Fixture recommendation:
+- candidate: <name>
+- layer: data | pages
+- evidence: <where the repetition is>
+- if skipped now: <what the spec does instead>
+```
+
+A fixture used by exactly one test is not reuse yet. Before adding one, answer all: what object does it
+provide? Is it thin (setup, wiring, teardown)? Does the action under test stay visible? Is it in the app's
+file for its kind? Would a second spec use it? Any unclear answer → no fixture; call it in the spec.
+
+## Disposable data and what tests stand on
+
+```ts
+disposableAddress: async ({ addresses }, use) => {
+  const created = await expectJson(addresses.create(addressBuilder.build()), 201);
+  await use(created);
+  await addresses.remove(created.id); // runs even if the test failed
+},
+```
+
+- Teardown stays thin and idempotent. Every `disposable…` fixture ships its `src/data/sweeps.ts` entry in the
+  same change, naming the fixture in a comment; every entry says `platform: "<app>"`.
+- What two or more tests stand on (an item found on the stand, an object prepared for them) is an app fixture
+  named after what it is; the lookup stays a function in `src/setup/<app>/`, called in a boxed step that
+  still shows in the report:
+
+  ```ts
+  reportedProject: async ({ projects, reports }, use) => {
+    await use(await base.step("Setup: a project with reports in the last 30 days", () => projectWithReports(projects, reports, last30Days()), { box: true }));
+  },
+  ```
+
+- An app's setup file holds one subject (the stand items its tests need, one prepared object's upkeep).
+- **A test reads every fixture it lists** (`tsc` fails an unread one). A precondition the test does not read
+  goes into what it reads: the fixture it takes depends on it (`sharedBoardPage: async ({ sharedBoard,
+  boardPage }, use) => use(boardPage)`), or a guard over the data it then checks
+  (`expectStandData(found.length > 0, { … })`).
+
+## Where data lives
+
+```text
+src/data/builders/<app>/*.builder.ts              valid structured payloads or form values, one per layer
+src/data/generators/<app|shared>/*.generator.ts   unique primitives: name, email, id, date
+src/data/datasets/<app|shared>/*.dataset.ts       constants, invalid and boundary values
+src/data/sweeps.ts                                what the sweep removes after an interrupted run
+```
+
+- Created on a feature's first real need, never speculatively. `shared/` holds what no app owns (a unique
+  name, a date, a 256-character string); one written for an app that a second app needs moves there, never
+  copied. A builder is always its app's.
+- Before writing a shape, search the app's folders, `shared/` and `src/setup/`. The same shape in two places
+  (a full payload, a default profile, an invalid value, a `createValid…` helper) moves to the data layer.
+  Fine inline: small deterministic scenario constants, a one-off invalid override, table-driven scenario
+  metadata (field names, expected error text).
+- **Builder**: reusable structured domain data, valid by default, invalid only through explicit overrides
+  (`Partial<T>`); no UI actions, requests or checks; never for one-off payloads, constants or test mechanics.
+  An entity shaped differently per layer (an API payload vs form values) gets one builder per layer, sharing
+  only neutral constants via a dataset. Setup helpers and clients consume the builder; none keeps a parallel
+  default payload.
+- **Generator**: unique or formatted primitives only — never a domain object, `process.env` or a check. It
+  puts the **`AQA` marker** at the start of every name or text a test creates.
+- No random or time-based values inline in specs or Page Objects (`Date.now`, `Math.random`) — a generator.
+  `@faker-js/faker` only for a confirmed need for realistic data. Generated emails use a non-routable domain
+  (`example.test`); never data that could reach a real person, phone or payment system.
+
+```ts
+const address = addressBuilder.build({ city: "Berlin" });                                   // good
+const address = { street: "Main 1", name: `John ${Date.now()}`, city: "Berlin" };            // bad
+```
+
+## Data sources — one per case, named in the plan
+
+The plan's `Data:` names the source; implementing never picks another — a different source goes back to the
+plan. The source is **tried on the stand before the plan is shown**: what `stand` names exists now; an `API
+setup` creates and removes one (`AQA`-marked); a `UI setup` reaches its last button with the saving request
+answered in place (a probe, `live-app.mdc`). Unproven → `blocked`. Take the first that fits:
+
+| Data | When | Means |
+|---|---|---|
+| `none` | nothing needs to exist (a form, a page, a rejected request) | — |
+| `stand` | what the case needs already exists | read live at run time; never "the account has N items" |
+| `API setup` | it must be created and an endpoint exists | fast, stable; the UI create flow gets its own UI case |
+| `UI setup` | it must be created, no endpoint or no access | slower, honest |
+| `mocked` | the state cannot be reached honestly (an empty list on a shared account, a server error, 500 items) | tests how the UI shows the state; the title says what is shown |
+
+- `mocked`: UI specs only, only the response the screen renders — never in API or E2E, never the response of
+  the action under test, never inside a Page Object, component or client. `page.route` sits in the spec under
+  `// mocked: <why the real state is unreachable>`; it matches the real request path as seen live, as a
+  RegExp (`/\/api\/orders(\?|$)/` — a glob's `*` stops at `/`), and the test proves the route was hit (the
+  handler counts its calls, checked after the action).
+- One source per case; needing two means two concerns — split the case or say why.
+
+## Nothing stays on the stand
+
+1. The test removes what it creates: `cleanup.add(() => orders.remove(id))` right after the create, or a
+   disposable fixture's teardown — both run on failure too. No `let id; try { … } finally { … }` for data.
+2. It carries the `AQA` marker.
+3. The sweep catches the rest: `src/data/sweeps.ts` entries (list path, `isLeftover` by the marker, delete
+   path, `platform`) run before and after every Playwright run; `npm run data:sweep` alone.
+
+Never assume a shared account's state: an empty state or an exact count is `mocked` (UI), a persona the map
+guarantees empty, or *Not now* `Blocked`. Count relative to what the test created ("one more than before").
+
+## `stand` — finding what a case stands on
+
+- Rich data comes from **one item named in the plan** ("QA project with reports"): the setup finds it by that
+  name and checks it still has what the case needs. Finders live in `src/setup/<app>/`.
+- When it does not: the lookup throws `standDataMissing({ item, problem, needed, checkByHand })`, a
+  precondition asserts `expectStandData(holds, { … })` (`src/assertions/shared/stand-data.ts`) — never a plain
+  `Error` or `expect`; the report then sorts it under "stand data", not a bug.
+- "Any fitting item will do" → search once per worker: `oncePerWorker(key, find)` (`src/setup/once.ts`),
+  never a whole-stand scan in every test.
+- What a test changes, in order of choice: data it creates itself → an item kept for the tests alone → a real
+  stand item, registered with its lock (`specs.mdc` §Isolation).
+
+## Facts only another system knows
+
+A ticket's parent in a tracker, a manager in an HR system: first fit, top to bottom —
+1. readable through the app (API or page) → read it live, as `stand`;
+2. creatable in the app → `API setup` / `UI setup`;
+3. a steady fact a person can look up once → ask the user; record it in `Data:` with source and date; the
+   test checks the app against it and stops with `expectStandData` once it no longer holds;
+4. a fact that changes every run → test access to that system (a read-only token in `.env`, the user's or the
+   team's decision);
+5. a product change exposing it — last.
+
+None fits → `blocked`. Record the dependency in the map's §External systems: the app, the system, what the
+app takes from it, the tests' access (`none` · `read-only — <ENV name>` · `through the app only`), and the
+facts given by the engineer (`<plan> — <what>, <date>`).
+
+## Sign-in setup — the map's ```auth block
+
+Login is set up **once per app** by the setup skill: the app's ```auth block in the map's §Auth. The code
+(`src/setup/auth/`, `auth.fixture.ts`) is the template's and reads only that block, which holds `.env`
+**names** (`${NAME}`), never values. No block = login not set up yet. **The block's format, its steps, the
+`api:` modes and roles: the setup skill §4.**
+
+- **The template guarantees**: one sign-in per role per run, shared by all workers; sessions cached in
+  `state/` until they near expiry, re-verified with `session check`; API specs sign in through a browser only
+  in the `session-*` and `refresh-token` modes, once; a refused login is recorded and never retried
+  (`02-guardrails.mdc`); a role requested before login is set up, or not listed, fails loudly; the login has
+  its own time budget, so a failure says why, not "test timeout".
+- **Several apps**: specs do not change — a spec's folder decides its app, sessions are kept per app and role,
+  one app's broken sign-in stops only its tests.
+- **A project's own login** (neither a form nor a token endpoint — a signed request, a client certificate, a
+  custom handshake): `src/setup/auth/project.ts` provides `browserSession` and `apiHeaders` with roles and
+  names from the block — no business flows, no credential in it; the user reviews it. `storageState` keeps
+  cookies and `localStorage`, not `sessionStorage` — that needs `addInitScript` before `goto`.

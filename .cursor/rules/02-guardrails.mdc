@@ -1,0 +1,80 @@
+---
+description: What must never happen — secrets and sensitive data in chat, code and artifacts, .env typed by the user, env:prepare, a refused sign-in retried; what qa:gate and tsc fail, how to treat a finding, shared code changed only on request
+alwaysApply: true
+---
+
+# Guardrails
+
+## Secrets and settings
+
+- **Values live only in the git-ignored `.env`, typed by the user**; their names are in the map (URLs per
+  app, the ```auth block's `${NAME}`s) and `.env.example`; CI uses the same names.
+- **Never ask for, print, repeat or quote a secret** (password, token, key, cookie, session file) — in chat,
+  plans, the map, code, comments, commits or reports; never open, print or grep `.env`. One printed or
+  committed by accident → tell the user to rotate it.
+- **`npm run env:prepare` is the agent's only way to `.env`**: non-secret values (`-- UI_BASE_URL=https://…`),
+  empty entries the user fills (`-- --note "Test account" SHOP_LOGIN SHOP_PASSWORD`), names reported
+  filled/empty and mirrored into `.env.example` (only URLs keep values); it refuses while git would commit
+  `.env`. `npm run auth:check [-- <roles>]` names empty login entries → tell the user the exact names, wait.
+- Settings reach tests through `playwright.config.ts` and fixtures (`baseURL`, `apiRequestContext`,
+  `authHeaders`): no `process.env`, hardcoded URL, credential, token, tenant or user id in test code.
+- Sessions live only in `state/`; never commit `state/`, `.env` or session files, never upload them in a test.
+- **A refused sign-in is never retried with the same values** — repeated wrong passwords lock accounts. The
+  template records it (`state/*.failed.json`, a hash, never the values) and stops; the user fixes `.env`.
+  Never retry by hand, never type a password into the MCP browser (`live-app.mdc`).
+
+## Sensitive data in artifacts
+
+Every log, report, trace, screenshot and video is assumed shared: prevention first, scrubbing is the net.
+- The template: `secret-scrub.reporter.ts` (first reporter, even with a command-line `--reporter`) replaces
+  `.env` values named *PASSWORD*, *SECRET*, *TOKEN*, *KEY* with `[secret]` in traces and text attachments and
+  sweeps `test-results/`, `playwright-report/`, the Allure results at the start and end of a run; the shared
+  session signs in before a trace starts, `signIn()` takes typed values out; readable errors and the run
+  summary pass `maskSecrets`; background errors record method and path, never the query.
+- A test still never: attaches text without `maskSecrets`; logs except through `safeLogger`, or logs bodies,
+  headers, tokens, cookies, storage, `.env`; attaches Authorization headers, cookies, storage state or whole
+  storage; puts personal data in check names, titles or steps (noun phrases only). A generated identity is
+  kept out of logs, appears in check messages only as a received value and in attachments only as far as a
+  failure needs; `.env` names and hosts are fine anywhere.
+- Screenshots and videos are not scrubbed: when the case allows, check before navigating to a screen full of
+  generated personal data and note the risk in the plan for sign-in and form flows; never weaken a check to
+  avoid a capture. Visual baselines mask secrets and generated identities (`specs.mdc`).
+- Generated data uses non-routable domains (`example.test`). Redaction beyond `maskSecrets` → `src/security/`,
+  field names from the contract or plan, never guessed. Reports, traces and videos have restricted access.
+
+## Quality gate
+
+`npm run qa:gate` = `scripts/gate/check.mjs` (every finding at once, each says how to fix it), then
+`tsc --noEmit` — after every change to specs, support code, plans or the map, and before any commit. It runs
+no tests. ✗ fails, ! warns; readability rules judge only files being written now (uncommitted) — committed
+ones are warned, not reworked. It fails:
+- specs — fixed waits, no check, no `test.step` (UI/E2E), `test` not from the app's fixtures, `new XPage(`
+  (UI), `process.env`, `.env` paths, tokens, lowercase titles/steps, implementation words in steps,
+  `test.fail`, `test.skip()` without a reason, unregistered tags or locks, missing layer/scope tags, smoke
+  rules, a `Setup:` step or page opening repeated across tests, quarantine without a reason, misused
+  `beforeAll`/serial/default mode, UI login in `beforeEach`, `page.route` without `// mocked:`, a case link
+  that is not a URL, ending the shared session, a UI/E2E spec shaping data;
+- Page Objects, components, clients — `expect`, `test.step`, `process.env`, `page.route`; Page Objects and
+  components also fixed waits, `Date.now`/`Math.random`, screenshots, network listening, browser
+  preparation, exports besides the class, a member nothing uses;
+- anywhere — Allure calls, raw `console.*`, `addLocatorHandler` outside `app-wide.ts`, unmasked attachments;
+  files off the layout, imports across apps; the fixture chain out of order, roles in code, a `disposable…`
+  fixture without its sweep, bad map blocks, an app fixture shadowing a shared one;
+  two lines copied, one code in two apps, a case automated twice or in two features, a test linking a case
+  kept in *Not now*, a ready case missing a `Needs:` layer; bad `specs/known-bugs.md` rows;
+- `tsc` — type errors, an unused import, variable, parameter or fixture.
+
+Warnings: sizes, unnamed checks, long or dated comments, `try/finally` in specs, unused exports, client and
+setup size, Page Object state and second names, siblings repeating their base, case-title shape.
+**A finding** is fixed the way its message says — never dodged (an equivalent call, a renamed method, a moved
+copy, a Page Object's body pasted into the spec). One that looks wrong is a suspected gate bug: keep the code
+as the rules want it and name it in the summary; never edit the gate unasked (§Shared code). A warning is
+fixed or its reason given.
+
+## Shared code
+
+Shared code — the template's own files: `src/setup/*.ts` and `src/setup/auth/`, `src/reporting/`,
+`src/fixtures/*.ts`, the files `src/assertions/shared/` came with, `scripts/` — is changed only when the user
+asks for it, and the summary names every such change. The tests' own code is not shared code, wherever the
+rules put it: an app's `src/setup/<app>/`, `src/fixtures/<app>/`, `src/assertions/<app>/`, and a new helper
+several apps need in `src/assertions/shared/` or `src/data/**/shared/`.

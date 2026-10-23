@@ -1,0 +1,222 @@
+---
+description: Page Objects and components — one route per Page Object, locators, actions and readers only, no state, opening a page, pages built alike share a base, when a block becomes a component (three reasons), locator priority and shape, who checks what in UI tests, messages after actions, visual masks, ownership decisions, refactoring on request
+globs: src/pages/**, src/components/**, tests/ui/**, tests/e2e/**
+alwaysApply: false
+---
+
+# Page Objects and components
+
+## Ownership
+
+- A **Page Object** owns one page, screen, route or navigation boundary: route beats visual placement — an
+  area with its own URL or menu entry gets its own Page Object (`src/pages/<app>/<name>.page.ts`); a block
+  that is part of an existing page's layout never gets one.
+- A **component** owns one meaningful block inside a page (§When a component). Page Objects compose
+  components; tests reach a component through its page (`ordersPage.filters.choose("Open")`).
+- Wired in `src/fixtures/<app>/pages.fixture.ts`; specs take Page Objects from fixtures, never
+  `new XPage(page)` (`qa:gate`, UI specs) — E2E may, on a second role's own browser context.
+- Neither orchestrates a flow across pages, knows unrelated pages or a whole journey, nor becomes a domain
+  service: cross-page flows are the spec's, each page through its own Page Object.
+
+## What it holds — and nothing else
+
+**Locators** (readonly fields, §Locators), **the components it is made of**, **actions** a person takes,
+**readers** of what the screen shows, as shown, and structural markers. Both answer in the case's words:
+- an action of the case is **one method** — `orders.expand(order)` finds the row and expands it; the test
+  does not chain `search`, `row` and `expand`;
+- a block a test checks has **one reader**, `read()`, returning the block as one object or list shaped like
+  its expectation `shown<Block>(…)` (`specs.mdc` §A UI test reads as its case). Which of two toggles is on is
+  a reader too (`selectedView()` → "Completed"); data components return what is shown
+  (`results.names()`, `results.prices()`).
+
+An action ends when the screen is ready for the next one: the content or its empty state is shown, a spinner
+is gone. The address is not that sign: on a client-side route (`#/active`, a router push) it changes before the
+screen does — wait for what the screen shows (the tab shown selected, the new heading), never `waitForURL` before
+a read (the gate warns).
+
+| Not a Page Object's job | Its home |
+|---|---|
+| `expect`, `test.step`, hooks, screenshots, test-runner logic, reporting metadata | the spec |
+| test data (builders, generators, defaults, random values), API setup, `process.env` | `src/data/`, fixtures |
+| cross-page flows, another route's locators | the spec, each page through its own Page Object |
+| listening to the network (`waitForResponse`, `on("request")`, `captureRequests`) | the spec with `captureRequests` / `whenAnswered` (`src/setup/request-capture.ts`); request patterns in `src/setup/<app>/` |
+| mocking a response (`page.route`) | the spec, under `// mocked:` |
+| preparing the browser (`addInitScript`, storage, cookies, `page.evaluate`) | `src/setup/<app>/`; an `open…()` may call it |
+| turning shown text into data or back (dates, money) | the app's display helper `src/assertions/<app>/display.ts` |
+| any export besides the class and the types its methods take | the home of what it is |
+
+- **The one network wait allowed**: when the screen gives no sign that new data arrived (figures change in
+  place), the action waits for the answers that bring it — `whenAnswered(this.page, paths, () => …)`, never a
+  hand-written `waitForResponse`, and only for an action that surely asks the server.
+- **No state**: every field `readonly`, set once; no stored answer, counter or flag.
+- `page` is `protected`: a spec never reaches past the Page Object (`ordersPage.page.getByRole(…)`); a spec
+  that needs the browser itself takes the `page` fixture.
+- **Method design**: explicit, user intent, only what current tests use — no
+  `performAdvancedSortingWorkflowWithValidation()`, no `sortByRating()` "for later", never an action and a
+  check in one method (`sortByPriceDescAndVerify()`).
+
+## Opening a page
+
+- Addresses are relative to the app's own, never from the host's root: `goto("./")`, `goto("orders/42")` — an app
+  under a path (`https://host/shop`) keeps it (`urlOf` gives its base the trailing slash); `goto("/orders")` would
+  open the host's root (the gate fails it).
+- After navigating, `await appReady(this.page)` (`src/setup/app-wide.ts`) — the app's "loaded" sign from the
+  map's ```app-wide block (`ready when: hidden …`). Overlays the app shows on its own (a cookie banner,
+  "what's new", "session expired") are closed there, on every page: add a `dismiss:` line to the map, never
+  handle them in a spec or Page Object (`addLocatorHandler` elsewhere fails the gate). A toast is never such
+  an overlay — it is the app's answer to an action and the test checks it.
+- `open()` waits for "content **or** empty state", never one only. A loaded or empty-state marker holds for
+  every viewer and data state: check it live for each role the plan uses and both data states; match every
+  variant (`getByText(/(You have|This customer has) no orders yet/)`), naming them in a comment.
+- A move that opens a new tab (`target="_blank"`) returns the new tab's Page Object and the test continues
+  there; not under test → open the target's address in its own tab instead:
+
+  ```ts
+  async openCustomerProfile(): Promise<ProfilePage> {
+    const popup = this.page.waitForEvent("popup");
+    await this.customerLink.click();
+    const tab = await popup;
+    await appReady(tab);
+    return new ProfilePage(tab);
+  }
+  ```
+
+- Never another route's locators: after navigating from A to B, B's markers come from B's Page Object.
+
+## Pages built alike share a base
+
+Pages of one kind (reports with one period picker, settings tabs) differ in what they show, not how they open.
+Their base opens them, goes through the menu and works the shared controls; each page **declares** what
+differs and copies no method:
+
+```ts
+export abstract class ReportPage extends AppPage {
+  protected abstract readonly address: string;
+  protected abstract readonly menuItem: string;
+  protected abstract readonly loadsFrom: readonly string[];
+
+  async open(): Promise<void> {
+    await whenAnswered(this.page, this.loadsFrom, () => this.page.goto(this.address));
+    await appReady(this.page);
+  }
+}
+
+export class SalesReportPage extends ReportPage {
+  protected readonly address = "reports/sales";
+  protected readonly menuItem = "Sales";
+  protected readonly loadsFrom = ["/api/reports/sales"];
+}
+```
+
+The base reads declarations only in its methods, never its constructor. What a page still draws after its
+data arrives goes in one `protected async ready()` hook the base calls. A page that opens differently
+overrides that one method and says why. A public method written again in two siblings is the base's.
+
+## When a component
+
+A block becomes a component for one of **three reasons** — by meaning, not by count:
+1. **It appears on 2+ pages or routes** (a header and its search, a side menu, a shared dialog or picker):
+   one copy in `src/components/<app>/`.
+2. **It repeats on its page**, each copy with parts of its own (a card per item, a row with its buttons): one
+   component per copy — `ordersPage.card(name).editButton`.
+3. **It is a self-contained block with behaviour of its own** (its own root, actions or readers: a dialog, a
+   table you search and read, a widget you work) and keeping it would push the Page Object past **~15
+   locators or ~150 statements**.
+
+- Never size alone (it is the sign to look for such a block — the gate warns past it), never a root locator
+  alone, never because a block exists visually. A group of plain fields with no actions of its own (a form tab
+  of four inputs) stays in its owner under a comment naming the group; a block used only inside one other
+  component stays part of it; a wrapper renaming a Playwright call never qualifies; no component per field.
+- **Look before creating**: search `src/components/<app>/` and Page Objects holding such a block; extend what
+  exists. **One component per kind**: blocks differing only in an optional part are one component whose
+  readers cover both.
+- **It lives inside its root**: it takes its root (or the container and title that find it), every locator
+  starts from the root, and what the library draws outside it (a picker's list, a tooltip) is reached
+  through `this.root.page()`. It keeps no state. Past ~15 locators / ~150 statements, a part of it with
+  behaviour of its own becomes its own component; plain fields stay.
+- **App-wide parts** (header, side menu) are reached alike from every Page Object — a shared base Page Object
+  or a `layout` property every page gets — never re-created per page. A sign-out through them needs a session
+  of its own (`specs.mdc` §Signing in).
+- **Several apps on one design system**: a design-system component lives once in a library-named folder
+  (`src/components/design-system/`) and every app's Page Objects use it — locators inside a root the Page
+  Object passes in, no `goto`, no app's own block. Page Objects, clients and builders always stay under their
+  app.
+- **The plan names them** before code: the UI brief's `Components: reuse <Name> · new <Name> (reason 1 | 2 | 3)`.
+- Naming by role, not a forced template: structural (header, sidebar, nav), control (sort, filter,
+  pagination, search), data (list, table, grid — readers return what is shown), overlay (dialog, dropdown;
+  toasts need none — `expectToast` finds them by text; overlays the app shows on its own go to the map), form
+  (grouped inputs). A new kind of block: name it after its real role; never force it into a category.
+
+## Locators
+
+`getByTestId` when the element has one → `getByRole` with its accessible name → `getByLabel` →
+`getByPlaceholder` → `getByText` (when stable) → CSS as a last resort.
+- The test id attribute is the app's own: the ```app-wide `test id:` line in the map (`data-testid` without one),
+  given to its projects by `playwright.config.ts`; check it live. `getByTestId` reads it — never hand-roll
+  `locator('[data-testid="…"]')`. No test id → never invent one;
+  take the next option, and when it is fragile note the missing test id in the plan's change log (a finding
+  for the product team, not a code comment).
+- No XPath, `nth-child`, generated class names or layout-dependent selectors without a stated reason.
+  Locators come from the live app (`live-app.mdc`) — never guessed, never asked of the user — and live only in
+  Page Objects and components; a spec reads as intent (`await loginPage.signIn(customer)`).
+- Every locator and component is a typed `readonly` field, one line each in the constructor
+  (`this.email = page.getByTestId("email")`, `this.banner = new Banner(page.getByRole("banner"))`). A locator
+  others start from (the main area) is a field set above them (`this.main`), not a repeated local. A subclass
+  calls `super(page)` first, then sets its own fields. One name per locator: no field set from another
+  (`this.months = this.axisLabels`).
+- **The one parameterized locator**: a method taking a parameter only when the element has no role, label,
+  placeholder or test id and only spec-supplied data finds it — exactly that one locator, no action or check,
+  never a way around a missing test id:
+
+  ```ts
+  orderName(name: string): Locator { return this.main.getByText(name, { exact: true }); } // good — only the test's name finds it
+  submitButton(label: string): Locator { return this.page.getByRole("button", { name: label }); } // bad — a selectable element made a method
+  ```
+
+## Who checks what
+
+- Page Objects and components return what the screen shows; the spec decides what it means, comparing a
+  reader with an expectation from `src/assertions/<app>/`:
+  `expect(await order.delivery.read(), "Delivery details").toEqual(shownDelivery(placedOrder))`.
+- A rule the shown figures follow (each row adds up) is one named check in `src/assertions/<app>/`:
+  `expectRowsAddUp(await totals.figures())`; sorting and filtering: `code.mdc`. An assertion helper computes
+  from what the spec already has — it never sends a request, calls a Page Object, changes data or hides a step.
+- After a navigation the destination is checked through its own Page Object, never the page it came from or
+  a raw locator. A step checks only facts proving this case; a heading the case does not name is not checked
+  in every step.
+- **What the app says after an action** (a toast, snackbar or alert after a save, delete or send — the plan's
+  `expect` and UI brief `Messages:`): `expectToast(page, "<exact text>")` (`src/assertions/shared/toast.ts`) on
+  the next line after the action — it closes itself within seconds — and then what the action left (the row,
+  the changed value); the message alone never passes the case. Never close it, wait it out or check that it
+  disappears; a failed UI test's report quotes every message the app showed.
+- **Visual masks**: a Page Object exposes `readonly visualMaskTargets = [this.emailInput, this.phoneInput]` for
+  the plan-backed fields only; the spec passes them as `mask:`; a reusable mask helper lives in
+  `src/assertions/<app>/` (`specs.mdc` §Visual checkpoints).
+
+## Ownership decisions and refactoring
+
+- **A refactor only on request**: the gate warning about a Page Object's size, siblings repeating their base or a
+  repeat is fixed by a behaviour-preserving refactor the user asks for — test names, intent, steps, checks, tags
+  and fixture contracts unchanged, no new abstraction while removing one, failing tests healed first. A component
+  split only for one of the three reasons of §When a component; a simplification by the cleanup triggers of
+  `code.mdc` §When an abstraction earns its cost. Then the impacted specs with `--retries=0` and `npm run qa:gate`.
+- Unclear which Page Object or component owns a block → decide per candidate: **keep** in the Page Object ·
+  **extract** a component now (one of the three reasons) · **reuse** an existing component · **postpone**
+  until reuse or complexity appears · **remove** an unnecessary abstraction. A component fixture only as a
+  rare, explained exception; discovery is never an excuse for a large refactoring.
+- Refactoring a Page Object into components — never by guesswork: first name the owner, its route or screen
+  boundary, the repeated locator and action groups, the affected specs and the smallest verification
+  command. Behaviour unchanged; move only related locators and methods,
+  update the owner's composition, imports and affected specs minimally; no new scenarios, features,
+  speculative methods, fixtures without need, generic Playwright wrappers, flows or scenario checks moved in;
+  public names kept unless needed; delete what moved — no old copy beside the new component.
+- Verify: the smallest impacted spec first (`npm run test:app -- <app> ui <spec> --retries=0`), the relevant UI
+  specs when the component is shared, then `npm run qa:gate`; not run → say what to run and why.
+
+## Before accepting UI code
+
+None of: a component fixture without a reuse need; a scenario check in a Page Object or component; a
+speculative or unused member; an undocumented fragile locator; a changing field; network capture, browser
+preparation or value conversion in a Page Object; a page copying its base's `open()`; two components for one
+kind of block; a Page Object grown into a dumping ground; a block read in pieces the test joins; an action of
+the case split into calls the test chains.

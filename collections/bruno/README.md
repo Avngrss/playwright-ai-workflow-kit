@@ -10,6 +10,6 @@ collections/bruno/<service-or-domain>/
 
 Keep personal and debug collections outside the repository. Never commit secrets, tokens, passwords, cookies, or production credentials.
 
-Bruno entries are executable request and payload examples. They are not the API contract source of truth: use OpenAPI/Swagger when available. Use collections for planning and audits, not direct Playwright test generation.
+Bruno entries are executable request and payload examples. They are not the API contract source of truth: use OpenAPI/Swagger when available. Use collections for planning (`/plan <collection path>`), not direct Playwright test generation.
 
-See `docs/long-flow.md` (API collection section).
+See [docs/workflow.md — API collection](../../docs/workflow.md#api-collection).

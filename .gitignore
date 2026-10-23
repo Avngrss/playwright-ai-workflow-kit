@@ -12,7 +12,7 @@ state/
 .playwright-mcp/
 .env
 .env.uat
-# Allure generated output (config stays tracked under reports/allure/)
+# Allure generated output (the config is allurerc.mjs at the root, tracked)
 reports/allure/results/
 reports/allure/html/
 allure-results/
@@ -27,3 +27,9 @@ discover-*-output.json
 scripts/debug-*.mjs
 scripts/discover-*.mjs
 scripts/scratch-*.mjs
+
+reports/allure/history.jsonl
+.playwright-cli/
+# Readable run summary (written by every run)
+reports/run-summary.md
+reports/run-summary.json

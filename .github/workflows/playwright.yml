@@ -34,13 +34,14 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar nullglob
-          files=(tests/**/*.spec.ts tests/**/*.test.ts)
+          # Feature tests only — the template's sign-in smoke is there from the start.
+          files=(tests/api/**/*.spec.ts tests/ui/**/*.spec.ts tests/e2e/**/*.spec.ts)
           if (( ${#files[@]} > 0 )); then
             echo "has_tests=true" >> "$GITHUB_OUTPUT"
-            echo "Detected ${#files[@]} test file(s)"
+            echo "Detected ${#files[@]} feature test file(s)"
           else
             echo "has_tests=false" >> "$GITHUB_OUTPUT"
-            echo "No test files detected; matrix jobs will be skipped."
+            echo "No feature tests yet; matrix jobs will be skipped."
           fi
 
   matrix-tests:
@@ -49,10 +50,9 @@ jobs:
     if: needs.baseline.outputs.has_tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # Repository variables (Settings → Secrets and variables → Actions → Variables).
-    # Empty when unset — baseline gate does not require them; matrix runs only when tests exist.
-    # Keep starter mappings minimal. Real projects add only Feature Targets
-    # registered in the project map and used by their tests.
+    # GitHub passes only what is named here (Settings → Secrets and variables → Actions): add every
+    # .env name of specs/project-map.md — vars.<NAME> for addresses, secrets.<NAME> for logins,
+    # passwords and keys (e.g. SHOP_LOGIN: ${{ secrets.SHOP_LOGIN }}). Empty when unset.
     env:
       UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
       API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
@@ -71,16 +71,16 @@ jobs:
             command: npm run test:visual
           - name: Cross-Browser Chromium
             browser: chromium
-            command: npx playwright test --project=ui-chromium --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+            command: npx playwright test --project="ui*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser Firefox
             browser: firefox
-            command: npx playwright test --project=ui-firefox --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+            command: npx playwright test --project="firefox*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser WebKit
             browser: webkit
-            command: npx playwright test --project=ui-webkit --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+            command: npx playwright test --project="webkit*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Responsive Mobile Chromium
             browser: chromium
-            command: npx playwright test --project=ui-mobile-chromium --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
+            command: npx playwright test --project="mobile*" --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -91,12 +91,13 @@ jobs:
         run: npm ci
       - name: Install Playwright browser runtime
         if: matrix.browser != 'none'
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+        # Chromium always: every project waits for the app's sign-in smoke, which runs in Chromium.
+        run: npx playwright install --with-deps chromium ${{ matrix.browser }}
       - name: Run matrix command
         run: ${{ matrix.command }}
       - name: Generate Allure report
         if: always() && hashFiles('reports/allure/results/**') != ''
-        run: npm run report:allure:generate
+        run: npm run allure:report
       - name: Upload Playwright HTML report
         if: always() && hashFiles('playwright-report/**') != ''
         uses: actions/upload-artifact@v4
