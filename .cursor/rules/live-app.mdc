@@ -1,0 +1,84 @@
+---
+description: Exploring the live app with the Playwright MCP — for a plan's live check, before writing locators or a Page Object, and when healing a locator; signing the MCP browser in without typing a password, roles, test ids, capturing the app's messages, network evidence, probes that need request routing (outside tests/), probes that change shared items
+globs: specs/**, src/pages/**, src/components/**
+alwaysApply: false
+---
+
+# Exploring the live app
+
+Use the Playwright MCP the kit configures (`.cursor/mcp.json`) — navigate, snapshot, click, fill, network
+requests — whenever a locator would otherwise be guessed or asked of the user, for a plan's live check
+(`plans.mdc`), and when healing a locator. The session is a throwaway: nothing from it goes into a spec or
+Page Object except the resulting locators and findings.
+
+## A signed-in session
+
+- **Never type a password (or a login) into the MCP browser** — the call and its echo put the real value in
+  the chat.
+- `npm run auth:sign-in -- <app> <role>` (or `all`) signs the role in and writes
+  `state/<app>.<role>.<host>.session.json`; the MCP browser takes that session with `browser_set_storage_state`
+  (`filename: state/<app>.<role>.<host>.session.json` — it replaces the cookies and storage, so switching roles is
+  one more call). The tool comes with `--caps=storage` in `.cursor/mcp.json`; never edit that file. Never read
+  a cookie or a storage value into the chat (`browser_localstorage_get`, `browser_storage_state`) — they hold
+  tokens. The tool missing → ask the user to sign in by hand in the MCP browser and wait.
+- No ```auth block for the app yet → the setup skill's sign-in first; it explores the sign-in page signed out.
+- A 401 or an expired-looking error in a probe means an old session: sign in again first.
+- Default to the map's default role; explore as another role only when the scenario is role-specific, once
+  per role. A role without `.env` values gets no exploration — its cases go straight to `blocked`.
+
+## Writing a new Page Object
+
+1. Navigate to the real URL from the map / `.env`, never an invented one.
+2. Snapshot — the interactive elements with their real accessible names.
+3. Walk the path the test will take — its clicks, no shortcut by address (a new tab, a redirect, a dialog on
+   the way). A click that seemed to do nothing → list the tabs. A switch of context (workspace, account,
+   language) is made from the page the test switches on; record where it lands (UI brief `Lands:`).
+4. After an action that saves, deletes, sends — or fails — capture what the app says, right after the action
+   (a toast closes within seconds), through the MCP's evaluate:
+   `() => [...document.querySelectorAll('[role=alert], [role=status]')].map((e) => e.textContent.trim()).filter(Boolean)`;
+   none yet → once more. Write the exact texts into the UI brief (`Messages: <action> → success "<text>" ·
+   error "<text>"`), the error from a case that makes it fail.
+5. Check the element's test id first (`(el) => el.getAttribute('<attribute>')` on its ref — the app's
+   ```app-wide `test id:` line in the map, `data-testid` without one; the app marks its elements with another
+   attribute → that line is missing or wrong: fix the map): a value → `getByTestId("<value>")`; none → the locator the MCP's action code
+   shows. Never second-guess it into CSS (`ui.mdc` §Locators).
+6. Use the network requests list to see whether a move goes to the server (the case's `Needs:` evidence) and
+   the real method and path of a request a mock must match.
+7. Close the browser when done.
+
+## Browsers, phone, screenshots
+
+On each screen a UI case uses — at the plan's live check, and again when implementing its Page Object — once,
+in this order, the evidence for the plan's `## Browsers, phone, screenshots` (`plans.mdc`):
+1. **Controls engines treat differently** — the MCP's evaluate:
+   `() => Object.fromEntries(Object.entries({ date: 'input[type=date],input[type=time],input[type=datetime-local],input[type=month],input[type=week]', file: 'input[type=file]', colourOrRange: 'input[type=color],input[type=range]', editable: '[contenteditable=""],[contenteditable=true]', draggable: '[draggable=true]' }).map(([kind, css]) => [kind, document.querySelectorAll(css).length])))`,
+   plus what the snapshot shows the case driving: a custom date picker, drag and drop, a copy button.
+2. **The phone** — `browser_resize` to 393 × 851 (the `mobile:<app>` project's Pixel 5), a snapshot, compared
+   with the desktop one for the controls the cases use: hidden, behind a menu, covered — fields that only stack
+   are no risk; then back to 1280 × 720.
+3. **The look** — the stable states the cases reach (a form, a dialog, an empty, error or confirmation state)
+   and what in them changes from run to run (generated names, dates, counts → masks).
+
+The numbers and what the phone showed go into the plan's lines as evidence — "none — no date, file or
+editable control; at 393 px every field and the button stay visible".
+
+## Probes
+
+- **Request routing** (answering a save in place for a `UI setup` proof, a mocked state): a one-off scratch
+  spec in a temporary folder **outside `tests/`**, with its own minimal config, using the role's `state/`
+  session; run it, read its output, delete the folder (`01-workflow.mdc` §Cleanup). Its route is built from
+  the real request (paths are case-sensitive; a RegExp, or a glob ending in `**`), and the run proves the
+  answer came from the route. A miss is a real write: compare with the state before, put it back at once,
+  say so in the summary. A probe longer than one line is a script file, never a nested-quote one-liner.
+- **A probe that changes something kept or shared** (a setting, a membership, another account's data) is
+  asked of the user before the first try — all such probes in one question, with how each is put back.
+  Declined → those cases are `blocked` "needs the user's OK", never retried in another form.
+
+## Healing a locator drift
+
+Only when the failure looks like a moved or renamed element: run the test once with `--retries=0`, read its
+error (`Page: …`), screenshot and trace in `test-results/`, walk the same steps in the MCP browser to the
+failing point, snapshot, take the element's current locator, and apply the smallest fix to the Page Object.
+The element or flow no longer existing as documented is requirement drift — stop and route to the plan
+(`plans.mdc` §When the product changes). Unclear which Page Object or component owns a block → `ui.mdc`
+§Ownership decisions.

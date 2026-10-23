@@ -3,7 +3,7 @@
 # cross-browser / responsive. URLs: GitLab CI/CD variables UI_BASE_URL, API_BASE_URL.
 #
 # This path is the etalon template. GitLab only runs a file named .gitlab-ci.yml
-# at the repository root — copy this file there at BMAD module install when CI=gitlab.
+# at the repository root — copy this file there if the project uses GitLab CI.
 
 stages:
   - gate
@@ -67,11 +67,12 @@ gitleaks:
     API_BASE_URL: $API_BASE_URL
   before_script:
     - npm ci
-    - npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
+    # Chromium always: every project waits for the app's sign-in smoke, which runs in Chromium.
+    - npx playwright install --with-deps chromium "$PLAYWRIGHT_BROWSER"
   after_script:
     - |
       if [ -d reports/allure/results ] && [ "$(ls -A reports/allure/results 2>/dev/null)" ]; then
-        npm run report:allure:generate || true
+        npm run allure:report || true
       fi
   artifacts:
     when: always
@@ -111,22 +112,22 @@ test:cross-browser-chromium:
   extends: .playwright-job
   variables:
     PLAYWRIGHT_BROWSER: chromium
-    JOB_COMMAND: npx playwright test --project=ui-chromium --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+    JOB_COMMAND: npx playwright test --project="ui*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
 
 test:cross-browser-firefox:
   extends: .playwright-job
   variables:
     PLAYWRIGHT_BROWSER: firefox
-    JOB_COMMAND: npx playwright test --project=ui-firefox --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+    JOB_COMMAND: npx playwright test --project="firefox*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
 
 test:cross-browser-webkit:
   extends: .playwright-job
   variables:
     PLAYWRIGHT_BROWSER: webkit
-    JOB_COMMAND: npx playwright test --project=ui-webkit --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
+    JOB_COMMAND: npx playwright test --project="webkit*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
 
 test:responsive:
   extends: .playwright-job
   variables:
     PLAYWRIGHT_BROWSER: chromium
-    JOB_COMMAND: npx playwright test --project=ui-mobile-chromium --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
+    JOB_COMMAND: npx playwright test --project="mobile*" --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests

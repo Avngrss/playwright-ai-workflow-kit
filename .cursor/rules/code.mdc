@@ -1,0 +1,251 @@
+---
+description: Test and support code — waiting for a state, real expected values, locator priority, readable code, one home per kind and no repeats, when an abstraction earns its cost, sorting and filtering checks, readable failures and verdicts, the run summary, the Allure report, flaky tests and quarantine, healing
+globs: tests/**, src/**
+alwaysApply: false
+---
+
+# Code
+
+## Waiting
+
+- Never `waitForTimeout`. Wait for a state: a web-first assertion, a locator, a URL (in a spec — a Page Object
+  waits for what the screen shows, `ui.mdc`), or the answer the screen
+  gives no other sign of (`whenAnswered`, `ui.mdc`).
+- Never raise a timeout or retries as the only change.
+
+## Checks
+
+- Behaviour checks live in specs and assertion helpers. Page Objects and components expose locators, actions
+  and readers and never check; API clients compose and send requests and never check.
+- Never weaken an expected outcome to make a test pass; never change it unless the plan changed.
+- Check real expected content from the contract or plan, not shape — a status code, `Array.isArray` or
+  `toBeTruthy()` alone passes when the response is wrong in every way that matters:
+
+  ```ts
+  expect(Array.isArray(body)).toBe(true); // weak — any array passes
+  const addresses = await expectJson(customerAddresses.list()); // strong — the expected content
+  expect(addresses, "Addresses of the customer").toEqual(expect.arrayContaining([expect.objectContaining({ city: "Berlin", isDefault: expect.any(Boolean) })]));
+  ```
+
+  A structural check only when the plan has no known content yet (a brand-new account), saying so.
+- Never a fake check (`expect(response).toBeDefined()`), never a `try/catch` around a check.
+- Assert known values (the test's own data, a documented constant, a bound) — never re-implement the
+  product's calculation; no defensive branches for what a check covers. Prove "created" by the test's own
+  entity (its id, its `AQA` name), "nothing created" by no create request leaving the page — never by a
+  shared list compared before and after.
+
+## Locators
+
+`getByTestId` → `getByRole` with its name → `getByLabel` → `getByPlaceholder` → `getByText` (stable) → CSS as
+a last resort; only in Page Objects and components, never raw selectors in specs (`ui.mdc` §Locators).
+
+## Readable code
+
+A reviewer reads top to bottom without scrolling back: **every line acts, checks, or is needed to do one of
+the two.** Deviate only when a case genuinely needs it, saying why in one comment. Guide sizes in statements
+(a smell, not a quota): API test ~15–20, UI test ~25, a step ~8, a spec file ~250, a Page Object ~150.
+- **Comments say why, briefly — never history**: one or two lines, only where code cannot say it (a product
+  quirk, a workaround and its reason). No dates, "confirmed live", "used to", "fixed after" — history goes
+  to the plan's change log and git; no comment restating the next line; a class or fixture header at most
+  three lines. Findings (an odd locator, a missing test id, stand drift) go to the change log, not the code.
+- **Names carry the meaning** (`disposableAddress`, `startCapturingCreateRequests()`, `expectSignedIn`) —
+  no `data1`, `res2`, decoding abbreviations, never `helper`, `utils`, `data`, `manager`, `handleFlow`.
+- **Nothing speculative or dead**: no method, type, option or helper "for later". An unused Page Object
+  member fails the gate, an unused import, variable, parameter or fixture fails `tsc`, an unused export is
+  warned — delete it. Code taken out of the suite is deleted (`01-workflow.mdc` §Cleanup).
+- **Plain code**: a call or object fitting ~120 characters stays on one line, a longer one breaks once per
+  argument; one statement per line; constants that matter to the reader (`NONEXISTENT_ID`) named at the top.
+  Assertion literals list the fields proving the case, not the whole response. In API tests and support
+  code: name the intermediate value (`const ordersWithoutItems = orders.filter(…)`, then the check); read the
+  body, then pick from it — never `(await expectJson(…)).items.filter(…)[0]`; plain `filter`/`map`/loops,
+  not `flatMap` tricks or `reduce` spreading objects; no tables of field-name strings (`row[count]`). Two or
+  three variants: write the lines out; a table only for four or more, or one table driving several checks.
+- Heavier code is justified for a table-driven `for` over variants of one rule, a Page Object method hiding a
+  genuinely fiddly widget, or a short comment on a quirk a reader would otherwise "fix". In review each smell
+  alone is *Minor*, *Major* when they make the spec unreadable.
+
+## The spec owns the scenario
+
+Action, then verification, visible in the test body. Reusable technical logic (parsing, comparison, polling,
+request building) never lives as a local function in a `.spec.ts`:
+
+```ts
+// bad — the steps, actions and checks are hidden in a local function
+async function runSearchScenario(catalogPage, query) { … }
+// good — the scenario stays in the test
+await test.step("Search for shoes", async () => { await catalogPage.search("shoes"); });
+await test.step("Verify every result matches", async () => { expectAllNamed(await catalogPage.results.names(), "shoes"); });
+```
+
+The narrow exception: a helper used once in the same file, ≤ ~3 lines, hiding no action under test and no
+parsing, sync or comparison. In doubt, it goes to its home.
+
+## One home per kind
+
+| Responsibility | Lives in |
+|---|---|
+| reusable checks, invariants, `shown<Block>` expectations, display helpers, response schemas | `src/assertions/<app\|shared>/` |
+| locators, actions, readers | `src/pages/<app>/`, `src/components/<app>/` |
+| what a page sends or receives, when a test checks it | the spec via `captureRequests` / `whenAnswered`; request patterns in `src/setup/<app>/` |
+| preparing the browser before a page opens; stand lookups, multi-step preparation without teardown | `src/setup/<app>/` |
+| payloads, form values, datasets, unique values | `src/data/builders\|datasets\|generators/` |
+| an API area's requests and body types | `src/api/clients/<app>/` |
+| what two or more tests stand on, disposable records, bound clients | `src/fixtures/<app>/data.fixture.ts` |
+| logging (the only allowed console output) / redaction beyond `maskSecrets` | `src/logging/safe-logger.helper.ts` / `src/security/` |
+
+No second helper for the same responsibility — extend the existing one. An assertion helper computes from
+data the spec already has; one that fetches something is no assertion helper.
+
+## The same thing twice → one helper in its home
+
+Written in a **second** test, the same preparation or check becomes a named helper (a plain function, not a
+fixture):
+
+| The repeated piece | Its home | Example |
+|---|---|---|
+| a lookup or constant over one resource (an id by name) | that resource's client file | `searchOptions(criteria).category("Books")` |
+| a default request body | the builder, called inside the client | `productSearch.search({ categoryIds: [id] })` |
+| the response's body type | the client (`json<T>(…)`) | no `expectJson<T>(…)` in specs |
+| reading, acting on or addressing a page (its URL and query format) | the Page Object | `productSearchPage.open({ categoryIds: [id] })` |
+| how a block shows data, a rule its figures follow — even in one test | `src/assertions/<app>/` | `shownDelivery(order)`, `expectRowsAddUp(figures)` |
+| a check used by 2+ specs | `src/assertions/<shared\|app>/` | `expectEveryItemMatches(…)` |
+
+## No repeats
+
+The same preparation, lookup or check in two places is one thing in its home — in specs, Page Objects and
+setup alike. `qa:gate` fails two copied lines (within a file, between files of one app, out of shared code)
+and the same `Setup:` step in two tests; lines that only look alike (a test's skeleton, look-alike checks, the
+parts a Page Object composes) are not copies. The fix is the smallest clear abstraction in its home — never a
+generic `utils` module, never a comment justifying the copy. Across apps, what no app owns has one copy in a
+shared home every app imports. One manual case, one test (`specs.mdc` §Titles).
+- **One way per operation**: once a helper exists every spec uses it — no hand-rolled variant beside it
+  (`options.find((o) => o.name === name)!` next to `searchOptions(…)`).
+- **No workaround for instability** in a spec: no fallback navigation, manual retry loops, broad `try/catch`
+  swallowing a failure, or a comment explaining flakiness instead of fixing it.
+
+## When an abstraction earns its cost
+
+- Inline simple one-off logic. Abstract only when it improves readability, reuse, ownership, correctness,
+  diagnostics or consistency — never speculatively — and never so that it hides the action under test, the
+  main assertion, important behaviour, a setup risk or an open contract or product question.
+- No helper for one trivial line, one obvious `expect`, one-off values or data, simple constants. A helper is
+  justified when reused, non-trivial (parsing, normalizing, sorting, filtering, comparing), giving domain
+  vocabulary, centralizing a contract-sensitive check or removing repeated technical noise; used once it is
+  fine when it hides complex mechanics, suspicious when it wraps an obvious assertion.
+- Assertion helpers may use `expect`; they never act, send requests, create data, hide the action, weaken a
+  check or carry workflow logic, and are never named for action and check together (`sortAndVerify`,
+  `submitAndValidate`, `createAndCheck`).
+- Export only what is used outside its module. Ownership: a shared contract lives in a neutral shared file,
+  not in one feature's (a user schema used by sign-up and sign-in); feature helpers stay with their feature;
+  `shared/` only when genuinely shared. API and UI may check alike when each proves its own risk — never one
+  helper hiding which layer means what. Where no shared home fits, two or three variants written out beat a
+  clever generic utility.
+- Specs hold small constants, local scenario cases, simple one-off checks, steps and calls to Page Objects
+  and helpers — never reusable parsing, sorting or comparison algorithms, normalization, repeated predicates,
+  response validation, generic helpers, builders or random data.
+- **Cleanup triggers** (the verify skill's review; the fix is a refactor on request, `ui.mdc` §Ownership
+  decisions and refactoring): an export nobody imports; a helper left after coverage shrank;
+  a helper used once obscuring the scenario; a shared contract in a feature module; duplicated predicates;
+  schema optionality contradicting an assertion; an assertion helper acting or preparing; a client, Page
+  Object or component checking; a fixture hiding the action; a builder for one-off data; a component for a
+  simple one-off block; methods for future tests. Recommend small batches — keep, remove, internalize, move,
+  inline — never a mass refactor unless the architecture is clearly broken.
+
+## Sorting and filtering
+
+A fixed count or order on data the test does not control proves nothing. Prove the behaviour with the
+template's `src/assertions/shared/sort-filter.ts` — never a comparison loop in a spec:
+- `expectSorted(values, label, "asc" | "desc", { strict? })` — in order (equal neighbours allowed unless
+  `strict`); a failure names the first pair out of order. `expectEveryItemMatches(items, { label, name,
+  matches })` — at least one item and every one matches; a failure names the ones that do not. Both log what
+  a passing check inspected through `safeLogger` — never a console summary of your own.
+- Values are normalized first (prices and percentages as numbers, dates as timestamps, names lower-cased); in
+  UI tests the reader returns text as shown and the app's display helper converts it
+  (`src/assertions/<app>/display.ts`, `pricesOf(shown)`) — never `map` or `parseFloat` in the spec. A filter's predicate is wrapped once as a named
+  rule in `src/assertions/<app>/` (`expectAllInStock(items)`), which the spec calls.
+- Filtering: every visible item matches; a positive case has at least one result; a negative case asserts
+  the empty state. Reset: controls and state back at baseline, not the exact original order. Paginated or
+  virtualized lists: the loaded page only, unless the case is cross-page — never "the whole dataset is
+  sorted" from one page. Exact counts or order only on controlled data (API-seeded, mocked) or when the count
+  is under test. Sorting needs two distinct values on the stand, a positive filter a matching item —
+  otherwise the precondition fails with `expectStandData`.
+
+## Failures explain themselves
+
+- Actionable: the action, expected vs observed, the endpoint, element or fixture involved — never a broad
+  `try/catch` that logs and continues, never a generic message instead of the real failure. The spec
+  contributes names only (`expect(x, "Add address button")`, `expectJson` / `expectStatus`: `/api/… answered
+  400 instead of 201` + the body); missing stand data fails through `standDataMissing` / `expectStandData`.
+- The template adds (`src/reporting/readable-error.ts`, the `page` fixture): the call log dropped, the
+  check's name first, Playwright phrases as sentences, long values by shape, codes and tokens in URLs masked,
+  `Page: <url>`, **Background errors** (server 5xx, page and console errors — also on passing tests),
+  "Messages the app showed", a new tab opened, "The shared session ended during the run".
+- `src/reporting/failure-cause.ts` opens each failure with its verdict and ends it with what to check by hand
+  — a hint for the first look, never the answer; a bug is decided by a retest by hand:
+
+| Verdict | Causes | First look |
+|---|---|---|
+| Known bug looks fixed — retest the ticket | a test of `specs/known-bugs.md` passed | the ticket, by hand |
+| Possible bug — retest by hand | check did not match · element not found · server error | the step by hand against the case: as the run saw → a bug or a changed requirement; as the case expects → the test or its data; another element name → its Page Object |
+| Not a bug — the stand or its data | stand data · stand unavailable (no answer, 502–504) · sign-in or access (401/403) · out of time · cleanup | the item, page or request named; one sign-in by hand, never a retried password; restore the data or change the lookup; rerun once the stand is up |
+| Not a bug — the test needs fixing | test code (a TypeError in the suite's code) · element not found in a spec not committed yet (new or changed — its locator is not proven on the stand) | the test's own frame; the locator, live |
+| Known bug — waiting for the fix | a known-bug test failing at its step | nothing |
+
+- Three colours only: green passed, red failed, grey a known bug still failing at its step; a pass on the
+  retry stays green, marked unstable. Allure's Categories tab lists the verdicts in that order, split by
+  cause, plus "Unstable — passed on a retry".
+- **The run's summary** — in the terminal, `reports/run-summary.md` (with what to check by hand) and
+  `reports/run-summary.json` — lists possible bugs first and tests whose cleanup failed; healing starts there.
+- Intentional output only through `safeLogger`; never secrets, tokens, cookies or full payloads.
+
+## The Allure report
+
+- `src/reporting/readable-allure.reporter.ts` (with `report-tree.ts`) fills every test — also one that failed
+  before its body ran — from its path, tags and annotations: the tree `<App> › <Area> › <Feature> › API | UI ›
+  test`, `<App> › User journeys (E2E) › <Area> › test`, `<App> › Smoke · is the stand alive › Sign-in` (in a
+  smoke run the features' smoke tests appear under Smoke too); `layer` from the folder; the app as a
+  `platform` label and tag (several apps → a report per app beside the all-apps one); `severity` from the
+  annotation (major → Allure normal; without one `@smoke` → critical, `@regression` → normal).
+  `allure-playwright` records the project, describe title and tags; failure screenshots, traces and videos
+  attach to the failed test; tooling labels are dropped.
+- **Specs, Page Objects, clients and data never call Allure** (`allure-js-commons`, `allure-playwright`,
+  `allure.*`) — only `src/reporting/` does. Links come from annotations (`tms(<id>)`, a known bug's ticket
+  from `specs/known-bugs.md`); extra text is `testInfo.attach(name, { body: maskSecrets(text), contentType:
+  "text/plain" })`; `test.step` is the step structure, never Allure steps.
+- Every npm test script clears the last results first (`npm run test:app -- <app> [layer] [targets]`); `npm run allure:open`
+  generates and serves, `npm run allure:report` only writes `reports/allure/html`. A feature's API and UI in
+  one report → one command (`npm run test:app -- <app> tests/api/<…> tests/ui/<…>`). Never pass `--reporter`
+  on the command line — it replaces the config's reporters and Allure results silently stop. History:
+  `reports/allure/history.jsonl` (git-ignored), trends need two generates. The report shows real stand data:
+  publish it with restricted access.
+
+## Flaky tests
+
+A flaky test passes and fails on the same code and stand — a defect of the test, its data or the stand,
+never of the assertion, and never hidden by waits, retries in the test body or a softened check.
+- `playwright.config.ts` retries once locally, twice on CI, the E2E project once, smoke never; a pass on the
+  retry is reported unstable. A test written or healed now passes without it: `--retries=0`, or
+  `--repeat-each 5` locally. One timeout once is not yet "the stand was slow": `--repeat-each 3` first.
+- Classify, fix only that: **timing / locator** ("not found / not visible / detached", passes on rerun) → the
+  right condition, a stable locator in the Page Object · **data collision** (fails only in parallel or twice
+  in a row, "already exists", a wrong count, someone else's record) → unique disposable data, cleanup that
+  verifies, the same lock for a shared state; "found X, which tests change" → take its lock or leave it out
+  of the lookup · **the stand** (whole runs fail, every request times out, 5xx) → no test change, a change-log
+  note, rerun when it is up.
+- **Quarantine** when the cause cannot be fixed now (it needs data or a team decision) or the test was flaky
+  in 2 consecutive nightly runs: `@flaky` **instead of** `@regression` (a smoke test drops `@smoke` too) with
+  `// flaky: <cause> — <ticket or plan note>` above it; it runs only in `npm run test:flaky` (nightly, allowed
+  to fail). Exit: 5 consecutive green runs there (or `--repeat-each 5` after the fix) → back to
+  `@regression`, the fix noted in the plan. Never a quarantine older than two sprints without a ticket.
+  `@wip` works the same with `// wip: <reason>`. A test failing on a filed bug is not flaky
+  (`plans.mdc` §Known bugs).
+
+## Healing
+
+Only when the plan still holds (`plans.mdc` §When the product changes). Evidence first: the command, the
+error excerpt (no secrets), the spec, the run summary and the failure's verdict; a locator suspicion is
+re-inspected live (`live-app.mdc`), never patched from a guess. **Allowed**: a locator in its Page Object, a
+real readiness wait, a payload matching the documented contract, fixture wiring, idempotent cleanup.
+**Forbidden**: `waitForTimeout`, a timeout or retries as the only change, softening a check, a `try/catch`
+around a check, new coverage, a guessed status or text, tidying files unrelated to the failure. Done =
+`npm run test:app -- <app> <layer> <spec> --retries=0` passes, then `npm run qa:gate`.

@@ -1,0 +1,118 @@
+---
+description: API tests and clients — bound clients per API area, what a client holds, expectJson/expectStatus, one primary action per test, never guessing a status, contract drift; optional Zod response schemas (where they live, shape vs behaviour); API collections (Bruno) as planning input
+globs: tests/api/**, src/api/**, collections/**
+alwaysApply: false
+---
+
+# API tests and clients
+
+## Principles
+
+- API tests use requests and responses only — no Page Objects, components or UI patterns, no browser; headers
+  come from `authHeaders` (`specs.mdc` §Signing in).
+- `apiRequestContext` targets the test's app API (its `.env` name from the map); paths are relative, no
+  leading slash (`orders/42`).
+- Statuses, fields and messages come from the plan and the contract (the map's registered Swagger/OpenAPI
+  docs). An undocumented status or message is never guessed — the case is `blocked`.
+
+## Bound clients
+
+An endpoint group used by more than one test is a **bound client** from the app's fixture: the request
+context, owner id and caller's headers given once; tests call `addresses.get(id)`.
+
+```ts
+// src/api/clients/shop/addresses.client.ts
+export function addressesApi(request: APIRequestContext, customerId: string, headers: Record<string, string>) {
+  const base = `customers/${customerId}/addresses`;
+  return {
+    list: () => json<Address[]>(request.get(base, { headers })),
+    get: (id: string) => json<Address>(request.get(`${base}/${id}`, { headers })),
+    create: (data: Partial<AddressPayload> = {}) => json<Address>(request.post(base, { headers, data: addressBuilder.build(data) })),
+    remove: (id: string) => request.delete(`${base}/${id}`, { headers }),
+  };
+}
+
+// src/fixtures/shop/data.fixture.ts
+addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
+  await use(addressesApi(apiRequestContext, customerId, authHeaders));
+},
+```
+
+- A call used once may stay a direct `request.get(…)` — no client for one line or one one-off request; never
+  five positional arguments repeated on every call; no service hierarchy without need.
+- **A client holds the requests of one API area and their body types — nothing else.** Periods and unique
+  values → `src/data/generators/<app>/`; how the screen shows a value → `src/assertions/<app>/`; finding an
+  item on the stand → `src/setup/<app>/`; a payload built from saved values → `src/data/builders/<app>/`.
+  The gate warns past ~100 statements of requests (one client per API area) and on an export that sends no
+  request.
+- Clients declare each endpoint's answer with `json<T>(…)` (`src/assertions/shared/http.ts`), typing only the
+  fields tests read; `expectJson` infers it — specs never write `expectJson<T>(…)`.
+- Clients fill default request bodies from the builder; tests pass only the fields under test.
+- Clients never check (no `expect`, no schema assertion), never hide prerequisite data, a sign-in or a
+  business workflow behind one name (`createUserAndVerify` is wrong), never read `process.env` or hold
+  credentials.
+
+## Tests
+
+- One primary API action per test; setup and cleanup calls are fine and stay visibly setup. Several business
+  actions in one test only when the workflow itself is the case, named so.
+- HTTP checks in one line: `expectJson(response, 201)` asserts the status (200 by default) and returns the
+  body; `expectStatus(response, 204)` for unread bodies. Never `expect(res.status())` + `res.json()` + checks.
+- Check the case's essential fields with real expected values (`code.mdc` §Checks; a rejection:
+  `specs.mdc` §One step proves one thing).
+
+## When the contract drifts
+
+Observed behaviour contradicts the plan (a status, a field, a message) → stop: it is a plan change, not a heal
+(`plans.mdc` §When the product changes). A heal touches only test mechanics: fixture wiring, payload shape
+against an unchanged contract, setup isolation.
+
+## Response schemas (optional, Zod)
+
+By default a plan lists the response fields to assert in its API brief and the test checks them with
+`expectJson`. Schema validation is an optional layer for non-trivial, reused, nested, paginated or
+contract-critical shapes — never for a trivial one-off response.
+- **`zod` is not installed**: propose it to the user with the reason and add it only as an approved
+  dependency change, starting small; no other schema library unless asked. Then migrate one response family
+  at a time (schema → its helper on the shared one → behaviour checks unchanged → run the impacted specs and
+  the gate), never mixed with new coverage or unrelated refactors.
+- **Where**: the gate's layout has no `schemas/` folder and allows `src/assertions/<app|shared>/<name>.ts`
+  with no extra dots — so a schema is `src/assertions/<app>/<resource>-schema.ts` (one no app owns, like a
+  pagination envelope, `src/assertions/shared/pagination-schema.ts`); the shared `safeParse` + `expect`
+  helper is `src/assertions/shared/zod-schema.ts`; feature helpers (`expectOrderResponse`) sit in
+  `src/assertions/<app>/` beside them. Never a schema in a spec, Page Object, component, builder, generator,
+  client or fixture, nor a reusable one inside an assertion helper file (a local one only while not reused).
+- **The chain**: schema (shape) → the shared helper (calls `safeParse`, fails through Playwright `expect`
+  with each issue's field path and message — never swallowed or reduced to a vague "Invalid response" —
+  returns the parsed typed data; no behaviour, no response-specific fields, no request) → a thin
+  feature helper with a domain name → the spec (request, status, behaviour):
+  `const body = expectOrderResponse(await expectJson(orders.create(payload), 201));`. Specs never call
+  `schema.parse()` (Zod errors, not assertion failures) or the shared helper directly when a feature helper
+  exists. Named exported schemas; types inferred (`z.infer`), never a parallel interface; a pagination
+  factory only when it removes duplication.
+- **Shape vs behaviour**: schemas prove structure; sorted order, filter predicates, token usability, access,
+  business outcomes are checked in specs or behaviour helpers. After a schema check, manual assertions keep
+  only behaviour (correlation with the request, sensitive fields omitted, business state) — no field-by-field
+  restating of the shape.
+- **Per contract**: `.optional()` only when the field may be omitted, `.nullable()` only when it may be
+  `null`, `.nullish()` for both — never loosened to make a test pass; `.strict()` only when the contract
+  forbids extra fields, and an undocumented field is asserted only when the behaviour needs it; enums only
+  with documented values; timestamps a non-empty string unless the contract
+  defines the format. A behaviour check requiring an optional field needs the contract, the scenario or
+  explicit handling of the missing value; live data happening to include it is not enough. A mismatch
+  between schema and assertion is Critical. An unclear contract or live data off the contract → report a
+  contract gap, never widen the schema silently.
+
+## API collections (Bruno)
+
+- Collections are planning input, never a source of tests: OpenAPI/Swagger is the contract (it
+  wins), the reviewed plan decides what is automated, `tests/api/**` implements it. Bruno and OpenAPI
+  disagree → report the drift, never guess which is right; no field, status or behaviour inferred from a
+  collection alone. Its examples may inform payloads and builders, never replace contract checks.
+- Curated team collections live in `collections/bruno/<service-or-domain>/`; personal and debug ones stay
+  out, and so do secrets and environment files with real values — Bruno variables use the map's `.env` names.
+- A destructive or stateful request (DELETE, payment, order creation, user mutation, admin operations) is
+  automated only with plan approval and its cleanup or isolation defined first.
+- Planning from a collection (the plan skill §4.4) compares collections, OpenAPI, plans and `tests/api/**`:
+  requests covered, not planned, planned but untested, tests without a source, OpenAPI/Bruno mismatches,
+  destructive requests without cleanup.

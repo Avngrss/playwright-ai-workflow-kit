@@ -1,25 +1,39 @@
 # Playwright AI Workflow Kit
 
-Starter repository for **Playwright + TypeScript** test automation with **Cursor rules, skills, and slash commands**.
+Starter repository for **Playwright + TypeScript** test automation with **Cursor rules, skills and
+slash commands**.
 
-Clone this repo (or use it as a GitHub template), point it at your application, and use the workflow to plan and implement tests. The starter ships with **zero tests** and no `src/test/**` layer — that is expected. Project code is added when you implement a real feature.
+Create your own repository from it on GitHub, add your application, and let the agent plan and write
+tests under rules it cannot quietly break. The kit ships with **no application tests** — only the
+sign-in smoke of the template. It ships the whole mechanism around them: sign-in from a project map,
+test data with cleanup, readable failures with a verdict, case links and coverage, and a quality gate.
 
 ---
 
 ## Quick start
 
-```bash
-git clone https://github.com/Avngrss/playwright-ai-workflow-kit.git
-cd playwright-ai-workflow-kit
-npm install
-cp .env.example .env
-npm run qa:gate
-npm run test:list
-```
+1. On this repository's GitHub page, click **Use this template** → **Create a new repository**, and
+   create your own copy (yours to change; this kit stays as it is).
+2. Clone **your new repository** and install:
 
-Chromium installs on `npm install`. Skip browser download for API-only work: `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`.
+   ```bash
+   git clone https://github.com/<you>/<your-repo>.git
+   cd <your-repo>
+   npm install            # also installs Chromium
+   npm run env:prepare    # creates .env from .env.example — you fill the values, never commit it
+   ```
 
-Fill `.env` when you add tests that need URLs. Never commit `.env`.
+3. Open the folder in Cursor and turn on the `playwright` MCP server it lists (Cursor Settings → MCP;
+   `.cursor/mcp.json`) — the agent explores your app with it. Then type in the chat:
+   - `/setup` — registers your application and sets up how tests sign in (a fresh clone is checked
+     first: `test:list` and `qa:gate` pass with zero tests);
+   - `/plan` — the first feature's plan; answer **Yes, write them** and the same run writes the tests,
+     runs them, heals a failure once, reviews and sums up with one next command.
+
+   `/implement` and `/verify` on their own are for later runs (the rest of a plan, a rerun); `/heal` for a
+   failing run, `/coverage` for a TMS folder.
+
+Step by step: [docs/getting-started.md](docs/getting-started.md).
 
 ---
 
@@ -27,243 +41,114 @@ Fill `.env` when you add tests that need URLs. Never commit `.env`.
 
 | Area | Purpose |
 |------|---------|
-| `.cursor/rules/` | Architecture and workflow rules for agents |
-| `.cursor/skills/` | Step-by-step implementation skills |
-| `.cursor/commands/` | Slash commands (`/plan-feature`, `/implement-ui-batch`, …) |
-| `playwright.config.ts` | Playwright projects: `api`, `ui-chromium`, `e2e`, optional cross-browser/responsive |
-| `.github/workflows/` | CI: quality gate, test discovery, matrix when tests exist |
-| `reports/allure/allurerc.mjs` | Allure 3 report config (generated `results/` and `html/` stay local) |
-| `tests/` | Empty placeholder — specs appear per feature |
-| `docs/` | Guides: setup, quick flow, auth, commands |
+| `.cursor/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
+| `.cursor/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal and Coverage sections) |
+| `.cursor/commands/` | 6 slash commands, each opening a skill: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage` |
+| `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
+| `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
+| `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
+| `tests/<api\|ui>/<app>/<area>/<feature>/` | Specs; `tests/smoke/` holds the template's sign-in check |
+| `specs/e2e/<app>/<area>/`, `tests/e2e/<app>/<area>/` | E2E journeys: a plan and a spec per journey, no feature level |
+| `src/` | Fixtures, sign-in, data and cleanup, assertion helpers, reporting |
+| `scripts/` | Quality gate, test runner, sign-in check, coverage, app and env helpers |
+| `playwright.config.ts` | Projects per app: `smoke`, `api`, `ui`, `e2e`, plus `firefox`, `webkit`, `mobile` for tagged tests |
+| `.github/workflows/`, `ci/gitlab/` | CI: gate, secret scan, test list, test matrix |
+| `docs/` | Guides for people — start with [docs/test-strategy.md](docs/test-strategy.md) |
 
-Source of truth for paths, tags, env names, and auth: `.cursor/rules/00-project-map.mdc`.
+The agent's entry point is `.cursor/rules/00-project-map.mdc`: where the map lives, every npm
+script, the projects and CI.
 
 ---
 
 ## Under the hood
 
-What the kit is built from and which capabilities are wired in. **Composition and features** — not usage guides. See [docs/](docs/) for workflows.
-
-The clean starter has **zero application tests**. It ships infrastructure, conventions, and agent guidance. Project code (`tests/**`, Page Objects, schemas, helpers) is added when you automate a real app.
-
-### AI control stack (rules and skills on top)
-
-Browser MCP and bundled agent helpers are **tools**. The kit’s **rules, skills, and project map govern** planning, implementation, and review — not the other way around.
+### Control stack
 
 ```text
-.cursor/rules/          ← always-on constraints (41 rule files)
-.cursor/skills/         ← step-by-step procedures (31 skills)
-.cursor/commands/       ← short slash entry points (21 commands)
-00-project-map.mdc      ← living registry: paths, tags, env, CI, auth
-
-        ↓ must follow the above
-
-Browser MCP (Cursor)        live app discovery in the IDE
-Optional TMS MCP            pull manual test cases into plans (read-only by default)
-.github/agents/             optional Copilot agent stubs — same rules/skills apply
+.cursor/rules/      ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
+.cursor/skills/     ← 4 skills (setup, plan → implement → verify, which also heals, reviews and shows coverage)
+.cursor/commands/   ← 6 short entries into the skills
+specs/project-map.md← the living registry the code and gate read
+scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 ```
-
-| Layer | What it controls |
-|-------|------------------|
-| **Rules** | Test pyramid, PO/Component model, API/Zod, E2E vs UI, visual masking, auth, secrets, tags, flakiness, spec placement, TMS/Bruno policy |
-| **Skills** | Plan → implement → heal → audit → review procedures agents execute within those rules |
-| **Commands** | Thin prompts wired to skills (`/plan-feature`, `/implement-ui-batch`, `/heal-ui-test`, …) |
-| **Project map** | Source of truth for folders, registered tags, scripts, env names, auth modes, CI — auto-synced by cartographer |
-| **MCP / optional agents** | Browser discovery and external inputs; output must match rules and land in approved folders |
 
 ### Core stack
 
 | Piece | Role |
 |-------|------|
-| **Playwright Test** (`@playwright/test` 1.60) | Browser automation, API request context, parallel runs, web-first assertions |
-| **TypeScript** 5.7 (strict) | Typed specs and project layer; `tsc --noEmit` in quality gate |
-| **Allure 3** (`allure`, `allure-playwright`, `allure-js-commons`) | Reporting, Runtime metadata API, single-file HTML report with charts |
-| **dotenv** | Local env in `playwright.config.ts` only — not in specs |
-| **@playwright/mcp** | Cursor MCP server (`npx playwright-mcp` in `.cursor/mcp.json`) |
-| **Node 20** | CI runtime |
+| **Playwright Test** 1.6x | Browser and API tests, parallel runs, `lock` for tests that share state |
+| **TypeScript** 7 (strict, `noUnusedLocals`) | Typed specs and support code; `tsc` is part of the gate |
+| **Allure 3** | Report tree by app, area, feature and layer; readable steps |
+| **dotenv** | `.env` values for the config and fixtures only — specs never read `process.env` |
+| **Playwright MCP** | The agent explores the live app before writing a test |
 
-**Zod** — not preinstalled; full **schema validation pattern** (shared assertion helper + `src/test/schemas/api/**`) defined in rules; add the dependency with the first API feature.
+### How a feature gets tested
 
-Optional per project: **`@faker-js/faker`** when generated data is planned.
+1. **Plan first** (`/plan`; on an existing plan it starts a later pass or a refresh by itself). The
+   source is TMS cases, a ticket, a requirements doc, an API collection or plain words, checked
+   against the live app. Every case gets a status — ready, blocked,
+   postponed or cannot be automated — with its reason, and the layers it needs (API, UI, both, or an
+   E2E journey). Preconditions are proven on the stand before the plan is shown; you confirm the
+   plan in chat before any test is written.
+2. **Implement only ready cases** (`/implement`). A case is automated whole, on every layer it
+   needs, or not at all. A UI test reads as its case: actions are Page Object methods, checks are
+   named.
+3. **Verify** (`/verify`): one targeted run without retries, the gate, one automatic heal after a
+   fresh implement, a review of only what the gate cannot check, then a summary that leads with the
+   verdict.
+4. **Heal** (`/heal`) from the failure's verdict — the smallest fix at the real layer; a confirmed
+   product bug becomes a row of `specs/known-bugs.md`, a ticket only with your yes.
+5. **Coverage** (`/coverage`): every case of a TMS folder — automated, not automated (with the
+   reason) or inconsistent.
 
-### Test pyramid and layers
+### What is built in
 
-Policy (in rules): use the **lowest reliable layer** — API/schema for contracts, UI for browser feedback, E2E only for full journeys, visual for layout risk. No duplicate coverage across layers without a distinct reason.
+| Capability | How |
+|---|---|
+| Sign-in from the map | an ```auth block per app; UI form or custom, API token, refresh token, session, key, basic …; one sign-in per role per run; a refused password is never retried |
+| Test data | sources none / stand / API setup / UI setup / mocked; `AQA`-marked data removed by the test; leftovers swept before and after every run |
+| Shared stand | items tests change are listed with a lock; a test reading one without the lock fails at once |
+| Readable failures | each failure opens with a verdict (possible bug, stand or data, test needs fixing …) and what to check by hand; `reports/run-summary.md` and `.json` |
+| Known bugs | `specs/known-bugs.md`; the test is grey while it fails at its step, red when it changes |
+| Case links and coverage | tests link their TMS case through the map's case link line; `npm run suite:coverage` |
+| Quality gate | layout, tags per test, fixture chain, Page Object rules, repeats, whole-case coverage, "a UI test reads as its case", masked attachments, no secrets in specs; then `tsc` |
+| Shared code on request | the template's own files (sign-in, reporting, the shared fixtures and checks, `scripts/`) change only when you ask; the summary names every such change |
+| More browsers | `@cross-browser` → Firefox and WebKit, `@responsive` → a phone, `@visual` → screenshot comparison |
 
-| Layer | Project | Spec pattern | Purpose |
-|-------|---------|--------------|---------|
-| **API** | `api` | `tests/api/<feature>/*.api.spec.ts` | Backend contracts, status/body, auth — no browser |
-| **UI** | `ui-chromium` | `tests/ui/<feature>/*.ui.spec.ts` | Focused browser behavior (desktop Chrome, 1280×720) |
-| **E2E** | `e2e` | `tests/e2e/<area>/*.e2e.spec.ts` | Full journeys — planned separately in `specs/e2e/`, not in feature plans |
-| **Visual** | `ui-chromium` + `@visual` | checkpoints inside UI specs | `toHaveScreenshot`, masks for dynamic/PII fields |
-| **Cross-browser** | `ui-chromium`, `ui-firefox`, `ui-webkit` + `@cross-browser` | same UI specs | Chromium / Firefox / WebKit matrix on demand |
-| **Responsive** | `ui-mobile-chromium` + `@responsive` | same UI specs | Pixel 5 viewport for breakpoint risks |
+### CI
 
-Registered tags: `@api`, `@ui`, `@e2e`, `@visual`, `@smoke`, `@regression`, `@cross-browser`, `@responsive`, `@wip`, `@flaky`.
-
-Execution defaults: `data-test` locators, headless, **fully parallel**, CI retries, `forbidOnly` in CI, E2E timeouts/actions tuned separately, **`--pass-with-no-tests`** on all npm test scripts (valid empty starter).
-
-Failure artifacts: screenshot, trace, video — **only on failure**. Visual thresholds: `maxDiffPixels: 50`, `threshold: 0.2`.
-
-Stability policy (rules): web-first assertions, **no `waitForTimeout`**, UI stability helpers for list/search sync when needed.
-
-### Spec structure (UI / E2E / API)
-
-| Convention | Role |
-|------------|------|
-| **`test.step`** | UI and E2E specs split into **user-intent phases** (open page, act, verify) — readable in Playwright and Allure reports |
-| **Steps vs Page Objects** | Steps name the scenario; PO/Components own locators and actions — no raw selectors in specs |
-| **Tags** | Layer + smoke/regression via Playwright `tag:` — not embedded in test titles |
-| **`beforeEach`** | Safe navigation / page-ready and shared suite Allure metadata — not the action under test |
-| **Hooks policy** | `afterEach` rare (idempotent cleanup); `beforeAll`/`afterAll` only in serial suites with plan reason; prefer fixture teardown over hooks for reusable cleanup |
-| **Cleanup priority** | Disposable data → fixture teardown → spec cleanup step → `afterEach` |
-| **`globalSetup`** | Config/run infra only — not feature cleanup; not shipped in clean starter by default |
-| **Allure metadata** | Feature, story, suite, severity via shared helper — reporting layer, not a replacement for `test.step` |
-| **API specs** | Request → status/behavior assert → optional Zod shape — no Page Objects |
-| **Test isolation** | Independent tests, parallel-safe data; no order dependency |
-
-E2E journeys stay **visible in the spec** — not hidden in fixtures, hooks, or PO “full flow” methods.
-
-### Architecture patterns
-
-| Pattern | Location | Role |
-|---------|----------|------|
-| **Layered fixtures** | `src/test/fixtures/`: `base` → `api` → `data` → `pages` → [`auth`] → `test.ts` | One public import; optional `reporting` layer after first UI/API batch; optional `auth.fixture` when preconditions are registered |
-| **Page Objects + Components** | `pages/**`, `components/**` | Route ownership; semantic locators (`getByRole` first); no `expect` in PO/Components |
-| **Assertion helpers** | `assertions/api/**`, `ui/**` | Contract/UI invariants; Zod shape wrapper; sort/filter/search helpers where shared |
-| **Zod schemas** | `schemas/api/**` | Runtime API contracts (on first API feature) |
-| **Test data** | `data/builders`, `generators`, `datasets` | Valid-by-default builders; centralized uniqueness; no random data in specs |
-| **API clients** | `api/clients/**` | Thin optional grouping; no assertions or Allure inside |
-| **Auth setup** | `setup/auth/**`, `state/` (gitignored) | `storageState`, inject-before-goto, disposable users — from project map |
-| **Reporting / security helpers** | `reporting/**`, `security/**`, `logging/**` | Allure metadata in starter; readable failure diagnostics wired on first UI/API batch; sanitized HTTP/redaction when plans need them |
-| **Feature plans** | `specs/<feature>/<feature>.md` | Pyramid level, auth, masking, ready/blocked/postponed per scenario |
-| **E2E journey plans** | `specs/e2e/<area>/<journey>.md` | Journeys only — setup, cleanup, final assertion |
-| **Feature-grouped specs** | `tests/<layer>/<feature>/` | Enforced by convention checker |
-| **Upload assets** | `src/test/assets/files/**` | Safe synthetic files only |
-| **Optional domain flows** | `domain/*.flow.ts` | Cross-page business workflows when reuse justifies (not default) |
-
-### Environment, URLs, and auth
-
-Application URLs are **configuration**, not hardcoded in tests. Playwright projects pick them up as `baseURL` (UI/E2E) or API project base (API layer).
-
-| Capability | Role |
-|------------|------|
-| **Default URLs** | `UI_BASE_URL` + `API_BASE_URL` in `.env` (from `.env.example`) and GitHub Actions variables for CI |
-| **Multi-app / multi-service** | Extra env names per UI app or API service (e.g. admin UI, auth API) — register in project map, wire in config/fixtures/clients |
-| **Conditional URL gate** | URLs required only when matching specs exist — empty starter runs without them |
-| **Injection boundary** | Resolved in `playwright.config.ts`, fixtures, Page Objects, clients — **never** `process.env` in specs |
-| **No host heuristics** | Do not derive API host from UI host (no `api.` + strip-`www` tricks) |
-| **Auth strategy registry** | none / action / precondition + mechanism in project map; **multi-role:** role matrix (`<role-slug>` → API mode + UI mode + artifacts); plans pick one slug; **API** = token/creds/headers · **UI** = `storageState`/inject |
-| **Hooks / cleanup** | `beforeEach` = navigation/page-ready only; cleanup priority: disposable → fixture teardown → spec step → rare `afterEach`; see `.cursor/rules/test-structure-and-tags.rules.mdc` |
-
-### Reporting
-
-Triple reporter: console + Playwright HTML + Allure raw results. Allure 3 (`allurerc.mjs`): groupBy **layer / feature / story**, severity charts, single-file HTML. Environment block: ui_host, api_host, OS, Node. Auto-clean stale Allure folders before each run/generate. Metadata via **`allure-metadata.helper.ts`**. Readable failure summaries: wire once on first UI/API batch — [docs/failure-reporting.md](docs/failure-reporting.md).
-
-### Quality gate, audit, and heal
-
-| Capability | Role |
-|------------|------|
-| **`qa:gate`** | `check-conventions.mjs` + strict TypeScript |
-| **Convention checker** | Folder placement, tag registry, fixture chain, no `expect` in PO/Components, no Allure in wrong layers, security patterns in specs/helpers |
-| **Gitleaks (CI)** | Secret scan on push/PR |
-| **Audit skills (read-only)** | Coverage vs plans, flakiness patterns, test data strategy, security posture, Bruno ↔ automation alignment |
-| **Heal skills** | Technical root-cause fix (locators, sync, setup) — **not** requirement drift; product changes go through plan refresh first |
-| **Product change lifecycle** | `/update-feature-plan` before changing expected behavior; heal is for stable requirements only |
-
-### CI pipeline
-
-GitHub Actions: Node 20, npm cache, baseline gate always, **matrix only when tests exist** (API, UI, E2E, smoke, regression, visual, cross-browser ×3, responsive mobile), per-browser install, fail-fast off, artifact upload (HTML report, test-results, Allure), Allure generate on results. Zero-test repo stays green.
-
-### External inputs (planning)
-
-Contract and manual-test sources feed **feature plans** first — automation level is chosen there, not copied 1:1 into specs.
-
-| Source | Role |
-|--------|------|
-| **OpenAPI / Swagger** | Primary API contract: endpoints, status codes, request/response shapes. Link or path goes in the feature plan; drives API coverage and **Zod schemas** — agents do not guess undocumented fields |
-| **Bruno collections** | `collections/bruno/**` — git-native HTTP examples alongside or instead of Swagger; inspect/plan/audit; OpenAPI wins on contract conflicts |
-| **Test Management System** | Manual cases via TMS MCP or approved integration (read-only by default). Plans include TMS Source + Mapping; kit maps each case to API / UI / schema / visual / E2E / not automated |
-
-**Browser MCP** (`.cursor/mcp.json`) — live UI discovery in Cursor. **Optional agent stubs** in `.github/agents/` if you use Copilot — **rules, skills, and project map** still govern output.
-
-### Maintenance scripts
-
-| Script | Role |
-|--------|------|
-| `check-conventions.mjs` | Architecture + security enforcement |
-| `clean-allure-artifacts.mjs` | Allure cleanup |
-| `project-cartographer.mjs` | Sync repo tree → project map |
-| `ensure-playwright-browsers.mjs` | Chromium on postinstall; browsers before UI runs |
-
-Layer/matrix npm scripts: `test:api`, `test:ui`, `test:e2e`, smoke/regression, visual, cross-browser, responsive, Allure serve/generate.
-
-### Shipped vs added on first feature
-
-| In the kit today | Added per application |
-|------------------|------------------------|
-| Playwright config (6 projects), fixture skeleton, **Allure metadata helper**, Allure/CI/scripts, `.cursor/rules` + skills + commands, docs, MCP config, GitHub agents, Bruno folder, convention checker | `tests/**`, `specs/**`, Page Objects, readable failure wiring, Zod, schemas, assertions, builders, clients, auth artifacts, visual baselines, sanitized HTTP/security helpers |
-
----
-
-## Typical workflow
-
-```text
-/plan-feature
-  → review specs/<feature>/<feature>.md
-  → /implement-api-batch and/or /implement-ui-batch   (ready items only)
-  → npm run test:api and/or test:ui
-  → npm run qa:gate
-  → /review-generated
-```
-
-Plans live under `specs/<feature>/<feature>.md`. E2E journeys: `specs/e2e/<area>/<journey>.md`.
-
-Implement only scenarios marked **ready to implement now** in the plan. More commands (TMS, audit, heal, E2E): [docs/long-flow.md](docs/long-flow.md).
-
----
-
-## Configuration
-
-**Simple project** — one UI app and one API (default):
-
-```text
-UI_BASE_URL=https://your-app-host.example
-API_BASE_URL=https://your-api-host.example
-```
-
-**Several UI apps or API services** — commented examples in `.env.example` (`CUSTOMER_APP_URL`, `ADMIN_APP_URL`, `AUTH_API_URL`, …). To use them:
-
-1. Uncomment only names your product has.
-2. Register the same names in `.cursor/rules/00-project-map.mdc`.
-3. Wire them in config, fixtures, Page Objects, or API clients — not in specs.
-4. Add CI variable mapping in `.github/workflows/playwright.yml` after registration.
-
-Specs must not read `process.env`. Do not derive an API host from a UI host.
-
-If tests need a session, declare **Auth Strategy** in the project map first: [docs/auth-strategy.md](docs/auth-strategy.md) — **How you use this (short walkthrough)**.
+`.github/workflows/playwright.yml` runs the gate, a secret scan and the test list, then — once feature
+tests exist — smoke, regression, visual, cross-browser and responsive jobs with Allure artifacts. The
+GitLab version is `ci/gitlab/gitlab-ci.yml` (copy it to `.gitlab-ci.yml` at the root). URLs and
+accounts come from CI variables named like the `.env` entries of the map. **GitHub** passes only what the
+workflow names: add each `.env` name of the map to the test job's `env:` — `vars.<NAME>` for addresses,
+`secrets.<NAME>` for logins, passwords and keys. GitLab hands its CI/CD variables to the job itself.
 
 ---
 
 ## Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `npm run qa:gate` | Convention checks + TypeScript |
-| `npm run test:list` | List tests (zero is valid) |
-| `npm test` | `api` + `ui-chromium` + `e2e` |
-| `npm run test:api` / `test:ui` / `test:e2e` | One layer |
-| `npm run test:smoke` / `test:regression` | Functional tag filters (exclude `@visual`, `@cross-browser`, `@responsive`, `@wip`, `@flaky`) |
-| `npm run test:report` | Tests + fresh Allure report |
+The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
+
+| Script | What it does |
+|---|---|
+| `npm test` | every layer of every app |
+| `npm run test:smoke` / `test:regression` | smoke / regression |
+| `npm run test:app -- <app> [layer]` | one app |
+| `npm run qa:gate` | conventions, then `tsc` — before every commit |
+| `npm run auth:check` / `auth:sign-in` | are the .env entries of the map's roles filled? / sign the roles in and save their sessions |
+| `npm run suite:coverage -- --app <app>` | coverage per case |
+| `npm run allure:report` / `allure:open` | the report |
 
 ---
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) — install, env, folders, CI
-- [Quick flow](docs/quick-flow.md) — plan → implement → review for one feature
-- [Auth strategy](docs/auth-strategy.md) — short walkthrough + multi-role; map → bootstrap → plan → implement
-- [Failure reporting](docs/failure-reporting.md) — readable Allure failures for QA and flaky analysis
-- [Long flow](docs/long-flow.md) — TMS, collections, audit, E2E, heal
-- [Commands](docs/commands.md) — slash-command templates
-- [Prompts](docs/prompts.md) — paste-ready prompts
+- [docs/test-strategy.md](docs/test-strategy.md) — the strategy in one page
+- [docs/getting-started.md](docs/getting-started.md) — from clone to the first green smoke
+- [docs/workflow.md](docs/workflow.md) — the 6 commands, the everyday path, the other paths (an
+  existing plan, TMS, E2E journeys, collections, visual and cross-browser, a second app), where
+  reviews, audits and refactors live, what you will see in the chat, example prompts
+- [docs/auth-strategy.md](docs/auth-strategy.md) — how tests sign in
+- [docs/failure-reporting.md](docs/failure-reporting.md) — how to read a failure
+- [docs/security-data-handling.md](docs/security-data-handling.md) — secrets and sensitive data

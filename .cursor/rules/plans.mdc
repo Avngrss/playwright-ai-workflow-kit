@@ -1,0 +1,329 @@
+---
+description: Feature and journey plans — the stability gate, the map first, sources and the live check, layers and whole cases, rating, smoke choice, TMS cases, E2E journeys, the plan body and status words (read by the gate), later passes, confirmation, refresh vs heal, known bugs
+globs: specs/**
+alwaysApply: false
+---
+
+# Plans
+
+A plan (`specs/<app>/<area>/<feature>/<feature>.md`; a journey `specs/e2e/<app>/<area>/<journey>.md`) lets
+implementation not guess; writing it writes no tests. The plan is the source of truth for what is
+automated — tests follow the plan, never the other way round.
+
+## Stability gate — automation follows manual QA
+
+A feature is automated once it is on the stand and accepted by manual QA (`docs/test-strategy.md` §1). Not
+on the stand, the stand contradicting the requirements in more than isolated places (forms still changing,
+whole blocks missing), or the user says it is in development → **stop**: say what was found, write no plan,
+next step "come back when the feature is stable on the stand and accepted by manual QA". Isolated drift is
+a `blocked` case, not this gate.
+
+## Read the map first
+
+- Targets use names already in the map; a missing app or service → ask its name and env URL name, add it.
+- A session needed and no ```auth block for the app → the setup skill's sign-in first; never a mechanism
+  invented in a plan.
+- A role the user asks for that the map lacks → ask its slug, register it in the app's block. A role only a
+  requirements doc mentions → no question: plan against the map's roles, one informational line on the case.
+- Every role the cases use passes `npm run auth:check -- <roles>` before the confirmation; missing values →
+  name the exact variables to add to `.env` and wait. A role without values → one `blocked` case per
+  feature until filled, never variants that cannot run. Which registered role a pass covers is the user's
+  call — ask only when genuinely ambiguous.
+
+## Sources of truth
+
+The coverage basis decides what **defines the set**; the other sources confirm, correct and expose gaps:
+
+| Basis | What enters the plan | `Why` of a case |
+|---|---|---|
+| `test-cases` (a TMS location given) | exactly those cases on the chosen layers (§TMS cases) | the case id |
+| `requirements` (a ticket or doc) | every documented rule, AC and flow, plus the negative a rule's risk calls for (one per rule, not per field) | the rule (`AC-3`, "end ≥ start") |
+| `value-and-risk` (the feature in words) | what the rating makes P1/P2 | the scenario or the risk |
+
+Words alone mean "explore the app live" — never consult documentation the user did not give. No documented
+spec → say so in the plan. Never a scenario no source, live app or contract grounds. An API collection
+(Bruno) informs a plan but never defines it (`api.mdc`).
+
+**Live check — docs drift; confirm every candidate before giving it a status** (`live-app.mdc`):
+- UI: open the real page; a documented block missing → `blocked`, drift noted.
+- API: read the service's registered contract, a few real calls where it is ambiguous — status codes are the
+  usual drift. A status or message no source states is never guessed.
+- A state cases change that other cases see → a lock (`specs.mdc`). An overlay or global spinner the test
+  does not cause → the map's ```app-wide block, never a case.
+- Every case's `Data:` and preconditions are proven on the stand before the plan is shown
+  (`data-and-fixtures.mdc` §Data sources).
+- A probe that changes something kept or shared is asked of the user first (`live-app.mdc` §Probes).
+
+## Layers
+
+| Layer | Covers | Never |
+|---|---|---|
+| **API** (`tests/api`) | what the server stores and returns, status codes, server rules and errors, access (401/403, someone else's data), file contents | drives a browser |
+| **UI** (`tests/ui`) | one screen: what renders (content, empty states), what the browser does before any request (validation, disabled controls), that a path through the screen reaches the server, messages, downloads starting | logs in through the form when login is not the case; re-checks a server rule the API proves |
+| **E2E** (`tests/e2e`) | one journey across pages, roles or services ending in an outcome only it produces | a single-page check |
+
+- **API + UI** is not a fourth layer: both layers for one feature, each on its own side, never the same
+  thing twice. A case belongs where its failure would point: the server → API; the screen → UI; the seam
+  between features, roles or apps → E2E.
+- **Prefer API when the UI is not the risk.** A pure contract check is API only even with a UI surface;
+  client-side-only behaviour is UI; unsure whether a UI row adds independent risk → leave it out, saying why.
+  Not every UI test is E2E: a page render, one form's validation, one click's feedback stay UI.
+- **API + UI, each side once**: draft the API cases first, then ask of each UI candidate "what does this
+  prove that the API cases don't?" — the answer is its `Why`, prefixed `UI only:`; none → *Not now*
+  `Covered by API #N`. One "form → server → list" UI path per feature proves the screens reach the server;
+  edit, rename, delete through the same kind of form are API cases unless the UI does something of its own.
+  The same rule on both layers only when each checks its own side (the form blocks it, the server refuses
+  it). A UI case asserts the screen, never the stored data; it may use the API to prepare and clean up.
+- An action the app answers with a message: the UI case checks its exact text **and** what the action left.
+- **Layer check** — never a test for the sake of a layer. A layer is empty, from evidence only: API — no
+  endpoints of its own (the screen only reads existing ones) · UI — no screen · E2E — no journey across
+  pages, roles or services. The only chosen layer empty → ask: switch to the layer with content · keep it
+  and test the endpoints it reads (if not covered yet) · stop. API + UI with one empty → no question, plan
+  the other, say why in `## Coverage choice`. E2E chosen, no crossing journey → ask: switch to UI · stop.
+
+## A case is written whole or not at all
+
+A part of a case never leaves manual regression, so a test of a part saves no one work. Each expected
+result is checked on the layer that can prove it, decided from the live check (do the network requests show
+the move going to the server?):
+
+| The expected result | Layer |
+|---|---|
+| comes with a request, or is a server rule (which items, a count, a save, a refusal, access) | API — every variant of the rule |
+| only on screen, or decided in the browser with no request | UI |
+| a server rule the screen shows | API for the rule, UI that the screen shows the answer (once per screen) |
+| a hand-over between features, roles or apps | E2E |
+
+The `Needs:` line names the layers and the evidence (`API+UI — the server filters: GET …/orders carries the
+period; the table shows its answer`). Every step covered on the layers it needs → written on all of them in
+this run; a step no layer can cover (an account or item missing, no delete, a person's eye) → the whole
+case to *Not now* `Blocked` / `Cannot be automated`, naming that step, no test for its other steps; a needed
+layer not chosen for this run → *Not now* `Needs <layers>`. `qa:gate` (`cases.mjs`) fails the rest.
+A case may stay manual (too unstable, an unreachable system or account, a person's eye, cost above value) —
+a *Not now* line with an actionable reason, never silence.
+
+## Rating (bases `requirements` and `value-and-risk`)
+
+1. **Scenarios** — walk the feature live; write why a person comes here, in their words. Value: *Core* (why
+   the feature exists) · *Common* · *Rare*. Every Core and Common happy path is P1.
+2. **Risks** — every line gets cases or one word why not: access (who sees or changes it, someone else's
+   data, anonymous) · rules (required, limits, dependencies, duplicates) · data integrity (created → shown
+   everywhere, deleted → gone, edits persist) · calculations · states (empty, data, read-only, disabled) ·
+   side effects. A check that is nobody's scenario has Value `—`.
+3. **Priority** = Severity (`01-workflow.mdc` §Severity) × Likelihood — High (complex logic, drift found
+   live) · Medium (ordinary CRUD) · Low (static display) — never below its scenario's weight:
+
+   | Severity \ Likelihood | High | Medium | Low |
+   |---|---|---|---|
+   | Critical | P1 | P1 | P2 |
+   | Major | P1 | P2 | P3 |
+   | Minor | P2 | P3 | — |
+
+P1 and P2 are written; P3 goes to *Not now* `Postponed`. Priority is for triage, never for choosing a run:
+every feature case is `@regression`. A case another plan of the app already holds (same outcome, same screen
+or request) → *Not now* `Covered by <that plan> #N`. More than ~8 API or ~6 UI cases for one feature usually
+means variants of one rule rated apart — fold them. A mutation whose contract documents an error gets a
+positive and a negative case.
+
+## Smoke — one case per feature at most
+
+Smoke = the template's sign-in check + at most **one** test per feature: one of its own cases (never a
+separate smoke file), its main scenario (Core; a UI case when the feature has a screen), under the app's
+first account (a public app: signed out), dependable (content *or* empty state, read-only or cleaning up after itself), tagged `@smoke`
+besides `@regression`. None for an E2E journey, a role's own feature or a `@visual` test. No case fits → no
+smoke, one line why.
+
+## TMS cases
+
+- The TMS is the map's §Test cases (TMS): `- tms:`, one `- case link <app>: <URL with {id}>` per app
+  (`{folder}` when the TMS needs it; filled from the first case link of that app the user pastes, never
+  guessed), `- id format:`. No TMS named → no case links, no coverage table. Unreachable → one line, fall
+  back to the next basis and record the basis used. Read-only (`01-workflow.mdc` §Asking).
+- Given a TMS location its cases **are** the set: each becomes a plan case on the chosen layers, its title
+  kept with its id in front (`### 1. TC-101 · <the case's title>`), its priority and severity when present.
+- **Already automated**: a case linked by a test of another feature is *Not now* `Covered by <that spec>`,
+  never written again (moving it here moves the existing test). A case whose title and steps match another
+  id's is one case copied in the TMS: `Covered by <spec> — the same as <other id>`, and
+  `## Manual case corrections` says "keep one in the TMS".
+- **Case drift** — the stand contradicts a case: never silently rewrite or drop it. Ask once per plan,
+  numbered options, listing the drifts: (1) the stand is right — test what it does now and list each
+  correction under `## Manual case corrections`, fixed in the TMS by hand; (2) the case is right — keep it
+  `blocked` with the difference, for the case owner or a bug report.
+- A step no layer can automate (a person's eye, a captcha, a device) → *Not now* `Cannot be automated`. A
+  documented rule or critical risk no case covers → *Not now* `Gap`; the user decides.
+- No step-by-step sync with the TMS; a changed expectation goes through the plan. **A suite's coverage** (on
+  request, and after writing tests from TMS cases): the suite's case list from the TMS + `npm run
+  suite:coverage -- --app <app>` → a table: automated (layer, last result) · not automated (blocked and what
+  unblocks it, postponed, cannot be automated, planned but not written, not planned) · inconsistent (fix the
+  plan or the tests — the gate fails these too).
+
+## E2E journeys
+
+A **full journey** across pages, roles or services — frontend, backend, persisted state — ending in a
+user-visible outcome only it produces (an order placed → a manager approves it → the customer sees the
+status). Not E2E: a page render, field visibility, one form's validation, one click's feedback, a navigation
+check, a contract or schema check; with nothing to connect it is a UI case, said plainly. Few and high value:
+one representative journey when lower layers cover the variants, no data matrices. The journey comes from
+the user's own description ("from start to the final outcome, in a sentence or two"); steps are never
+guessed. Status is exactly `ready to implement now` or `blocked` (no "ready if"); blocked, with what
+unblocks it, when data cannot be created or removed safely, an external dependency (mailbox, reset link,
+payment) is missing or unstable, a role is not in the map or has no `.env` values, or the final outcome
+cannot be observed reliably. No cross-browser or responsive journeys: such a risk becomes a UI case.
+
+## Visual, cross-browser, responsive
+
+Properties of UI cases, not layers, planned only for a risk found on the stand: `@cross-browser` —
+engine-specific behaviour of a control the case drives; `@responsive` — layout or controls that change on a
+phone (the case names what the phone shows and why the desktop viewport is not enough); `@visual` — a stable
+state whose appearance matters (masks: name the fields in the UI brief, or `mask in @visual: none — default
+empty state only`). They use the plan's statuses.
+
+**Decided in every plan with a UI case, from evidence — never from memory.** The live check runs the probe of
+`live-app.mdc` §Browsers, phone, screenshots on each screen the UI cases use, and the plan records one decision
+per kind in `## Browsers, phone, screenshots` (the gate fails a plan with UI cases without it):
+
+| Line | Yes when the probe finds | Then |
+|---|---|---|
+| `browsers:` | a native date, time, file, colour or range input, an editable or draggable area, or a custom widget the case drives (a date picker, drag and drop, copy to clipboard) | the case that drives it gets `@cross-browser` |
+| `phone:` | at phone width (393 px) a control the case uses is hidden, moved behind a menu or covered (a sticky bar, a banner) — fields that only stack are no risk | that case gets `@responsive`, its steps say what the phone shows |
+| `screenshots:` | a stable state the cases reach whose look matters (a form, a dialog, an empty, error or confirmation state) | a screenshot checkpoint proposed for after the tests (`/implement <plan> Layer: visual`) — the baseline is the user's to approve |
+
+Each line names the cases (`#9 @cross-browser — the date of birth field is an input type=date`) or says
+`none — <what was checked>`. The user can strike any of them at the confirm.
+
+## Plan body
+
+`scripts/agent/suite-coverage.mjs` and `qa:gate` (`plans.mjs`, `cases.mjs`) read the case blocks and *Not
+now* lines — keep the shape exactly.
+
+```markdown
+# <Area> — <Feature>
+- Ticket: <KEY>-<number> | none
+
+## Coverage choice
+- selected: api | ui | ui+api | e2e
+- reason: <what was found per layer>
+
+## Scope
+- in: / out:
+
+## Feature Targets (from specs/project-map.md)
+- UI app: <map name> / env <NAME> | none
+- API service: <map name> / env <NAME> | none
+
+## Auth (from map)
+- auth as: none | action | precondition · role: <role from the map | none>
+
+## Test cases
+### 1. <The outcome in one sentence | <case id> · <the case's title>>
+- Level: API | UI | E2E · Tag: @regression [@smoke] [@cross-browser] [@responsive] · Role: <role> · TMS: <case id | not yet documented | —>
+- Needs: API | UI | API+UI | E2E — <the evidence>
+- Value: Core | Common | Rare | — · Severity: Critical | Major | Minor · Priority: P1 | P2 | P3
+- Why: <the basis in ≤ 8 words; a UI case of a ui+api plan: "UI only: <what the API cases cannot see>">
+- Status: ready to implement now
+- Data: none | stand | API setup | UI setup | mocked — <what>
+- Preconditions: <what must exist | none>
+- Steps:
+  1. <what the person or the client does>
+     - expect: <the observable outcome that proves this case>
+- Cleanup: <what is removed and how | none>
+
+## Browsers, phone, screenshots (a plan with UI cases)
+- browsers: <#N @cross-browser — <the control and why engines differ> | none — <what was checked>>
+- phone: <#N @responsive — <what the phone shows> | none — <what was checked at 393 px>>
+- screenshots: <#N <the state> — after the tests, Layer: visual | none — <why no stable state matters>>
+
+## Not now
+- <Title> · TMS: <case id | —> · <Blocked | Postponed | Cannot be automated | Needs <layers> | Covered by <layer> #N | Covered by <spec path> | Gap> since <YYYY-MM-DD> — <reason a QA engineer can act on>
+
+## Manual case corrections
+- <case id> step <n> — expected "<the case>" → "<what the stand does>"
+
+## Change log
+- <date> — <what changed> — cases affected: <names | none, new plan>
+
+## API brief
+- endpoints, statuses from the contract, fields to assert
+
+## UI brief
+- page, actions, step names
+- Messages: <action> → success "<exact text>" · error "<exact text>" | none
+- Components: reuse <Name> · new <Name> (reason) | none
+- Lands: <switch> on <page> → <page it lands on> | none
+- Locks: <lock> — <the shared state> — cases #N | none
+
+## E2E brief (E2E only)
+- connects: <the features, roles or apps the journey crosses>
+- journey steps, final user-visible check, why API/UI is not enough, setup and cleanup
+```
+
+Status words, exact: `ready to implement now` · `blocked` · `postponed` · `cannot be automated`; E2E cases are
+only `ready to implement now` or `blocked`. A *Not now* line keeps its TMS id and its first `since` date while
+the reason stays.
+
+## A later pass
+
+- Starts from what is automated: `npm run suite:coverage -- --app <app>`. A case with tests on every layer
+  its `Needs:` names is done — never drafted, written or rewritten again; one short of a layer gets only that
+  layer. Show "Already automated: <n> of <m>" and a table `Case | Layer | Coverage | Last run`.
+- Re-checks the `Blocked` lines first against what their reason names (a role now in the map, a block now on
+  the page, a status now in the contract): lifted → back into the cases with a change-log line; still there
+  → keeps its date. Say the outcome in one line.
+- Nothing left → stop: no plan change, no code; give the one useful next step (heal a failed run, the run
+  command, a refresh naming what changed).
+
+## Confirm before any code
+
+Show markdown tables in chat — the user decides from this message alone:
+- **Will be written (<n>)** — `# | Test | Type | Case needs | Suite | Priority | Why it is needed`; Type
+  API/UI/E2E, Suite *Regression* or *Regression + Smoke*, Priority `P1 · Critical`, Why ≤ 8 words starting
+  with *main scenario* / *frequent scenario* / *rare scenario* / *risk* / *case TC-…* / *rule AC-…*.
+- One line each under it: **Test data** (in plain words, the setups tried, exceptions by number) ·
+  **Priority** legend ("P1 is looked at first when it fails · Critical / Major / Minor — how bad a breakage
+  is") · **Smoke** (which case, "say 'no smoke' to keep it regression only") · **Browsers, phone,
+  screenshots** (the three decisions in a few words, "say 'no' to any of them") · **Already automated (<n>)** on
+  a later pass · findings outside this plan (a word about another plan's test only after running it with
+  `--retries=0`).
+- **Not now (<m>)** — `Test | Why not now`, one actionable clause each; grouped by reason above ~15 rows.
+
+Then, in the same turn, ask "Write these <n> now?" with numbered options: write them · switch to <layers>
+and write <k> more (only when *Not now* holds `Needs` cases of a layer not chosen) · add them to <feature>
+instead (only when the cases sit on another plan's screen) · let me adjust the plan first. Only after "write
+them" does implementation start. After implementing, the plan matches the code: wherever a test does or
+checks something other than the plan's step or `expect`, fix the case and add a change-log line.
+
+## When the product changes — refresh, not heal
+
+**Plan refresh** (the plan skill, a journey too) — an expected status or message no longer matches; a
+control, field, step or endpoint was added or removed; a new expected outcome; the TMS, contract or docs
+disagree with the plan; or the failure's reason is unclear and may be drift:
+1. `Blocked` lines re-checked first (§A later pass).
+2. Evidence first — the user's words, a contract diff, a ticket, or, when nobody knows, the plan, the failing
+   tests and the live app compared. Only observed or documented differences enter; remaining doubt is
+   `blocked` with the missing source.
+3. Re-run the sources for the changed part only; per touched case: unchanged → leave · changed → update
+   (`blocked` when the new behaviour is undocumented) · gone → remove, noted · new → add, rated as usual.
+4. One `## Change log` line per refresh. Ready cases with code: edit only their tests in the existing spec,
+   never rewrite the file; tests of removed cases are deleted.
+5. A layer the user names is refreshed first; still look at the other for side effects (a shared Page
+   Object, a shared rule). A feature step that broke a journey: refresh the feature plan, then the journey.
+
+**Technical heal** (the verify skill's Heal, `/heal`) — the plan still holds: a locator moved with the same
+behaviour, readiness or timing, fixture, import or config wiring, a payload against an unchanged contract,
+setup isolation (`code.mdc` §Healing). A heal that would change intent, expected text, a status or the scope →
+stop and take the refresh path. Never heal requirement drift.
+
+## Known bugs — `specs/known-bugs.md`
+
+- A failing test whose step the user retested by hand and found broken is a **confirmed bug**: its
+  expectation stays as the case says, never bent to the bug, and its code is not touched.
+- Its ticket is filed in the map's tracker only with the user's explicit yes (draft the text in chat). Once
+  the ticket exists, add one row — `| Test | Layer | Ticket | Fails at step | Since |`: the test's full title
+  or the case id it starts with · API, UI or E2E · the ticket · the step's title as the test names it · the
+  date — and a change-log line in the plan. The ticket URL comes from the file's `ticket link:` line, never a
+  spec. Never `test.fail`, `test.skip` or `@flaky` for it; the gate fails a row naming no test or missing its
+  ticket or step.
+- The run marks the test itself (`src/fixtures/reporting.fixture.ts`): grey "Known bug — waiting for the
+  fix" while it fails at that step; red "Known bug looks fixed — retest the ticket" when it passes; red with
+  the real cause when anything else fails it. "Looks fixed" → the user retests: fixed → they close it, the
+  row leaves, the change log says so; not fixed → the test no longer catches the bug: fix the test.
