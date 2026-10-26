@@ -49,9 +49,14 @@ Step by step: [docs/getting-started.md](docs/getting-started.md).
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
 | `tests/<api\|ui>/<app>/<area>/<feature>/` | Specs; `tests/smoke/` holds the template's sign-in check |
 | `specs/e2e/<app>/<area>/`, `tests/e2e/<app>/<area>/` | E2E journeys: a plan and a spec per journey, no feature level |
-| `src/` | Fixtures, sign-in, data and cleanup, assertion helpers, reporting |
+| `src/fixtures/` | The shared chain `base → reporting → api → auth → data → pages → test.ts`, and per app `src/fixtures/<app>/` (its clients, data and Page Objects); specs import only `src/fixtures/<app>/test` |
+| `src/setup/` | Sign-in (`auth/`), app-wide overlays and loading signs, request capture, sweeps of leftovers, known bugs, the map reader |
+| `src/assertions/`, `src/data/`, `src/reporting/`, `src/logging/` | Checks (`shared/` and per app), builders / generators / datasets / sweeps, the readable report, a logger that never prints secrets |
+| `src/pages/<app>/`, `src/components/<app>/`, `src/api/clients/<app>/` | Page Objects, components and API clients — created with the first tests that need them |
 | `scripts/` | Quality gate, test runner, sign-in check, coverage, app and env helpers |
 | `playwright.config.ts` | Projects per app: `smoke`, `api`, `ui`, `e2e`, plus `firefox`, `webkit`, `mobile` for tagged tests |
+| `allurerc.mjs` | Allure 3: one report for all apps and one per app, tree by app, area, feature and layer |
+| `collections/bruno/` | Curated API request collections — planning input, never a source of tests |
 | `.github/workflows/`, `ci/gitlab/` | CI: gate, secret scan, test list, test matrix |
 | `docs/` | Guides for people — start with [docs/test-strategy.md](docs/test-strategy.md) |
 
@@ -80,7 +85,8 @@ scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 | **TypeScript** 7 (strict, `noUnusedLocals`) | Typed specs and support code; `tsc` is part of the gate |
 | **Allure 3** | Report tree by app, area, feature and layer; readable steps |
 | **dotenv** | `.env` values for the config and fixtures only — specs never read `process.env` |
-| **Playwright MCP** | The agent explores the live app before writing a test |
+| **Playwright MCP** | The agent explores the live app before writing a test (`.cursor/mcp.json`, with `--caps=storage` to load a saved session) |
+| **Node 20** | The CI runtime |
 
 ### How a feature gets tested
 
@@ -101,6 +107,35 @@ scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 5. **Coverage** (`/coverage`): every case of a TMS folder — automated, not automated (with the
    reason) or inconsistent.
 
+When the product changes, the plan is refreshed first (`/plan <plan> — <what changed>`); a heal fixes only the
+test's mechanics against requirements that still hold.
+
+### Test layers
+
+| Layer | Project | Spec | What it proves |
+|---|---|---|---|
+| **API** | `api:<app>` | `tests/api/<app>/<area>/<feature>/<feature>.api.spec.ts` | what the server stores and returns, statuses, rules, access — no browser |
+| **UI** | `ui:<app>` (desktop Chrome, 1280×720) | `tests/ui/<app>/<area>/<feature>/<feature>.ui.spec.ts` | one screen: what it shows, what the browser checks itself, that the form reaches the server, the messages |
+| **E2E** | `e2e:<app>` | `tests/e2e/<app>/<area>/<journey>.e2e.spec.ts` | a journey across pages, roles or services ending in an outcome only it produces |
+| **Smoke** | `smoke:<app>` (the sign-in check); a feature's one `@smoke` test runs in its own layer | `tests/smoke/sign-in.smoke.spec.ts` | is the stand alive — every other project of the app waits for the sign-in check |
+| Browsers, phone | `firefox:<app>`, `webkit:<app>`, `mobile:<app>` (Pixel 5) | the same UI specs, tests tagged `@cross-browser` / `@responsive` | a control engines treat differently, a screen that changes on a phone |
+| Screenshots | `ui:<app>` | a checkpoint inside a UI test, tagged `@visual` | a stable state whose look matters, against a baseline you approved |
+
+A case belongs where its failure would point; a case is written on every layer it needs, or not at all.
+
+### How tests are written
+
+| Convention | What it means |
+|---|---|
+| A test reads as its case | the title is the outcome, `test.step`s are the case's steps, every check is named (`expect(x, "Delivery address")`) |
+| Page Objects and components | locators, actions and readers only — no `expect`, no data, no network listening; one action of the case is one method |
+| Expected values | `shown<Block>(…)` in `src/assertions/<app>/` — the block as the screen shows it, never assembled in the spec |
+| Tags | one layer tag and `@regression` on every test; `@smoke`, `@visual`, `@cross-browser`, `@responsive` only from the plan; quarantine `@wip` / `@flaky` with its reason |
+| Hooks | `beforeEach` only opens the page; signing in comes from the `role` option, never a login in a hook |
+| Data and cleanup | the plan names one source per case; created data carries the `AQA` marker and is removed by the test, leftovers are swept |
+| Isolation | tests run in parallel and depend on nothing; what tests share on the stand is a registered lock |
+| Settings and secrets | specs never read `process.env` or name `.env`; secrets are typed by you into `.env`, never into the chat |
+
 ### What is built in
 
 | Capability | How |
@@ -113,7 +148,23 @@ scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 | Case links and coverage | tests link their TMS case through the map's case link line; `npm run suite:coverage` |
 | Quality gate | layout, tags per test, fixture chain, Page Object rules, repeats, whole-case coverage, "a UI test reads as its case", masked attachments, no secrets in specs; then `tsc` |
 | Shared code on request | the template's own files (sign-in, reporting, the shared fixtures and checks, `scripts/`) change only when you ask; the summary names every such change |
-| More browsers | `@cross-browser` → Firefox and WebKit, `@responsive` → a phone, `@visual` → screenshot comparison |
+| Browsers, phone, screenshots | every plan with UI cases decides them from a probe of the live screens (controls engines treat differently, the screen at phone width, stable states); you say no to any at the confirm; tagged tests also run in Firefox, WebKit and a phone during verify |
+| Reports | console list, Playwright HTML (`playwright-report/`) and Allure (`reports/allure/` — all apps and one per app); `.env` secrets scrubbed from traces and attachments before any reporter sees them |
+| Planning sources | OpenAPI / Swagger (the contract — it wins), Bruno collections, TMS cases read through its MCP or API (never written without your yes), tickets, requirement docs, your own words |
+
+### Environment and URLs
+
+- Every address and account has a `.env` name from the map; `/setup` writes the names and the addresses, you type
+  logins and passwords. The first app uses `UI_BASE_URL` / `API_BASE_URL`, a further app `<APP>_UI_URL` /
+  `<APP>_API_URL` — `/setup app <its URL>` adds it without renaming anything.
+- The config and fixtures read `.env`; specs never do. An API address is never derived from a UI address.
+- An app under a path (`https://host/shop`) keeps it: addresses in code are relative (`goto("./")`).
+
+### What ships, what each project adds
+
+| In the template | Added per application, as its tests need it |
+|---|---|
+| rules, skills, commands; the config with projects per app; the fixture chain; sign-in from the map; the readable report and run summary; the quality gate; the sign-in smoke; CI for GitHub and GitLab; the MCP config; docs | the app's rows and ```auth block in the map, `.env` values, plans, specs, Page Objects and components, clients, builders and generators, finders, screenshot baselines, known bugs |
 
 ### CI
 
@@ -133,12 +184,17 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 | Script | What it does |
 |---|---|
 | `npm test` | every layer of every app |
-| `npm run test:smoke` / `test:regression` | smoke / regression |
-| `npm run test:app -- <app> [layer]` | one app |
+| `npm run test:api` / `test:ui` / `test:e2e` | one layer of every app |
+| `npm run test:smoke` / `test:regression` / `test:flaky` | smoke / regression / the `@flaky` tests |
+| `npm run test:app -- <app> [layer] [--with-browsers]` | one app; `--with-browsers` adds its tagged tests in Firefox, WebKit and a phone |
+| `npm run test:visual` / `test:cross-browser` / `test:responsive` | only the screenshots / the browsers / the phone |
+| `npm run test:list` | list the tests (zero is valid) |
 | `npm run qa:gate` | conventions, then `tsc` — before every commit |
 | `npm run auth:check` / `auth:sign-in` | are the .env entries of the map's roles filled? / sign the roles in and save their sessions |
 | `npm run suite:coverage -- --app <app>` | coverage per case |
+| `npm run data:sweep` | remove `AQA`-marked leftovers from the stand (also runs around every test run) |
 | `npm run allure:report` / `allure:open` | the report |
+| `npm run env:prepare` / `app:add` | used by `/setup`: `.env` names, an app's fixtures |
 
 ---
 
