@@ -1,0 +1,25 @@
+.github/workflows/playwright.yml
+  s_fa44aae9d5998c::t_4122e6199cbefb 17,19-23,88-89,91,106,113,120,127
+README.md
+  s_fa44aae9d5998c::t_aa179634a6f07c 30-34,249-260
+ci/gitlab/gitlab-ci.yml
+  s_fa44aae9d5998c::t_60110bd0438f24 18
+.gitattributes
+  s_fa44aae9d5998c::t_a8f7b90ff06d19 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d29eb801f6e5b8d94ba919d0cf75c01b1b8a3e60",
+  "prompts": {},
+  "sessions": {
+    "s_fa44aae9d5998c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "405d1074-9391-4f3c-8ce7-f39a9c444b07",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
