@@ -15,7 +15,7 @@ variables:
 
 default:
   interruptible: true
-  image: node:20
+  image: node:22
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
