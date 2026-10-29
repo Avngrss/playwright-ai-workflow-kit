@@ -39,8 +39,8 @@
     "allure:open": "allure open reports/allure/results"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Yury Siadou",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@playwright/mcp": "^0.0.75",

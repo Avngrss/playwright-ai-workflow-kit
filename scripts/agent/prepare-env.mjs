@@ -194,7 +194,8 @@ function render({ entries, loose }, apps, forExample) {
   return `${out.join("\n").replace(/\n+$/, "")}\n`;
 }
 
-if (!fs.existsSync(file)) fs.writeFileSync(file, read(example), "utf8");
+const created = !fs.existsSync(file);
+if (created) fs.writeFileSync(file, read(example), "utf8");
 const env = parse(read(file));
 const exampleFile = parse(read(example));
 
@@ -213,6 +214,7 @@ const unquoted = (value) => value.trim().replace(/^(["'`])(.*)\1$/, "$2");
 
 let note;
 const report = [];
+if (created) report.push("✓ .env created from .env.example — enter the empty values there yourself");
 const args = process.argv.slice(2).filter((arg) => arg !== "--tidy");
 for (const arg of args) {
   if (arg === "--note") {

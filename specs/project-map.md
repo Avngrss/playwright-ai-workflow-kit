@@ -14,8 +14,7 @@ Never put passwords, tokens, or session JSON in this file.
 
 | Platform | Name | Kind | Env URL name | Docs (Swagger/OpenAPI) | Notes |
 |---|---|---|---|---|---|
-| default | default-ui | UI | `UI_BASE_URL` | — | replace name with the real app, e.g. frontend |
-| default | default-api | API | `API_BASE_URL` | (optional URL) | replace name with the real service, e.g. auth |
+| todomvc | todomvc-web | UI | `UI_BASE_URL` | — | Playwright demo TodoMVC; no API — the list lives in the browser (localStorage) |
 
 Add a row per extra app/service. Do not invent env names in specs. Docs column is optional —
 when set, planning that service reads it as the primary contract source instead of guessing.
@@ -43,6 +42,12 @@ go here, never values.
   service (the same sign-in page host) says `sign-in like: <app>` and writes only what differs (its
   address, its client id, its own login and password when the shared account is not let in)
 - `npm run auth:check` shows which login entries are still empty in `.env`
+
+```auth
+platform: todomvc
+ui: none
+api: none
+```
 
 ## External systems
 
