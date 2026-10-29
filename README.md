@@ -10,6 +10,36 @@ test data with cleanup, readable failures with a verdict, case links and coverag
 
 ---
 
+## See it in action
+
+The [`demo/todomvc`](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc) branch is
+this kit after one pass of its workflow on a public app, [TodoMVC](https://demo.playwright.dev/todomvc):
+the app registered in the map, a feature planned from the live screen, the tests written and run.
+
+| What | Where |
+|---|---|
+| The app in the map — one web app, no sign-in | [specs/project-map.md](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/specs/project-map.md) |
+| The plan — 5 cases, 2 left for later with the reason, browsers / phone / screenshots decided from the live screen | [specs/todomvc/todos/todo-list/todo-list.md](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/specs/todomvc/todos/todo-list/todo-list.md) |
+| The tests — each one reads as its case | [tests/ui/todomvc/todos/todo-list/todo-list.ui.spec.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/tests/ui/todomvc/todos/todo-list/todo-list.ui.spec.ts) |
+| The Page Object and what the screen should show | [src/pages/todomvc/todo-list.page.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/src/pages/todomvc/todo-list.page.ts), [src/assertions/todomvc/todo-list.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/src/assertions/todomvc/todo-list.ts) |
+
+![The Allure report of the demo run: app › area › feature › layer](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-tree.png)
+
+![One test in the report: its steps, worded as the case](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-test.png)
+
+Run it yourself — no account needed:
+
+```bash
+git clone -b demo/todomvc https://github.com/Avngrss/playwright-ai-workflow-kit.git todomvc-demo
+cd todomvc-demo
+npm install
+npm run env:prepare    # .env with the demo app's address from .env.example
+npm test               # 6 passed, 1 skipped (the sign-in check of an app without sign-in)
+npm run allure:open
+```
+
+---
+
 ## Quick start
 
 1. On this repository's GitHub page, click **Use this template** → **Create a new repository**, and
@@ -208,3 +238,9 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 - [docs/auth-strategy.md](docs/auth-strategy.md) — how tests sign in
 - [docs/failure-reporting.md](docs/failure-reporting.md) — how to read a failure
 - [docs/security-data-handling.md](docs/security-data-handling.md) — secrets and sensitive data
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Yury Siadou
