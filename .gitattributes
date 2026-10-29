@@ -1,0 +1,8 @@
+# LF line endings in the repository and in every checkout, Windows included: the same diffs everywhere and no
+# "LF will be replaced by CRLF" warnings on commit. Images, videos and archives are never touched.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.webm binary
+*.zip binary

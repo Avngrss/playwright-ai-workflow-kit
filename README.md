@@ -27,6 +27,11 @@ the app registered in the map, a feature planned from the live screen, the tests
 
 ![One test in the report: its steps, worded as the case](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-test.png)
 
+When a test fails, the report says what the failure most likely means and what to check by hand. Below,
+the failure was made on purpose — the test was changed to expect "2 items left":
+
+![A failing test in the report: the verdict, what differs, the page and what to check by hand](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-failure.png)
+
 Run it yourself — no account needed:
 
 ```bash
@@ -238,6 +243,18 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 - [docs/auth-strategy.md](docs/auth-strategy.md) — how tests sign in
 - [docs/failure-reporting.md](docs/failure-reporting.md) — how to read a failure
 - [docs/security-data-handling.md](docs/security-data-handling.md) — secrets and sensitive data
+
+---
+
+## Known limitations
+
+- **Cursor only, for now.** The rules, skills and commands are written for Cursor (`.cursor/`). Other agents
+  (Claude Code, GitHub Copilot, Codex) are planned.
+- **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
+  `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
+  system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.
+- **The agent works with the live app.** `/setup`, `/plan` and `/heal` open your app through the Playwright MCP,
+  so the app must be reachable from your machine; an app behind a sign-in needs a test account you create.
 
 ---
 
