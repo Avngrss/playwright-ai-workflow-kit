@@ -1,0 +1,43 @@
+.env.example
+  s_fa44aae9d5998c::t_0363bc7c9646d7 9,11
+LICENSE
+  s_fa44aae9d5998c::t_72e8bd9c37b566 1-21
+README.md
+  s_fa44aae9d5998c::t_9d59fe13beada5 13-42,241-246
+package.json
+  s_fa44aae9d5998c::t_714e5ed572ca7c 42-43
+scripts/agent/prepare-env.mjs
+  s_fa44aae9d5998c::t_1dd422cff2d35e 197-198,217
+specs/project-map.md
+  s_fa44aae9d5998c::t_010191c40882e9 17,46-51
+specs/todomvc/todos/todo-list/todo-list.md
+  s_fa44aae9d5998c::t_6b0834f315ae95 1-108
+src/assertions/todomvc/todo-list.ts
+  s_fa44aae9d5998c::t_40becd1c7e4e4d 1-5
+src/fixtures/todomvc/data.fixture.ts
+  s_fa44aae9d5998c::t_84fc9020daf9bd 1-10
+src/fixtures/todomvc/pages.fixture.ts
+  s_fa44aae9d5998c::t_f8f2673ba2773a 1-11
+src/fixtures/todomvc/test.ts
+  s_fa44aae9d5998c::t_e298f4309f9b77 1-7
+src/pages/todomvc/todo-list.page.ts
+  s_fa44aae9d5998c::t_648994cc3645bf 1-83
+tests/ui/todomvc/todos/todo-list/todo-list.ui.spec.ts
+  s_fa44aae9d5998c::t_34b311619b4152 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "66f765c1e07b2de426d37d28b12a6cdae54abc91",
+  "prompts": {},
+  "sessions": {
+    "s_fa44aae9d5998c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "405d1074-9391-4f3c-8ce7-f39a9c444b07",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
