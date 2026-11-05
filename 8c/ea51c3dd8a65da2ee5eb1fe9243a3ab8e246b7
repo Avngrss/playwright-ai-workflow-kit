@@ -1,0 +1,29 @@
+README.md
+  s_4be6837ff60543::t_847c0b843837b8 225-226
+package.json
+  s_4be6837ff60543::t_f422d3b13a9cb1 32
+scripts/agent/verify.mjs
+  s_4be6837ff60543::t_b122b53c8fd459 1-635
+scripts/gate/check.mjs
+  s_4be6837ff60543::t_90468f651422b4 16-17,20,32-34
+scripts/gate/plans.mjs
+  s_4be6837ff60543::t_6718f13768220f 13-15,22,90
+scripts/run-tests.mjs
+  s_4be6837ff60543::t_6645bc74065c0b 12,15,198,201-203,212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8cea51c3dd8a65da2ee5eb1fe9243a3ab8e246b7",
+  "prompts": {},
+  "sessions": {
+    "s_4be6837ff60543": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_4be6837ff60543",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
