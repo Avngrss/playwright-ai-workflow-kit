@@ -3,13 +3,16 @@ import { read } from "./context.mjs";
 /**
  * The simple rules — one line each: a group of files must not contain (`forbid`) or must contain
  * (`require`) a pattern. `except` leaves out the files that are the rule's one allowed home; `when`
- * applies the rule only to files that contain that pattern; `warn` makes it a warning. Groups:
- * collectFiles() in context.mjs.
+ * applies the rule only to files that contain that pattern; `warn` makes it a warning; `code` reads the
+ * file without its comments (a file name a comment mentions is no call). Groups: collectFiles() in
+ * context.mjs.
  */
 const PATTERN_RULES = [
   // Specs read as what a person does and checks; everything else comes through fixtures.
   { in: ["specs"], forbid: /waitForTimeout\s*\(/, says: "waits a fixed time (waitForTimeout) — wait for a state: a locator, a response, a URL" },
-  { in: ["specs"], require: /\bexpect\w*\s*\(/, says: "checks nothing — add expect(…) or an assertion helper (expectJson, expectSignedIn, …)" },
+  // A check: expect(…), an expect… helper, an answer taken through answerTo (it checks inside), or a
+  // rule of the app's assertions (a `check:` rule named after what it proves, `paidAsInBilling`).
+  { in: ["specs"], require: /\bexpect\w*\s*\(|\banswers?To\(|from\s+["'][^"']*\/assertions\//, says: "checks nothing — add expect(…), an assertion helper (expectJson, expectSignedIn, …) or an app's rule from src/assertions/<app>/" },
   { in: ["ui", "e2e", "smoke"], require: /\btest\.step\(/, says: "has no test.step() — the report shows a browser test as the steps a person takes" },
   { in: ["specs"], forbid: /import\s*{[^}]*\btest\b[^}]*}\s*from\s*["']@playwright\/test["']/, says: 'imports test from @playwright/test — import { test, expect } from "src/fixtures/<app>/test" (the app of its folder)' },
   // E2E may: a second role's browser context has its own page (.cursor/rules/specs.mdc).
@@ -58,7 +61,7 @@ const PATTERN_RULES = [
   },
 
   // One home for each concern across all test code.
-  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (.cursor/rules/code.mdc)" },
+  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, code: true, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (.cursor/rules/code.mdc)" },
   { in: ["testCode"], except: /[\\/]src[\\/](logging|security)[\\/]/, forbid: /console\.(log|debug|info)\s*\(/, says: "writes to the console — use safeLogger (src/logging/safe-logger.helper.ts), never with secrets" },
   { in: ["testCode"], except: /[\\/]src[\\/]setup[\\/]app-wide\.ts$/, forbid: /addLocatorHandler\s*\(/, says: "closes an overlay itself — add it to the app-wide block of specs/project-map.md (dismiss: …)" },
   { in: ["testCode"], when: /(?:allure\.attachment|testInfo\.attach)\s*\(/, require: /maskSecrets|sanitize|redact/, says: "attaches text without masking it — pass it through maskSecrets (src/reporting/readable-error.ts)" },
@@ -74,12 +77,20 @@ const PATTERN_RULES = [
   { in: ["testCode"], warn: true, forbid: /toLocale(?:Date)?String\(\s*[^,)]*["']en-GB["'][^)]*month\s*:\s*["']short/, says: 'formats a short month the en-GB way ("Sept") — expected texts come from the app\'s display helper (src/assertions/<app>/), matched to what the page shows' },
 ];
 
+/** The text without its comments: a line that is one (`//`, `/*`, `*`) and the rest of a line after " //". */
+const codeOf = (text) =>
+  text
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*(\/\/|\/\*|\*)/.test(line))
+    .map((line) => line.replace(/\s\/\/.*$/, ""))
+    .join("\n");
+
 export function checkPatterns(files, report) {
   for (const rule of PATTERN_RULES) {
     const targets = new Set(rule.in.flatMap((group) => files[group]));
     for (const file of targets) {
       if (rule.except?.test(file)) continue;
-      const content = read(file);
+      const content = rule.code ? codeOf(read(file)) : read(file);
       if (rule.when && !rule.when.test(content)) continue;
       const broken = rule.forbid ? rule.forbid.test(content) : !rule.require.test(content);
       if (broken) (rule.warn ? report.warn : report.fail)(file, rule.says);
