@@ -32,6 +32,7 @@
     "verify": "node scripts/agent/verify.mjs",
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",
+    "api:types": "node scripts/agent/api-types.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",
     "test:failed": "node scripts/run-tests.mjs failed",
     "browsers:install": "npx playwright install chromium",
@@ -56,6 +57,9 @@
     "zod": "4.6.7"
   },
   "overrides": {
-    "dompurify": "3.4.17"
+    "dompurify": "3.4.17",
+    "openapi-typescript": {
+      "undici": "6.29.1"
+    }
   }
 }

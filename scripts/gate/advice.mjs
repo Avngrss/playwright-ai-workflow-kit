@@ -45,7 +45,8 @@ function adviseCodeWeight(files, report) {
     if (/\}\s*finally\s*\{/.test(lines.join("\n"))) report.warn(spec, "try/finally in a spec — register created data with cleanup.add(…) instead");
   }
 
-  for (const file of [...files.ui, ...files.api, ...files.smoke, ...files.support]) {
+  // An app's contract types (npm run api:types) are written from its contract, never by hand: their comments are the contract's examples.
+  for (const file of [...files.ui, ...files.api, ...files.smoke, ...files.support].filter((each) => !/[\\/]contract\.client\.ts$/.test(each))) {
     if (/(\/\/|\/\*|^\s*\*).*\b20\d\d-\d\d-\d\d\b/m.test(read(file))) report.warn(file, "a comment carries a date — history belongs in the plan's change log");
   }
 
@@ -59,7 +60,10 @@ function adviseCodeWeight(files, report) {
       report.warn(client, `${requestLines} statements of requests, response types aside (guide ≤ ${CLIENT_REQUEST_LINES_GUIDE}) — one client per API area (e.g. projects, reports), each with its own response types`);
     }
     const exported = text.split(/^(?=export\s)/m).filter((part) => /^export\s+(?:async\s+)?(?:function|const)\s/.test(part));
-    const noRequest = exported.filter((part) => !/\brequest\.\w+\(|\bfetch\(/.test(part)).map((part) => /^export\s+(?:async\s+)?(?:function|const)\s+([A-Za-z0-9_]+)/.exec(part)?.[1]);
+    // An answer path (answerPath) is the client's too: the request the page sends, whose answer a UI test takes;
+    // so is the schema of an answer another client shares (`export const order = fieldsOf<…>()({ … })`, `= z.…`).
+    const isSchema = (part) => /^export\s+const\s+[A-Za-z0-9_]+\s*(?::[^=]+)?=\s*(?:fieldsOf\b|z\.)/.test(part);
+    const noRequest = exported.filter((part) => !isSchema(part) && !/\brequest\.\w+\(|\bfetch\(|\banswerPath\b/.test(part)).map((part) => /^export\s+(?:async\s+)?(?:function|const)\s+([A-Za-z0-9_]+)/.exec(part)?.[1]);
     if (noRequest.length) {
       report.warn(client, `${noRequest.join(", ")} send no request — a client holds requests only: periods and test values → data/generators|datasets/<app>/, how the screen shows a value → assertions/<app>/, lookups on the stand → setup/<app>/`);
     }
