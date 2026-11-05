@@ -13,9 +13,11 @@
  *   pointers.mjs  every rule and skill the code names exists in .cursor/
  *   advice.mjs    warnings: size, readability
  */
+import fs from "node:fs";
+import path from "node:path";
 import { adviceRules } from "./advice.mjs";
 import { caseRules } from "./cases.mjs";
-import { collectFiles, createReport } from "./context.mjs";
+import { collectFiles, createReport, ROOT } from "./context.mjs";
 import { layoutRules } from "./layout.mjs";
 import { checkPatterns } from "./patterns.mjs";
 import { repeatRules } from "./repeats.mjs";
@@ -27,6 +29,9 @@ import { pointerRules } from "./pointers.mjs";
 
 const files = collectFiles();
 const report = createReport();
+// A cut-off `npm run verify` leaves its spoiled lines listed here: a test checking a wrong value is never committed.
+if (fs.existsSync(path.join(ROOT, "reports", "verify-spoils.json")))
+  report.fail(null, "reports/verify-spoils.json — a cut-off `npm run verify` left spoiled lines in the specs: `npm run verify -- --restore` puts them back");
 for (const rule of [checkPatterns, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
 
 console.log(`qa:gate — ${files.specs.length} spec(s), ${files.support.length} support file(s)`);

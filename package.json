@@ -29,6 +29,7 @@
     "auth:check": "node scripts/auth.mjs check",
     "auth:sign-in": "node scripts/auth.mjs sign-in",
     "suite:coverage": "node scripts/agent/suite-coverage.mjs",
+    "verify": "node scripts/agent/verify.mjs",
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",

@@ -10,13 +10,16 @@ import { SPECS_OWN_FILES } from "./context.mjs";
 
 const read = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 
+/** The part of a case id before its number ("TC-" of TC-123) — one pattern for the plans, the tests' links and verify. */
+export const CASE_PREFIX = "[A-Z][A-Z0-9]*-";
+
 /**
  * The case numbers a plan's `TMS:` field names: ids like TC-123 (bare numbers only when the field has
  * no such id). Notes in brackets — "TC-103 (screen)" — name no case.
  */
 export function caseIds(field) {
   const text = field.replace(/\([^)]*\)/g, " ");
-  const prefixed = [...text.matchAll(/\b[A-Z][A-Z0-9]*-(\d+)\b/g)].map((match) => match[1]);
+  const prefixed = [...text.matchAll(new RegExp(`\\b${CASE_PREFIX}(\\d+)\\b`, "g"))].map((match) => match[1]);
   return prefixed.length ? prefixed : [...text.matchAll(/\b(\d+)\b/g)].map((match) => match[1]);
 }
 
@@ -84,7 +87,7 @@ export const keepsOut = (line) => !line.status.startsWith("covered by");
 
 /** The case numbers a test links in its own options: tms(101), tms("TC-101"), or a case URL spelled out. */
 export function caseLinksIn(options) {
-  const viaHelper = [...options.matchAll(/\btms\(\s*["'`]?(?:[A-Z][A-Z0-9]*-)?(\d+)/g)].map((match) => match[1]);
+  const viaHelper = [...options.matchAll(new RegExp(`\\btms\\(\\s*["'\`]?(?:${CASE_PREFIX})?(\\d+)`, "g"))].map((match) => match[1]);
   const spelled = [...options.matchAll(/type:\s*["'`]tms["'`]\s*,\s*description:\s*["'`]([^"'`$]+)["'`]/g)].map((match) => /(\d+)\D*$/.exec(match[1])?.[1]);
   return [...new Set([...viaHelper, ...spelled].filter(Boolean))];
 }

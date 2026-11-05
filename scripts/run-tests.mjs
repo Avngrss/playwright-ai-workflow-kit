@@ -9,9 +9,10 @@
  *   npm run test:regression | test:flaky              the @regression or the @flaky tests of every app
  *   npm run test:visual | test:cross-browser | test:responsive   the UI tests tagged for them (Firefox and WebKit installed when missing)
  *   npm run test:failed                               only the last run's failures and the tests it left unrun (after their app's smoke)
- *   npm run test:app -- my-app [smoke|api|ui|e2e]     one app: every layer, or one
+ *   npm run test:app -- my-app [smoke|api|ui|e2e]     one app: every layer, or one (several: my-app,other-app)
  *   npm run test:app -- my-app <spec> --with-browsers  and its @cross-browser / @responsive tests in Firefox, WebKit and a phone too
  *   npm run test:ui -- -g "menu"                      Playwright options go last
+ *   npm run verify -- my-app <specs…> [--with-browsers]  the verify skill's run: gate, can-fail, one run (scripts/agent/verify.mjs)
  *
  *   node scripts/run-tests.mjs --browsers [--check]   only the browser: install it when missing (postinstall), or say what is there
  *
@@ -194,11 +195,12 @@ function dropFromLastRun(ids) {
   }
 }
 
-/** One app's tests: every layer (its smoke first, the layers' dependency), one layer, or its smoke. */
+/** One app's tests (several apps': `alpha,beta`): every layer (its smoke first, the layers' dependency), one layer, or its smoke. */
 function appRun([app, second, ...rest]) {
   const apps = appsOfMap();
-  if (!app || !apps.includes(app)) {
-    console.error(`Which app? npm run test:app -- <app> [${APP_LAYERS.join("|")}] — apps in specs/project-map.md: ${apps.join(", ") || "none yet"}`);
+  const asked = (app ?? "").split(",").filter(Boolean);
+  if (!asked.length || asked.some((one) => !apps.includes(one))) {
+    console.error(`Which app? npm run test:app -- <app>[,<app>…] [${APP_LAYERS.join("|")}] — apps in specs/project-map.md: ${apps.join(", ") || "none yet"}`);
     process.exit(1);
   }
   const layer = APP_LAYERS.includes(second) ? second : undefined;
@@ -207,7 +209,7 @@ function appRun([app, second, ...rest]) {
   // runs only its tagged tests (@cross-browser, @responsive): one command, so one set of results.
   const otherBrowsers = given.includes("--with-browsers");
   const options = given.filter((value) => value !== "--with-browsers");
-  const ofApp = (layers) => layers.map((each) => `--project=${each}:${app}`);
+  const ofApp = (layers) => asked.flatMap((one) => layers.map((each) => `--project=${each}:${one}`));
   const scope = layer === "smoke" ? [...ofApp(APP_LAYERS), "--grep", "@smoke", ...ACTIVE_ONLY] : ofApp(layer ? [layer] : APP_LAYERS);
   const browsers = otherBrowsers ? ofApp(["firefox", "webkit", "mobile"]) : [];
   return { args: [...scope, ...browsers, ...options], browser: layer !== "api" || otherBrowsers, otherBrowsers };
