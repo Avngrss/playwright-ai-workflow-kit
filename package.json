@@ -32,6 +32,7 @@
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",
+    "test:failed": "node scripts/run-tests.mjs failed",
     "browsers:install": "npx playwright install chromium",
     "typecheck": "tsc --noEmit",
     "qa:gate": "node scripts/gate/check.mjs && npm run typecheck",

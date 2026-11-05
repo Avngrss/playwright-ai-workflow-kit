@@ -5,10 +5,12 @@ import AllureReporter from "allure-playwright";
 import type { FullConfig, Suite, TestCase, TestError, TestResult, TestStep } from "@playwright/test/reporter";
 import { safeLogger } from "../logging/safe-logger.helper";
 import type { KnownBug } from "../setup/known-bugs";
+import { defaultPlatform } from "../setup/platforms";
 import { explainFailure, type Explained } from "./failure-cause";
+import { contractFinding, planOf, screenFinding, type ContractFinding, type ScreenFinding } from "./product-change";
 import { headline, maskSecrets, readableMessage, readableTrace } from "./readable-error";
 import { reportLabels } from "./report-tree";
-import { runSummary, type RunEntry } from "./run-summary";
+import { afterSecondPass, runSummary, type RunEntry, type SummaryData } from "./run-summary";
 
 /** What the test's run left about its failure (pages.fixture.ts) and what the test says about itself. */
 interface Context {
@@ -22,6 +24,9 @@ interface Context {
   knownBug?: KnownBug;
   passed: boolean;
   unproven: boolean;
+  /** What the product's own contract and page say about the failure (product-change.ts). */
+  contract?: ContractFinding;
+  screen?: ScreenFinding;
 }
 
 const fileKey = (file: string): string => (process.platform === "win32" ? path.resolve(file).toLowerCase() : path.resolve(file));
@@ -70,6 +75,8 @@ function readable(error: TestError, context: Context): { error: TestError; expla
     background: context.background,
     sessionEnded: !!context.sessionEnded,
     unproven: context.unproven,
+    contract: context.contract,
+    screen: context.screen,
   });
   const checkByHand = explained.cause === "stand data" && ownCheck ? ownCheck : explained.checkByHand;
   const cause = explained.cause.startsWith("known bug") && bug ? `${explained.cause} ${bug.ticket}` : explained.cause;
@@ -84,6 +91,13 @@ function readable(error: TestError, context: Context): { error: TestError; expla
   if (context.background) parts.push(listed("Background errors during the test", context.background));
   parts.push(`Check by hand: ${checkByHand}`);
   return { error: { ...error, message: parts.join("\n\n"), stack }, explained, checkByHand };
+}
+
+/** Whether the product changed rather than broke: its contract and its page at the failure (product-change.ts). */
+async function productChange(error: TestError, app: string, result: TestResult): Promise<Pick<Context, "contract" | "screen">> {
+  const message = readableMessage(error.message ?? "");
+  const errorContext = result.attachments.find(({ name }) => name === "error-context")?.path;
+  return { contract: await contractFinding(app, message), screen: screenFinding(message, errorContext) };
 }
 
 /** The innermost test step that failed, as titled. */
@@ -144,12 +158,14 @@ interface Shown {
 
 /**
  * allure-playwright with a readable report: a failure opens with its verdict and cause and ends with
- * what to check by hand; only three colours (a failure is red whatever broke, a known bug still failing
- * on its step is grey); the failed step shows only its first line; neither the suite's own annotations,
- * tooling labels nor "Before/After Hooks" wrappers appear; every test gets its place in the tree and its
- * severity (report-tree.ts) — also one that failed before its body ran. The run ends with its summary
- * (run-summary.ts) in the terminal and in reports/run-summary.md|json. Other reporters (list,
- * Playwright HTML, trace) keep the full raw data for debugging.
+ * what to check by hand — a path the app's contract no longer lists, or a text the page now shows
+ * reworded, reads as the product changed (product-change.ts); only three colours (a failure is red
+ * whatever broke, a known bug still failing on its step is grey); the failed step shows only its first
+ * line; neither the suite's own annotations, tooling labels nor "Before/After Hooks" wrappers appear;
+ * every test gets its place in the tree and its severity (report-tree.ts) — also one that failed before
+ * its body ran. The run ends with its summary (run-summary.ts) in the terminal and in
+ * reports/run-summary.md|json, closed by the line to give the agent. Other reporters (list, Playwright
+ * HTML, trace) keep the full raw data for debugging.
  */
 export default class ReadableAllureReporter extends AllureReporter {
   private readonly startedAt = new Date();
@@ -230,7 +246,10 @@ export default class ReadableAllureReporter extends AllureReporter {
         : first && rest.length
           ? { ...first, message: [first, ...rest].map((each) => readableMessage(each.message ?? "")).join("\n\n") }
           : first;
+    const platform = (test.parent.project()?.metadata as { platform?: string } | undefined)?.platform;
+    const changed = error && !passed ? await productChange(error, platform ?? defaultPlatform(), result) : {};
     const context: Context = {
+      ...changed,
       pageAtFailure: note("page-at-failure"),
       background: note("background-errors"),
       newTab: note("new-tab"),
@@ -245,12 +264,11 @@ export default class ReadableAllureReporter extends AllureReporter {
     const failure = error && (!passed || knownBug) ? readable(error, context) : undefined;
     if (failure) {
       const { explained, checkByHand } = failure;
-      this.failures.set(test.id, { explained, checkByHand, step: context.step, ticket: knownBug?.ticket });
+      this.failures.set(test.id, { explained, checkByHand, step: context.step, ticket: knownBug?.ticket, plan: planOf(test.location.file, this.home) });
     }
     if (note("cleanup-failed")) this.leftovers.add(test.id);
 
     const uuid = (this as unknown as AllureInternals).allureResultsUuids?.get(test.id);
-    const platform = (test.parent.project()?.metadata as { platform?: string } | undefined)?.platform;
     if (uuid) {
       this.treeLabels.set(uuid, reportLabels(test.location.file, test.annotations, test.tags, platform));
       this.shown.set(uuid, {
@@ -264,6 +282,17 @@ export default class ReadableAllureReporter extends AllureReporter {
     await super.onTestEnd(test, { ...result, errors, error: errors[0] });
   }
 
+  /**
+   * The run's summary — or, on the second pass scripts/run-tests.mjs runs for the stand's failures
+   * (AQA_SECOND_PASS names its copy of the first pass's summary), the first pass's with this one's results.
+   * AQA_RUNNER — the run came through scripts/run-tests.mjs, so a second pass follows for the stand's failures.
+   */
+  private summaryOf(entries: RunEntry[]) {
+    const firstPass = process.env.AQA_SECOND_PASS;
+    if (firstPass && fs.existsSync(firstPass)) return afterSecondPass(JSON.parse(fs.readFileSync(firstPass, "utf8")) as SummaryData, entries, this.home);
+    return runSummary(entries, this.startedAt, { home: this.home, runner: !!process.env.AQA_RUNNER });
+  }
+
   async onEnd(): Promise<void> {
     await super.onEnd();
     const entries: RunEntry[] = [...this.tests.values()].map((test) => ({
@@ -272,12 +301,12 @@ export default class ReadableAllureReporter extends AllureReporter {
       leftover: this.leftovers.has(test.id),
       ...(this.failures.get(test.id) ?? {}),
     }));
-    const summary = runSummary(entries, this.startedAt);
+    const summary = this.summaryOf(entries);
     const reports = path.join(this.home, "reports");
     fs.mkdirSync(reports, { recursive: true });
     fs.writeFileSync(path.join(reports, "run-summary.md"), maskSecrets(summary.markdown));
     fs.writeFileSync(path.join(reports, "run-summary.json"), maskSecrets(JSON.stringify(summary.data, null, 2)));
-    if (entries.some((entry) => entry.explained || entry.leftover || entry.outcome === "flaky")) safeLogger.info(summary.text);
+    if (summary.data.tests.length || summary.data.slow.length || summary.data.leftovers.length) safeLogger.info(summary.text);
 
     // A test marked with a known bug counts its failure as expected — when something else failed it,
     // the run still fails: Playwright lets a reporter's onEnd set the run's status.

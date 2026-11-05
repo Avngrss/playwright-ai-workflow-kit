@@ -221,6 +221,7 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 | `npm test` | every layer of every app |
 | `npm run test:api` / `test:ui` / `test:e2e` | one layer of every app |
 | `npm run test:smoke` / `test:regression` / `test:flaky` | smoke / regression / the `@flaky` tests |
+| `npm run test:failed` | only the last run's failures and the tests it left unrun |
 | `npm run test:app -- <app> [layer] [--with-browsers]` | one app; `--with-browsers` adds its tagged tests in Firefox, WebKit and a phone |
 | `npm run test:visual` / `test:cross-browser` / `test:responsive` | only the screenshots / the browsers / the phone |
 | `npm run test:list` | list the tests (zero is valid) |
