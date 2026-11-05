@@ -1,4 +1,5 @@
 import type { Sweep } from "../setup/sweep";
+// import { timeInMarker } from "../setup/sweep"; — for an entry whose AQA name carries its time
 
 /**
  * What the sweep removes after an interrupted run (src/setup/sweep.ts runs it before and after
@@ -17,5 +18,6 @@ export const SWEEPS: Sweep[] = [
   //   isLeftover: (item) => typeof item.name === "string" && item.name.startsWith("AQA "),
   //   deletePath: (item) => `items/${item.id}`,
   //   describe: (item) => item.name,
+  //   createdAt: (item) => timeInMarker(item.name), // or Date.parse(item.createdAt): kept while a parallel run may use it
   // },
 ];

@@ -23,6 +23,8 @@ export type Cause =
   | "screenshot differs"
   | "out of time"
   | "element not found"
+  | "request did not match"
+  | "answer did not match"
   | "check did not match";
 
 /** The verdicts, in the order the report and the summary list them — who acts first. */
@@ -40,6 +42,8 @@ const VERDICT_OF: Record<Cause, Verdict> = {
   "API changed": "Not a bug — the product changed: refresh the plan",
   "screen changed": "Not a bug — the product changed: refresh the plan",
   "known bug looks fixed": "Known bug looks fixed — retest the ticket",
+  "request did not match": "Possible bug — retest by hand",
+  "answer did not match": "Possible bug — retest by hand",
   "check did not match": "Possible bug — retest by hand",
   "element not found": "Possible bug — retest by hand",
   "server error": "Possible bug — retest by hand",
@@ -203,6 +207,26 @@ const RULES: Rule[] = [
     checkByHand: (facts) => {
       const element = lineOf(facts.message, "Element")?.replace(/^Element:\s*/, "") ?? "the element the step looks for";
       return `Open ${whereTo(facts)}: is ${element} there? Under another name or in another place → the test's locator needs updating. Not there → the screen changed: a bug, or a changed requirement — check the ticket.`;
+    },
+  },
+  // The page sent other data than the case expects (the form's request, a period's query) — the front
+  // end's part, told apart from the server's answer.
+  {
+    cause: "request did not match",
+    matches: ({ message }) => /^The request the action sent —/m.test(message),
+    checkByHand: (facts) => {
+      const request = /The request the action sent — (\S+ \S+)/.exec(facts.message)?.[1] ?? "the request the action sends";
+      return `Repeat ${stepOf(facts)} by hand with the browser's developer tools open (Network) and look at what the page sent in ${request}. It holds what the case expects → the test's expectation or data is wrong; it does not → the screen sends the wrong data: a front-end bug — give the developers the request and the time of the run.`;
+    },
+  },
+  // After the sign-in, unavailable and 5xx rules: those answers keep their own causes. What is left is
+  // the server answering the action with another status or other data than the case expects.
+  {
+    cause: "answer did not match",
+    matches: ({ message }) => /^The server's answer to the action —|The page's request \S+ answered/m.test(message),
+    checkByHand: (facts) => {
+      const endpoint = /(?:The server's answer to the action — (?:[A-Z]+ )?|The page's request )(\S+)/.exec(facts.message)?.[1] ?? "the request the action sends";
+      return `Repeat ${stepOf(facts)} by hand with the browser's developer tools open (Network) and look at the answer of ${endpoint}. It holds what the case expects → the test's expectation or data is wrong; it does not → the server answered the action wrongly: a bug — give the developers the request and the time of the run.`;
     },
   },
 ];
