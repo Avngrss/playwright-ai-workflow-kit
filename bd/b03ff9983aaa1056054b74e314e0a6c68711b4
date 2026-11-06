@@ -1,0 +1,19 @@
+.cursor/commands/setup.md
+  s_9957950976614d::t_6691ed4b436bef 4-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bdb03ff9983aaa1056054b74e314e0a6c68711b4",
+  "prompts": {},
+  "sessions": {
+    "s_9957950976614d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_9957950976614d",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
