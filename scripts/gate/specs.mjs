@@ -3,7 +3,7 @@ import path from "node:path";
 import { at, read, rel } from "./context.mjs";
 import { CASE_PREFIX } from "./plans.mjs";
 
-/** What a spec declares: its layer and scope tags, its quarantine reasons, hooks, mocks and case links. */
+/** What a spec declares: its layer and scope tags, its quarantine reasons, hooks, mocks and case links — and no skeleton left. */
 
 // The suite's own vocabulary; anything else must be registered in specs/project-map.md §Allowed tags.
 const BUILT_IN_TAGS = ["@api", "@ui", "@e2e", "@smoke", "@regression", "@wip", "@flaky"];
@@ -354,4 +354,32 @@ function checkKnownBugs(files, report) {
   }
 }
 
-export const specRules = [checkTags, checkKeySmoke, checkRepeatedSetup, checkLocks, checkQuarantineReasons, checkHooksAndRunMode, checkUiSpecs, checkMocks, checkCaseLinks, checkSessionEndings, checkKnownBugs];
+/**
+ * A test still a skeleton: what `npm run spec:draft` writes for the agent to replace — a step's
+ * `// Route: …` and `// expect: …` comments — or a template placeholder `<…>` left in a test or step
+ * title (spec:draft's "… and verify <…>" too).
+ */
+function checkDraftLeftovers(files, report) {
+  const comments = /^[ \t]*\/\/[ \t]*(Route(?: \(step [^)]*\))?|expect):/gm;
+  const placeholder = /<[^\s<>][^<>]*>/;
+  const stepTitles = (text) => [...text.matchAll(/\btest\.step\(\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g)].map((match) => match[2]);
+  for (const spec of files.specs) {
+    const content = read(spec).replace(/\r\n/g, "\n");
+    const tests = testsOf(content);
+    // The text before the first test too: a comment there is a skeleton's as well.
+    const head = tests.length ? content.split("\n").slice(0, tests[0].line).join("\n") : content;
+    for (const { title, body } of [{ title: null, body: head }, ...tests]) {
+      const found = [...body.matchAll(comments)].map((match) => (match[1] === "expect" ? "expect" : "Route"));
+      const unwritten = ["Route", "expect"].map((kind) => [kind, found.filter((each) => each === kind).length]).filter(([, count]) => count).map(([kind, count]) => `${count} // ${kind}: comment(s)`);
+      const unnamed = [...(title && placeholder.test(title) ? ["a <…> in its title"] : []), ...stepTitles(body).filter((step) => placeholder.test(step)).map((step) => `a <…> in step "${step}"`)];
+      if (!unwritten.length && !unnamed.length) continue;
+      const todo = [
+        ...(unwritten.length ? ["write each step's code where its comments say, then delete them (npm run spec:draft's skeleton — the implement skill, Shared start)"] : []),
+        ...(unnamed.length ? ["name what the test or step does or verifies (the implement skill, Naming)"] : []),
+      ];
+      report.fail(spec, `${title ? `"${title}"` : "the code before its first test"} is still a skeleton — ${[...unwritten, ...unnamed].join(", ")}: ${todo.join("; ")}`);
+    }
+  }
+}
+
+export const specRules = [checkTags, checkKeySmoke, checkRepeatedSetup, checkLocks, checkQuarantineReasons, checkHooksAndRunMode, checkUiSpecs, checkMocks, checkCaseLinks, checkSessionEndings, checkKnownBugs, checkDraftLeftovers];

@@ -4,7 +4,7 @@
  * topic in this folder (scripts/gate/):
  *   patterns.mjs  one-line rules: what specs, Page Objects, clients and all test code may not do
  *   layout.mjs    where plans, specs and support code live
- *   specs.mjs     tags and scope, quarantine reasons, hooks, mocks, case links
+ *   specs.mjs     tags and scope, quarantine reasons, hooks, mocks, case links, a skeleton spec:draft left
  *   support.mjs   the fixture chain, roles from the map, a sweep for every disposable fixture
  *   models.mjs    Page Objects and components: size, state, second names, unused members, siblings repeating their base
  *   repeats.mjs   the same thing twice: copied lines, the same code in two apps, a scenario automated twice

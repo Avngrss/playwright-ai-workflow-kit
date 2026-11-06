@@ -14,17 +14,12 @@
  *
  * Cases are matched by their number: the `{id}` of the app's case link (§Test cases (TMS):
  * `- case link <app>: <URL with {id}>`, one per app — each app has its own TMS project) and the
- * plans' `TMS: TC-123` both become "123".
+ * plans' `TMS: TC-123` (or `PROJ-T123`) both become "123".
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import * as plansOf from "../gate/plans.mjs";
-
-const { keepsOut, readPlans } = plansOf;
-// A test's scenario — the S<n> of "<case id> · S<n> · <what it proves>" — as the gate reads it
-// (scripts/gate/plans.mjs, which names it with the plans' routes); "" for a one-scenario case.
-const scenarioOf = plansOf.scenarioOf ?? ((title) => /^[^·]+·\s*(S\d+)\s*·/.exec(title)?.[1] ?? "");
+import { keepsOut, readPlans, scenarioOf } from "../gate/plans.mjs";
 
 const ROOT = process.cwd();
 const read = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");

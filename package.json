@@ -30,6 +30,8 @@
     "auth:sign-in": "node scripts/auth.mjs sign-in",
     "suite:coverage": "node scripts/agent/suite-coverage.mjs",
     "verify": "node scripts/agent/verify.mjs",
+    "plan:block": "node scripts/agent/plan-block.mjs",
+    "spec:draft": "node scripts/agent/spec-draft.mjs",
     "stand:find": "node scripts/agent/stand-find.mjs",
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",

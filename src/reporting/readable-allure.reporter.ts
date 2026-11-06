@@ -256,7 +256,7 @@ export default class ReadableAllureReporter extends AllureReporter {
       sessionEnded: note("session-ended"),
       appMessages: note("app-messages"),
       step: failedStep(result.steps),
-      caseId: /^([A-Z][A-Z0-9]*-\d+) · /.exec(test.title)?.[1],
+      caseId: /^([A-Z][A-Z0-9]*-[A-Z]*\d+) · /.exec(test.title)?.[1],
       knownBug,
       passed,
       unproven: Boolean(error && !passed) && uncommittedFiles().has(fileKey(test.location.file)),
