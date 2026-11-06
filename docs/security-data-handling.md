@@ -19,7 +19,9 @@ Prevention comes first. The scrubbing is a safety net. The rules are in
   - sets non-secret values such as URLs or a public client id;
   - adds empty entries for you to fill (`-- --note "Test account" SHOP_LOGIN SHOP_PASSWORD`);
   - prints names as filled or empty, never a value;
-  - copies the names into `.env.example`, where only URLs keep their values.
+  - copies the names into `.env.example`, where only URLs keep their values;
+  - edits both files in place — your lines, headings and notes stay; `-- --tidy` alone lays them out by
+    app again.
 - **`env:prepare` refuses to run while git would commit `.env`.** Add `.env` and `state/` to
   `.gitignore` first. The kit's `.gitignore` already has both.
 - **You type logins, passwords, tokens and client secrets into `.env` yourself.** The agent never
@@ -56,17 +58,25 @@ See [Auth strategy](auth-strategy.md).
 
 - **`src/reporting/secret-scrub.reporter.ts`** runs first among the reporters. It replaces
   every `.env` value of at least 4 characters with `[secret]`, when its name contains `PASSWORD`,
-`SECRET` or `TOKEN`, or ends in `_KEY`:
-  - where: each test's trace and its text attachments;
-  - in which forms: as typed, JSON-escaped and URL-encoded.
+  `SECRET` or `TOKEN`, or ends in `_KEY`:
+  - where: each test's trace and its text attachments, and the test's errors and output before the
+    list, HTML and Allure reporters print them;
+  - in which forms: as typed, JSON-escaped, URL- and form-encoded, and inside an HTTP Basic header.
 
-  It also sweeps `test-results/`, `playwright-report/` and the Allure results at the start and end
-  of every run, even when a `--reporter` is given on the command line.
+  The sign-in issues session tokens, so `.env` never holds them; they are masked by their shape
+  instead — a Bearer value, a JWT, Basic credentials become `[token]` (a request that times out prints
+  its Authorization header in the call log). It also sweeps `test-results/`, `playwright-report/` and
+  the Allure results at the start and end of every run, even when a `--reporter` is given on the
+  command line.
 - **Before the trace:** the shared session signs in before a test's trace starts. `signIn()` takes
   the values it typed out of the trace.
 - **`maskSecrets`** (`src/reporting/readable-error.ts`) covers readable errors, the run
-  summary and extra attachments. Sign-in codes and tokens in URLs become `***`.
+  summary and extra attachments. Sign-in codes and tokens in URLs become `***`, session tokens
+  `[token]`.
 - **Background errors** record the method and path, never the query.
+- **The agent's scripts** print no value either: `npm run verify` masks `.env` secrets and session
+  tokens in its block and its files (`test-results/verify.json`, `verify.log`); `npm run stand:find`
+  prints accounts, tenants and matching ids, never a credential.
 
 ## What a test must still not do
 

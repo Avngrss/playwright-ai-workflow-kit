@@ -5,7 +5,7 @@ is in [Workflow](workflow.md).
 
 ## Prerequisites
 
-- Node.js and npm (the CI uses Node 20), Git.
+- Node.js and npm (the CI uses Node 22), Git.
 - Cursor with this folder open. The rules, skills and slash commands load from `.cursor/`.
 - The Playwright MCP from `.cursor/mcp.json`, enabled in Cursor. The agent uses it to look at the
   live app.
@@ -33,8 +33,11 @@ npm run env:prepare
 
 This creates `.env` from `.env.example`. It refuses to run while git would commit `.env`. From now on
 the agent changes `.env` only through this script. It writes addresses and adds empty entries, and it
-prints names and filled/empty only, never a value. **You type logins, passwords and secrets into
-`.env` yourself.** Do not type them into the chat (see [Security and data](security-data-handling.md)).
+prints names and filled/empty only, never a value. It edits `.env` and `.env.example` in place: your
+lines, headings and notes stay where they are, a value changes in its own line and a new name joins its
+app's group. Only `npm run env:prepare -- --tidy` lays both files out by app again. **You type logins,
+passwords and secrets into `.env` yourself.** Do not type them into the chat (see
+[Security and data](security-data-handling.md)).
 
 ## 3. Check the empty kit
 
@@ -96,12 +99,15 @@ the app has an ```auth block, the smoke is skipped.
 ## 7. Plan the first feature
 
 ```text
-/plan Account → Addresses, API + UI
+/plan Account → Addresses
 ```
 
 The agent asks only what it cannot find out, checks the feature on the stand and shows a plan to
-confirm. No test is written before you say yes. After your yes, the same run writes the tests
-(`/implement`) and verifies them (`/verify`). Continue with [Workflow](workflow.md).
+confirm. Each case's scenarios get one owner each — API, UI or E2E, from what the stand shows — so no
+scenario is tested twice. No test is written before you say yes. After your yes, the same run writes
+the tests (`/implement`) and checks them with one `npm run verify` (`/verify`): the gate, each new check
+proven able to fail, one run without a retry. For new tests the summary ends with a `/review` line —
+paste it into a new chat for an independent review. Continue with [Workflow](workflow.md).
 
 ## Where things live
 
@@ -115,7 +121,7 @@ confirm. No test is written before you say yes. After your yes, the same run wri
 | `tests/e2e/<app>/<area>/<journey>.e2e.spec.ts` | a journey's test |
 | `tests/smoke/sign-in.smoke.spec.ts` | the template's sign-in smoke |
 | `src/fixtures/<app>/`, `pages/<app>/`, `components/<app>/`, `api/clients/<app>/`, `data/…/<app>/` | the app's support code |
-| `state/` | saved sign-in sessions (git-ignored) |
+| `state/` | saved sign-in sessions, and the TMS cases or bugs a plan was drafted from (git-ignored) |
 | `reports/run-summary.md`, `reports/allure/` | the last run's summary and the Allure results |
 
 An app's folders appear with its first plan and test. They are never created empty in advance. Every

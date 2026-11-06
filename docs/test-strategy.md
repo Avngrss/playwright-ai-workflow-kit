@@ -22,8 +22,8 @@ Playwright (API, UI, E2E), Allure reports, one convention gate (`npm run qa:gate
 - **Every test earns its place.** It exists because a user needs that scenario to work, or because
   a breakage there is expensive — and its plan says which.
 - **Pyramid, not a UI wall.** Rules, permissions and negatives through the API; what a user sees and
-  does through the UI; a handful of critical journeys end to end. The cheapest layer that covers
-  the risk wins.
+  does through the UI; a handful of critical journeys end to end. Each scenario is proven once, by
+  the layer its failure would point at.
 - **Grounded in reality.** Requirements are candidates; a case is written only after a live check
   on the stand. Drift from the documentation is recorded, never transcribed.
 - **Traceable.** Every test sits in its feature's folder and links back to its story and, when
@@ -35,16 +35,18 @@ Playwright (API, UI, E2E), Allure reports, one convention gate (`npm run qa:gate
 
 | Layer | Covers | Does not |
 |---|---|---|
-| **API** (`tests/api`) | contracts, business rules, permissions per role, validation, negatives | drive a browser; replace checks of what the user sees |
-| **UI** (`tests/ui`) | one page or screen: what renders, actions, dialogs, messages, role-dependent visibility | log in through the form (the session is a precondition); re-check server rules covered by API |
+| **API** (`tests/api`) | what no screen shows: a rule's other inputs and boundaries, permissions per role, the contract, negatives with no screen of their own | drive a browser; replace checks of what the user sees; repeat a person's scenario "to check the data" |
+| **UI** (`tests/ui`) | one page or screen: what renders, actions and the answer each action got from the server, dialogs, messages, role-dependent visibility | log in through the form (the session is a precondition); re-check server rules covered by API |
 | **E2E** (`tests/e2e`) | one journey across pages or roles with a user-visible outcome | be a single-page check; hide the journey in a helper |
 | **Smoke** (`tests/smoke` + one test per feature tagged `@smoke`) | "is the stand alive — does each feature work at all?" | more than one test per feature; roles of their own; stop the run for one feature |
 
-Where a case belongs follows from where its failure would point: at the server → API; at the
-screen → UI; at the seam between features, roles or apps → E2E. An E2E case names what it connects;
-with nothing to connect it is a UI case. **API + UI** is not a fourth layer but a choice for one
-feature: both layers, each covering its own side — server rules in API tests, the screen in UI
-tests — never the same thing twice.
+A case is split into scenarios — each one obligation that fails on its own — and every scenario has
+**one owner and one test**, decided by where its failure would point: the result on the screen where
+the action happened → UI; somewhere else (another feature, role or app) → E2E; on no screen (another
+input of a rule, access, the contract) → API. An E2E case names what it connects; with nothing to
+connect it is a UI case. A UI test checks the answer its own action got from the server and what the
+screen shows, so no API test proves the same thing again; a feature may have both layers, never the
+same scenario twice. A case is automated whole — every scenario — or not at all.
 
 ### Coverage — how much is tested
 
@@ -54,6 +56,7 @@ The source given for a feature decides what enters its plan:
 |---|---|
 | test cases in `<TMS>` | exactly those cases; gaps are shown, the engineer decides |
 | a story or requirements doc | every documented rule and acceptance criterion |
+| a confirmed bug | the result the bug says the feature should have; what it does now is noted, never checked |
 | only a description | the user scenarios and risks found on the live stand, rated by value and risk |
 
 Every case carries a value (main / frequent / rare scenario, or a risk), a severity (Critical /
@@ -96,9 +99,10 @@ tests/e2e/<platform>/<area>/                        journeys of an area
 tests/smoke/sign-in.smoke.spec.ts                   smoke's sign-in check (the template's); a feature's smoke test is tagged @smoke in its own folder
 src/                                           support code — clients, Page Objects, data, fixtures, reporting
 src/data/sweeps.ts                             what the sweep removes after an interrupted run
-scripts/run-tests.mjs, auth.mjs                     running the tests; the accounts (auth:check, auth:sign-in)
+scripts/run-tests.mjs, auth.mjs                     running the tests (test:*, test:failed); the accounts (auth:check, auth:sign-in)
 scripts/gate/                                       the gate (qa:gate): check.mjs and its rules by topic
-scripts/agent/                                      what the kit's skills run: env:prepare, app:add, suite:coverage
+scripts/agent/                                      what the kit's skills run: verify, plan:block, spec:draft, stand:find,
+                                                    api:types, suite:coverage, env:prepare, app:add
 ```
 
 Folders are by **feature**, never by ticket: stories come and go, features stay; tickets are links.
@@ -112,7 +116,8 @@ Folders are by **feature**, never by ticket: stories come and go, features stay;
 4. The feature's plan is written or refreshed                 (QA + the plan skill)
    from: the test cases / the story / a description → live check on the stand
    result: what will be written, what will not, and why — confirmed by the engineer
-5. Ready cases are implemented, checked by the gate, run, reported   (QA + the implement and verify skills)
+5. Ready cases are implemented, checked by the gate, proven able    (QA + the implement and verify skills)
+   to fail, run once without a retry, reviewed independently, reported
 6. Merge request → review → merge                             (QA + reviewer)
 7. The tests join the smoke / regression runs in CI           (§7)
 ```
@@ -134,10 +139,13 @@ The manual case and the autotest are one row: written first by hand, then automa
 follows the case in meaning, not word for word.
 
 **A TMS suite's coverage** is a table built fresh from the suite in `<TMS>`, the tests' case links,
-the plans and the last run: what is automated (by which layer, how it ended last time) and what is
-not and why — blocked (and what unblocks it), postponed, cannot be automated, planned but not
-written yet, not planned yet — with the date each reason was recorded. It is shown at the end of
-writing tests and on request; the Allure report shows only what ran. No TMS → no coverage table.
+the plans and the last run: what is automated (each scenario by its owner, how it ended last time),
+what is **to rework** (automated before scenarios had one owner: a scenario tested twice, to merge
+into one test when its feature is next refreshed), what is not automated and why — blocked (and what
+unblocks it), postponed, cannot be automated, planned but not written yet, not planned yet — with the
+date each reason was recorded, and what is inconsistent (a part of a case written; the gate fails
+it). It is shown at the end of writing tests and on request; the Allure report shows only what ran.
+No TMS → each plan's own scenarios instead.
 
 ## 6. Environments, roles and data
 
@@ -148,8 +156,9 @@ writing tests and on request; the Allure report shows only what ran. No TMS → 
   map is never invented.
 - **Data** — every test creates what it needs and removes it, with a recognisable marker in its
   name; leftovers of interrupted runs are swept at the start and the end of every run. A test never
-  assumes how much data a shared account holds. A state the stand cannot give honestly is shown
-  with a faked server answer, and the test says so.
+  assumes how much data a shared account holds. A case is not called blocked for missing data
+  before every account and tenant was searched (`npm run stand:find`) and a way to make it tried.
+  A state the stand cannot give honestly is shown with a faked server answer, and the test says so.
 - **Accounts** — <shared QA accounts | dedicated test users>. Shared accounts mean runs on one stand
   must not overlap.
 
@@ -172,12 +181,17 @@ serialised (<the CI's lock on the stand>).
 
 ## 8. Definition of done
 
-A test is done when its case is ready in the plan and was live-checked; the gate passes; it passed
-twice in a row on the stand; it cleans up what it created; the report shows it in the right place
-with readable steps; the plan and, when there is one, the manual case are updated.
+A test is done when its case is ready in the plan and was live-checked; one `npm run verify` passed:
+the gate, its check proven able to fail (red when the expected value is spoiled), one run on the
+stand without a retry; a review that did not write it (a new chat) found no way it passes while its
+case is broken, or its findings were fixed or answered; it cleans up what it created; the report shows
+it in the right place with readable steps; the plan and, when there is one, the manual case are
+updated.
 
 A failing test is first **healed** (locator, timing or data — the assertion stays); behaviour that
-contradicts the plan goes back to planning. A requirement change is never "fixed" in the test.
+contradicts the plan goes back to planning. A requirement change is never "fixed" in the test: what a
+test expects changes only with a quoted source — a ticket, the product's code, a commit — and without
+one it is a question to the team, the test staying as it is.
 
 ### 8a. Flaky tests — detection, quarantine, exit
 
@@ -186,10 +200,10 @@ the stand — never hidden with waits, retries in the test body or a softened as
 
 | Stage | Rule |
 |---|---|
-| **Detect** | A failed test is retried once locally, twice on CI (smoke never); one that passed on the retry shows as unstable (flaky) in the report and the run's summary, not red. A new or healed test proves itself with `--retries=0` or `--repeat-each 5`. |
+| **Detect** | A failed test is retried once locally, twice on CI (smoke never); one that passed on the retry shows as unstable (flaky) in the report and the run's summary, not red. A new or healed test passes without a retry (`npm run verify` runs once with `--retries=0`); `--repeat-each 3` confirms a suspected flaky test before its fix. |
 | **Quarantine** | Flaky in 2 consecutive nightly runs → `@flaky` with a reason comment (`// flaky: <cause> — <ticket>`); it leaves regression (and smoke) and runs in its own nightly job. |
 | **Heal** | Classify the cause first — timing / locator, data collision, the stand — and fix only that cause, keeping the assertion. |
-| **Exit** | 5 consecutive green runs → back to `@regression`, the fix noted in the plan. |
+| **Exit** | 5 consecutive green runs (or `--repeat-each 5` after the fix) → back to `@regression`, the fix noted in the plan. |
 | **Never** | `@flaky` without a reason, a fixed wait, a `try/catch` around an assertion, a quarantine older than two sprints without a ticket. |
 
 ### 8b. Known bugs — a test failing on a filed bug

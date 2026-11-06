@@ -33,6 +33,11 @@ session check: ${API_BASE_URL}/me
 - An app open to visitors that also has accounts (a shop, a portal) names a page only a signed-in user may
   open: `members only: ${UI_BASE_URL}/account`. Its home page looks the same signed in and out, so the sign-in
   smoke checks there: a visitor is sent to the sign-in page, a signed-in user stays.
+- An app whose accounts each open several tenants (stores, projects, organisations) may add one optional
+  line saying how the app lists them: `tenants: GET /api/stores → id, name` (the id and name fields of each
+  entry), or `tenants: GET /api/account → stores[].id, stores[].name` when the list is a field of the
+  answer. `npm run stand:find` then searches every account × tenant for the data a case needs before the
+  case is called blocked (read-only, each account signed in as the tests do).
 
 ## UI sign-in
 
@@ -82,6 +87,10 @@ uses a browser only for the `session-*` and `refresh-token` modes, once per run.
   - `"signed-out"` plus `await signIn()` when signing in is the case itself.
 
   `qa:gate` fails such a test that uses the shared session.
+- A saved session can hide a broken sign-in while tests are being written. So when a run checks a test
+  written or changed under a further role (not the first account), the verify skill first moves that
+  role's saved files aside (`<file>.aside` — never deleted), and the role signs in afresh once. A
+  refused sign-in (`*.failed.json`) is never moved: it stays paused.
 
 ## A refused password is never retried
 
@@ -106,6 +115,8 @@ npm run auth:check -- shop:member          # one role of one app (also: -- shop,
 npm run auth:sign-in -- shop               # sign the first account in (what the smoke checks)
 npm run auth:sign-in -- shop member        # one role; "all" for every role of the app
 npx playwright test --project=smoke:shop   # the app's sign-in smoke
+npm run stand:find -- shop --in "GET /api/stores/{tenant}/orders" --where "status=Paid"
+                                           # every account × tenant searched for stand data — read-only
 ```
 
 The sign-in smoke checks the first account only: the web app, the API session, and a signed-out
