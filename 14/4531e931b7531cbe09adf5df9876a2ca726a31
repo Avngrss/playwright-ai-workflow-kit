@@ -1,0 +1,37 @@
+package.json
+  s_44267032748145::t_fa66e4c869b09c 33-34
+scripts/agent/plan-block.mjs
+  s_44267032748145::t_68482cf48230aa 1-194
+scripts/agent/plan-draft.mjs
+  s_44267032748145::t_1923c7a89fc4a3 1-234
+scripts/agent/spec-draft.mjs
+  s_44267032748145::t_1d289fee8d3039 1-366
+scripts/agent/suite-coverage.mjs
+  s_44267032748145::t_48b465ecc2c48e 17,22
+scripts/gate/check.mjs
+  s_44267032748145::t_f4c1f68ab468f2 7
+scripts/gate/plans.mjs
+  s_44267032748145::t_09088c214134a6 14-18,21-22,177
+scripts/gate/specs.mjs
+  s_44267032748145::t_be873c6c244280 6,357-385
+src/reporting/readable-allure.reporter.ts
+  s_44267032748145::t_57d2d19bfb02f2 259
+src/reporting/tms.ts
+  s_44267032748145::t_eea07105719cc0 16-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "144531e931b7531cbe09adf5df9876a2ca726a31",
+  "prompts": {},
+  "sessions": {
+    "s_44267032748145": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_44267032748145",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
