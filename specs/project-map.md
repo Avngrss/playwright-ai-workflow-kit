@@ -42,6 +42,10 @@ go here, never values.
   service (the same sign-in page host) says `sign-in like: <app>` and writes only what differs (its
   address, its client id, its own login and password when the shared account is not let in)
 - `npm run auth:check` shows which login entries are still empty in `.env`
+- optional, in an app's own block: `tenants: GET /api/<list> → id, name` — how the app lists the tenants an
+  account opens (stores, projects, organisations): each entry's id and name fields, or
+  `<list>[].id, <list>[].name` when the list is a field of the answer. `npm run stand:find` searches every
+  account × tenant with it (`scripts/agent/stand-find.mjs`)
 
 ```auth
 platform: todomvc

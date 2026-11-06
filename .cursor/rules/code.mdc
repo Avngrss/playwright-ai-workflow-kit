@@ -1,16 +1,20 @@
 ---
-description: Test and support code — waiting for a state, real expected values, locator priority, readable code, one home per kind and no repeats, when an abstraction earns its cost, sorting and filtering checks, readable failures and verdicts, the run summary, the Allure report, flaky tests and quarantine, healing
+description: Test and support code — waiting for a state, real expected values and what a route names, locator priority, readable code, one home per kind (answer schemas and answer paths in the client) and no repeats, when an abstraction earns its cost, sorting and filtering checks, readable failures and verdicts, the run summary and its next line, the Allure report, flaky tests and quarantine, healing
 globs: tests/**, src/**
 alwaysApply: false
 ---
 
 # Code
 
+Read whole before writing new code; for an edit of existing code (a heal, a refresh, a triage fix), the
+sections its changed lines meet.
+
 ## Waiting
 
 - Never `waitForTimeout`. Wait for a state: a web-first assertion, a locator, a URL (in a spec — a Page Object
-  waits for what the screen shows, `ui.mdc`), or the answer the screen
-  gives no other sign of (`whenAnswered`, `ui.mdc`).
+  waits for what the screen shows, `ui.mdc`), the action's answer the case takes as truth (the spec's
+  `answerTo`, `specs.mdc`), the answer a Page Object's screen gives no other sign of (`whenAnswered`,
+  `ui.mdc`), or a block that changes in place (`expect.poll(() => <page>.read(), { message })`).
 - Never raise a timeout or retries as the only change.
 
 ## Checks
@@ -33,6 +37,10 @@ alwaysApply: false
   product's calculation; no defensive branches for what a check covers. Prove "created" by the test's own
   entity (its id, its `AQA` name), "nothing created" by no create request leaving the page — never by a
   shared list compared before and after.
+- What a route names is what the test checks — the action's answer by `answerTo(…, { has | check })`, the
+  screen by the token's kind — nothing more, nothing less; never a second read of what the answer held
+  (`plans.mdc` §Routes). A stand-data rule says what the server could get wrong; one restating the answer
+  ("the list has items") checks nothing.
 
 ## Locators
 
@@ -84,17 +92,18 @@ parsing, sync or comparison. In doubt, it goes to its home.
 
 | Responsibility | Lives in |
 |---|---|
-| reusable checks, invariants, `shown<Block>` expectations, display helpers, response schemas | `src/assertions/<app\|shared>/` |
+| reusable checks, invariants, `shown<Block>` expectations, display helpers, stand-data rules handed to `answerTo(…, { check })` | `src/assertions/<app\|shared>/` |
 | locators, actions, readers | `src/pages/<app>/`, `src/components/<app>/` |
-| what a page sends or receives, when a test checks it | the spec via `captureRequests` / `whenAnswered`; request patterns in `src/setup/<app>/` |
+| what a page sends or receives, when a test checks it | the spec: the action's answer via `answerTo` / `answersTo`, sent requests via `captureRequests`; other request patterns in `src/setup/<app>/` |
 | preparing the browser before a page opens; stand lookups, multi-step preparation without teardown | `src/setup/<app>/` |
 | payloads, form values, datasets, unique values | `src/data/builders\|datasets\|generators/` |
-| an API area's requests and body types | `src/api/clients/<app>/` |
-| what two or more tests stand on, disposable records, bound clients | `src/fixtures/<app>/data.fixture.ts` |
+| an API area's requests, their answer schemas (`json(…, schema)`) and the answer paths the page sends (`answerPath("POST", …, schema)`); the app's types from `npm run api:types` (`contract.client.ts`) | `src/api/clients/<app>/` |
+| what two or more tests stand on, disposable records, bound clients, a rule's oracle | `src/fixtures/<app>/data.fixture.ts` |
 | logging (the only allowed console output) / redaction beyond `maskSecrets` | `src/logging/safe-logger.helper.ts` / `src/security/` |
 
 No second helper for the same responsibility — extend the existing one. An assertion helper computes from
-data the spec already has; one that fetches something is no assertion helper.
+data the spec already has; its only request is its rule's oracle, handed in — one that fetches anything else
+is no assertion helper.
 
 ## The same thing twice → one helper in its home
 
@@ -105,7 +114,7 @@ fixture):
 |---|---|---|
 | a lookup or constant over one resource (an id by name) | that resource's client file | `searchOptions(criteria).category("Books")` |
 | a default request body | the builder, called inside the client | `productSearch.search({ categoryIds: [id] })` |
-| the response's body type | the client (`json<T>(…)`) | no `expectJson<T>(…)` in specs |
+| the answer's schema (`json<T>(…)` only in an app without generated types) | the client | ``json(request.get(`orders/${id}`, { headers }), order)``, no `expectJson<T>(…)` in specs |
 | reading, acting on or addressing a page (its URL and query format) | the Page Object | `productSearchPage.open({ categoryIds: [id] })` |
 | how a block shows data, a rule its figures follow — even in one test | `src/assertions/<app>/` | `shownDelivery(order)`, `expectRowsAddUp(figures)` |
 | a check used by 2+ specs | `src/assertions/<shared\|app>/` | `expectEveryItemMatches(…)` |
@@ -186,16 +195,20 @@ template's `src/assertions/shared/sort-filter.ts` — never a comparison loop in
 | Verdict | Causes | First look |
 |---|---|---|
 | Known bug looks fixed — retest the ticket | a test of `specs/known-bugs.md` passed | the ticket, by hand |
-| Possible bug — retest by hand | check did not match · element not found · server error | the step by hand against the case: as the run saw → a bug or a changed requirement; as the case expects → the test or its data; another element name → its Page Object |
+| Possible bug — retest by hand | check did not match · element not found · server error · request did not match (the page sent other data) · answer did not match (the server answered the action otherwise) · screenshot differs | the step by hand against the case (the Network tab on the action's request): as the run saw → a bug or a changed requirement; as the case expects → the test or its data; another element name → its Page Object |
+| Not a bug — the product changed: refresh the plan | API changed (the contract no longer lists the path; a field the tests read is missing or retyped) · screen changed (the text the test looks for, reworded) — only under a committed test | the finding it names; the summary's "Plans to refresh" |
 | Not a bug — the stand or its data | stand data · stand unavailable (no answer, 502–504) · sign-in or access (401/403) · out of time · cleanup | the item, page or request named; one sign-in by hand, never a retried password; restore the data or change the lookup; rerun once the stand is up |
-| Not a bug — the test needs fixing | test code (a TypeError in the suite's code) · element not found in a spec not committed yet (new or changed — its locator is not proven on the stand) | the test's own frame; the locator, live |
+| Not a bug — the test needs fixing | test code (a TypeError in the suite's code) · element not found in a spec not committed yet (its locator not proven on the stand) · screenshot without a baseline | the test's own frame; the locator, live |
 | Known bug — waiting for the fix | a known-bug test failing at its step | nothing |
 
 - Three colours only: green passed, red failed, grey a known bug still failing at its step; a pass on the
   retry stays green, marked unstable. Allure's Categories tab lists the verdicts in that order, split by
-  cause, plus "Unstable — passed on a retry".
+  cause, plus "Unstable — passed on a retry". A test the stand failed runs again alone after the run (its
+  second pass): failed again → the stand; passed → the stand was slow, nothing to do.
 - **The run's summary** — in the terminal, `reports/run-summary.md` (with what to check by hand) and
-  `reports/run-summary.json` — lists possible bugs first and tests whose cleanup failed; healing starts there.
+  `reports/run-summary.json` — lists possible bugs first, tests whose cleanup failed and the plans to refresh,
+  and ends with the line to give the agent: one or two red tests → `heal the red tests: <spec>:<line> …`, three
+  or more → `triage the run <link>` (`01-workflow.mdc` §Which path).
 - Intentional output only through `safeLogger`; never secrets, tokens, cookies or full payloads.
 
 ## The Allure report
@@ -224,14 +237,15 @@ template's `src/assertions/shared/sort-filter.ts` — never a comparison loop in
 A flaky test passes and fails on the same code and stand — a defect of the test, its data or the stand,
 never of the assertion, and never hidden by waits, retries in the test body or a softened check.
 - `playwright.config.ts` retries once locally, twice on CI, the E2E project once, smoke never; a pass on the
-  retry is reported unstable. A test written or healed now passes without it: `--retries=0`, or
-  `--repeat-each 5` locally. One timeout once is not yet "the stand was slow": `--repeat-each 3` first.
+  retry is reported unstable. A test written or healed now passes without it (`npm run verify` runs once with
+  `--retries=0`). `--repeat-each 3` only confirms, before its fix, a test that passed on a retry or fails now
+  and then — never a plainly red one.
 - Classify, fix only that: **timing / locator** ("not found / not visible / detached", passes on rerun) → the
   right condition, a stable locator in the Page Object · **data collision** (fails only in parallel or twice
   in a row, "already exists", a wrong count, someone else's record) → unique disposable data, cleanup that
   verifies, the same lock for a shared state; "found X, which tests change" → take its lock or leave it out
-  of the lookup · **the stand** (whole runs fail, every request times out, 5xx) → no test change, a change-log
-  note, rerun when it is up.
+  of the lookup · **the stand** (whole runs fail, every request times out, 5xx) → its second pass decides:
+  failed again → no test change, rerun when the stand is up; passed → the stand was slow, nothing to do.
 - **Quarantine** when the cause cannot be fixed now (it needs data or a team decision) or the test was flaky
   in 2 consecutive nightly runs: `@flaky` **instead of** `@regression` (a smoke test drops `@smoke` too) with
   `// flaky: <cause> — <ticket or plan note>` above it; it runs only in `npm run test:flaky` (nightly, allowed
@@ -245,7 +259,9 @@ never of the assertion, and never hidden by waits, retries in the test body or a
 Only when the plan still holds (`plans.mdc` §When the product changes). Evidence first: the command, the
 error excerpt (no secrets), the spec, the run summary and the failure's verdict; a locator suspicion is
 re-inspected live (`live-app.mdc`), never patched from a guess. **Allowed**: a locator in its Page Object, a
-real readiness wait, a payload matching the documented contract, fixture wiring, idempotent cleanup.
-**Forbidden**: `waitForTimeout`, a timeout or retries as the only change, softening a check, a `try/catch`
-around a check, new coverage, a guessed status or text, tidying files unrelated to the failure. Done =
-`npm run test:app -- <app> <layer> <spec> --retries=0` passes, then `npm run qa:gate`.
+real readiness wait, a payload matching the documented contract, fixture wiring, idempotent cleanup, a right
+answer moved (the same fields at another path: the client's answer path and the plan's route). **Forbidden**:
+`waitForTimeout`, a timeout or retries as the only change, softening a check, a `try/catch` around a check, new
+coverage, a guessed status or text, tidying files unrelated to the failure. "The test needs fixing" changes no
+plan line. Done = `npm run verify -- <app> <spec>:<line>` green (`--can-fail` only for a changed check,
+`02-guardrails.mdc` §Never fitted to the product). `npm run test:failed` only reproduces before a change.

@@ -1,11 +1,16 @@
+import type { ContractFinding, ScreenFinding } from "./product-change";
+
 /**
  * Every failure gets a verdict (is it a bug, and who acts), its likely cause and what to check by hand,
  * read from where and how it failed. The verdict is a hint for the first look, never the answer:
- * whether it is a bug is decided by a retest by hand. The same words reach the report (its first
- * line and its Categories tab, report-categories.mjs) and the run's summary.
+ * whether it is a bug is decided by a retest by hand — and whether a change of the product was
+ * intended, by the agent's triage of the run. The same words reach the report (its first line and its
+ * Categories tab, report-categories.mjs) and the run's summary.
  */
 
 export type Cause =
+  | "API changed"
+  | "screen changed"
   | "known bug looks fixed"
   | "known bug"
   | "stand data"
@@ -18,12 +23,15 @@ export type Cause =
   | "screenshot differs"
   | "out of time"
   | "element not found"
+  | "request did not match"
+  | "answer did not match"
   | "check did not match";
 
 /** The verdicts, in the order the report and the summary list them — who acts first. */
 export const VERDICTS = [
   "Known bug looks fixed — retest the ticket",
   "Possible bug — retest by hand",
+  "Not a bug — the product changed: refresh the plan",
   "Not a bug — the stand or its data",
   "Not a bug — the test needs fixing",
   "Known bug — waiting for the fix",
@@ -31,7 +39,11 @@ export const VERDICTS = [
 export type Verdict = (typeof VERDICTS)[number];
 
 const VERDICT_OF: Record<Cause, Verdict> = {
+  "API changed": "Not a bug — the product changed: refresh the plan",
+  "screen changed": "Not a bug — the product changed: refresh the plan",
   "known bug looks fixed": "Known bug looks fixed — retest the ticket",
+  "request did not match": "Possible bug — retest by hand",
+  "answer did not match": "Possible bug — retest by hand",
   "check did not match": "Possible bug — retest by hand",
   "element not found": "Possible bug — retest by hand",
   "server error": "Possible bug — retest by hand",
@@ -70,13 +82,17 @@ export interface FailureFacts {
   sessionEnded: boolean;
   /** The test's spec is not committed yet (new or changed): it has not been green on the stand as it is now. */
   unproven?: boolean;
+  /** A request answered 404/405, read against the app's contract (product-change.ts). */
+  contract?: ContractFinding;
+  /** The page showed, reworded, the text the test looked for (product-change.ts). */
+  screen?: ScreenFinding;
 }
 
 export interface Explained {
   verdict: Verdict;
   cause: Cause;
   checkByHand: string;
-  /** A line a reader needs besides the cause — a known bug that is not what failed this time. */
+  /** A line a reader needs besides the cause — a known bug that is not what failed this time, what the API's contract or the page says. */
   note?: string;
 }
 
@@ -100,7 +116,28 @@ function whereTo({ page, message }: FailureFacts): string {
   return opened ?? request ?? "the app";
 }
 
+const REFRESH = "Not a retest: the feature's plan needs a refresh — the run summary's last line says what to tell the agent.";
+
 const RULES: Rule[] = [
+  // First: a fact from the product's own contract or page outweighs how the failure reads — under a test
+  // that has been green only: a new or changed one (unproven) cannot see the product change under it.
+  {
+    cause: "API changed",
+    matches: ({ contract, unproven }) => !!contract && !contract.listed && !unproven,
+    checkByHand: ({ contract }) =>
+      `The API's contract (${contract?.docs}) no longer lists ${contract?.path}${contract?.similar ? ` — likely moved to ${contract.similar}` : " and nothing like it — removed? Ask the team"}. ${REFRESH}`,
+  },
+  {
+    cause: "screen changed",
+    matches: ({ screen, unproven }) => !!screen && !unproven,
+    checkByHand: ({ screen }) => `The page shows "${screen?.shown}" where the test looks for "${screen?.expected}". ${REFRESH}`,
+  },
+  {
+    cause: "API changed",
+    matches: ({ message, unproven }) => /a field the tests read is missing or retyped/.test(message) && !unproven,
+    checkByHand: () =>
+      `The answer lost a field the tests read, or holds it as another type (the message names it): npm run api:types, then npm run typecheck names every place. ${REFRESH}`,
+  },
   {
     cause: "stand data",
     // The helper's words, or the older "(stand data, see the plan)" — never a check that only names its data.
@@ -113,7 +150,7 @@ const RULES: Rule[] = [
     matches: ({ message, sessionEnded }) =>
       sessionEnded ||
       // The browser's sign-in, the API's own (a login request, a token endpoint), a paused account, a map line to fix.
-      /did not get signed in|was not signed in by|got no token from the token endpoint|not tried again — repeated wrong passwords|left the sign-in form|did not accept the session|Login step .* found nothing|has no rights for it|answered 40[13] /.test(message),
+      /did not get signed in|was not signed in by|got no token from the token endpoint|not tried again — repeated wrong passwords|left the sign-in form|"signed in when:" does not match|did not accept the session|Login step .* found nothing|has no rights for it|answered 40[13] /.test(message),
     checkByHand: () =>
       "Sign in once by hand as this test's account in a fresh browser — never retry a failing password: each wrong one counts toward a lock. Signed in but refused (403) → compare the account's rights with the case's role.",
   },
@@ -172,6 +209,26 @@ const RULES: Rule[] = [
       return `Open ${whereTo(facts)}: is ${element} there? Under another name or in another place → the test's locator needs updating. Not there → the screen changed: a bug, or a changed requirement — check the ticket.`;
     },
   },
+  // The page sent other data than the case expects (the form's request, a period's query) — the front
+  // end's part, told apart from the server's answer.
+  {
+    cause: "request did not match",
+    matches: ({ message }) => /^The request the action sent —/m.test(message),
+    checkByHand: (facts) => {
+      const request = /The request the action sent — (\S+ \S+)/.exec(facts.message)?.[1] ?? "the request the action sends";
+      return `Repeat ${stepOf(facts)} by hand with the browser's developer tools open (Network) and look at what the page sent in ${request}. It holds what the case expects → the test's expectation or data is wrong; it does not → the screen sends the wrong data: a front-end bug — give the developers the request and the time of the run.`;
+    },
+  },
+  // After the sign-in, unavailable and 5xx rules: those answers keep their own causes. What is left is
+  // the server answering the action with another status or other data than the case expects.
+  {
+    cause: "answer did not match",
+    matches: ({ message }) => /^The server's answer to the action —|The page's request \S+ answered/m.test(message),
+    checkByHand: (facts) => {
+      const endpoint = /(?:The server's answer to the action — (?:[A-Z]+ )?|The page's request )(\S+)/.exec(facts.message)?.[1] ?? "the request the action sends";
+      return `Repeat ${stepOf(facts)} by hand with the browser's developer tools open (Network) and look at the answer of ${endpoint}. It holds what the case expects → the test's expectation or data is wrong; it does not → the server answered the action wrongly: a bug — give the developers the request and the time of the run.`;
+    },
+  },
 ];
 
 const CHECK_DID_NOT_MATCH: Rule = {
@@ -197,7 +254,7 @@ export function explainFailure(facts: FailureFacts): Explained {
     return explained("known bug", `Nothing to do while ${bug.ticket} is open: it still fails at step "${bug.step}". When this test passes, retest the ticket.`);
   }
   const rule = RULES.find(({ matches }) => matches(facts)) ?? CHECK_DID_NOT_MATCH;
-  const note = bug ? `Known bug ${bug.ticket} is at step "${bug.step}" — this failure is not it.` : undefined;
+  const note = [bugElsewhere(facts), stillListed(facts), notGreenYet(facts)].filter(Boolean).join(" ") || undefined;
   // A test never green as it is now: an element it cannot find is first its own locator, not a bug.
   if (rule.cause === "element not found" && facts.unproven) {
     return {
@@ -208,4 +265,25 @@ export function explainFailure(facts: FailureFacts): Explained {
     };
   }
   return explained(rule.cause, rule.checkByHand(facts), note);
+}
+
+const bugElsewhere = ({ knownBug }: FailureFacts): string | undefined =>
+  knownBug && `Known bug ${knownBug.ticket} is at step "${knownBug.step}" — this failure is not it.`;
+
+/** A 404/405 on a path the contract still lists: the server breaks its own contract — or, through an id in the path, the item is gone. */
+function stillListed({ contract }: FailureFacts): string | undefined {
+  if (!contract?.listed) return undefined;
+  const throughId = contract.listed.includes("{");
+  return `The API's contract (${contract.docs}) still lists ${contract.listed}${throughId ? " — the item asked for may be gone (stand data); if not," : " —"} the server breaks its own contract.`;
+}
+
+/** What the contract or the page says under a test never green as it is now — a lead for its heal, not a product change. */
+function notGreenYet({ unproven, contract, screen }: FailureFacts): string | undefined {
+  if (!unproven) return undefined;
+  const lead = screen
+    ? `the page shows "${screen.shown}" where the test looks for "${screen.expected}"`
+    : contract && !contract.listed
+      ? `the API's contract (${contract.docs}) does not list ${contract.path}${contract.similar ? ` — it lists ${contract.similar}` : ""}`
+      : undefined;
+  return lead && `A new or changed test, not green on the stand yet — so not read as a product change: ${lead}.`;
 }

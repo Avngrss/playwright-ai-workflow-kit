@@ -6,6 +6,7 @@
 const VERDICTS = [
   "Known bug looks fixed — retest the ticket",
   "Possible bug — retest by hand",
+  "Not a bug — the product changed: refresh the plan",
   "Not a bug — the stand or its data",
   "Not a bug — the test needs fixing",
   "Known bug — waiting for the fix",

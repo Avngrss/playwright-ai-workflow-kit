@@ -39,8 +39,25 @@ function shapeOf(value: string): string {
   return `${value.slice(0, MAX_VALUE_LENGTH)} …`;
 }
 
+// A session token is never in .env — the sign-in issues it — so it is known by its shape: the value
+// after "Bearer " (Playwright's call log prints the Authorization header of a request that timed out)
+// and a JWT (three dot-separated base64url parts starting with "eyJ").
+const BEARER = /(\bBearer\s+)[A-Za-z0-9\-._~+/]+=*/gi;
+const JWT = /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g;
+// Basic credentials: base64 of "login:password" — masked only when it decodes to that shape ("Basic settings" stays).
+const BASIC = /(\bBasic\s+)([A-Za-z0-9+/]{4,}={0,2})/gi;
+const isCredentials = (value: string) => /^[\x20-\x7e]+:[\x20-\x7e]*$/.test(Buffer.from(value, "base64").toString("latin1"));
+
+/** The text with every session token — a Bearer value, a JWT, Basic credentials — replaced. */
+export function maskTokens(text: string): string {
+  return text
+    .replace(BEARER, "$1[token]")
+    .replace(JWT, "[token]")
+    .replace(BASIC, (whole: string, head: string, value: string) => (isCredentials(value) ? `${head}[token]` : whole));
+}
+
 export function maskSecrets(text: string): string {
-  return text.replace(SECRET_PARAMS, "$1***");
+  return maskTokens(text.replace(SECRET_PARAMS, "$1***"));
 }
 
 /** What the call log knows that the message does not: the element waited for, the request sent. */

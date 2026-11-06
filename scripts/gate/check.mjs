@@ -4,18 +4,22 @@
  * topic in this folder (scripts/gate/):
  *   patterns.mjs  one-line rules: what specs, Page Objects, clients and all test code may not do
  *   layout.mjs    where plans, specs and support code live
- *   specs.mjs     tags and scope, quarantine reasons, hooks, mocks, case links
+ *   specs.mjs     tags and scope, quarantine reasons, hooks, mocks, case links, a skeleton spec:draft left
  *   support.mjs   the fixture chain, roles from the map, a sweep for every disposable fixture
  *   models.mjs    Page Objects and components: size, state, second names, unused members, siblings repeating their base
- *   repeats.mjs   the same thing twice: copied lines, the same code in two apps, a case automated twice
- *   cases.mjs     a manual case automated whole or not at all, on the layers its plan says it needs
+ *   repeats.mjs   the same thing twice: copied lines, the same code in two apps, a scenario automated twice
+ *   cases.mjs     a manual case automated whole or not at all: every scenario of it with its test; a Blocked one says where
+ *                 the tests looked; browsers, phone and screenshots decided
+ *   routes.mjs    one scenario, one owner, one test, proven as its route says (docs/Layer Routing Algorithm.md)
  *   reading.mjs   a UI test reads as its case: no data shaped in the spec, a step is one action and its checks
  *   pointers.mjs  every rule and skill the code names exists in .cursor/
  *   advice.mjs    warnings: size, readability
  */
+import fs from "node:fs";
+import path from "node:path";
 import { adviceRules } from "./advice.mjs";
 import { caseRules } from "./cases.mjs";
-import { collectFiles, createReport } from "./context.mjs";
+import { collectFiles, createReport, ROOT } from "./context.mjs";
 import { layoutRules } from "./layout.mjs";
 import { checkPatterns } from "./patterns.mjs";
 import { repeatRules } from "./repeats.mjs";
@@ -23,11 +27,15 @@ import { specRules } from "./specs.mjs";
 import { supportRules } from "./support.mjs";
 import { modelRules } from "./models.mjs";
 import { readingRules } from "./reading.mjs";
+import { routeRules } from "./routes.mjs";
 import { pointerRules } from "./pointers.mjs";
 
 const files = collectFiles();
 const report = createReport();
-for (const rule of [checkPatterns, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
+// A cut-off `npm run verify` leaves its spoiled lines listed here: a test checking a wrong value is never committed.
+if (fs.existsSync(path.join(ROOT, "reports", "verify-spoils.json")))
+  report.fail(null, "reports/verify-spoils.json — a cut-off `npm run verify` left spoiled lines in the specs: `npm run verify -- --restore` puts them back");
+for (const rule of [checkPatterns, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
 
 console.log(`qa:gate — ${files.specs.length} spec(s), ${files.support.length} support file(s)`);
 for (const warning of report.warnings) console.log(`! ${warning}`);

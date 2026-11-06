@@ -1,23 +1,25 @@
 /**
  * The data behind a TMS suite's coverage table (the verify skill (Coverage)): for every manual
- * case the tests link — the tests (title, layer, file) and how they ended in the last run; for every
- * case a plan names — its status, the layers it needs and, when it is not automated, the reason and
- * since when; and whether it is automated — whole, on every layer it needs — or not. A case tests
- * link while its plan keeps it in Not now, or covered on fewer layers than it needs, is
- * `inconsistent`: the plan or the tests are to be fixed (the gate fails it too). The suite's own case
- * list is the agent's part (a script cannot call the TMS). Read-only; JSON.
+ * case the tests link — the tests (title, owner folder, file, scenario) and how they ended in the last
+ * run (some of them not run → `not run`, with `ran: "<k> of <n>"`); for every case a plan names — its
+ * status, its scenarios with their owners and routes and, when it is not automated, the reason and
+ * since when; and whether it is automated — whole, every scenario with its test — or not. A scenario
+ * two tests prove (written before routing) is `to rework`; a case tests link while its plan keeps it
+ * in Not now, or with a scenario no test covers, is `inconsistent`: the plan or the tests are to be
+ * fixed (the gate fails it too). A plan with no TMS ids is matched by title (`withoutTms`). The
+ * suite's own case list is the agent's part (a script cannot call the TMS). Read-only; JSON.
  *
  *   npm run suite:coverage                 every app
  *   npm run suite:coverage -- --app crm    one app — a TMS suite belongs to one app's TMS project
  *
  * Cases are matched by their number: the `{id}` of the app's case link (§Test cases (TMS):
  * `- case link <app>: <URL with {id}>`, one per app — each app has its own TMS project) and the
- * plans' `TMS: TC-123` both become "123".
+ * plans' `TMS: TC-123` (or `PROJ-T123`) both become "123".
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { keepsOut, readPlans } from "../gate/plans.mjs";
+import { keepsOut, readPlans, scenarioOf } from "../gate/plans.mjs";
 
 const ROOT = process.cwd();
 const read = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
@@ -46,7 +48,7 @@ function keyFromUrl(url, app) {
 }
 
 const cases = {};
-const entry = (key) => (cases[key] ??= { tests: [], lastRun: "not run", plan: null, needs: null, notNow: [] });
+const entry = (key) => (cases[key] ??= { tests: [], lastRun: "not run", plan: null, needs: null, scenarios: [], notNow: [] });
 
 // 1. Tests and the cases they link — from Playwright's own list, so every test counts, run or not.
 const listed = JSON.parse(execSync("npx playwright test --list --reporter=json", { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 }));
@@ -55,16 +57,19 @@ const walk = (suite) => [
   ...(suite.suites ?? []).flatMap(walk),
 ];
 const seen = new Set();
+// Every test once, linked or not — a plan written from requirements (no TMS ids) is matched by title (§5).
+const everyTest = new Map();
 for (const test of listed.suites.flatMap(walk)) {
   const app = test.file.split("/")[2];
   if (onlyApp && app !== onlyApp) continue;
+  everyTest.set(`${app}|${test.file}|${test.title}`, { app, title: test.title, file: test.file, layer: test.file.split("/")[1]?.toUpperCase() ?? "?" });
   for (const link of test.annotations.filter((annotation) => annotation.type === "tms" && annotation.description)) {
     const key = keyFromUrl(link.description, app);
     const id = `${key}|${test.file}|${test.title}`;
     if (seen.has(id)) continue; // the same spec in several projects
     seen.add(id);
     const layer = test.file.split("/")[1];
-    entry(key).tests.push({ title: test.title, layer: layer?.toUpperCase() ?? "?", app, file: test.file, url: link.description });
+    entry(key).tests.push({ title: test.title, layer: layer?.toUpperCase() ?? "?", scenario: scenarioOf(test.title), app, file: test.file, url: link.description });
   }
 }
 
@@ -72,28 +77,48 @@ for (const test of listed.suites.flatMap(walk)) {
 const resultsDir = path.join(ROOT, "reports", "allure", "results");
 const rank = { failed: 4, broken: 3, skipped: 2, unknown: 1, passed: 0 };
 let lastRunAt = null;
+// The worst result of each test title in the last run, for the plans with no TMS ids (§5).
+const ranByTitle = new Map();
 for (const file of fs.existsSync(resultsDir) ? fs.readdirSync(resultsDir).filter((name) => name.endsWith("-result.json")) : []) {
   const result = JSON.parse(read(path.join(resultsDir, file)));
   const app = (result.labels ?? []).find((label) => label.name === "platform")?.value;
   if (onlyApp && app !== onlyApp) continue;
   if (result.start && (!lastRunAt || result.start > lastRunAt)) lastRunAt = result.start;
+  const before = ranByTitle.get(`${app}|${result.name}`);
+  if (!before || rank[result.status] > rank[before]) ranByTitle.set(`${app}|${result.name}`, result.status);
   for (const link of (result.links ?? []).filter((item) => item.type === "tms" && item.url)) {
     const known = cases[keyFromUrl(link.url, app)];
     if (!known) continue;
+    (known.ranTitles ??= new Set()).add(result.name);
     const previous = known.lastRun in rank ? known.lastRun : null;
     if (previous === null || rank[result.status] > rank[previous]) known.lastRun = result.status;
   }
 }
+// A case is as good as its worst test — and a test that did not run proves nothing: when only some of
+// a case's tests ran, a case none of them failed reads "not run", never "passed".
+for (const known of Object.values(cases)) {
+  const ranTitles = known.ranTitles ?? new Set();
+  delete known.ranTitles;
+  const ran = known.tests.filter(({ title }) => ranTitles.has(title)).length;
+  if (ran && ran < known.tests.length) {
+    known.ran = `${ran} of ${known.tests.length}`;
+    if (known.lastRun !== "failed" && known.lastRun !== "broken") known.lastRun = "not run";
+  }
+}
 
 // 3. What the plans say about each case: a planned case's status and the layers it needs; a "Not now"
-//    line's reason and date (scripts/gate/plans.mjs reads both, as the gate does).
+//    line's reason and date (scripts/gate/plans.mjs reads both, as the gate does) — the reason without
+//    its "· searched:" tail, which stays in the plan (`searched` in `notNow`).
 const plans = readPlans(ROOT, onlyApp);
 const unreadable = plans.flatMap(({ plan, unreadable: lines }) => lines.map((line) => ({ plan, line })));
 for (const { plan, cases: planned, notNow } of plans) {
-  for (const { ids, title, status, needs } of planned) {
+  // A plan written before routing has no `Route:` lines: no routes, the scenario from its title.
+  for (const { ids, title, scenario = scenarioOf(title), level, status, needs, routes = [] } of planned) {
     for (const id of ids) {
       entry(id).plan ??= { plan, title, status };
+      entry(id).planned = true;
       entry(id).needs ??= needs;
+      if (routes.length) entry(id).scenarios.push({ scenario, title, owner: level, status, route: routes.map(({ line }) => line).join(" | ") });
     }
   }
   for (const line of notNow) {
@@ -105,19 +130,66 @@ for (const { plan, cases: planned, notNow } of plans) {
 }
 
 // 4. Whether each case is automated — whole, never in part:
-//    automated     — tests link it on every layer it needs (`needs`, from its plan; any layer when unsaid),
-//                    and no Not now line keeps it out ("Covered by …" lines keep nothing out);
+//    automated     — every scenario of it has one test, in its owner's folder (a plan written before
+//                    routing: tests on every layer its `needs` names), and no Not now line keeps it out
+//                    ("Covered by …" lines keep nothing out);
+//    to rework     — automated, but written before routing: a scenario has two tests (an API and a UI
+//                    one — `twice`), or its plan has no routes yet; the feature's first refresh routes
+//                    it and reworks its tests (`rework` says which);
 //    not automated — no test links it; the plan's Not now line or status says why;
-//    inconsistent  — tests link it while its plan keeps it in Not now, or on fewer layers than it
-//                    needs (`missing`): the plan or the tests are wrong — the gate fails it too.
-const summary = { automated: 0, "not automated": 0, inconsistent: 0 };
+//    inconsistent  — tests link it while its plan keeps it in Not now, a scenario has no test, or a
+//                    test sits outside its scenario's owner (`missing`): the gate fails it too.
+const summary = { automated: 0, "to rework": 0, "not automated": 0, inconsistent: 0 };
 for (const known of Object.values(cases)) {
   const layers = [...new Set(known.tests.map((test) => test.layer))];
   known.layers = layers;
-  known.missing = known.needs && layers.length ? known.needs.filter((layer) => !layers.includes(layer)) : [];
+  const perScenario = new Map();
+  for (const test of known.tests) perScenario.set(test.scenario, [...(perScenario.get(test.scenario) ?? []), test]);
+  const ready = known.scenarios.filter(({ status }) => /^ready/i.test(status ?? ""));
+  if (ready.length) {
+    known.missing = ready.filter(({ scenario }) => !perScenario.has(scenario)).map(({ scenario, title }) => scenario || title);
+    known.wrongOwner = ready.flatMap(({ scenario, owner }) => (perScenario.get(scenario) ?? []).filter((test) => owner && test.layer !== owner).map((test) => test.title));
+  } else {
+    known.missing = known.needs && layers.length ? known.needs.filter((layer) => !layers.includes(layer)) : [];
+    known.wrongOwner = [];
+  }
+  known.twice = [...perScenario].filter(([, tests]) => tests.length > 1).map(([scenario]) => scenario || "the case");
   known.keptOut = known.notNow.filter(keepsOut).length > 0;
-  known.coverage = !layers.length ? "not automated" : known.keptOut || known.missing.length ? "inconsistent" : "automated";
+  // A planned case whose plan has no routes yet was written before routing — whatever Not now line
+  // (a "Covered by …") the same id also has.
+  const unrouted = !known.scenarios.length && known.planned === true;
+  delete known.planned;
+  known.rework = [...(known.twice.length ? [`tested twice: ${known.twice.join(", ")}`] : []), ...(unrouted ? ["not routed"] : [])];
+  known.coverage = !layers.length
+    ? "not automated"
+    : known.keptOut || (layers.length && known.missing.length) || known.wrongOwner.length
+      ? "inconsistent"
+      : known.rework.length
+        ? "to rework"
+        : "automated";
   summary[known.coverage]++;
+}
+
+// 5. Plans written from requirements (no TMS ids): each ready scenario matched to its test by title,
+//    as the gate matches them — the coverage of a feature no TMS holds.
+const withoutTms = [];
+for (const { plan, app, cases: planned, notNow } of plans) {
+  for (const entry of planned.filter(({ ids }) => ids.length === 0)) {
+    const tests = [...everyTest.values()].filter((test) => test.app === app && test.title === entry.title);
+    const ran = tests.map((test) => ranByTitle.get(`${app}|${test.title}`) ?? "not run");
+    withoutTms.push({
+      plan,
+      title: entry.title,
+      owner: entry.level,
+      status: entry.status,
+      tests: tests.map(({ title, layer, file }) => ({ title, layer, file })),
+      lastRun: ran.find((status) => status === "failed" || status === "broken") ?? (ran.length && ran.every((status) => status === "passed") ? "passed" : "not run"),
+      coverage: !tests.length ? "not automated" : entry.level && tests.some((test) => test.layer !== entry.level) ? "inconsistent" : "automated",
+    });
+  }
+  for (const line of notNow.filter(({ ids }) => ids.length === 0)) {
+    withoutTms.push({ plan, title: line.title, status: line.status, since: line.since, reason: line.reason, tests: [], lastRun: "not run", coverage: "not automated" });
+  }
 }
 
 console.log(
@@ -130,6 +202,7 @@ console.log(
       plans: plans.map(({ plan }) => plan),
       summary,
       cases,
+      withoutTms,
       unreadableNotNowLines: unreadable,
     },
     null,

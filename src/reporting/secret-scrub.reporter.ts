@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 import type { Reporter, TestCase, TestResult } from "@playwright/test/reporter";
+import { maskTokens } from "./readable-error";
 
 /**
  * Takes every secret of .env out of what a test leaves behind — its trace (trace.zip: the values an
@@ -10,7 +11,11 @@ import type { Reporter, TestCase, TestResult } from "@playwright/test/reporter";
  * value is replaced with "[secret]" in every form it can take there (as typed, JSON-escaped,
  * URL- and form-encoded, inside an HTTP Basic header). Runs first in playwright.config.ts, and
  * synchronously, so no reporter sees it before.
- * Secrets: every .env value whose name says PASSWORD, SECRET, TOKEN or KEY (at least 4 characters).
+ * Secrets: every .env value whose name says PASSWORD, SECRET, TOKEN or KEY (at least 4 characters), and
+ * every session token by its shape (a Bearer value, a JWT, Basic credentials — readable-error.ts
+ * `maskTokens`): the sign-in issues those, so .env never holds them, yet a request that times out prints
+ * its Authorization header in the call log. The test's errors and output are masked too, before the
+ * list, HTML and Allure reporters print them.
  */
 const SECRET_NAME = /PASSWORD|SECRET|TOKEN|(^|_)KEY$/;
 const MARK = Buffer.from("[secret]");
@@ -29,10 +34,17 @@ function secretForms(): Buffer[] {
   return [...new Set(forms)].sort((a, b) => b.length - a.length).map((form) => Buffer.from(form, "utf8"));
 }
 
-/** The data with every secret replaced, or undefined when it holds none. */
+/** The data with every secret and session token replaced, or undefined when it holds none. */
 function scrubbed(data: Buffer, secrets: Buffer[]): Buffer | undefined {
   let out = data;
   let changed = false;
+  // Byte for byte (latin1), so a binary or UTF-8 file keeps every other byte as it was.
+  const text = out.toString("latin1");
+  const masked = maskTokens(text);
+  if (masked !== text) {
+    out = Buffer.from(masked, "latin1");
+    changed = true;
+  }
   for (const secret of secrets) {
     let at = out.indexOf(secret);
     if (at === -1) continue;
@@ -142,7 +154,6 @@ const TEXT_FILE = /\.(md|txt|json|jsonl|log|yaml|yml|html|trace|network|stacks)$
  */
 export function scrubFolders(root: string, folders: string[]): void {
   const secrets = secretForms();
-  if (secrets.length === 0) return;
   const walk = (dir: string): string[] =>
     fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? walk(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`])) : [];
   for (const file of folders.flatMap((folder) => walk(`${root}/${folder}`))) {
@@ -158,10 +169,25 @@ export function scrubFolders(root: string, folders: string[]): void {
   }
 }
 
+/** A text with every .env secret and session token replaced. */
+function scrubbedText(text: string, secrets: Buffer[]): string {
+  return scrubbed(Buffer.from(text, "utf8"), secrets)?.toString("utf8") ?? text;
+}
+
 export default class SecretScrubReporter implements Reporter {
   onTestEnd(_test: TestCase, result: TestResult): void {
     const secrets = secretForms();
-    if (secrets.length === 0) return;
+    // The errors first: every later reporter (list, HTML, Allure) prints these same objects.
+    for (const error of [result.error, ...result.errors]) {
+      if (!error) continue;
+      if (error.message) error.message = scrubbedText(error.message, secrets);
+      if (error.stack) error.stack = scrubbedText(error.stack, secrets);
+      if (error.value) error.value = scrubbedText(error.value, secrets);
+      if (error.snippet) error.snippet = scrubbedText(error.snippet, secrets);
+    }
+    for (const output of [result.stdout, result.stderr]) {
+      for (const [index, chunk] of output.entries()) output[index] = typeof chunk === "string" ? scrubbedText(chunk, secrets) : (scrubbed(chunk, secrets) ?? chunk);
+    }
     for (const attachment of result.attachments as Array<{ contentType: string; path?: string; body?: Buffer }>) {
       try {
         if (attachment.path && fs.existsSync(attachment.path)) {

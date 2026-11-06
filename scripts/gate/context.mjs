@@ -79,11 +79,42 @@ export function appOfPath(file, apps) {
   return undefined;
 }
 
-/** Files under `dir` new or changed in the working tree — what is being written now; null without git. */
+const git = (args) => execSync(`git ${args}`, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+
+/**
+ * Where this branch left the default branch: the merge base with AQA_BASE_BRANCH, origin's HEAD, main or
+ * master — the first that exists. None (no such branch, a clone that fetched only this branch, no commit
+ * yet) → null. On the default branch itself it is HEAD: nothing there is being written.
+ */
+function branchBase() {
+  const candidates = [process.env.AQA_BASE_BRANCH, "origin/HEAD", "main", "master", "origin/main", "origin/master"].filter(Boolean);
+  for (const ref of candidates) {
+    try {
+      return git(`merge-base ${ref} HEAD`).trim() || null;
+    } catch {
+      // that branch does not exist here — the next one
+    }
+  }
+  return null;
+}
+
+/**
+ * Files under `dir` being written now: changed on this branch since it left the default branch —
+ * committed or not, so a commit never turns a failure into a warning and CI (where everything is
+ * committed) judges the branch's work as strictly as the working copy — plus the working tree's new and
+ * changed ones. With no base to compare with, the working tree's only. null without git.
+ */
 export function inProgress(dir = "tests") {
   try {
-    const out = execSync(`git status --porcelain --untracked-files=all -- ${dir}`, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-    return new Set(out.split(/\r?\n/).filter(Boolean).map((line) => path.join(ROOT, line.slice(3).trim())));
+    // git names files from the repository's root; the test home may be a folder inside it.
+    const prefix = git("rev-parse --show-prefix").trim();
+    const inHome = (file) => path.join(ROOT, file.slice(prefix.length));
+    const files = new Set(
+      git(`status --porcelain --untracked-files=all -- ${dir}`).split(/\r?\n/).filter(Boolean).map((line) => inHome(line.slice(3).trim())),
+    );
+    const base = branchBase();
+    if (base) for (const file of git(`diff --name-only ${base} HEAD -- ${dir}`).split(/\r?\n/).filter(Boolean)) files.add(inHome(file));
+    return files;
   } catch {
     return null;
   }

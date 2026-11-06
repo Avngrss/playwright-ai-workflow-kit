@@ -1,5 +1,5 @@
 ---
-description: What must never happen — secrets and sensitive data in chat, code and artifacts, .env typed by the user, env:prepare, a refused sign-in retried; what qa:gate and tsc fail, how to treat a finding, shared code changed only on request
+description: What must never happen — secrets and sensitive data in chat, code and artifacts, .env typed by the user, env:prepare, a refused sign-in retried; what qa:gate and tsc fail (routes too), how to treat a finding; a test never fitted to the product without a source, can-fail, the independent review, summary numbers from result files; shared code changed only on request
 alwaysApply: true
 ---
 
@@ -53,23 +53,54 @@ ones are warned, not reworked. It fails:
   `test.fail`, `test.skip()` without a reason, unregistered tags or locks, missing layer/scope tags, smoke
   rules, a `Setup:` step or page opening repeated across tests, quarantine without a reason, misused
   `beforeAll`/serial/default mode, UI login in `beforeEach`, `page.route` without `// mocked:`, a case link
-  that is not a URL, ending the shared session, a UI/E2E spec shaping data;
+  that is not a URL, ending the shared session, a UI/E2E spec shaping data, a test still holding
+  `spec:draft`'s skeleton (`// Route…:` / `// expect:` comments, a `<…>` in a title), a `verify` spoil not put back;
 - Page Objects, components, clients — `expect`, `test.step`, `process.env`, `page.route`; Page Objects and
   components also fixed waits, `Date.now`/`Math.random`, screenshots, network listening, browser
   preparation, exports besides the class, a member nothing uses;
 - anywhere — Allure calls, raw `console.*`, `addLocatorHandler` outside `app-wide.ts`, unmasked attachments;
   files off the layout, imports across apps; the fixture chain out of order, roles in code, a `disposable…`
   fixture without its sweep, bad map blocks, an app fixture shadowing a shared one;
-  two lines copied, one code in two apps, a case automated twice or in two features, a test linking a case
-  kept in *Not now*, a ready case missing a `Needs:` layer; bad `specs/known-bugs.md` rows;
+  two lines copied, one code in two apps, a case automated in two features, a test linking a case kept in
+  *Not now*, bad `specs/known-bugs.md` rows;
+- routes (`routes.mjs`, `cases.mjs`, `repeats.mjs`; `docs/Layer Routing Algorithm.md` §9) — a ready scenario
+  without its `Level:` or a parsable `Route:` agreeing with it; its test outside the owner's folder, not
+  listening (`answerTo`) where the route intercepts or listening where it does not, a client read in a check
+  step beyond the route's one `read`, a screen kind the route names unchecked in its step, the screen compared
+  with the answer where the case knew the values; a scenario with two tests; a written case with a scenario
+  left unwritten;
 - `tsc` — type errors, an unused import, variable, parameter or fixture.
 
 Warnings: sizes, unnamed checks, long or dated comments, `try/finally` in specs, unused exports, client and
-setup size, Page Object state and second names, siblings repeating their base, case-title shape.
+setup size, Page Object state and second names, siblings repeating their base, case-title shape, a Blocked
+line without its `· searched:` tail; the route findings of plans and tests written before routing (listed to
+rework, `plans.mdc` §A later pass).
 **A finding** is fixed the way its message says — never dodged (an equivalent call, a renamed method, a moved
 copy, a Page Object's body pasted into the spec). One that looks wrong is a suspected gate bug: keep the code
 as the rules want it and name it in the summary; never edit the gate unasked (§Shared code). A warning is
 fixed or its reason given.
+
+## Never fitted to the product
+
+- **A test is never fitted to the product silently.** *How* it reaches the product (a path, a locator, a label's
+  spacing) is fixed on evidence; *what* it expects (a step, a rule, a value) changes only with a source — the
+  feature's ticket, the product's code, its history — quoted (a ticket's field, `file:line`, a commit). A change
+  with a source is followed through the plan; without one it is a question to the user ("is this intended?")
+  or a possible bug, and the test stays as it is.
+- **Every new or changed check proves it can fail**: `npm run verify -- <app> <spec…> --can-fail
+  <spec>:<line>=<the line spoiled>` swaps the expected value of the check this run wrote or changed (the main
+  one in a new test; a state → its opposite), runs only those tests once and puts every line back. A changed
+  expected value or assertion → can-fail; a locator-only fix or a renamed or moved step → none. Red at its line
+  → it can fail; green → blind, fixed and proven again; red elsewhere → the test does not reach its check.
+- **Independent review**, once the run is green: **full** for every new test — a NEW chat (`/review`) given only
+  the cases as their source states them, the plan's `Data:` and `Rules:` lines, the test code and the run's
+  report, asked where each test passes though its case is broken (an unasserted step, a check that cannot fail,
+  assumed data, a re-proved fact, a mock); **light** for an edit — the same five kinds answered here, each with
+  the `file:line` that holds it. No new chat possible → the summary says "not independent". A finding on a test
+  this run touched is fixed and rerun, or answered; on an untouched one, listed for a later refresh.
+- **Numbers only from the result files** — the summary's counts, verdicts, can-fail lines and coverage are copied
+  from the `npm run verify` block (`test-results/verify.json`), `reports/run-summary.json` or `suite:coverage`,
+  never written from memory.
 
 ## Shared code
 

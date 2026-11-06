@@ -1,5 +1,5 @@
 ---
-description: How the agent works here — the skill and command for each stage, asking, never writing to the TMS or tracker without a yes, conduct, cleanup before "done", hardening rules, the one severity scale, starter conversion
+description: How the agent works here — the skill and command for each stage, which path (refresh, heal, triage, new tests), asking, never writing to the TMS or tracker without a yes, conduct, cleanup before "done", hardening rules, the one severity scale, starter conversion
 alwaysApply: true
 ---
 
@@ -7,24 +7,38 @@ alwaysApply: true
 
 ## The skill for each stage
 
-Four skills, six commands:
+Four skills, eight commands:
 
 1. **setup** (`/setup` — What: app, sign-in, another account or role) — the test home, a new app (map rows,
    `npm run app:add`), its sign-in (an app with no ```auth block of its own gets it first, once), a further
    account or role, any change of the map.
-2. **plan** (`/plan`) — intake: what to cover (a TMS link, a ticket, a requirements doc, an API collection or
-   words), which app, which coverage (API, UI, API + UI, E2E) — ask only what the request leaves open; writes
-   the plan and shows it as tables; nothing is implemented until the user confirms (`plans.mdc`). The plan
-   exists already → a later pass, an alignment with the TMS or a refresh, by itself.
-3. **implement** (`/implement`; `Layer: visual` for a screenshot checkpoint) — only cases `ready to implement now`, each
-   whole, on every layer its `Needs:` names; a visual checkpoint changes a baseline only on "Approve baseline: yes".
-4. **verify** (`/verify`) — a targeted run of what changed, `npm run qa:gate` (`02-guardrails.mdc`), one
-   automatic heal after a fresh implement, a review of only what the gate cannot check, the summary. Its Heal
-   section (`/heal`, `/heal explain`) starts from the run summary and the failure's verdict (`code.mdc`) — a
-   technical fix only, product drift goes back to the plan (`plans.mdc` §When the product changes); its
-   Coverage section (`/coverage`) shows a TMS suite case by case.
+2. **plan** (`/plan`) — intake: what to cover (a TMS link, a ticket or a bug, a requirements doc, an API
+   collection or words), which app, an owner limit if any — ask only what the request leaves open; each case's
+   scenarios, owners and routes from the live check; writes the plan and shows it as tables; nothing is
+   implemented until the user confirms (`plans.mdc`). The plan exists already → a later pass, an alignment
+   with the TMS or a refresh, by itself.
+3. **implement** (`/implement`; `Layer: visual` for a screenshot checkpoint) — only cases `ready to implement
+   now`, each whole: every scenario its one test in its owner's folder, started by `npm run spec:draft`; a
+   visual checkpoint changes a baseline only on "Approve baseline: yes".
+4. **verify** (`/verify`) — one `npm run verify` of what changed (the gate, can-fail, one run), one automatic
+   heal after a fresh implement, a review of only what the gate cannot check — independent for a new test
+   (`/review`, `02-guardrails.mdc` §Never fitted to the product) — the summary. Its Heal section (`/heal`,
+   `/heal explain`) starts from the run summary and the failure's verdict (`code.mdc`) — a technical fix only;
+   its Triage (`/triage`) sorts a red run; its Coverage section (`/coverage`) shows a TMS suite case by case.
 
 A refactor of passing tests is done only on request (`ui.mdc` §Ownership decisions and refactoring).
+
+## Which path
+
+The first that matches:
+- **a product or rule change named** (a ticket, a doc, the user's words) → a plan refresh (`plans.mdc` §When
+  the product changes), even with red tests at hand — they are its evidence;
+- **one or two red tests** of planned features → heal ("heal the red tests: <spec>:<line> …");
+- **three or more, or a CI run** → triage ("triage the run <link | reports/run-summary.json>");
+- **new tests** → plan → confirm → implement → verify.
+
+The run summary's last line names the path for the run it describes. `npm run test:failed` only reproduces a
+failure before a change; every rerun after one is `npm run verify` of the touched tests.
 
 ## Asking
 
@@ -77,8 +91,8 @@ detail into a universal rule, never duplicate or contradict guidance.
 
 | Severity | A product breakage (a case, a bug) | A finding in tests, code or a plan |
 |---|---|---|
-| **Critical** | data lost or exposed, a Core scenario blocked | can give a wrong verdict — a false pass or fail (a fake, weakened or missing check, a schema contradicting the assertions, a check hidden in a Page Object or client, a fixed wait); a secret exposed |
-| **Major** | broken, a workaround exists | maintainability or architecture: the wrong home, stale or unused code, an abstraction not earning its cost, a spec made unreadable |
+| **Critical** | data lost or exposed, a Core scenario blocked | can give a wrong verdict — a false pass or fail (a fake, weakened or missing check, a check that cannot fail, an expectation fitted to the product without a source, a schema contradicting the assertions, a check hidden in a Page Object or client, a fixed wait); a secret exposed |
+| **Major** | broken, a workaround exists | maintainability or architecture: a scenario proven twice or not as its route says, the wrong home, stale or unused code, an abstraction not earning its cost, a spec made unreadable |
 | **Minor** | cosmetic | readability worth fixing now: a name, an order, a wrapper to inline, an import |
 
 Never report a speculative finding without evidence.

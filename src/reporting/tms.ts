@@ -13,6 +13,6 @@ export function caseLinksOf(app: string, folder?: string | number): (id: string 
   const template = (lines.find((line) => line[1] === app) ?? lines.find((line) => !line[1]))?.[2];
   if (!template) throw new Error(`specs/project-map.md §Test cases (TMS) has no "case link ${app}:" line — the plan skill adds it from the first case link pasted`);
   if (template.includes("{folder}") && folder === undefined) throw new Error(`${app}'s case link has {folder} — give the cases' folder: caseLinks(<folder>)`);
-  // "TC-101" and 101 name the same case; the link takes the number.
-  return (id) => ({ type: "tms", description: template.replace("{folder}", String(folder)).replace("{id}", String(id).replace(/^[A-Z][A-Z0-9]*-/, "")) });
+  // "TC-101", "PROJ-T101" and 101 name the same case; the link takes the number.
+  return (id) => ({ type: "tms", description: template.replace("{folder}", String(folder)).replace("{id}", String(id).replace(/^[A-Z][A-Z0-9]*-[A-Z]*/, "")) });
 }

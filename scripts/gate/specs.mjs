@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { at, read, rel } from "./context.mjs";
+import { CASE_PREFIX } from "./plans.mjs";
 
-/** What a spec declares: its layer and scope tags, its quarantine reasons, hooks, mocks and case links. */
+/** What a spec declares: its layer and scope tags, its quarantine reasons, hooks, mocks and case links — and no skeleton left. */
 
 // The suite's own vocabulary; anything else must be registered in specs/project-map.md §Allowed tags.
 const BUILT_IN_TAGS = ["@api", "@ui", "@e2e", "@smoke", "@regression", "@wip", "@flaky"];
@@ -62,16 +63,25 @@ function checkTags(files, report) {
   }
 }
 
-/** Each test a spec declares: its title, its own options (tags, annotations), the tags in them, and its line. */
+/** A title as written: from its opening quote to the same quote — an apostrophe ("the parent's …") stays in it. */
+const TITLE = /^(["'`])((?:\\.|(?!\1)[^\\])*)\1/;
+
+/** Each test a spec declares: its title, its own options (tags, annotations), the tags in them, its line and its text up to the next test. */
 export function testsOf(content) {
   const starts = [...content.matchAll(/\btest\(\s*(?=["'`])/g)].map((match) => match.index);
   return starts.map((start, index) => {
     const chunk = content.slice(start, starts[index + 1]).replace(/^test\(\s*/, "");
-    const title = /^["'`]([^"'`]+)["'`]/.exec(chunk)?.[1] ?? "";
+    const title = TITLE.exec(chunk)?.[2] ?? "";
     const options = chunk.slice(0, chunk.search(/\basync\b|=>/) + 1 || undefined);
-    return { title, options, tags: tagsOf(options), line: content.slice(0, start).split("\n").length - 1 };
+    return { title, options, tags: tagsOf(options), line: content.slice(0, start).split("\n").length - 1, body: chunk };
   });
 }
+
+/**
+ * A screenshot checkpoint in a file of its own (`<feature>-visual.ui.spec.ts`, .cursor/rules/specs.mdc
+ * "Visual checkpoints"): it checks how a state looks — no second test of its scenario, not held to its route.
+ */
+export const isVisualCheckpoint = (spec, tags) => /-visual\.ui\.spec\.ts$/.test(spec) && tags.has("@visual");
 
 /** The role a test runs as: the nearest `test.use({ role })` above it in a block still open there (indentation tells). */
 function roleAt(lines, line) {
@@ -209,7 +219,9 @@ function checkUiSpecs(files, report) {
     }
     // The same page opened the same way by two tests of a file is opened once, in a test.beforeEach of
     // their describe. A test's opening is its first `<x>Page.open…(…)` call before its first check;
-    // navigating later in the test, or opening a dialog again, is the test's own action.
+    // navigating later in the test, opening a dialog again, or an opening handed to answerTo /
+    // answersTo (its answer is the case's truth, which a beforeEach cannot give the test) is the
+    // test's own action.
     const lines = content.split(/\r?\n/);
     const openings = new Map();
     for (const { title, line } of testsOf(content)) {
@@ -226,10 +238,19 @@ function checkUiSpecs(files, report) {
   }
 }
 
-/** The first `<x>Page.open…(…)` call in the text, arguments and all (`ordersPage.openInProject(id, lastMonths(3))`). */
+/**
+ * The first `<x>Page.open…(…)` call in the text, arguments and all (`ordersPage.openInShop(id, lastMonths(3))`)
+ * — none when that call is inside an `answerTo(` / `answersTo(` call: the test takes its answer.
+ */
 function openingCallIn(text) {
   const match = /\b[\w$]+Page\.open\w*\(/.exec(text);
   if (!match) return undefined;
+  const before = text.slice(0, match.index);
+  const listener = [...before.matchAll(/\banswers?To\(/g)].pop();
+  if (listener) {
+    const between = before.slice(listener.index);
+    if ((between.match(/\(/g) ?? []).length > (between.match(/\)/g) ?? []).length) return undefined;
+  }
   let depth = 0;
   for (let index = match.index + match[0].length - 1; index < text.length; index += 1) {
     if (text[index] === "(") depth += 1;
@@ -257,7 +278,7 @@ function checkCaseLinks(files, report) {
   // the URL from the map (specs/project-map.md §Test cases (TMS)); a URL spelled in the spec still
   // works, but repeats the map in every spec.
   const caseAnnotation = /type:\s*["'`]tms["'`]\s*,\s*description:\s*["'`]([^"'`]*)["'`]/g;
-  for (const spec of [...files.ui, ...files.api]) {
+  for (const spec of [...files.ui, ...files.api, ...files.e2e]) {
     const content = read(spec);
     const links = [...content.matchAll(caseAnnotation)].map((m) => m[1]);
     const helper = /\bcaseLinks\(/.test(content) && /\btms\(\s*["'`]?[\w-]+/.test(content);
@@ -268,27 +289,28 @@ function checkCaseLinks(files, report) {
     for (const link of links.filter((value) => !/^https?:\/\//.test(value) && !value.includes("${"))) {
       report.fail(spec, `TMS link "${link}" is not a URL — use the case's full URL (template in specs/project-map.md §Test cases (TMS))`);
     }
-    // A test from a TMS case is named after it — `TC-101 · <the case's title>` — so the report, the
-    // code and the TMS read the same. A case split over layers names what each part checks, after
-    // " — ": two tests named alike but for "(API)" / "(UI)" read as one test run twice.
+    // A test from a TMS case is named after it — `TC-101 · <the case's title>`, a scenario
+    // `TC-101 · S2 · <what it proves>` — so the report, the code and the TMS read the same. A name
+    // differing only by "(API)" / "(UI)" reads as one test run twice.
     if (links.length || helper || /type:\s*["'`]tms["'`]/.test(content)) {
-      const titles = [...content.matchAll(/\btest\(\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]);
-      for (const title of titles.filter((value) => !/^[A-Z][A-Z0-9]*-\d+ · /.test(value))) {
-        report.warn(spec, `"${title}" links a TMS case but is not named after it — "<case id> · <the case's title>" (the implement skill, Naming)`);
+      const titles = testsOf(content).map(({ title }) => title);
+      for (const title of titles.filter((value) => !new RegExp(`^${CASE_PREFIX}\\d+ · `).test(value))) {
+        report.warn(spec, `"${title}" links a TMS case but is not named after it — "<case id> · <the case's title>", a scenario "<case id> · S<n> · <what it proves>" (the implement skill, Naming)`);
       }
       for (const title of titles.filter((value) => /\((?:API|UI|E2E)\)\s*$/i.test(value))) {
-        report.warn(spec, `"${title}" names the layer instead of what it checks — "<case id> · <the case's title> — <what this part checks>" (the implement skill, Naming)`);
+        report.warn(spec, `"${title}" names the layer — one scenario has one test; a case of several obligations is split into scenarios "<case id> · S<n> · <what it proves>" (the implement skill, Naming)`);
       }
-      // The part after " — " tells the parts of a case apart; the report shows the title on one line.
+      // A scenario's name and the old part after " — " are read on one line in the report.
       for (const title of titles) {
-        const words = / — (.+)$/.exec(title)?.[1].split(/\s+/).length ?? 0;
-        if (words > 10) report.warn(spec, `"${title}" — ${words} words after " — "; name what this part checks in a few (≤ 8) (the implement skill, Naming)`);
+        const tailOf = /^[^·]+·\s*S\d+\s*·\s*(.+)$/.exec(title)?.[1] ?? / — (.+)$/.exec(title)?.[1];
+        const words = tailOf?.split(/\s+/).length ?? 0;
+        if (words > 10) report.warn(spec, `"${title}" — ${words} words in the scenario's name; name what it proves in a few (≤ 8) (the implement skill, Naming)`);
       }
     }
     // tests/<layer>/<platform>/<area>/<feature>/<file> → specs/<platform>/<area>/<feature>/<feature>.md
     const parts = path.relative(at("tests"), spec).split(path.sep);
     const plan = parts.length === 5 ? at("specs", parts[1], parts[2], parts[3], `${parts[3]}.md`) : undefined;
-    if (links.length === 0 && !helper && plan && fs.existsSync(plan) && /^- .*TMS:\s*(?:TC-)?\d/m.test(read(plan))) {
+    if (links.length === 0 && !helper && plan && fs.existsSync(plan) && new RegExp(`^- .*TMS:\\s*(?:${CASE_PREFIX})?\\d`, "m").test(read(plan))) {
       report.warn(spec, "the plan is built from TMS cases, but the tests do not link them — const tms = caseLinks(<folder>) from the app's test.ts, then annotation: tms(<case id>) on each test");
     }
   }
@@ -332,4 +354,32 @@ function checkKnownBugs(files, report) {
   }
 }
 
-export const specRules = [checkTags, checkKeySmoke, checkRepeatedSetup, checkLocks, checkQuarantineReasons, checkHooksAndRunMode, checkUiSpecs, checkMocks, checkCaseLinks, checkSessionEndings, checkKnownBugs];
+/**
+ * A test still a skeleton: what `npm run spec:draft` writes for the agent to replace — a step's
+ * `// Route: …` and `// expect: …` comments — or a template placeholder `<…>` left in a test or step
+ * title (spec:draft's "… and verify <…>" too).
+ */
+function checkDraftLeftovers(files, report) {
+  const comments = /^[ \t]*\/\/[ \t]*(Route(?: \(step [^)]*\))?|expect):/gm;
+  const placeholder = /<[^\s<>][^<>]*>/;
+  const stepTitles = (text) => [...text.matchAll(/\btest\.step\(\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g)].map((match) => match[2]);
+  for (const spec of files.specs) {
+    const content = read(spec).replace(/\r\n/g, "\n");
+    const tests = testsOf(content);
+    // The text before the first test too: a comment there is a skeleton's as well.
+    const head = tests.length ? content.split("\n").slice(0, tests[0].line).join("\n") : content;
+    for (const { title, body } of [{ title: null, body: head }, ...tests]) {
+      const found = [...body.matchAll(comments)].map((match) => (match[1] === "expect" ? "expect" : "Route"));
+      const unwritten = ["Route", "expect"].map((kind) => [kind, found.filter((each) => each === kind).length]).filter(([, count]) => count).map(([kind, count]) => `${count} // ${kind}: comment(s)`);
+      const unnamed = [...(title && placeholder.test(title) ? ["a <…> in its title"] : []), ...stepTitles(body).filter((step) => placeholder.test(step)).map((step) => `a <…> in step "${step}"`)];
+      if (!unwritten.length && !unnamed.length) continue;
+      const todo = [
+        ...(unwritten.length ? ["write each step's code where its comments say, then delete them (npm run spec:draft's skeleton — the implement skill, Shared start)"] : []),
+        ...(unnamed.length ? ["name what the test or step does or verifies (the implement skill, Naming)"] : []),
+      ];
+      report.fail(spec, `${title ? `"${title}"` : "the code before its first test"} is still a skeleton — ${[...unwritten, ...unnamed].join(", ")}: ${todo.join("; ")}`);
+    }
+  }
+}
+
+export const specRules = [checkTags, checkKeySmoke, checkRepeatedSetup, checkLocks, checkQuarantineReasons, checkHooksAndRunMode, checkUiSpecs, checkMocks, checkCaseLinks, checkSessionEndings, checkKnownBugs, checkDraftLeftovers];
