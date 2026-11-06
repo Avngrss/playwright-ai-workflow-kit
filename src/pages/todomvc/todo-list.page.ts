@@ -17,7 +17,7 @@ export class TodoListPage {
     this.newTodo = page.getByPlaceholder("What needs to be done?");
     this.todos = page.getByTestId("todo-item");
     this.todoTitles = page.getByTestId("todo-title");
-    this.completedTodos = page.locator('[data-testid="todo-item"].completed');
+    this.completedTodos = this.todos.filter({ has: page.getByRole("checkbox", { checked: true }) });
     this.counter = page.getByTestId("todo-count");
     this.activeFilter = page.getByRole("link", { name: "Active" });
     this.completedFilter = page.getByRole("link", { name: "Completed" });
