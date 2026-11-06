@@ -1,8 +1,9 @@
 Use Skill: @.cursor/skills/setup/SKILL.md — §2 "Add an app" (a fresh clone checked first), §3 "Sign-in", §3.9 "A further account or role".
 
 Registers an app (its map rows and `.env` names, `npm run app:add -- <app>`, its sign-in, a first green sign-in
-smoke), sets up how its tests sign in, or adds another account or role. You type passwords into `.env` yourself —
-never into this chat.
+smoke), sets up how its tests sign in, or adds another account or role. You type passwords into `.env` yourself;
+for a test account on a test environment you may give them in this chat instead (offered, never the default — the
+skill's §1 says what happens to them).
 
 Tests instead? A named product or rule change → `/plan <plan path> — <what changed>` · one or two red tests →
 `/heal <spec>:<line> …` · three or more, or a CI run → `/triage`.
