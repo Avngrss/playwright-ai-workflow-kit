@@ -4,6 +4,9 @@ Registers an app (its rows in `specs/project-map.md`, its `.env` names, `npm run
 first green sign-in smoke), sets up how its tests sign in, or adds another account or role. You type passwords
 into `.env` yourself — never into this chat.
 
+Tests instead? A named product or rule change → `/plan <plan path> — <what changed>` · one or two red tests →
+`/heal <spec>:<line> …` · three or more, or a CI run → `/triage`.
+
 What: <app | sign-in | another account or role>
 App (optional — the skill asks when empty): <the app's dev or QA URL for a new app, or its slug>
 Details (optional): <a name (kebab-case) for a new app | sign-in broken, change how tests sign in | the role, e.g. "a member without admin rights">

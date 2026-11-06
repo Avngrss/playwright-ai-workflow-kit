@@ -18,8 +18,9 @@ Nothing said → a map with no app of its own yet → §2; otherwise ask which o
 ## 1. Safety — always
 
 - Secrets and `env:prepare`: `02-guardrails.mdc` §Secrets and settings. A URL, a public client id and scopes are not
-  secrets — save them from chat. Write the map's rows and block lines first, then `env:prepare` (it lays both files
-  out by app).
+  secrets — save them from chat. Write the map's rows and block lines first, then `env:prepare`: it edits `.env`
+  and `.env.example` in place — a value in its own line, a new name next to its app's group as the map has it —
+  and only `npm run env:prepare -- --tidy` lays both files out by app again.
 - **The user may choose the chat** for the test account (offered, never the default): save the values to `.env` at
   once through `env:prepare`, never repeat them, and say once: "Saved to .env. These values are now in this
   session's history — fine for a test account on a test environment; for anything else, change the password." The
@@ -146,8 +147,9 @@ password step's button) gets the likeliest label, corrected from the first real 
    `/swagger/index.html`; (3) the definition answers 401 → one more request with the test account's headers
    (through the auth code; the token is never shown). Judge a hit by **content**, never the status: JSON with an
    `openapi` / `swagger` key, or a page with `swagger-ui`. A hit → the Docs column of the app's API row
-   (`{<API env name>}/<path>`), not `.env`. Nothing → stop looking; report it as **Missing** (§3.4). It blocks only
-   API tests.
+   (`{<API env name>}/<path>`), not `.env`; its answer types come from it with `npm run api:types -- <app>`
+   (`src/api/clients/<app>/contract.client.ts`) once the app's first client is written (the implement skill), and
+   again whenever the API changes. Nothing → stop looking; report it as **Missing** (§3.4). It blocks only API tests.
 
 ### 3.4 Report — the action first
 
@@ -337,7 +339,11 @@ session check: ${API_BASE_URL}/me
   own sign-in request; `login url:`, `login body:`, `login format:`, `session from:`) · `key` (`key header:`,
   `key:`) · `basic` · `custom` (`project.ts`, §3.6) · `none`. `ui: none` + `api: none` = a public app.
 - **Optional**: `session check: <url>` (a cheap "who am I") · `session max age: <minutes>` · `members only: <url>` (an
-  app open to visitors: a page that sends a visitor to sign in — the sign-in smoke opens it, §3.3 step 1).
+  app open to visitors: a page that sends a visitor to sign in — the sign-in smoke opens it, §3.3 step 1) ·
+  `tenants: GET <path> → <id>, <name>` (an app whose accounts open several tenants — stores, projects,
+  organisations: how it lists an account's tenants, the two being fields of each entry, `<list>[].id, <list>[].name`
+  when the list is a field of the answer; written when a stand search first needs it — `npm run stand:find` walks
+  accounts × tenants with it, the header of `scripts/agent/stand-find.mjs`).
 - **Roles**: no `roles:` line = one test account (role `user`); a further account adds its own `login <role>:` /
   `password <role>:` lines (§3.9); the first account's lines never change. Whether signing out ends every session
   of the account is recorded as a comment here by the app's first sign-out test (the check: `specs.mdc`).
