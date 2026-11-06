@@ -1,5 +1,5 @@
 ---
-description: Writing a spec — imports, titles, steps, hooks, tags per test, a UI test reads as its case, named checks, one step proves one thing, isolation and locks, signing in (auth as, role, session), multi-role and E2E specs, smoke, @visual / @cross-browser / @responsive
+description: Writing a spec — the spec:draft skeleton, imports, titles of cases and scenarios, steps, hooks, tags per test, a UI test reads as its case, the action's answer (answerTo), named checks, one step proves one thing, isolation and locks, signing in (auth as, role, session), multi-role and E2E specs, smoke, @visual / @cross-browser / @responsive
 globs: tests/**
 alwaysApply: false
 ---
@@ -33,6 +33,10 @@ test.describe("Account — Addresses (API)", () => {
 });
 ```
 
+- **Each test starts as `npm run spec:draft -- <plan> <#>`** — the plan block's title, tags, case link, role
+  and one `test.step` per plan step, each holding its route and `expect` as comments, in the owner's spec; the
+  code replaces the comments. `qa:gate` fails a test still holding `// Route…:` / `// expect:` comments or a
+  `<…>` in its title or a step's.
 - `test` and `expect` come from `src/fixtures/<app>/test` — the app of the spec's folder, never
   `@playwright/test`, an intermediate fixture layer or the shared chain.
 - One `describe` title per feature in a file — same-titled describes group as one suite in the report.
@@ -41,18 +45,19 @@ test.describe("Account — Addresses (API)", () => {
 
 - The outcome in one sentence, capitalised; no ticket ids, layer words or "should".
 - A test from a TMS case is named after it: `<case id> · <the case's title as the TMS writes it>`
-  (`TC-101 · Customer adds a delivery address`). A case split over layers names what each part checks after
-  ` — ` in ≤ 8 words, never the layer (`TC-102 · A saved address appears in the account — the server stores
-  it` / `… — the account shows it`).
-- One manual case, one test — or one per named part; one test covering several cases takes the main case's
-  title and links each. The test follows the case in meaning, not word for word: preconditions → role and
-  `Data:` (fixtures), steps → `test.step` in the case's words, each expected fact → one named check.
+  (`TC-101 · Customer adds a delivery address`); a scenario of a split case: `TC-102 · S2 · A member cannot
+  invite` — ≤ 8 words after `S2 ·` (the gate warns past 10). Never split by layer (`… — the server stores it` /
+  `… — the account shows it`): one scenario, one test (`plans.mdc` §Layers).
+- One test covering several cases takes the main case's title and links each. The test follows the case in
+  meaning, not word for word: preconditions → role and `Data:` (fixtures), steps → `test.step` in the case's
+  words, each expected fact → one named check.
 
 ## Steps
 
 - Every UI and E2E test uses `test.step`; API tests do when there is more than one phase.
-- 2–5 steps (3–6 for a journey), imperative and capitalised, in a manual tester's order. The check step starts
-  with **Verify**, setup with **Setup:**, cleanup with **Cleanup:**.
+- 2–5 steps (3–6 for a journey), imperative and capitalised, in a manual tester's order; each routed step of
+  the plan in a `test.step` of its own (the gate counts a screen check per routed step). The check step starts
+  with **Verify** (a one-step case: "<Action> and verify <what>"), setup with **Setup:**, cleanup with **Cleanup:**.
 - No implementation words in step names — API, request, response, fixture, locator, payload, id. "Open the
   browser" and "log in" are fixtures, not steps. Never wrap every action in a step, never the whole body in
   one generic step.
@@ -69,6 +74,24 @@ await test.step("Open the delivery details and verify them", async () => {
 });
 ```
 
+- **What the server answered the action** (an `intercept` route) → one line with the action in it, the answer
+  checked inside the call; then the screen:
+
+  ```ts
+  const invitation = await answerTo(inviteTo(team), () => members.invite(email), { has: invited });
+  expect(await members.invitation(email), "Pending invitation").toEqual(shownInvitation(invited, invitation));
+  ```
+
+  `has:` the case's own values (a list: a list, or `expect.arrayContaining([…])`) · `check:` a named rule of
+  `src/assertions/<app>/` for stand data (`check: paidAsInBilling(billing)`) · `sent:` / `query:` what the page
+  must send · `status:` when not 200 · `answersTo([a, b], () => …, [{ … }, { … }])` for several answers. The
+  screen is expected from the case's data — the answer joins only for what the server alone knows,
+  `shown<Block>(answer)` only for stand data; a value the case states (an empty account's zeros) is
+  `shown<Block>()`. The spec never parses an answer, reads it again or names a path (the client's `answerPath`).
+  A `no-request` / `screen-only` step listens to nothing; a client call in a check step only as the route's one
+  `read` — a `Setup:` read whose result an `expect` uses is a check (the gate fails both).
+- **A block that changes in place** after the action (no spinner, no sign of new data) is read until it
+  matches, never once: `await expect.poll(() => members.read(), { message: "Members" }).toEqual(shownMembers(…))`.
 - **What the screen shows** → a reader of the Page Object, one per block a test checks, returning the block
   as shown (`{ Address: "…", Window: "10:00–12:00", Courier: "…" }`). An action of the case is one method.
 - **What is expected** → `shown<Block>(data)` in `src/assertions/<app>/`: a plain object literal of the block
@@ -99,8 +122,9 @@ with the name (`Add address button / Expected: … / Received: …`). Noun phras
 ## Hooks
 
 - `beforeEach` only opens the page and waits for its loaded marker. Tests opening a page the same way share
-  a `describe` with that hook — an opening copied into two tests fails the gate. A test of navigation itself
-  never sits under a `beforeEach` that already went to the destination.
+  a `describe` with that hook — an opening copied into two tests fails the gate — unless a test takes that
+  opening's answer (`answerTo(…, () => reports.open(shop))`): then the opening is its action and stays in it. A
+  test of navigation itself never sits under a `beforeEach` that already went to the destination.
 - No UI login in `beforeEach` unless login is the feature; sessions come from the `role` option.
 - Any other setup or cleanup: the mechanism ladder in `data-and-fixtures.mdc`.
 
@@ -178,8 +202,9 @@ in the app's ```auth block.
 
 - 3–6 steps in a manual tester's order; the journey stays visible in the spec — never a `runWholeFlow()`, a
   fixture, hook or Page Object method doing it. Tags `@e2e` + `@regression`.
-- API and fixtures only create preconditions and clean up — never instead of a UI step, no full contract
-  checks, no mocked responses. Reuse the area's Page Objects; explore live any screen they do not cover.
+- API and fixtures only create preconditions and clean up (`Setup:` / `Cleanup:` steps, or the route's one
+  `read`) — never instead of a UI step, no full contract checks, no mocked responses; the action's answer
+  through `answerTo` as in a UI test. Reuse the area's Page Objects; explore live any screen they do not cover.
 - Final check: the user-visible outcome, never "the URL changed" alone. Data: disposable and removed; never a
   shared account's mutable state without its lock.
 - Several roles: one signed-in browser context per role in one test, roles only from the map; which role acts at which step comes only from the journey
@@ -208,10 +233,12 @@ test("A customer places an order, a manager approves it", { tag: ["@e2e", "@regr
   layout-critical blocks) — never for timestamps, random or user-generated data, ads, animations, videos,
   carousels, live counters, third-party widgets, uncontrolled lists, environment-specific content, nor just
   because a page exists. It never replaces a functional check.
-- A checkpoint inside the feature's own UI test; `<feature>-visual.ui.spec.ts` only for a separate CI job,
-  many visual-only states or a separate baseline review. Functional readiness checks come first; the
-  smallest stable target (a block, then a page, a full page only when justified), a clear screenshot name;
-  several checkpoints when the scenario moves through meaningful states, never after every action.
+- A checkpoint lives in the feature's own `<feature>-visual.ui.spec.ts`, tagged `@visual` — a check of how a
+  state looks, never a second test of a scenario (the gate leaves such a file out of its one-test-per-scenario
+  and route checks; a screenshot test linking the case in the feature's spec is a second test). It reaches the state
+  through the Page Objects and checks it is ready first; the smallest stable target (a block, then a page, a
+  full page only when justified), a clear screenshot name; several checkpoints when the state moves through
+  meaningful steps, never after every action.
 - A stable state: loaded, data shown, animations done, no overlay or spinner, the same project and viewport —
   never `waitForTimeout`. Dynamic content, in order: a state without it → deterministic data → mask only
   what is irrelevant to the risk → style overrides only when masking is not enough and the project allows.

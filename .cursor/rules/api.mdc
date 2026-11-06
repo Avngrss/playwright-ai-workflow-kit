@@ -1,5 +1,5 @@
 ---
-description: API tests and clients — bound clients per API area, what a client holds, expectJson/expectStatus, one primary action per test, never guessing a status, contract drift; answer schemas from the contract (npm run api:types, fieldsOf, where they live, shape vs behaviour); API collections (Bruno) as planning input
+description: API tests and clients — bound clients per API area, what a client holds (answer schemas, the answer paths UI tests take), expectJson/expectStatus, what an API scenario is, one primary action per test, never guessing a status, contract drift; answer schemas from the contract (npm run api:types, fieldsOf, where they live, shape vs behaviour); API collections (Bruno) as planning input
 globs: tests/api/**, src/api/**, collections/**
 alwaysApply: false
 ---
@@ -22,15 +22,20 @@ context, owner id and caller's headers given once; tests call `addresses.get(id)
 
 ```ts
 // src/api/clients/shop/addresses.client.ts
+export const address = fieldsOf<components["schemas"]["Address"]>()({ id: z.string(), city: z.string(), isDefault: z.boolean() });
+
 export function addressesApi(request: APIRequestContext, customerId: string, headers: Record<string, string>) {
   const base = `customers/${customerId}/addresses`;
   return {
-    list: () => json<Address[]>(request.get(base, { headers })),
-    get: (id: string) => json<Address>(request.get(`${base}/${id}`, { headers })),
-    create: (data: Partial<AddressPayload> = {}) => json<Address>(request.post(base, { headers, data: addressBuilder.build(data) })),
+    list: () => json(request.get(base, { headers }), z.array(address)),
+    get: (id: string) => json(request.get(`${base}/${id}`, { headers }), address),
+    create: (data: Partial<AddressPayload> = {}) => json(request.post(base, { headers, data: addressBuilder.build(data) }), address),
     remove: (id: string) => request.delete(`${base}/${id}`, { headers }),
   };
 }
+
+// the request the page sends when the person adds one — a UI test takes its answer through answerTo
+export const addressAdded = (customerId: string) => answerPath("POST", `customers/${customerId}/addresses`, address);
 
 // src/fixtures/shop/data.fixture.ts
 addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
@@ -40,13 +45,16 @@ addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
 
 - A call used once may stay a direct `request.get(…)` — no client for one line or one one-off request; never
   five positional arguments repeated on every call; no service hierarchy without need.
-- **A client holds the requests of one API area and their body types — nothing else.** Periods and unique
-  values → `src/data/generators/<app>/`; how the screen shows a value → `src/assertions/<app>/`; finding an
-  item on the stand → `src/setup/<app>/`; a payload built from saved values → `src/data/builders/<app>/`.
-  The gate warns past ~100 statements of requests (one client per API area) and on an export that sends no
-  request.
-- Clients declare each endpoint's answer with `json<T>(…)` (`src/assertions/shared/http.ts`), typing only the
-  fields tests read; `expectJson` infers it — specs never write `expectJson<T>(…)`.
+- **A client holds the requests of one API area, their answer schemas and answer paths — nothing else.**
+  Periods and unique values → `src/data/generators/<app>/`; how the screen shows a value →
+  `src/assertions/<app>/`; finding an item on the stand → `src/setup/<app>/`; a payload built from saved values
+  → `src/data/builders/<app>/`. The gate warns past ~100 statements of requests (one client per API area) and
+  on an export that sends no request.
+- Each endpoint's answer is declared with its schema, `json(…, schema)` (§Response schemas); `expectJson`
+  infers the body — specs never write `expectJson<T>(…)`.
+- **Answer paths**: beside its calls, a client declares each request the page sends whose answer a UI or E2E
+  scenario takes as truth — `answerPath("<METHOD>", <path>, schema)`, matched by method and the end of the
+  request's path — so a spec names no method, path or body type; a GET and a POST to one address are two.
 - Clients fill default request bodies from the builder; tests pass only the fields under test.
 - Clients never check (no `expect`, no schema assertion), never hide prerequisite data, a sign-in or a
   business workflow behind one name (`createUserAndVerify` is wrong), never read `process.env` or hold
@@ -54,6 +62,9 @@ addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
 
 ## Tests
 
+- An API scenario is what no screen shows — another input of a rule, access the page never tries, the
+  contract, a file's content (`plans.mdc` §Layers); a person's scenario is never written here again "to check
+  the data". Its route names the fields to check; a `check: <rule>` route calls that rule on the answer.
 - One primary API action per test; setup and cleanup calls are fine and stay visibly setup. Several business
   actions in one test only when the workflow itself is the case, named so.
 - HTTP checks in one line: `expectJson(response, 201)` asserts the status (200 by default) and returns the
@@ -65,7 +76,8 @@ addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
 
 Observed behaviour contradicts the plan (a status, a field, a message) → stop: it is a plan change, not a heal
 (`plans.mdc` §When the product changes). A heal touches only test mechanics: fixture wiring, payload shape
-against an unchanged contract, setup isolation.
+against an unchanged contract, setup isolation, a right answer moved (the same fields at another path — the
+client's path and the plan's route, like a locator).
 
 ## Response schemas
 
