@@ -5,13 +5,9 @@ UI or E2E) and its route from the live check; case blocks are written by `npm ru
 bug: `--case|--bug`); stand data is searched with `npm run stand:find` before a case is blocked. Ends with the plan
 at `specs/<app>/<area>/<feature>/<feature>.md` (a journey: `specs/e2e/<app>/<area>/<journey>.md`) and "Write these
 <n> now?". The plan exists already → a later pass by itself (§3): what is automated first, `Blocked` lines
-re-checked, an alignment with the TMS cases, or a short path — read only:
-- **one or two cases** of the planned feature → §1 (1, 7), §4 (the case's source), §4.5, §5 (what the case meets),
-  §6 Whole case, §8;
-- **a refresh** — a product or rule change named, red tests at hand or not → §3 "Already automated" and "Refresh",
-  §4–§5 for the changed part only, the TMS cases it touches only, §6 Whole case for a changed or new scenario, §8 —
-  its short form when only tests change;
-- **one E2E journey** over planned features → §7 and the parts its list names.
+re-checked, an alignment with the TMS cases, or a short path that reads only what its section lists — **one or two
+cases** of the planned feature → §3 "One or two cases"; **a refresh** (a product or rule change named, red tests at
+hand or not) → §3 "Refresh"; **one E2E journey** over planned features → §7.
 
 A locator-only failure is `/heal`; three or more red tests, or a CI run → `/triage` — a run summary's last line
 names which.

@@ -2,8 +2,8 @@ Use Skill: @.cursor/skills/implement/SKILL.md
 
 Writes the plan's ready cases whole — every scenario one test in its owner's folder (its `Level:`), each started with
 `npm run spec:draft -- <plan> <#>` and checking what its `Route:` names (a journey plan → its E2E spec), skipping
-what is automated; `Layer: visual` adds or checks a screenshot checkpoint (§6). API tests only → read only §1, §2,
-§3 and §8. Then the verify skill: one `npm run verify`.
+what is automated; `Layer: visual` adds or checks a screenshot checkpoint (§6); API tests only → the short list of
+§3. Then the verify skill: one `npm run verify`.
 
 Red tests or a change instead? A named product or rule change → `/plan <plan path> — <what changed>` (a refresh) ·
 one or two red tests → `/heal <spec>:<line> …` · three or more, or a CI run → `/triage`.
