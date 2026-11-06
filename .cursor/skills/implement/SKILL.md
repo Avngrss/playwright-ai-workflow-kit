@@ -122,10 +122,10 @@ state, dynamic content, masks and baselines: `specs.mdc` §Visual checkpoints �
    no checkpoint; say why. Unclear value → none.
 2. **Existing first** — the UI tests, visual tests, Page Objects, components and screenshot names already there;
    never a duplicate.
-3. **Target and place** — the smallest stable target, inside the existing UI test that reaches the state; a
-   checkpoint test of its own goes into `<feature>-visual.ui.spec.ts` beside the feature's UI spec — never a second
-   test of the scenario in that spec (snapshots in `<spec>-snapshots/`); the state reached through the Page Objects
-   and asserted functionally first.
+3. **Target and place** — the smallest stable target; the checkpoint is a test of its own in
+   `<feature>-visual.ui.spec.ts` beside the feature's UI spec (`specs.mdc` §Visual checkpoints) — never a screenshot
+   inside the feature's UI spec, which would be a second test of the scenario (snapshots in `<spec>-snapshots/`); the
+   state reached through the Page Objects and asserted functionally first.
 4. **Dynamic parts** — handled in the rule's order; masks in the spec's `toHaveScreenshot("<area|feature|component>-<state>.png",
    { mask: <page>.visualMaskTargets })`, the Page Object exposing `visualMaskTargets` for the plan-backed fields.
    Cannot be stabilised safely → the checkpoint is `blocked` or `postponed` in the plan.
