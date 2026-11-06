@@ -1,0 +1,19 @@
+.cursor/skills/implement/SKILL.md
+  s_1918e78fe42606::t_12478c310e7186 125-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3495654698b7d36073eaf7cec257e2743c4ab9ef",
+  "prompts": {},
+  "sessions": {
+    "s_1918e78fe42606": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_1918e78fe42606",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
