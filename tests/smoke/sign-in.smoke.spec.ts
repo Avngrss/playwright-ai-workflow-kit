@@ -79,6 +79,10 @@ for (const { slug: platform, ui: webApp } of platforms()) {
       });
     }
 
+    // An app that signs in nowhere on the web (`ui: none`) has no signed-out check to declare; before
+    // login is set up the test is listed, skipped.
+    if (configured && ui.mode === "none") return;
+
     test.describe("Signed out (smoke)", () => {
       test.use({ role: "none" });
       test.skip(ui.mode === "none", noWebSignIn);

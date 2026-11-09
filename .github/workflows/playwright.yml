@@ -1,5 +1,10 @@
 name: Playwright Starter CI
 
+# The test home in a folder of a product repo (e.g. qa/): this file goes to the repo's own
+# .github/workflows/; each job gets `defaults: { run: { working-directory: qa } }`, setup-node
+# `cache-dependency-path: qa/package-lock.json`, and every path below (the test detection, hashFiles,
+# artifacts) starts with qa/. The scripts themselves work from the folder as they are.
+
 on:
   push:
     branches: [main, master]
@@ -128,4 +133,15 @@ jobs:
         with:
           name: allure-report-${{ matrix.name }}
           path: reports/allure/html/
+          retention-days: 14
+      # The run's summary — every failure by its verdict and the next step; a triage of this run reads it.
+      - name: Upload run summary
+        if: always() && hashFiles('reports/run-summary.md', 'reports/run-summary.json') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: run-summary-${{ matrix.name }}
+          path: |
+            reports/run-summary.md
+            reports/run-summary.json
+          if-no-files-found: ignore
           retention-days: 14

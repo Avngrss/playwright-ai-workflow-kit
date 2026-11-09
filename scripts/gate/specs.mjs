@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { at, read, rel } from "./context.mjs";
+import { at, read, rel, statementsOf } from "./context.mjs";
 import { CASE_PREFIX } from "./plans.mjs";
 
 /** What a spec declares: its layer and scope tags, its quarantine reasons, hooks, mocks and case links — and no skeleton left. */
@@ -137,15 +137,75 @@ function checkKeySmoke(files, report) {
   }
 }
 
+/** The offset where the bracket opened at `from` closes — strings, comments and template literals skipped; -1 when it never does. */
+function closeOf(source, from) {
+  const templates = [];
+  let depth = 0;
+  let mode = null;
+  for (let at = from; at < source.length; at += 1) {
+    const [char, next] = [source[at], source[at + 1]];
+    if (mode === "//") {
+      if (char === "\n") mode = null;
+    } else if (mode === "/*") {
+      if (char === "*" && next === "/") [mode, at] = [null, at + 1];
+    } else if (mode === "'" || mode === '"') {
+      if (char === "\\") at += 1;
+      else if (char === mode || char === "\n") mode = null;
+    } else if (mode === "`") {
+      if (char === "\\") at += 1;
+      else if (char === "`") mode = null;
+      else if (char === "$" && next === "{") {
+        templates.push(depth);
+        [depth, mode, at] = [depth + 1, null, at + 1];
+      }
+    } else if (char === "/" && (next === "/" || next === "*")) [mode, at] = [`/${next}`, at + 1];
+    else if (char === "'" || char === '"' || char === "`") mode = char;
+    else if ("([{".includes(char)) depth += 1;
+    else if (")]}".includes(char)) {
+      depth -= 1;
+      if (templates.length && depth === templates.at(-1)) {
+        templates.pop();
+        mode = "`";
+      } else if (depth === 0) return at;
+    }
+  }
+  return -1;
+}
+
+/**
+ * What each `Setup:` step of a spec does, one line each: its callback's body — `() => <call>` or
+ * `async () => { await <call>; … }` (fixtures destructured or not), comments left out — none for a
+ * step holding another step.
+ */
+function setupBodies(source) {
+  const bodies = [];
+  for (const match of source.matchAll(/\btest\.step\(\s*(["'`])Setup:(?:(?!\1)[^\\]|\\.)*\1\s*,\s*/g)) {
+    const end = closeOf(source, match.index + "test.step".length);
+    if (end === -1) continue;
+    const callback = source.slice(match.index + match[0].length, end);
+    const arrow = /^(?:async\s+)?(?:\([^)]*\)|[\w$]+)\s*=>\s*/.exec(callback);
+    if (!arrow) continue;
+    let body = callback.slice(arrow[0].length).replace(/[\s,]+$/, "");
+    if (body.startsWith("{")) {
+      if (closeOf(body, 0) !== body.length - 1) continue;
+      body = body.slice(1, -1);
+    }
+    const statements = statementsOf(body)
+      .map(({ text }) => text)
+      .filter((text) => !/^(\/\/|\/\*|\*)/.test(text))
+      .map((text) => text.replace(/^(?:return\s+)?(?:await\s+)?/, "").replace(/;$/, "").replace(/\s+/g, " ").trim());
+    if (statements.length && !statements.some((text) => text.includes("test.step("))) bodies.push(statements.join("; "));
+  }
+  return bodies;
+}
+
 function checkRepeatedSetup(files, report) {
   // What several tests stand on is a fixture of the app: the same `Setup:` step — the same call — in
   // two tests of an app, in one spec or in several, is a repeat (.cursor/rules/code.mdc).
   const byApp = new Map();
   for (const spec of [...files.api, ...files.ui, ...files.e2e]) {
     const app = path.relative(at("tests"), spec).split(path.sep)[1];
-    const flat = read(spec).replace(/\s+/g, " ");
-    // `test.step("Setup: …", () => <one call>)` — the title up to its own closing quote, the call holding no other step.
-    for (const [, , call] of flat.matchAll(/test\.step\( ?(["'`])Setup:(?:(?!\1).)*\1 ?, ?\(\) ?=> ?((?:(?!test\.step\().)+?) ?,? ?\) ?;/g)) {
+    for (const call of setupBodies(read(spec))) {
       const calls = byApp.get(app) ?? new Map();
       calls.set(call, [...(calls.get(call) ?? []), spec]);
       byApp.set(app, calls);
@@ -155,7 +215,7 @@ function checkRepeatedSetup(files, report) {
     for (const [call, specs] of [...calls].filter(([, specs]) => specs.length > 1)) {
       const where = [...new Set(specs.map((spec) => path.basename(spec)))].join(", ");
       for (const spec of new Set(specs)) {
-        report.fail(spec, `"${call.slice(0, 90)}" is the Setup of ${specs.length} tests (${where}) — what tests stand on is a fixture of the app (src/fixtures/<app>/data.fixture.ts), taken as a parameter (.cursor/rules/code.mdc)`);
+        report.fail(spec, `"${call.slice(0, 90)}" is the Setup of ${specs.length} tests (${where}) — what tests stand on is a fixture of the app (src/fixtures/<app>/data.fixture.ts, or pages.fixture.ts when it is made through a Page Object), taken as a parameter (.cursor/rules/code.mdc)`);
       }
     }
   }

@@ -109,11 +109,16 @@ export function inProgress(dir = "tests") {
     // git names files from the repository's root; the test home may be a folder inside it.
     const prefix = git("rev-parse --show-prefix").trim();
     const inHome = (file) => path.join(ROOT, file.slice(prefix.length));
-    const files = new Set(
-      git(`status --porcelain --untracked-files=all -- ${dir}`).split(/\r?\n/).filter(Boolean).map((line) => inHome(line.slice(3).trim())),
-    );
+    // NUL-separated: a path with spaces comes unquoted, a rename as its new path (its old one follows).
+    const files = new Set();
+    const records = git(`status --porcelain -z --untracked-files=all -- ${dir}`).split("\0");
+    for (let at = 0; at < records.length; at += 1) {
+      if (!records[at]) continue;
+      files.add(inHome(records[at].slice(3)));
+      if (/[RC]/.test(records[at].slice(0, 2))) at += 1;
+    }
     const base = branchBase();
-    if (base) for (const file of git(`diff --name-only ${base} HEAD -- ${dir}`).split(/\r?\n/).filter(Boolean)) files.add(inHome(file));
+    if (base) for (const file of git(`diff --name-only -z ${base} HEAD -- ${dir}`).split("\0").filter(Boolean)) files.add(inHome(file));
     return files;
   } catch {
     return null;

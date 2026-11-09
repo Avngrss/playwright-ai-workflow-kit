@@ -5,19 +5,22 @@
  * `## Test cases`, numbered after the last block; no other line of the plan changes. Any source (a TMS
  * case, a ticket, a doc, the engineer's words, a bug) ends as this block.
  *
- *   npm run plan:block -- <plan> --title "<title>" [--tms <id>[,<id>…]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--steps "<step>" …]
+ *   npm run plan:block -- <plan> --title "<title>" [--tms <id>[,<id>…]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"] [--steps "<step>" …]
  *
  *   --title  the outcome in one sentence; with --tms the case id goes first ("TC-101 · …", a scenario "S2 · …" → "TC-101 · S2 · …")
  *   --tms    the case(s) it proves, the first one naming it; then Why is "case <id>"
  *   --owner  its one owner; --why the reason on its Level line — where the result is
  *   --role   a role of specs/project-map.md
+ *   --tag    a tag besides @regression on its Level line (@smoke, @cross-browser, @responsive); once per tag
+ *   --rules  where the rule a route checks is written (a route with `check:`): the block's Rules line —
+ *            without it the block has none (.cursor/rules/plans.mdc §Routes: stand data only)
  *   --steps  one argument per step, in the case's words; a scenario of several steps gets one "Route (step <n>)" line per step
  *
  * Drafted from a source the agent saved — a TMS case or a confirmed bug (scripts/agent/plan-draft.mjs,
  * loaded only for these calls):
  *
- *   npm run plan:block -- <plan> --case state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner …] [--why …] [--role …]
- *   npm run plan:block -- <plan> --bug state/sources/<id>.json [--title "<the outcome it expects>"] [--owner …] [--why …] [--role …]
+ *   npm run plan:block -- <plan> --case state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner …] [--why …] [--role …] [--tag …] [--rules …]
+ *   npm run plan:block -- <plan> --bug state/sources/<id>.json [--title "<the outcome it expects>"] [--owner …] [--why …] [--role …] [--tag …] [--rules …]
  *
  * A plan that does not exist yet is written by the agent through the plan skill. Exit 0: added · 1:
  * nothing written, the last line says why.
@@ -45,14 +48,22 @@ export const PLACEHOLDER = {
 };
 
 export const USAGE = [
-  'npm run plan:block -- <plan> --title "<title>" [--tms <id>] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--steps "<step>" …]',
-  'npm run plan:block -- <plan> --case state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>]',
-  'npm run plan:block -- <plan> --bug state/sources/<id>.json [--title "<the outcome it expects>"] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>]',
+  'npm run plan:block -- <plan> --title "<title>" [--tms <id>] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"] [--steps "<step>" …]',
+  'npm run plan:block -- <plan> --case state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"]',
+  'npm run plan:block -- <plan> --bug state/sources/<id>.json [--title "<the outcome it expects>"] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"]',
 ].join("\n");
-const OPTIONS = { "--title": "title", "--tms": "tms", "--owner": "owner", "--why": "why", "--role": "role" };
+const OPTIONS = { "--title": "title", "--tms": "tms", "--owner": "owner", "--why": "why", "--role": "role", "--rules": "rules" };
 const ROOT = process.cwd();
 export const posix = (file) => file.replace(/\\/g, "/");
 const isPrep = (step) => /^(Setup|Cleanup):/.test(step);
+
+/** A `--tag` value added to the call's tags — or a stop naming what a block's Tag takes. */
+export function addTag(call, value) {
+  const tag = String(value ?? "").trim().toLowerCase();
+  if (!/^@[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tag)) stop(`--tag takes one tag, "@" and kebab-case (@smoke, @cross-browser, @responsive) — not "${value}"`);
+  if (/^@(api|ui|e2e)$/.test(tag)) stop(`--tag ${tag}: the layer tag comes from --owner (spec:draft adds it), not the block's Tag`);
+  if (tag !== "@regression" && !(call.tags ??= []).includes(tag)) call.tags.push(tag);
+}
 
 /** A plan command's stop: nothing written, the last line says why. */
 export const stopper = (name) => (message) => {
@@ -83,6 +94,10 @@ function parse(argv) {
       while (at + 1 < rest.length && !rest[at + 1].startsWith("--")) call.steps.push(rest[++at].replace(/\s+/g, " ").trim());
       continue;
     }
+    if (arg === "--tag") {
+      addTag(call, rest[++at]);
+      continue;
+    }
     const key = OPTIONS[arg];
     if (!key) stop(`unknown option "${arg}"\n${USAGE}`);
     const value = rest[at + 1];
@@ -98,7 +113,8 @@ function parse(argv) {
 /**
  * The block, in the template's order of lines. What a drafted block copies from its source — `tmsWord`,
  * `value`, `basis`, `rules`, `preconditions`, `expects` (one per step), `after` (lines below Cleanup)
- * — replaces the template's words; without them it is the empty block.
+ * — replaces the template's words; without them it is the empty block. `tags` join @regression on
+ * the Level line; a Rules line only with `rules` — a route naming a rule (`check:`) cites its source there.
  */
 export function blockOf(number, call) {
   const [first] = call.ids;
@@ -109,13 +125,13 @@ export function blockOf(number, call) {
     routed.length > 1 ? routed.map(({ n }, index) => `- Route (step ${n}): ${index === 0 ? PLACEHOLDER.route : PLACEHOLDER.routeOfStep}`) : [`- Route: ${PLACEHOLDER.route}`];
   return [
     `### ${number}. ${title}`,
-    `- Level: ${call.owner ?? PLACEHOLDER.owner} — ${call.why ?? PLACEHOLDER.why} · Tag: @regression · Role: ${call.role ?? PLACEHOLDER.role} · TMS: ${call.ids.join(", ") || call.tmsWord || PLACEHOLDER.tms}`,
+    `- Level: ${call.owner ?? PLACEHOLDER.owner} — ${call.why ?? PLACEHOLDER.why} · Tag: ${["@regression", ...(call.tags ?? [])].join(" ")} · Role: ${call.role ?? PLACEHOLDER.role} · TMS: ${call.ids.join(", ") || call.tmsWord || PLACEHOLDER.tms}`,
     ...routes,
     `- Value: ${call.value ?? PLACEHOLDER.value}`,
     `- Why: ${call.basis ?? (call.ids.length ? `case ${call.ids.join(", ")}` : PLACEHOLDER.basis)}`,
     "- Status: ready to implement now",
     `- Data: ${PLACEHOLDER.data}`,
-    `- Rules: ${call.rules ?? PLACEHOLDER.rules}`,
+    ...(call.rules ? [`- Rules: ${call.rules}`] : []),
     `- Preconditions: ${call.preconditions ?? PLACEHOLDER.preconditions}`,
     "- Steps:",
     ...steps.flatMap((step, index) => [`  ${index + 1}. ${step}`, `     - expect: ${call.expects?.[index] || PLACEHOLDER.expect}`]),

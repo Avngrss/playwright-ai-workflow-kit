@@ -18,6 +18,7 @@
  *   npm run env:prepare -- --note "Test account" APP_LOGIN APP_PASSWORD   add empty entries under a note
  *   npm run env:prepare -- UI_BASE_URL APP_LOGIN                    only report filled/empty
  *   npm run env:prepare -- --tidy                                   lay both files out again
+ *   npm run env:prepare -- --drop API_BASE_URL                      remove a name no map row or ```auth block uses
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -300,6 +301,37 @@ function editor(text, apps, forExample) {
       const entry = entryOf(lines[index]);
       if (entry.commented) lines[index] = lineFor(name, { value: entry.value });
     },
+    /**
+     * The name gone — its line (and a commented-out one), with the notes right above it that head it alone;
+     * then a group's note or a section's heading left with nothing under it. Whether it was there.
+     */
+    drop(name) {
+      let found = false;
+      for (let index = at(name); index !== -1; index = at(name)) {
+        found = true;
+        let from = index;
+        const headsNext = entryOf(lines[index + 1] ?? "") !== undefined;
+        while (!headsNext && from > 0 && lines[from - 1].startsWith("#") && !entryOf(lines[from - 1]) && !GENERATED.some((pattern) => pattern.test(lines[from - 1])) && !ACCOUNT_NOTE.test(lines[from - 1])) from -= 1;
+        lines.splice(from, index - from + 1);
+      }
+      if (!found) return false;
+      // A group's note ("# Addresses and settings", a test account's) heading no entry, a section heading
+      // only blank lines, a blank line after another — gone.
+      const isHeading = (line) => line?.startsWith("# ─── ");
+      const isGroupNote = (line) => line === "# Addresses and settings" || ACCOUNT_NOTE.test(line ?? "");
+      for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const next = lines[index + 1];
+        if (isGroupNote(lines[index]) && (next === undefined || !next.trim() || isHeading(next) || isGroupNote(next))) lines.splice(index, 1);
+      }
+      for (let index = lines.length - 1; index >= 0; index -= 1) {
+        if (!isHeading(lines[index])) continue;
+        let end = index + 1;
+        while (end < lines.length && !lines[end].trim()) end += 1;
+        if (end === lines.length || isHeading(lines[end])) lines.splice(index, end - index);
+      }
+      for (let index = lines.length - 1; index > 0; index -= 1) if (!lines[index].trim() && !lines[index - 1].trim()) lines.splice(index, 1);
+      return true;
+    },
     text: () => `${lines.join("\n").replace(/\n+$/, "")}\n`,
   };
 }
@@ -322,7 +354,53 @@ function save(target, text) {
   fs.writeFileSync(target, before?.includes("\r\n") ? text.replace(/\n/g, "\r\n") : text, "utf8");
 }
 
+/** The names the map still uses: its rows' addresses, its ```auth blocks' ${NAME}s, its external systems' tokens. */
+function namesInUse(apps) {
+  const used = new Map();
+  for (const app of apps) {
+    for (const name of app.stand) used.set(name, `${app.slug}'s row or auth block`);
+    for (const [role, names] of app.accounts) for (const name of names) used.set(name, `${app.slug}'s auth block (${role === "user" ? "test account" : `role ${role}`})`);
+  }
+  const external = /^## External systems\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(read(mapFile))?.[1] ?? "";
+  for (const row of external.split("\n").filter((line) => line.startsWith("|"))) {
+    for (const [name] of row.matchAll(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/g)) if (!used.has(name)) used.set(name, "§External systems");
+  }
+  return used;
+}
+
+/**
+ * --drop <NAME>…: names gone from .env and .env.example — only names no map row, ```auth block or external
+ * system uses; any still used → nothing changes. Never creates .env.
+ */
+function dropNames(names, apps) {
+  if (!names.length || names.some((name) => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))) {
+    console.log("✗ --drop takes the names to remove (npm run env:prepare -- --drop API_BASE_URL) — set or add entries in a call of their own");
+    process.exit(1);
+  }
+  const used = namesInUse(apps);
+  const kept = names.filter((name) => used.has(name));
+  if (kept.length) {
+    console.log(kept.map((name) => `✗ ${name} is still used by specs/project-map.md (${used.get(name)}) — not dropped; remove it there first`).join("\n"));
+    console.log("Nothing dropped.");
+    process.exit(1);
+  }
+  const workflow = path.join(process.cwd(), ".github", "workflows", "playwright.yml");
+  const report = [];
+  const exampleFile = editor(read(example), apps, true);
+  const env = fs.existsSync(file) ? editor(read(file), apps, false) : undefined;
+  for (const name of names) {
+    const from = [env?.drop(name) && ".env", exampleFile.drop(name) && ".env.example"].filter(Boolean);
+    report.push(from.length ? `✓ ${name} dropped from ${from.join(" and ")}` : `· ${name} is in neither file — nothing to drop`);
+    if (fs.existsSync(workflow) && new RegExp(`^\\s+${name}\\s*:`, "m").test(read(workflow))) report.push(`! ${name} is still in .github/workflows/playwright.yml env: — remove it there too`);
+  }
+  if (env) save(file, env.text());
+  save(example, exampleFile.text());
+  console.log(report.join("\n"));
+  process.exit(0);
+}
+
 const apps = mapGroups();
+if (process.argv.includes("--drop")) dropNames(process.argv.slice(2).filter((arg) => arg !== "--drop"), apps);
 const created = !fs.existsSync(file);
 if (created) fs.writeFileSync(file, envFromExample(read(example)), "utf8");
 const env = editor(read(file), apps, false);
