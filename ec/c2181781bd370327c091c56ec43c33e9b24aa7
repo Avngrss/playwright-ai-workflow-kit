@@ -1,0 +1,25 @@
+.cursor/rules/plans.mdc
+  s_08f175fa545284::t_16996482e87092 254-256
+README.md
+  s_08f175fa545284::t_e1ff37f134cfe2 76-90,325,336-338,342-344
+docs/auth-strategy.md
+  s_08f175fa545284::t_cb9b74100903a2 32-34
+tests/smoke/sign-in.smoke.spec.ts
+  s_08f175fa545284::t_e5985f3153794e 44-46,59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ecc2181781bd370327c091c56ec43c33e9b24aa7",
+  "prompts": {},
+  "sessions": {
+    "s_08f175fa545284": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_08f175fa545284",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
