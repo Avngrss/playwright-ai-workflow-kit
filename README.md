@@ -40,7 +40,7 @@ git clone -b demo/todomvc https://github.com/Avngrss/playwright-ai-workflow-kit.
 cd todomvc-demo
 npm install
 npm run env:prepare    # .env with the demo app's address from .env.example
-npm test               # 6 passed, 1 skipped (the sign-in check of an app without sign-in)
+npm test               # 6 passed: the app opens, then its 5 cases
 npm run allure:open
 ```
 
