@@ -4,6 +4,8 @@
 #
 # This path is the etalon template. GitLab only runs a file named .gitlab-ci.yml
 # at the repository root — copy this file there if the project uses GitLab CI.
+# The test home in a folder of a product repo (e.g. qa/): each script starts with `cd qa`, and the
+# cache and artifact paths (and has-tests.env) start with qa/. The scripts themselves work from the folder.
 
 stages:
   - gate
@@ -82,6 +84,9 @@ gitleaks:
       - test-results/
       - reports/allure/results/
       - reports/allure/html/
+      # The run's summary — every failure by its verdict and the next step; a triage of this run reads it.
+      - reports/run-summary.md
+      - reports/run-summary.json
   script:
     - |
       if [ "$HAS_TESTS" != "true" ]; then

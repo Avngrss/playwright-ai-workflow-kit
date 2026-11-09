@@ -1,5 +1,6 @@
-import type { Page } from "@playwright/test";
+import type { Page, Response } from "@playwright/test";
 import { expect, test as base } from "./data.fixture";
+import { expectAnswer, type AnswerPath } from "../assertions/shared/http";
 import { maskSecrets } from "../reporting/readable-error";
 import { recordAppMessages } from "../setup/app-messages";
 import { installAppWideHandlers } from "../setup/app-wide";
@@ -7,13 +8,101 @@ import { authConfig, who } from "../setup/auth/auth-config";
 import { signInHere } from "../setup/auth/auth";
 import { loginFormShown } from "../setup/auth/form-login";
 import { missingUrl } from "../setup/platforms";
+import { answersOf, type AwaitedRequest } from "../setup/request-capture";
+
+/** The words a failed check of an action's answer opens with — the report reads its cause from them. */
+export const ANSWER_CHECK = "The server's answer to the action —";
+/** The words a failed check of what the action sent opens with — a front-end cause, not the server's. */
+export const SENT_CHECK = "The request the action sent —";
+
+/** What the action must send and what its answer must be — every part optional. */
+export interface AnswerExpected<T> {
+  /** The answer's status; 200 unless named. */
+  status?: number;
+  /** Fields the request's body holds, as `toMatchObject` — what the screen sent (the key it must never send masked). */
+  sent?: Record<string, unknown>;
+  /** The request's query parameters, as `toMatchObject` — the period, the sort the page asked for. */
+  query?: Record<string, string>;
+  /** Fields the answer holds, as `toMatchObject` — the case's own data: what the test made, or values the case states (a total of 0); a list answer takes a list (`expect.arrayContaining([...])` for a part of it). */
+  has?: Record<string, unknown> | unknown[];
+  /** An app's named rule over the answer (src/assertions/<app>/) — for values only the stand knows; a rule needing arguments is built by a call: `check: paidAsInBilling(billing)`. */
+  check?: (answer: T) => unknown;
+}
+
+/** A request the page sends: the client's `answerPath(…)`, or "POST api/…" / "api/…" (any method) written out. */
+export type AnswerTarget<T> = AnswerPath<T> | string;
+type AnswerOf<P> = P extends AnswerPath<infer T> ? T : unknown;
+
+/**
+ * Does the action, takes the server's answer to it and checks it — one line per gesture of a case:
+ * `const invitation = await answerTo(inviteTo(team), () => members.invite(email), { has: { email } })`.
+ * The action is handed over, so the answer is listened for before the click; the Page Object method
+ * acts (and may wait for its screen), it never takes this answer itself. Returns the answer's body.
+ */
+export type AnswerTo = <T>(target: AnswerTarget<T>, action: () => Promise<unknown>, expected?: AnswerExpected<T>) => Promise<T>;
+
+/**
+ * The same for an action awaiting several answers (a dashboard opening on its sections' requests):
+ * `const [sales, returns] = await answersTo([salesOf(shop), returnsOf(shop)], () => reports.open(shop), [{ check: totalsAddUp }, { check: refundsKept }])`.
+ */
+export type AnswersTo = <const P extends readonly AnswerTarget<unknown>[]>(
+  targets: P,
+  action: () => Promise<unknown>,
+  expected?: { [K in keyof P]?: AnswerExpected<AnswerOf<P[K]>> },
+) => Promise<{ -readonly [K in keyof P]: AnswerOf<P[K]> }>;
+
+const awaited = (target: AnswerTarget<unknown>): AwaitedRequest => {
+  if (typeof target !== "string") return { method: target.method, path: target.path };
+  const [, method, path] = /^(?:([A-Z]+)\s+)?(.+)$/.exec(target.trim()) ?? [];
+  return { method, path: path ?? target };
+};
+
+/** A failed check says first whose it is — the action's request or the server's answer — whoever's assertion threw it. */
+async function labelled(words: string, check: () => unknown): Promise<void> {
+  try {
+    await check();
+  } catch (error) {
+    if (error instanceof Error) error.message = `${words}\n${error.message}`;
+    throw error;
+  }
+}
+
+/** What the action sent first (a wrong request explains a wrong answer), then the answer's status, fields and rule. */
+async function checkedAnswer<T>(response: Response, expected: AnswerExpected<T> = {}): Promise<T> {
+  const request = response.request();
+  const label = `${request.method()} ${new URL(response.url()).pathname}`;
+  // As unknown: a generic body gives the matchers no type to resolve against.
+  if (expected.sent) expect(request.postDataJSON() as unknown, `${SENT_CHECK} ${label}`).toMatchObject(expected.sent);
+  if (expected.query) expect(Object.fromEntries(new URL(request.url()).searchParams) as unknown, `${SENT_CHECK} ${label}`).toMatchObject(expected.query);
+  const answer = await expectAnswer<T>(response, expected.status ?? 200);
+  if (expected.has) expect(answer as unknown, `${ANSWER_CHECK} ${label}`).toMatchObject(expected.has);
+  if (expected.check) await labelled(`${ANSWER_CHECK} ${label}`, () => expected.check?.(answer));
+  return answer;
+}
+
+async function answersToActions(page: Page, targets: readonly AnswerTarget<unknown>[], action: () => Promise<unknown>, expected: readonly (AnswerExpected<unknown> | undefined)[] = []): Promise<unknown[]> {
+  const responses = await answersOf(page, targets.map(awaited), action);
+  const answers: unknown[] = [];
+  for (const [index, response] of responses.entries()) answers.push(await checkedAnswer(response, expected[index]));
+  return answers;
+}
 
 /**
  * The shared page layer — the `page` every app's test gets. Part of the template, never edited in a
  * test home: an app's Page Objects are wired in src/fixtures/<app>/pages.fixture.ts
  * (`npm run app:add -- <app>` creates it), and its specs take `test` from src/fixtures/<app>/test.
  */
-export const test = base.extend<{ signIn: (role?: string) => Promise<void> }>({
+export const test = base.extend<{ signIn: (role?: string) => Promise<void>; answerTo: AnswerTo; answersTo: AnswersTo }>({
+  answerTo: async ({ page }, use) => {
+    await use(async <T>(target: AnswerTarget<T>, action: () => Promise<unknown>, expected?: AnswerExpected<T>) => {
+      const [answer] = await answersToActions(page, [target], action, [expected as AnswerExpected<unknown> | undefined]);
+      return answer as T;
+    });
+  },
+  answersTo: async ({ page }, use) => {
+    await use((async (targets: readonly AnswerTarget<unknown>[], action: () => Promise<unknown>, expected?: readonly (AnswerExpected<unknown> | undefined)[]) =>
+      answersToActions(page, targets, action, expected)) as AnswersTo);
+  },
   // Signing in as a step of the test itself — a sign-in or sign-out case, with `session: "signed-out"`:
   // the map's form steps on this test's page, as the role (default: the test's own) from .env. The
   // values typed are taken out of the trace and every attachment (src/reporting/secret-scrub).

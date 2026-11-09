@@ -39,7 +39,7 @@ a read (the gate warns).
 | `expect`, `test.step`, hooks, screenshots, test-runner logic, reporting metadata | the spec |
 | test data (builders, generators, defaults, random values), API setup, `process.env` | `src/data/`, fixtures |
 | cross-page flows, another route's locators | the spec, each page through its own Page Object |
-| listening to the network (`waitForResponse`, `on("request")`, `captureRequests`) | the spec with `captureRequests` / `whenAnswered` (`src/setup/request-capture.ts`); request patterns in `src/setup/<app>/` |
+| listening to the network (`waitForResponse`, `on("request")`, `captureRequests`) | the spec: the action's answer through `answerTo` / `answersTo`, the Page Object method handed to it; sent requests through `captureRequests`; answer paths with their method and schema in the app's client (`answerPath("POST", …)`), other request patterns in `src/setup/<app>/` |
 | mocking a response (`page.route`) | the spec, under `// mocked:` |
 | preparing the browser (`addInitScript`, storage, cookies, `page.evaluate`) | `src/setup/<app>/`; an `open…()` may call it |
 | turning shown text into data or back (dates, money) | the app's display helper `src/assertions/<app>/display.ts` |
@@ -47,7 +47,9 @@ a read (the gate warns).
 
 - **The one network wait allowed**: when the screen gives no sign that new data arrived (figures change in
   place), the action waits for the answers that bring it — `whenAnswered(this.page, paths, () => …)`, never a
-  hand-written `waitForResponse`, and only for an action that surely asks the server.
+  hand-written `waitForResponse`, and only for an action that surely asks the server. **Never for an answer
+  the case takes as truth**: the spec takes that one through `answerTo` (`specs.mdc` §A UI test reads as its
+  case) — the method acts, may wait for its own screen, and never returns or checks that answer.
 - **No state**: every field `readonly`, set once; no stored answer, counter or flag.
 - `page` is `protected`: a spec never reaches past the Page Object (`ordersPage.page.getByRole(…)`); a spec
   that needs the browser itself takes the `page` fixture.
@@ -156,7 +158,9 @@ A block becomes a component for one of **three reasons** — by meaning, not by 
   `locator('[data-testid="…"]')`. No test id → never invent one;
   take the next option, and when it is fragile note the missing test id in the plan's change log (a finding
   for the product team, not a code comment).
-- No XPath, `nth-child`, generated class names or layout-dependent selectors without a stated reason.
+- No `nth-child`, generated class names or layout-dependent selectors without a stated reason. XPath only for
+  an element found by its place next to one located the usual way, nothing else tying them (a row's expansion:
+  `row.locator("xpath=following-sibling::tr[1]")`) — never a path from the page's root.
   Locators come from the live app (`live-app.mdc`) — never guessed, never asked of the user — and live only in
   Page Objects and components; a spec reads as intent (`await loginPage.signIn(customer)`).
 - Every locator and component is a typed `readonly` field, one line each in the constructor
@@ -199,7 +203,7 @@ A block becomes a component for one of **three reasons** — by meaning, not by 
   repeat is fixed by a behaviour-preserving refactor the user asks for — test names, intent, steps, checks, tags
   and fixture contracts unchanged, no new abstraction while removing one, failing tests healed first. A component
   split only for one of the three reasons of §When a component; a simplification by the cleanup triggers of
-  `code.mdc` §When an abstraction earns its cost. Then the impacted specs with `--retries=0` and `npm run qa:gate`.
+  `code.mdc` §When an abstraction earns its cost. Then one `npm run verify` of the impacted specs (no `--can-fail`: no check changed).
 - Unclear which Page Object or component owns a block → decide per candidate: **keep** in the Page Object ·
   **extract** a component now (one of the three reasons) · **reuse** an existing component · **postpone**
   until reuse or complexity appears · **remove** an unnecessary abstraction. A component fixture only as a
@@ -210,13 +214,13 @@ A block becomes a component for one of **three reasons** — by meaning, not by 
   update the owner's composition, imports and affected specs minimally; no new scenarios, features,
   speculative methods, fixtures without need, generic Playwright wrappers, flows or scenario checks moved in;
   public names kept unless needed; delete what moved — no old copy beside the new component.
-- Verify: the smallest impacted spec first (`npm run test:app -- <app> ui <spec> --retries=0`), the relevant UI
-  specs when the component is shared, then `npm run qa:gate`; not run → say what to run and why.
+- Verify: `npm run verify -- <app> <the impacted spec>`, with `--also <the other specs>` when the component is
+  shared — the gate and one run; not run → say what to run and why.
 
 ## Before accepting UI code
 
 None of: a component fixture without a reuse need; a scenario check in a Page Object or component; a
 speculative or unused member; an undocumented fragile locator; a changing field; network capture, browser
-preparation or value conversion in a Page Object; a page copying its base's `open()`; two components for one
+preparation or value conversion in a Page Object; a Page Object returning the answer the case takes as truth; a page copying its base's `open()`; two components for one
 kind of block; a Page Object grown into a dumping ground; a block read in pieces the test joins; an action of
 the case split into calls the test chains.

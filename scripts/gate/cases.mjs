@@ -1,13 +1,13 @@
 import path from "node:path";
 import { at, read, ROOT } from "./context.mjs";
-import { caseLinksIn, keepsOut, readPlans } from "./plans.mjs";
-import { testsOf } from "./specs.mjs";
+import { caseLinksIn, keepsOut, readPlans, scenarioOf } from "./plans.mjs";
+import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
 /**
- * A manual case is automated whole or not at all, on the layers its plan says it needs (the plan skill,
- * "Whole case"): no test links a case its plan keeps in Not now — blocked,
- * postponed, a layer not in this run; only "Covered by …" leaves it written — and a case its tests
- * cover on one needed layer is covered on every one.
+ * A manual case is automated whole or not at all (the plan skill, "Whole case"): no test links a case
+ * its plan keeps in Not now — blocked, postponed, an owner not in this run; only "Covered by …" leaves
+ * it written — and every scenario of a written case has its test. A plan written before routing
+ * (`Needs:` instead of `Route:`) is held to its layers, as it was written.
  */
 function checkWholeCases(files, report) {
   const plans = readPlans(ROOT);
@@ -15,10 +15,12 @@ function checkWholeCases(files, report) {
   const testsOfCase = new Map();
   for (const spec of [...files.api, ...files.ui, ...files.e2e]) {
     const [layer, app] = path.relative(at("tests"), spec).split(path.sep);
-    for (const { title, options } of testsOf(read(spec))) {
+    for (const { title, options, tags } of testsOf(read(spec))) {
       for (const id of caseLinksIn(options)) {
         const key = `${app}|${id}`;
-        testsOfCase.set(key, [...(testsOfCase.get(key) ?? []), { spec, title, layer: layer.toUpperCase() }]);
+        // A screenshot checkpoint of its own file links the case, but proves none of its scenarios.
+        const scenario = isVisualCheckpoint(spec, tags) ? null : scenarioOf(title);
+        testsOfCase.set(key, [...(testsOfCase.get(key) ?? []), { spec, title, layer: layer.toUpperCase(), scenario }]);
       }
     }
   }
@@ -35,9 +37,22 @@ function checkWholeCases(files, report) {
         );
       }
     }
-    // A case planned as several blocks (its API and UI sides) repeats its Needs line: one finding.
+    // A routed case: every ready scenario has its test (one test, its owner's — routes.mjs and
+    // repeats.mjs check which and how many). A case with a scenario written has them all.
+    const ready = cases.filter((entry) => entry.route && /^ready/i.test(entry.status));
+    for (const { ids, scenario, title } of ready) {
+      for (const id of ids) {
+        const tests = testsOfCase.get(`${app}|${id}`) ?? [];
+        if (!tests.length || tests.some((test) => test.scenario === scenario)) continue;
+        report.fail(
+          at(...plan.split("/")),
+          `case ${id} is written in part — "${title}" has no test, while ${tests.length} test(s) link the case: write it, or move the case to Not now (not in this run, or what blocks it) and drop its tests' link (the plan skill, "Whole case")`,
+        );
+      }
+    }
+    // A plan written before routing: a case planned as several blocks (its API and UI sides) repeats its Needs line — one finding.
     const seen = new Set();
-    for (const { ids, needs } of cases.filter((entry) => entry.needs && /^ready/i.test(entry.status))) {
+    for (const { ids, needs } of cases.filter((entry) => !entry.route && entry.needs && /^ready/i.test(entry.status))) {
       for (const id of ids.filter((value) => !seen.has(value))) {
         seen.add(id);
         const tests = testsOfCase.get(`${app}|${id}`) ?? [];
@@ -45,7 +60,7 @@ function checkWholeCases(files, report) {
         if (missing.length) {
           report.fail(
             at(...plan.split("/")),
-            `case ${id} needs ${needs.join("+")}, and no ${missing.join("+")} test links it — write it, or move the case to Not now "Needs ${needs.join("+")}" (not in this run) and drop its other tests' link (the plan skill, "Whole case")`,
+            `case ${id} needs ${needs.join("+")}, and no ${missing.join("+")} test links it — write it, or move the case to Not now and drop its other tests' link (the plan skill, "Whole case"); a refresh of the feature routes its scenarios (docs/Layer Routing Algorithm.md)`,
           );
         }
       }
@@ -86,4 +101,21 @@ function checkBrowsersPhoneScreens(_files, report) {
   }
 }
 
-export const caseRules = [checkWholeCases, checkBrowsersPhoneScreens];
+/**
+ * A case is Blocked only after the search (the plan skill, "Searched before blocked"): its Not now
+ * reason ends " · searched: <place>; <place>" or " · searched: none (<why>)". A warning while plans
+ * written before the rule catch up.
+ */
+function checkBlockedSearched(files, report) {
+  for (const { plan, notNow } of readPlans(ROOT)) {
+    const unsearched = notNow.filter(({ status, searched }) => status === "blocked" && !searched);
+    if (!unsearched.length) continue;
+    const named = unsearched.map(({ ids, title }) => (ids.length ? ids.join(", ") : `"${title}"`)).join("; ");
+    report.warn(
+      at(...plan.split("/")),
+      `${unsearched.length} Blocked line(s) do not say where the tests looked (${named}) — end the reason with " · searched: <place>; <place>", or " · searched: none (<why>)" where no search lifts it (the plan skill, "Searched before blocked")`,
+    );
+  }
+}
+
+export const caseRules = [checkWholeCases, checkBrowsersPhoneScreens, checkBlockedSearched];

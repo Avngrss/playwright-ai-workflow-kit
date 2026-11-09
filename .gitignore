@@ -33,3 +33,7 @@ reports/allure/history.jsonl
 # Readable run summary (written by every run)
 reports/run-summary.md
 reports/run-summary.json
+# Each test's last result, merged by every run (scripts/agent/suite-coverage.mjs reads it)
+reports/last-results.json
+# Lines a verify cut off left spoiled (npm run verify -- --restore puts them back)
+reports/verify-spoils.json

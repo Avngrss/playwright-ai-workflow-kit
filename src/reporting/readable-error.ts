@@ -21,6 +21,19 @@ const ACTION_TIMEOUT: Record<string, string> = {
   hover: "Could not hover the element",
   selectOption: "Could not select in the element",
   press: "Could not press a key in the element",
+  pressSequentially: "Could not type into the element",
+  clear: "Could not clear the element",
+  focus: "Could not focus the element",
+  tap: "Could not tap the element",
+  setChecked: "Could not tick or untick the element",
+  setInputFiles: "Could not attach a file to the element",
+  dragTo: "Could not drag the element",
+  scrollIntoViewIfNeeded: "Could not scroll to the element",
+  textContent: "Could not read the text of the element",
+  innerText: "Could not read the text of the element",
+  innerHTML: "Could not read the element",
+  inputValue: "Could not read the value of the element",
+  getAttribute: "Could not read an attribute of the element",
   waitFor: "The element did not appear",
   goto: "The page did not open",
 };
@@ -39,8 +52,25 @@ function shapeOf(value: string): string {
   return `${value.slice(0, MAX_VALUE_LENGTH)} …`;
 }
 
+// A session token is never in .env — the sign-in issues it — so it is known by its shape: the value
+// after "Bearer " (Playwright's call log prints the Authorization header of a request that timed out)
+// and a JWT (three dot-separated base64url parts starting with "eyJ").
+const BEARER = /(\bBearer\s+)[A-Za-z0-9\-._~+/]+=*/gi;
+const JWT = /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g;
+// Basic credentials: base64 of "login:password" — masked only when it decodes to that shape ("Basic settings" stays).
+const BASIC = /(\bBasic\s+)([A-Za-z0-9+/]{4,}={0,2})/gi;
+const isCredentials = (value: string) => /^[\x20-\x7e]+:[\x20-\x7e]*$/.test(Buffer.from(value, "base64").toString("latin1"));
+
+/** The text with every session token — a Bearer value, a JWT, Basic credentials — replaced. */
+export function maskTokens(text: string): string {
+  return text
+    .replace(BEARER, "$1[token]")
+    .replace(JWT, "[token]")
+    .replace(BASIC, (whole: string, head: string, value: string) => (isCredentials(value) ? `${head}[token]` : whole));
+}
+
 export function maskSecrets(text: string): string {
-  return text.replace(SECRET_PARAMS, "$1***");
+  return maskTokens(text.replace(SECRET_PARAMS, "$1***"));
 }
 
 /** What the call log knows that the message does not: the element waited for, the request sent. */
@@ -96,6 +126,20 @@ export function readableMessage(message: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\n\n(?=(?:Expected|Received|Waited|Element|Request)\b)/g, "\n")
     .trim();
+}
+
+/**
+ * The locator a failure could not find, as Playwright names it (`getByRole('button', { name: 'Save' })`) —
+ * from a strict-mode error, an assertion's Locator line, or the call log's "waiting for"; none otherwise.
+ */
+export function missedLocator(message: string): string | undefined {
+  const text = message.replace(ANSI, "");
+  const found =
+    /strict mode violation: (.+?) resolved to \d+ elements/.exec(text)?.[1] ??
+    /^Locator: (.+)$/m.exec(text)?.[1] ??
+    /^Element: (.+)$/m.exec(text)?.[1] ??
+    /waiting for (.+)$/m.exec(text)?.[1];
+  return found?.replace(/ to be (?:visible|hidden|attached|detached|enabled|editable|checked)$/, "").trim() || undefined;
 }
 
 /** First line only — what a failed step shows, so the full text is not repeated under every step. */

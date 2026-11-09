@@ -1,5 +1,5 @@
 ---
-description: Fixtures and test data — the shared chain and an app's own fixtures, never hiding the action, the setup/cleanup ladder, recommending a fixture, disposable data and sweeps, builders, generators, datasets, each case's data source, the AQA marker, stand lookups, facts only another system knows, and the sign-in setup (the map's ```auth block, API modes, sessions, several apps)
+description: Fixtures and test data — the shared chain and an app's own fixtures, never hiding the action, the setup/cleanup ladder, recommending a fixture, disposable data and sweeps, builders, generators, datasets, each case's data source, each value a case names (a rule or an illustration), the AQA marker, stand lookups and stand:find, a kept item's facts, facts only another system knows, and the sign-in setup (the map's ```auth block, API modes, sessions, several apps)
 globs: src/data/**, src/fixtures/**, src/setup/**, tests/**
 alwaysApply: false
 ---
@@ -62,7 +62,8 @@ Fixture recommendation:
 - if skipped now: <what the spec does instead>
 ```
 
-A fixture used by exactly one test is not reuse yet. Before adding one, answer all: what object does it
+A fixture used by exactly one test is not reuse yet — except a disposable-data fixture and a stand-data rule's
+oracle (`plans.mdc` §Routes), which one test may own. Before adding one, answer all: what object does it
 provide? Is it thin (setup, wiring, teardown)? Does the action under test stay visible? Is it in the app's
 file for its kind? Would a second spec use it? Any unclear answer → no fixture; call it in the spec.
 
@@ -79,8 +80,9 @@ disposableAddress: async ({ addresses }, use) => {
 - Teardown stays thin and idempotent. Every `disposable…` fixture ships its `src/data/sweeps.ts` entry in the
   same change, naming the fixture in a comment; every entry says `platform: "<app>"`.
 - What two or more tests stand on (an item found on the stand, an object prepared for them) is an app fixture
-  named after what it is; the lookup stays a function in `src/setup/<app>/`, called in a boxed step that
-  still shows in the report:
+  named after what it is — in `data.fixture.ts`, or in `pages.fixture.ts` when it is made through the page (a
+  `UI setup`: the data fixtures cannot see Page Objects); the lookup stays a function in `src/setup/<app>/`
+  (a `UI setup`: the Page Object's method), called in a boxed step that still shows in the report:
 
   ```ts
   reportedProject: async ({ projects, reports }, use) => {
@@ -88,6 +90,9 @@ disposableAddress: async ({ addresses }, use) => {
   },
   ```
 
+- **The order** (Playwright): auto fixtures and the fixtures a `beforeEach` hook takes are set up before the hook;
+  a fixture only the test takes, after it. So a `UI setup` fixture acts on the page the `beforeEach` opened —
+  it never opens the page again, and no hook takes it (it would run before the page is open).
 - An app's setup file holds one subject (the stand items its tests need, one prepared object's upkeep).
 - **A test reads every fixture it lists** (`tsc` fails an unread one). A precondition the test does not read
   goes into what it reads: the fixture it takes depends on it (`sharedBoardPage: async ({ sharedBoard,
@@ -131,14 +136,27 @@ const address = { street: "Main 1", name: `John ${Date.now()}`, city: "Berlin" }
 The plan's `Data:` names the source; implementing never picks another — a different source goes back to the
 plan. The source is **tried on the stand before the plan is shown**: what `stand` names exists now; an `API
 setup` creates and removes one (`AQA`-marked); a `UI setup` reaches its last button with the saving request
-answered in place (a probe, `live-app.mdc`). Unproven → `blocked`. Take the first that fits:
+answered in place (a probe, `live-app.mdc`) — state only the browser keeps (its storage, no request) that the
+test makes itself is a `UI setup` with no probe and nothing to clean. Unproven → `blocked` after the search
+(`plans.mdc` §Searched before blocked).
+
+**Each value the case names, first: a rule or an illustration.** A rule value (a boundary, a status, an error
+text, a value a requirement names) is tested as written. An illustration ("e.g.", the ticket's example, a plain
+name) is never looked up as written: the data meets the criterion it stands for — found by it on the stand once
+per worker, or made (`AQA`-marked, removed) — and the checks expect what setup returned; a filter or search by
+it gets one item matching and one not. `Data:` says which (`stand — case says "Acme" → any brand with two
+products`), never a silent swap. Unclear → asked once per value ("Rule or example"); a TMS case's illustration
+the stand lacks → the plan's "Case drift" question (`plans.mdc` §TMS cases). Neither found nor made → `Blocked`,
+asking for exactly that data ("a brand with two products, any name").
+
+Then take the first source that fits:
 
 | Data | When | Means |
 |---|---|---|
 | `none` | nothing needs to exist (a form, a page, a rejected request) | — |
 | `stand` | what the case needs already exists | read live at run time; never "the account has N items" |
 | `API setup` | it must be created and an endpoint exists | fast, stable; the UI create flow gets its own UI case |
-| `UI setup` | it must be created, no endpoint or no access | slower, honest |
+| `UI setup` | it must be created, no endpoint or no access; or it lives only in the browser | slower, honest |
 | `mocked` | the state cannot be reached honestly (an empty list on a shared account, a server error, 500 items) | tests how the UI shows the state; the title says what is shown |
 
 - `mocked`: UI specs only, only the response the screen renders — never in API or E2E, never the response of
@@ -154,7 +172,9 @@ answered in place (a probe, `live-app.mdc`). Unproven → `blocked`. Take the fi
    disposable fixture's teardown — both run on failure too. No `let id; try { … } finally { … }` for data.
 2. It carries the `AQA` marker.
 3. The sweep catches the rest: `src/data/sweeps.ts` entries (list path, `isLeftover` by the marker, delete
-   path, `platform`) run before and after every Playwright run; `npm run data:sweep` alone.
+   path, `platform`) run before and after every Playwright run, for that run's apps only; `npm run
+   data:sweep` alone. Give every entry its `createdAt` (a field of the entity, or `timeInMarker(name)`): an
+   entity younger than 30 minutes is kept — another run may be using it.
 
 Never assume a shared account's state: an empty state or an exact count is `mocked` (UI), a persona the map
 guarantees empty, or *Not now* `Blocked`. Count relative to what the test created ("one more than before").
@@ -162,7 +182,13 @@ guarantees empty, or *Not now* `Blocked`. Count relative to what the test create
 ## `stand` — finding what a case stands on
 
 - Rich data comes from **one item named in the plan** ("QA project with reports"): the setup finds it by that
-  name and checks it still has what the case needs. Finders live in `src/setup/<app>/`.
+  name and checks it still has what the case needs. Finders live in `src/setup/<app>/`. Before a case is
+  blocked for want of such an item, `npm run stand:find` searches every account and tenant
+  (`plans.mdc` §Searched before blocked).
+- **A kept item's facts** — what the plan records of an item only the tests use and change (its name, the
+  children its setup gave it) is case data: a dataset constant, expected with `has:`, proven still there by
+  `expectStandData` before the action. What people or the app change (a count, a status), and every fact of a
+  real stand item, is read live.
 - When it does not: the lookup throws `standDataMissing({ item, problem, needed, checkByHand })`, a
   precondition asserts `expectStandData(holds, { … })` (`src/assertions/shared/stand-data.ts`) — never a plain
   `Error` or `expect`; the report then sorts it under "stand data", not a bug.
@@ -174,7 +200,9 @@ guarantees empty, or *Not now* `Blocked`. Count relative to what the test create
 ## Facts only another system knows
 
 A ticket's parent in a tracker, a manager in an HR system: first fit, top to bottom —
-1. readable through the app (API or page) → read it live, as `stand`;
+1. readable through the app (API or page) → read it live, as `stand`; only the app's synced copy readable
+   and the user accepting it → that copy, from another answer than the one the case checks, recorded
+   `as <app> synced it from <system>, not checked in <system> (<why>, <date>)`;
 2. creatable in the app → `API setup` / `UI setup`;
 3. a steady fact a person can look up once → ask the user; record it in `Data:` with source and date; the
    test checks the app against it and stops with `expectStandData` once it no longer holds;

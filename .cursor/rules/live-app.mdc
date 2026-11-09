@@ -1,15 +1,41 @@
 ---
-description: Exploring the live app with the Playwright MCP — for a plan's live check, before writing locators or a Page Object, and when healing a locator; signing the MCP browser in without typing a password, roles, test ids, capturing the app's messages, network evidence, probes that need request routing (outside tests/), probes that change shared items
+description: Exploring the live app — the Playwright MCP to explore, the saved-session script to check what is known and to heal a locator — for a plan's live check, before writing locators or a Page Object, and when healing; signing in without typing a password, roles, test ids, capturing the app's messages, network evidence for routes, probes that need request routing (outside tests/), probes that change shared items
 globs: specs/**, src/pages/**, src/components/**
 alwaysApply: false
 ---
 
 # Exploring the live app
 
-Use the Playwright MCP the kit configures (`.cursor/mcp.json`) — navigate, snapshot, click, fill, network
-requests — whenever a locator would otherwise be guessed or asked of the user, for a plan's live check
-(`plans.mdc`), and when healing a locator. The session is a throwaway: nothing from it goes into a spec or
-Page Object except the resulting locators and findings.
+Two tools, by the task — whenever a locator, a request or a message would otherwise be guessed or asked of the
+user, for a plan's live check (`plans.mdc`), and when healing a locator:
+- **The Playwright MCP** the kit configures (`.cursor/mcp.json`) — navigate, snapshot, click, fill, network
+  requests: exploring what is not known yet (a new Page Object, a screen's first look, its requests).
+- **The saved-session script** — a check of what the plan already names (a text, a count, a request's answer),
+  a locator heal, and whenever the MCP gives no answer within a minute (close it; never a second browser over a
+  hung one): a one-off `scripts/scratch-<what>.mjs` (outside `tests/`, deleted after — `01-workflow.mdc`
+  §Cleanup), run with `node`, printing only what the check needs. It opens the page as the test does, with
+  the role's session as `storageState`, and walks the case's own gesture:
+
+  ```js
+  import dotenv from "dotenv";
+  import { chromium, selectors } from "@playwright/test";
+  dotenv.config({ quiet: true });
+  selectors.setTestIdAttribute("data-test"); // the app's `test id:` line (the map's app-wide block); none → leave out
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ storageState: "state/shop.customer.<host>.session.json" });
+  const page = await context.newPage();
+  const answer = page.waitForResponse((response) => response.url().includes("api/orders"));
+  await page.goto(`${process.env.UI_BASE_URL}/orders`);
+  console.log((await answer).status(), await page.getByRole("row").count());
+  await browser.close();
+  ```
+
+- **No Playwright MCP in this agent** → the saved-session script explores too (signed out: no `storageState`):
+  `page.locator("body").ariaSnapshot()` for the snapshot, `page.on("request", …)` for the network list,
+  `page.evaluate(…)` for the probes this rule runs through the MCP's evaluate.
+
+The session is a throwaway: nothing from either goes into a spec or Page Object except the resulting locators
+and findings.
 
 ## A signed-in session
 
@@ -42,7 +68,9 @@ Page Object except the resulting locators and findings.
    ```app-wide `test id:` line in the map, `data-testid` without one; the app marks its elements with another
    attribute → that line is missing or wrong: fix the map): a value → `getByTestId("<value>")`; none → the locator the MCP's action code
    shows. Never second-guess it into CSS (`ui.mdc` §Locators).
-6. Use the network requests list to see whether a move goes to the server (the case's `Needs:` evidence) and
+6. Use the network requests list for the `Route:` evidence (`plans.mdc` §Routes): whether the move goes to the
+   server, its method, path and query, what it sent and what the answer holds (the script prints a body the
+   list does not show; never a request's headers — they carry the token) — twice where the app caches; and
    the real method and path of a request a mock must match.
 7. Close the browser when done.
 
@@ -76,9 +104,11 @@ editable control; at 393 px every field and the button stay visible".
 
 ## Healing a locator drift
 
-Only when the failure looks like a moved or renamed element: run the test once with `--retries=0`, read its
-error (`Page: …`), screenshot and trace in `test-results/`, walk the same steps in the MCP browser to the
-failing point, snapshot, take the element's current locator, and apply the smallest fix to the Page Object.
+Only when the failure looks like a moved or renamed element: read its error (`Page: …`), screenshot and trace
+in `test-results/`; then **the saved-session script first** — the page opened as the test opens it, walked by
+the case's gesture to the failing step, printing the candidates' texts and roles, the app's test id, how many
+match and the block they sit in (the MCP browser when the script cannot reach the state); the corrected
+locator, scoped to its block, proven by the script printing `1` for it; the smallest fix to the Page Object.
 The element or flow no longer existing as documented is requirement drift — stop and route to the plan
 (`plans.mdc` §When the product changes). Unclear which Page Object or component owns a block → `ui.mdc`
 §Ownership decisions.

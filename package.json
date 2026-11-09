@@ -1,6 +1,6 @@
 {
   "name": "playwright-ai-workflow-kit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A Playwright + TypeScript test home for Cursor: plan, implement and verify API, UI and E2E tests with AI agents.",
   "repository": {
     "type": "git",
@@ -29,9 +29,15 @@
     "auth:check": "node scripts/auth.mjs check",
     "auth:sign-in": "node scripts/auth.mjs sign-in",
     "suite:coverage": "node scripts/agent/suite-coverage.mjs",
+    "verify": "node scripts/agent/verify.mjs",
+    "plan:block": "node scripts/agent/plan-block.mjs",
+    "spec:draft": "node scripts/agent/spec-draft.mjs",
+    "stand:find": "node scripts/agent/stand-find.mjs",
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",
+    "api:types": "node scripts/agent/api-types.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",
+    "test:failed": "node scripts/run-tests.mjs failed",
     "browsers:install": "npx playwright install chromium",
     "typecheck": "tsc --noEmit",
     "qa:gate": "node scripts/gate/check.mjs && npm run typecheck",
@@ -49,6 +55,14 @@
     "allure": "^3.19.0",
     "allure-playwright": "^3.13.0",
     "dotenv": "^18.0.4",
-    "typescript": "^7.0.2"
+    "openapi-typescript": "6.7.6",
+    "typescript": "^7.0.2",
+    "zod": "4.6.7"
+  },
+  "overrides": {
+    "dompurify": "3.4.17",
+    "openapi-typescript": {
+      "undici": "6.29.1"
+    }
   }
 }

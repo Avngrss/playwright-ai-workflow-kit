@@ -1,12 +1,12 @@
 import path from "node:path";
 import { appOfPath, at, inProgress, read, registeredPlatforms, rel, statementsOf } from "./context.mjs";
-import { caseLinksIn } from "./plans.mjs";
-import { testsOf } from "./specs.mjs";
+import { caseLinksIn, scenarioOf } from "./plans.mjs";
+import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
 /**
  * The same thing twice (.cursor/rules/code.mdc "No repeats"), checked for what is being written now
  * against the whole suite: two lines copied within a file, between files of one app or out of shared
- * code; the same code in two apps; one manual case automated by two tests.
+ * code; the same code in two apps; one scenario of a manual case automated by two tests.
  */
 
 // Lines that look alike without being copied: comments, imports, a test's skeleton and its look-alike
@@ -27,6 +27,31 @@ const IDIOM = [
   /^this\.\w+ = new [A-Z]\w*\(/,
 ];
 const substantial = (line) => line.length >= 25 && !IDIOM.some((pattern) => pattern.test(line));
+
+// Across apps, a short block made only of the kit's own calls is the kit's idiom, not a copy: a Page
+// Object's prescribed opening (`await this.page.goto("./"); await appReady(this.page);`, .cursor/rules/ui.mdc
+// §Opening a page) or ≤ 3 lines each calling a helper the shared code exports. No app can share it with
+// another without importing across apps.
+const KIT_IDIOM_LINES = 3;
+const NAVIGATION = /^(?:await )?(?:this\.)?page\.(?:goto|reload)\(.*\);?$/;
+const KIT_CALL = /^(?:return )?(?:await )?([A-Za-z_$][\w$]*)\(.*\);?$/;
+// The method around them (`async open(): Promise<void> {`) — every Page Object declares its own.
+const SIGNATURE = /^(?:(?:public|private|protected|static) )*(?:async )?[\w$]+\([^)]*\)(?: ?: ?[^={;]+)? ?\{$/;
+
+/** The names the kit's shared code exports — what an app's code calls without owning. */
+function kitHelpers(files, apps) {
+  const names = new Set();
+  for (const file of files.support.filter((each) => !appOfPath(each, apps))) {
+    for (const [, name] of read(file).matchAll(/^export (?:async )?(?:function\*? |const |let )([A-Za-z_$][\w$]*)/gm)) names.add(name);
+  }
+  return names;
+}
+
+/** Each statement a navigation or a call of a kit helper (in the method holding them), and no more of them than an idiom has. */
+const isKitIdiom = (statements, helpers) => {
+  const calls = statements.filter((text, index) => !(index === 0 && SIGNATURE.test(text)));
+  return calls.length > 0 && statements.length <= KIT_IDIOM_LINES && calls.every((text) => NAVIGATION.test(text) || helpers.has(KIT_CALL.exec(text)?.[1]));
+};
 
 /** The suite's own code — what authors write: specs, an app's code, components, data no app owns — not the kit's shared mechanism nor the sweep list. */
 function ownCode(files, apps) {
@@ -89,7 +114,7 @@ function checkCopiedLines(files, report) {
     if (appsWithIt.length < 2 || shared.length) continue;
     const sharedHome = places.some(({ file }) => /[\\/]src[\\/](data|assertions|setup)[\\/]/.test(file));
     for (const place of places.filter(({ file }) => isNew(file))) {
-      hits.push({ kind: sharedHome ? "apps" : "apps-weigh", ...place, others: places.filter(({ file }) => file !== place.file), apps: appsWithIt, quote });
+      hits.push({ kind: sharedHome ? "apps" : "apps-weigh", ...place, others: places.filter(({ file }) => file !== place.file), apps: appsWithIt, quote, statements: block.split("\n") });
     }
   }
 
@@ -97,10 +122,14 @@ function checkCopiedLines(files, report) {
   const runs = new Map();
   for (const hit of hits.sort((a, b) => a.line - b.line)) {
     const open = runs.get(runOf(hit))?.at(-1);
-    if (open && hit.line <= open.last + 1) open.last = hit.line;
-    else runs.set(runOf(hit), [...(runs.get(runOf(hit)) ?? []), { ...hit, last: hit.line }]);
+    if (open && hit.line <= open.last + 1) {
+      open.last = hit.line;
+      open.statements?.push(hit.statements[1]);
+    } else runs.set(runOf(hit), [...(runs.get(runOf(hit)) ?? []), { ...hit, last: hit.line, statements: hit.statements && [...hit.statements] }]);
   }
+  let helpers;
   for (const hit of [...runs.values()].flat()) {
+    if (hit.kind !== "copy" && isKitIdiom(hit.statements, (helpers ??= kitHelpers(files, apps)))) continue;
     const lines = `lines ${hit.line}–${hit.last + 1}`;
     if (hit.kind === "copy") {
       report.fail(hit.file, `${lines} are the same as ${where(hit.others)} — ${hit.quote}: ${homeFor(hit.file)} (.cursor/rules/code.mdc "No repeats")`);
@@ -113,24 +142,27 @@ function checkCopiedLines(files, report) {
 }
 
 function checkCaseTwice(files, report) {
-  // A manual case has one test — or one per part when it is split, each part named after " — " for
-  // what it checks (the implement skill, Naming). Two tests of one case with the same part automate it twice:
-  // usually a case another feature already covers, written again (the plan skill, "Already automated").
-  // A split case's parts live in its one feature (API and UI alike), so the same case in a second
-  // feature is written again whatever its part is called. A journey (tests/e2e) crosses features by
-  // design and is left out of that.
+  // One scenario, one test (docs/Layer Routing Algorithm.md): a case is one scenario or several
+  // ("TC-101 · S2 · …"), each automated by one test in its owner's folder. Two tests of one
+  // scenario — an API and a UI one included — prove it twice; the old part after " — " no longer
+  // tells them apart. A screenshot checkpoint in a file of its own (-visual.ui.spec.ts) checks how a
+  // state looks, not the scenario, and is no second test of it. A case's scenarios live in its one
+  // feature, so the same case in a second feature is written again whatever its scenario. A journey
+  // (tests/e2e) crosses features by design and is left out of that. A pair no spec being written
+  // touches was written before routing: it is listed to rework (a warning), never blocking the gate —
+  // a new or changed one fails.
   const changed = inProgress("tests");
-  const byCase = new Map();
+  const byScenario = new Map();
   const byFeature = new Map();
   for (const spec of [...files.api, ...files.ui, ...files.e2e]) {
     const [layer, app, area, feature] = path.relative(at("tests"), spec).split(path.sep);
     const home = feature && !feature.endsWith(".ts") ? `${area}/${feature}` : area;
-    for (const { title, options } of testsOf(read(spec))) {
+    for (const { title, options, tags } of testsOf(read(spec))) {
       if (title.includes("${")) continue; // a title built in code: one test per data row
-      const part = / — (.+)$/.exec(title)?.[1]?.trim().toLowerCase() ?? "";
+      const visual = isVisualCheckpoint(spec, tags);
       for (const id of caseLinksIn(options)) {
-        const key = `${app}|${id}|${part}`;
-        byCase.set(key, [...(byCase.get(key) ?? []), { spec, title }]);
+        const key = `${app}|${id}|${scenarioOf(title)}`;
+        if (!visual) byScenario.set(key, [...(byScenario.get(key) ?? []), { spec, title }]);
         if (layer !== "e2e") byFeature.set(`${app}|${id}`, [...(byFeature.get(`${app}|${id}`) ?? []), { spec, title, home }]);
       }
     }
@@ -138,12 +170,17 @@ function checkCaseTwice(files, report) {
   const touched = (tests) => !changed || tests.some(({ spec }) => changed.has(spec));
   const listOf = (tests) => tests.map(({ spec, title }) => `"${title}" (${rel(spec)})`).join(", ");
   const reported = new Set();
-  for (const [key, tests] of byCase) {
-    if (tests.length < 2 || !touched(tests)) continue;
-    const [app, id] = key.split("|");
+  for (const [key, tests] of byScenario) {
+    if (tests.length < 2) continue;
+    const [app, id, scenario] = key.split("|");
+    const which = scenario ? `scenario ${scenario} of case ${id}` : `case ${id}`;
     reported.add(`${app}|${id}`);
     for (const spec of new Set(tests.map(({ spec }) => spec))) {
-      report.fail(spec, `case ${id} is automated twice — ${listOf(tests)}: one test per manual case, or one per part of a split case, each named after " — " for what it checks (the implement skill, Naming); a case another feature already automates is not written again (the plan skill, "Already automated")`);
+      if (touched(tests)) {
+        report.fail(spec, `${which} is automated twice — ${listOf(tests)}: one scenario, one test in its owner's folder — the UI test checks the answer of its own action, never an API twin (docs/Layer Routing Algorithm.md §6); a case of several obligations is split into scenarios "<case id> · S<n> · …"; a case another feature already automates is not written again (the plan skill, "Already automated")`);
+      } else {
+        report.warn(spec, `${which} is tested twice, written before routing — ${listOf(tests)}: to rework — a refresh of its feature merges the pair into the owner's one test (the plan skill, "A later pass, an alignment, a refresh")`);
+      }
     }
   }
   for (const [key, tests] of byFeature) {
@@ -151,7 +188,7 @@ function checkCaseTwice(files, report) {
     if (homes.size < 2 || reported.has(key) || !touched(tests)) continue;
     const id = key.split("|")[1];
     for (const spec of new Set(tests.map(({ spec }) => spec))) {
-      report.fail(spec, `case ${id} is automated in ${homes.size} features — ${listOf(tests)}: a case and its parts belong to one feature; a case another feature already automates is a Not now "Covered by <its spec>" line, never written again (the plan skill, "Already automated")`);
+      report.fail(spec, `case ${id} is automated in ${homes.size} features — ${listOf(tests)}: a case and its scenarios belong to one feature; a case another feature already automates is a Not now "Covered by <its spec>" line, never written again (the plan skill, "Already automated")`);
     }
   }
 }

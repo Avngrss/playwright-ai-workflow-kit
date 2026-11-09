@@ -13,14 +13,34 @@ export class CredentialsRefused extends Error {}
 /** A definite "no" from the server about the configuration (a client, a grant, a scope) — asking again cannot help. */
 export class ServerRefused extends Error {}
 
-/** The value the signed-in app keeps in its storage (`localStorage oidc.user:* access_token`). */
+/**
+ * The value the signed-in app keeps in its storage: a JSON entry's field (`localStorage oidc.user:* access_token`),
+ * or with no field the entry itself (`localStorage auth-token` — a plain token, or a JSON string holding one).
+ */
 function fromSession(state: StorageState, config: StorageField, line: string): string {
   const pattern = new RegExp(`^${config.key.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`);
   const entry = state.origins.flatMap((origin) => origin.localStorage).find((item) => pattern.test(item.name));
   if (!entry) throw new Error(`No "${config.key}" entry in the session's storage — the login did not finish (is the user signed in?)`);
+  if (config.field === undefined) return plainToken(entry.value, config.key, line);
   const value = (JSON.parse(entry.value) as Record<string, unknown>)[config.field];
   if (typeof value !== "string") throw new Error(`The "${config.key}" entry has no "${config.field}" (specs/project-map.md §Auth, "${line}:")`);
   return value;
+}
+
+/** An entry that IS the token — kept as it is, or as a JSON string (`"eyJ…"`); a JSON object needs its field named. */
+function plainToken(raw: string, key: string, line: string): string {
+  const text = raw.trim();
+  if (!text) throw new Error(`The "${key}" entry is empty — the login did not finish (is the user signed in?)`);
+  let parsed: unknown = text;
+  if (/^[[{"]/.test(text)) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+  if (typeof parsed === "string" && parsed) return parsed;
+  throw new Error(`The "${key}" entry holds JSON, not a token — name its field: "${line}: <storage> ${key} <field>" (specs/project-map.md §Auth)`);
 }
 
 export function tokenFromSession(state: StorageState, platform: string): string {

@@ -1,13 +1,13 @@
 ---
-description: The project map (specs/project-map.md) and the test home's layout — folders per app, area and feature, app boundaries, apps and their URLs, npm scripts, Playwright projects, CI
+description: The project map (specs/project-map.md) and the test home's layout — folders per app, area and feature, app boundaries, apps and their URLs, tenants, npm scripts (verify, test:failed, plan:block, spec:draft, stand:find, api:types …), Playwright projects, CI
 alwaysApply: true
 ---
 
 # Project map and layout
 
 **`specs/project-map.md` is the single source of truth** — read by the code, `qa:gate` and the scripts:
-apps and their `.env` URL names, each app's ```auth block, external systems, app-wide behaviour, TMS case
-links, the tracker queue, allowed tags, shared-state locks. Read it before planning or writing tests. Edit
+apps and their `.env` URL names, each app's ```auth block (its optional `tenants:` line too), external systems,
+app-wide behaviour, TMS case links, the tracker queue, allowed tags, shared-state locks. Read it before planning or writing tests. Edit
 only the section that changes (search first, never a second entry; names only, never a value), new `.env`
 names via `npm run env:prepare`, then `npm run qa:gate` (+ `test:list` after Apps, `auth:check` after Auth).
 Beside it: `specs/known-bugs.md` (`plans.mdc`), `docs/test-strategy.md`.
@@ -56,21 +56,28 @@ features of one area. `qa:gate` (`layout.mjs`) fails any other place, depth or n
   decides its app: its project sets `platform`, and `baseURL`, `page`, `apiRequestContext`, `authHeaders`
   follow it — specs never read env.
 - Code of one app imports only its own app's code and the shared folders; shared code imports no app's code.
-  A journey across two apps in one test is not supported yet.
+  One app per test: a journey that must cross two apps is its case's *Not now* `Blocked`, naming both.
+- An app whose tenants (stores, projects, organisations) each account lists gets the optional `tenants: GET
+  <path> → <id field>, <name field>` line in its ```auth block — `npm run stand:find` searches each of them.
 
 ## npm scripts
 
 | Script | What it does |
 |---|---|
 | `npm test` · `test:api` / `test:ui` / `test:e2e` | every layer of every app · one layer of every app (never narrowed with `--project`) |
-| `npm run test:app -- <app> [layer] [targets] [--with-browsers]` | one app; `--with-browsers` adds its `@cross-browser` / `@responsive` tests in Firefox, WebKit and the phone (installed when missing) |
+| `npm run test:app -- <app>[,<app>…] [layer] [targets] [--with-browsers]` | one app or several; `--with-browsers` adds their `@cross-browser` / `@responsive` tests in Firefox, WebKit and the phone (installed when missing) |
+| `npm run verify -- <app> <spec[:line]…> [--also …] [--can-fail <spec>:<line>=<spoiled line>…] [--with-browsers]` · `-- --restore` | the gate, each new check proven able to fail, one run with `--retries=0`, one block from the result files (`02-guardrails.mdc` §Never fitted to the product) · put back what a cut-off verify left spoiled |
+| `npm run test:failed` | only the last run's failures and what it left unrun — to reproduce before a change, never as the rerun after one |
 | `npm run test:smoke` / `test:regression` / `test:flaky` | sign-in smoke + each feature's `@smoke` test / every `@regression` / only `@flaky` |
 | `npm run test:visual` / `test:cross-browser` / `test:responsive` | tests tagged `@visual` / `@cross-browser` / `@responsive` |
 | `npm run qa:gate` · `test:list` | the conventions, then `tsc` — before every commit · list tests without running |
 | `npm run typecheck` | `tsc` only — the second half of the gate |
+| `npm run plan:block -- <plan> …` · `spec:draft -- <plan> <#>` | a plan's next case block, empty or from `--case`/`--bug state/sources/<id>.json` · a test's skeleton from a filled block (`plans.mdc` §Plan body, `specs.mdc`) |
+| `npm run stand:find -- <app> --in "GET <path>" --where "<condition>"` | every account × tenant searched for stand data before a case is blocked |
+| `npm run api:types [-- <app>]` | the app's answer types from its contract → `src/api/clients/<app>/contract.client.ts` (`api.mdc` §Response schemas) |
 | `npm run auth:check` · `auth:sign-in -- <app> <role\|all>` | empty login entries of `.env` (names only) · sign roles in, sessions in `state/` |
-| `npm run app:add -- <app>` · `env:prepare` | an app's own fixtures · create and fill `.env` safely (`02-guardrails.mdc`) |
-| `npm run suite:coverage -- --app <app>` · `data:sweep` | each case automated / not / inconsistent · remove `AQA` leftovers |
+| `npm run app:add -- <app>` · `env:prepare` | an app's own fixtures · create and fill `.env` safely, edited in place (`--tidy` lays it out; `--drop <NAME>` removes a name no row or block uses; `02-guardrails.mdc`) |
+| `npm run suite:coverage -- --app <app>` · `data:sweep` | each case automated / to rework / not automated / inconsistent · remove `AQA` leftovers |
 | `npm run allure:report` / `allure:open` | build / open the Allure report |
 | `npm run browsers:install` / `browsers:install:all` | Chromium / every browser |
 
