@@ -29,11 +29,12 @@ From the repository root:
 npm run verify -- <app> <spec[:line]…> [--also <spec[:line]…>] [--can-fail <spec>:<line>=<the line as spoiled>…] [--with-browsers]
 ```
 
-- `<spec…>` — the app's specs this run wrote or changed; `:<line>` (any line inside a test) narrows to that test;
-  a named spec with no test run fails ("did not run").
-- `--also` — other features' or apps' specs calling a member this run changed or removed (a method, reader, rule,
-  answer path; its name searched in `tests/`), in this same run, never one before; none for an added member or a
-  widened type (the type check proves every caller), but for a narrowed type or schema.
+- `<spec…>` — the app's specs this run wrote or changed; `:<line>` (any line inside a test) narrows to that test —
+  the whole spec runs when a file it imports under `src/` changed (the block: `whole spec: <file> changed`),
+  can-fail still at the named lines; a named spec with no test run fails ("did not run").
+- `--also` — other specs (other features' or apps') calling a member this run changed or removed (a method, reader,
+  rule, answer path; its name searched in `tests/`), in this same run, never one before; none for an added member or
+  a widened type (the type check proves every caller), but for a narrowed type or schema.
 - `--with-browsers` — a touched spec holds `@cross-browser` or `@responsive` tests: also Firefox, WebKit and the
   phone, same run (Firefox and WebKit downloaded once when missing: say so).
 
@@ -51,22 +52,23 @@ Allure report) but §8.6's repeat.
 
 **Can fail** — one `--can-fail` per test whose check this run wrote or changed (when: `02-guardrails.mdc` §Never
 fitted to the product; a locator-only fix needs none — the light review checks its scope). Spoil the expected value
-inside the test's own assertion: in UI or E2E the screen's (the data `shown<Block>` is built from, the expected text
-or state), in API the answer's (a `has:` value, the error code); never the data the test makes or sends nor a
-helper it calls first (`shownAddresses({ ...address, city: "Nowhere" })`); a text → another word, not the same one
-recased; a stand-data rule (`check:`) → a copy of the answer one figure off (`totalsAddUp({ ...answer, total:
-answer.total + 1 })`). Passed whole, `--can-fail <spec>:<line>=<the whole line as spoiled>`; verify puts every line
-back, each file's hash proven, before the run.
+inside the test's own assertion: in UI or E2E the screen's (the data `shown<Block>` is built from —
+`shownAddresses({ ...address, city: "Nowhere" })` — the expected text or state), in API the answer's (a `has:`
+value, the error code); never the data the test makes or sends nor a helper it calls first; a text → another word,
+not the same one recased; a stand-data rule (`check:`) → a copy of the answer one figure off (`totalsAddUp({
+...answer, total: answer.total + 1 })`). Passed whole, `--can-fail <spec>:<line>=<the whole line as spoiled>`;
+verify puts every line back, each file's hash proven, before the run.
 
-**Reading can-fail** (the block's `Can fail:` line, as that section reads it) — **red elsewhere** → back to the
-test's path (its plan's `Route:`), then again; a stand cause (out of time, stand unavailable, sign-in) → again once
-the stand answers; still elsewhere → without it, "not proven — <why>" in the summary · **green — blind** (a reader
-matching anything, a value compared with itself, a check caught or optional, a rule restating the answer) → fixed,
-then again · **not run** → as its reason says.
+**Reading can-fail** (the block's `Can fail:` line, as that section reads it) — **red elsewhere** (the test does not
+reach its check; the error: `test-results/verify.log`) → back to the test's path (its plan's `Route:`), then again;
+a stand cause (out of time, stand unavailable, sign-in) → again once the stand answers; still elsewhere → without
+it, "not proven — <why>" in the summary · **green — blind** (a reader matching anything, a value compared with
+itself, a check caught or optional, a rule restating the answer) → fixed, then again · **not run** → as its reason
+says.
 
 **A fix after it** that changes a test (a heal, a review finding) → the command again on the fixed tests
-(`<spec>:<line>`), `--also` for callers of a member it changed, `--can-fail` as above; the report and coverage then
-show that run only: say so.
+(`<spec>:<line>`), `--also` for callers of a member it changed, `--can-fail` as above; the report then shows that
+run only (coverage keeps each test's last result): say so.
 
 **A run the user does not allow** (tests writing to a kept or shared item) is never retried in another form or cut
 down: the tests stay written; ask once to allow it or to run it themselves (the exact command), then read its
@@ -174,7 +176,7 @@ Verdict first, then what it covers, then what the user does; never the run's mec
 **<Passed | Failed | Partly passed | Not run>** — <n> of <m> tests green, no retry; qa:gate <passed | n warnings>.
 <a failed or partial run: one line per failing test with its verdict · a test left out: <title> — not run — <why>>
 
-<the suite's coverage, short form — below (basis test-cases only)>
+<the suite's coverage, short form — below (basis test-cases); a plan without TMS ids: the block's Coverage line>
 
 **In the TMS:** mark Automated — <automated cases, links: every scenario has its test> · already Automated — nothing to mark — <cases automated before this run> · not automated, add the reason — <TC-…: why — what unblocks it> · fix by hand — <the manual case corrections> (only the parts that apply)
 
@@ -198,8 +200,9 @@ Verdict first, then what it covers, then what the user does; never the run's mec
 or changed no test.
 
 **The suite's coverage, short form** — the case list loaded at planning and `node scripts/agent/suite-coverage.mjs
---app <app>` (after a heal or a refresh: the plan's cases, no TMS load, first line `Plan "<feature>" — …`): the
-first line, the rows of the cases this run touched (every case when the suite has ≤ ~10), one line for the rest:
+--app <app>` (after a heal or a refresh: the plan's cases, no TMS load, first line `Plan "<feature>" — …`; a plan
+without TMS ids: the verify block's `Coverage` line, `plan "<feature>" — <n> cases · automated <a> · …`, as it is):
+the first line, the rows of the cases this run touched (every case when the suite has ≤ ~10), one line for the rest:
 
 ```markdown
 Suite "<folder>" — <n> cases · automated <a> (<%>) · not automated <z>
@@ -341,15 +344,15 @@ tester would still run a part).
 1. **The suite** — the TMS folder link given (a case's link → its folder); else the feature's TMS; else one message:
    "Paste the link to the TMS folder whose coverage you want." Every case (id, title) through the TMS's MCP or API;
    unreachable → ask for the folder's ids and titles. No TMS in the map, or a plan without TMS ids → the plan's own
-   coverage from `withoutTms`, one table per plan, `Scenario | Owner | Last run | Status`, never a substitute from
-   tickets.
+   coverage from `withoutTms` (counts: `withoutTmsSummary`), one table per plan, `Scenario | Owner | Last run |
+   Status`, never a substitute from tickets.
 2. **Our side** — `node scripts/agent/suite-coverage.mjs --app <app>` (clean JSON; `npm run suite:coverage` adds
    npm's header) for the app whose `case link <app>` matches the suite. Per case number: `tests`, `lastRun` (the
-   worst; `not run` unless every linked test ran last run, `ran: "<k> of <n>"`; another feature's later run clears
-   it), `plan`, `scenarios`, `coverage`, `missing`, `twice`, `rework`, `keptOut` (any *Not now* line but `Covered by
-   …`), `notNow` (its `· searched:` tail never in "Why not"); besides, `withoutTms` (plans without TMS ids, matched
-   by title) and `unreadableNotNowLines` (off the shape of `plans.mdc`: "fix these plan lines" under the table,
-   never guessed).
+   worst of each test's last result, kept until a later run holds that test; `not run` while a linked test has
+   none, `ran: "<k> of <n>"`), `plan`, `scenarios`, `coverage`, `missing`, `twice`, `rework`, `keptOut` (any *Not
+   now* line but `Covered by …`), `notNow` (its `· searched:` tail never in "Why not"); besides, `withoutTms`
+   (plans without TMS ids, matched by title) and `unreadableNotNowLines` (off the shape of `plans.mdc`: "fix these
+   plan lines" under the table, never guessed).
 3. **Classify every case of the suite** (its number: the id's digits, `TC-408` → `408`; rows: the suite's cases
    only) by the script's `coverage`, a case it does not list → not automated. Its detail:
    - **automated** (every scenario its one test in its owner's folder, no *Not now* line keeping it out) — its

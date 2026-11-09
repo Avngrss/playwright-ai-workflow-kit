@@ -28,6 +28,31 @@ const IDIOM = [
 ];
 const substantial = (line) => line.length >= 25 && !IDIOM.some((pattern) => pattern.test(line));
 
+// Across apps, a short block made only of the kit's own calls is the kit's idiom, not a copy: a Page
+// Object's prescribed opening (`await this.page.goto("./"); await appReady(this.page);`, .cursor/rules/ui.mdc
+// §Opening a page) or ≤ 3 lines each calling a helper the shared code exports. No app can share it with
+// another without importing across apps.
+const KIT_IDIOM_LINES = 3;
+const NAVIGATION = /^(?:await )?(?:this\.)?page\.(?:goto|reload)\(.*\);?$/;
+const KIT_CALL = /^(?:return )?(?:await )?([A-Za-z_$][\w$]*)\(.*\);?$/;
+// The method around them (`async open(): Promise<void> {`) — every Page Object declares its own.
+const SIGNATURE = /^(?:(?:public|private|protected|static) )*(?:async )?[\w$]+\([^)]*\)(?: ?: ?[^={;]+)? ?\{$/;
+
+/** The names the kit's shared code exports — what an app's code calls without owning. */
+function kitHelpers(files, apps) {
+  const names = new Set();
+  for (const file of files.support.filter((each) => !appOfPath(each, apps))) {
+    for (const [, name] of read(file).matchAll(/^export (?:async )?(?:function\*? |const |let )([A-Za-z_$][\w$]*)/gm)) names.add(name);
+  }
+  return names;
+}
+
+/** Each statement a navigation or a call of a kit helper (in the method holding them), and no more of them than an idiom has. */
+const isKitIdiom = (statements, helpers) => {
+  const calls = statements.filter((text, index) => !(index === 0 && SIGNATURE.test(text)));
+  return calls.length > 0 && statements.length <= KIT_IDIOM_LINES && calls.every((text) => NAVIGATION.test(text) || helpers.has(KIT_CALL.exec(text)?.[1]));
+};
+
 /** The suite's own code — what authors write: specs, an app's code, components, data no app owns — not the kit's shared mechanism nor the sweep list. */
 function ownCode(files, apps) {
   const written = (file) => file.endsWith(".spec.ts") || Boolean(appOfPath(file, apps)) || /[\\/]src[\\/](components|data[\\/](generators|datasets)[\\/]shared)[\\/]/.test(file);
@@ -89,7 +114,7 @@ function checkCopiedLines(files, report) {
     if (appsWithIt.length < 2 || shared.length) continue;
     const sharedHome = places.some(({ file }) => /[\\/]src[\\/](data|assertions|setup)[\\/]/.test(file));
     for (const place of places.filter(({ file }) => isNew(file))) {
-      hits.push({ kind: sharedHome ? "apps" : "apps-weigh", ...place, others: places.filter(({ file }) => file !== place.file), apps: appsWithIt, quote });
+      hits.push({ kind: sharedHome ? "apps" : "apps-weigh", ...place, others: places.filter(({ file }) => file !== place.file), apps: appsWithIt, quote, statements: block.split("\n") });
     }
   }
 
@@ -97,10 +122,14 @@ function checkCopiedLines(files, report) {
   const runs = new Map();
   for (const hit of hits.sort((a, b) => a.line - b.line)) {
     const open = runs.get(runOf(hit))?.at(-1);
-    if (open && hit.line <= open.last + 1) open.last = hit.line;
-    else runs.set(runOf(hit), [...(runs.get(runOf(hit)) ?? []), { ...hit, last: hit.line }]);
+    if (open && hit.line <= open.last + 1) {
+      open.last = hit.line;
+      open.statements?.push(hit.statements[1]);
+    } else runs.set(runOf(hit), [...(runs.get(runOf(hit)) ?? []), { ...hit, last: hit.line, statements: hit.statements && [...hit.statements] }]);
   }
+  let helpers;
   for (const hit of [...runs.values()].flat()) {
+    if (hit.kind !== "copy" && isKitIdiom(hit.statements, (helpers ??= kitHelpers(files, apps)))) continue;
     const lines = `lines ${hit.line}–${hit.last + 1}`;
     if (hit.kind === "copy") {
       report.fail(hit.file, `${lines} are the same as ${where(hit.others)} — ${hit.quote}: ${homeFor(hit.file)} (.cursor/rules/code.mdc "No repeats")`);

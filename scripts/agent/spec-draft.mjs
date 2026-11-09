@@ -15,7 +15,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { caseIds } from "../gate/plans.mjs";
+import { caseIds, parseRoute } from "../gate/plans.mjs";
 import { isVisualCheckpoint, testsOf } from "../gate/specs.mjs";
 import { PLACEHOLDER, planPlace, posix } from "./plan-block.mjs";
 
@@ -92,6 +92,10 @@ function draftOf(block) {
   if (!data || data === PLACEHOLDER.data) unfilled.push("Data");
   const cleanup = value("Cleanup");
   if (!cleanup || cleanup === PLACEHOLDER.cleanup) unfilled.push("Cleanup");
+  // A route naming a rule (`check: <rule>`, stand data) cites where the rule is written (plans.mdc §Routes).
+  const checks = block.routes.map(({ line }) => parseRoute(line).check).filter(Boolean);
+  const rules = value("Rules");
+  if (checks.length && (!rules || rules.startsWith("<each check"))) unfilled.push(`Rules (where ${checks.join(", ")} is written — the route names it)`);
   if (unfilled.length) stop(`block "${block.title}" still holds the plan template's words in: ${unfilled.join("; ")} — fill them from the live check first (the plan skill §5)`);
   const status = value("Status") ?? "";
   if (!/^ready/i.test(status)) stop(`"${block.title}" is ${status || "without a Status"} — only a scenario ready to implement now gets its test`);
@@ -175,9 +179,13 @@ const comment = (label, text) => `// ${label}: ${text.replace(/\s+/g, " ").trim(
 function testLines(draft) {
   const steps = draft.steps.map((step) => ({ ...step, title: stepTitle(step.text), lines: [] }));
   const acting = steps.filter(({ title }) => !isPrep(title));
-  if (acting.length && !acting.some(({ title }) => /\bverify\b/i.test(title))) {
-    acting.at(-1).title += " and verify <…>";
-    notes.push(`step ${acting.at(-1).n} reads "… and verify <…>" — name what it verifies (the implement skill, Naming)`);
+  // Each step with a route of its own (`Route (step n):`) checks its own answer — each says what it verifies;
+  // a scenario of one route verifies once, in its last step.
+  const routedSteps = new Set(draft.routes.map(({ step }) => step).filter((step) => step !== null));
+  const checking = routedSteps.size ? acting.filter(({ n }) => routedSteps.has(n)) : acting.some(({ title }) => /\bverify\b/i.test(title)) ? [] : acting.slice(-1);
+  for (const step of checking.filter(({ title }) => !/\bverify\b/i.test(title))) {
+    step.title += " and verify <…>";
+    notes.push(`step ${step.n} reads "… and verify <…>" — name what it verifies (the implement skill, Naming)`);
   }
   const top = [];
   for (const { step, line } of draft.routes) {

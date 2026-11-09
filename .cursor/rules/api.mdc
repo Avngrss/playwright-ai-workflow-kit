@@ -104,8 +104,10 @@ its tests read, typed from the app's contract. No schema-only tests — the sche
   generator or fixture; specs never call `schema.parse()` (a Zod error, not an assertion failure).
 - **Per contract**: `.nullable()` only where the contract allows `null`; a field the contract may omit is read
   only when the scenario guarantees it or the test handles its absence (`.optional()`) — live data happening to
-  include it is not enough. Never loosened to make a test pass; `.strict()` only when the contract forbids
-  extra fields; enums only with documented values. An unclear contract or live data off it → report a
+  include it is not enough. A contract with no `required` lists at all (every field optional): the fields the
+  live answers always carry are read as required, a one-line comment beside the schema saying so. Never
+  loosened to make a test pass; `.strict()` only when the contract forbids extra fields; enums only with
+  documented values. An unclear contract or live data off it → report a
   contract gap, never widen the schema silently.
 - **Shape vs behaviour**: the schema proves the fields are there and typed; values, sorted order, filters,
   access and business outcomes stay checks in the spec (`code.mdc` §Checks), never restated field by field.

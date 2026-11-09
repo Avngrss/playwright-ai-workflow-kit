@@ -32,7 +32,7 @@
  *               the last step's expect, TMS: not yet documented, Why: bug <id>, Rules: the ticket; its
  *               actual result is the block's Seen line, never an expect. The title is the outcome it
  *               expects (--title), else the template's <Title …> for the agent
- *   --owner, --why, --role  as plan:block's
+ *   --owner, --why, --role, --tag, --rules  as plan:block's
  *
  * Exit 0: added · 1: nothing written, the last line says why (a missing or malformed field named).
  */
@@ -40,10 +40,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { caseIds, scenarioOf } from "../gate/plans.mjs";
-import { PLACEHOLDER, USAGE, appendBlock, posix, stopper } from "./plan-block.mjs";
+import { PLACEHOLDER, USAGE, addTag, appendBlock, posix, stopper } from "./plan-block.mjs";
 
 const stop = stopper("plan:block");
-const OPTIONS = { "--case": "case", "--bug": "bug", "--scenario": "scenario", "--take": "take", "--title": "title", "--owner": "owner", "--why": "why", "--role": "role" };
+const OPTIONS = { "--case": "case", "--bug": "bug", "--scenario": "scenario", "--take": "take", "--title": "title", "--owner": "owner", "--why": "why", "--role": "role", "--rules": "rules" };
 const FIELDS = {
   case: ["id", "title", "precondition", "priority", "severity", "steps", "expected", "tags"],
   bug: ["id", "title", "precondition", "priority", "severity", "steps", "expected", "actual", "tags"],
@@ -59,6 +59,10 @@ function parse(argv) {
   if (!plan || plan.startsWith("--")) stop(`name the plan first\n${USAGE}`);
   const call = { plan };
   for (let at = 0; at < rest.length; at += 2) {
+    if (rest[at] === "--tag") {
+      addTag(call, rest[at + 1]);
+      continue;
+    }
     const key = OPTIONS[rest[at]];
     if (!key) stop(`unknown option "${rest[at]}" with a source — --tms and --steps make an empty block, --case/--bug take theirs from the source\n${USAGE}`);
     const value = rest[at + 1];
@@ -187,7 +191,7 @@ export function main(argv) {
   notes.push(`! The values its steps name are the ${kind}'s words — each a rule or an example (.cursor/rules/data-and-fixtures.mdc §Data sources); Data: says which`);
 
   let steps = source.steps;
-  const draft = { plan: call.plan, owner: call.owner, why: call.why, role: call.role, preconditions: source.precondition, value: valueOf(source, kind === "bug" ? "tracker" : "TMS") };
+  const draft = { plan: call.plan, owner: call.owner, why: call.why, role: call.role, tags: call.tags, rules: call.rules, preconditions: source.precondition, value: valueOf(source, kind === "bug" ? "tracker" : "TMS") };
   if (kind === "case") {
     let basis = `case ${source.id}`;
     if (call.take) {
@@ -205,7 +209,7 @@ export function main(argv) {
       title: call.title ?? `<Title — the outcome ${source.id} expects, in one sentence>`,
       tmsWord: "not yet documented",
       basis: `bug ${source.id}`,
-      rules: `<each check: rule of the routes> — ${source.id} (its expected result)`,
+      rules: call.rules ?? `<each check: rule of the routes> — ${source.id} (its expected result)`,
       after: [`- Seen: ${source.actual} — ${source.id} "${source.title}": the bug's behaviour, never an expect`],
     });
     notes.push(`! While ${source.id} is open its test fails at its step — then a row in specs/known-bugs.md (.cursor/rules/plans.mdc §Known bugs); fixed, it passes`);

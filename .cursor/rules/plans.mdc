@@ -251,8 +251,9 @@ Each line names the cases (`#9 @cross-browser — the date of birth field is an 
 `scripts/agent/suite-coverage.mjs` and `qa:gate` (`plans.mjs`, `cases.mjs`, `routes.mjs`) read the case blocks
 and *Not now* lines — keep the shape exactly. A new plan's sections are written by hand; **each case block by
 command** — `npm run plan:block -- <plan> --title "<title>" [--tms <id>] [--owner API|UI|E2E] [--why "<≤ 8
-words>"] [--role <slug>] [--steps "<step>" …]`, or drafted from a saved source with `--case | --bug
-state/sources/<id>.json` (§TMS cases, §Known bugs) — appended in this shape, its `<…>` and choices yours to fill
+words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"] [--steps "<step>" …]`, or drafted from a saved
+source with `--case | --bug state/sources/<id>.json` (§TMS cases, §Known bugs) — `--rules` when a route names a rule
+(`spec:draft` refuses a `check:` route without its `- Rules:` line); appended in this shape, its `<…>` and choices yours to fill
 from the live check (`npm run spec:draft` refuses a block still holding one).
 
 ```markdown

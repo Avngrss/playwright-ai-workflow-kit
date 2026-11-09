@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { TestCase } from "@playwright/test/reporter";
 import { VERDICTS, type Explained, type Verdict } from "./failure-cause";
@@ -11,6 +12,8 @@ export interface RunEntry {
   checkByHand?: string;
   step?: string;
   ticket?: string;
+  /** The locator an "element not found" failure missed, as Playwright names it. */
+  locator?: string;
   /** The feature plan the test implements (product-change.ts `planOf`). */
   plan?: string;
   /** Its registered undo failed — its data may be left on the stand. */
@@ -34,8 +37,17 @@ export interface SummaryTest {
   ticket?: string;
   checkByHand?: string;
   note?: string;
+  /** "element not found": the locator it missed. */
+  locator?: string;
   /** A test failed for the stand's cause: "passed on its second pass", "failed again on its second pass" or "no second pass — <why>". */
   secondPass?: string;
+}
+
+/** Tests an "element not found" failure of one locator turned red — one locator to heal, not n bugs. */
+export interface SameLocator {
+  locator: string;
+  /** Each as `<spec>:<line>` from the test home. */
+  tests: string[];
 }
 
 /** The run as data — reports/run-summary.json. */
@@ -49,6 +61,8 @@ export interface SummaryData {
   /** The plans of the tests the product changed under — a refresh each: /plan <plan> — <what changed>. */
   stalePlans: string[];
   leftovers: string[];
+  /** Locators two or more tests missed ("element not found"), each with its tests. */
+  sameLocator: SameLocator[];
   /** The line to give the agent, by the tests that need a look: one or two → "heal the red tests: <spec>:<line> …", more → "triage the run <link>". */
   next?: string;
   /** The same choice as data: none needs a look → null. */
@@ -104,16 +118,47 @@ function nextStep(look: SummaryTest[], home: string): Pick<SummaryData, "next" |
 
 const cut = (title: string): string => (title.length > 90 ? `${title.slice(0, 89)}…` : title);
 
-/** A line of a group: a test the summary lists, or only its title (a leftover). */
-type Listed = Partial<SummaryTest> & { title: string };
+/** A line of a group: a test the summary lists, only its title (a leftover), or the tests that missed one locator (`members`). */
+type Listed = Partial<SummaryTest> & { title: string; members?: SummaryTest[] };
 
-const whatOf = ({ cause, step, ticket, secondPass }: Listed): string => {
+const whatOf = ({ cause, step, ticket, secondPass, members }: Listed): string => {
   if (!cause) return "";
   if (cause === "known bug" || cause === "known bug looks fixed") return ticket ?? "";
+  if (members) return cause;
   return [step ? `${cause} — step "${step}"` : cause, secondPass].filter(Boolean).join(" — ");
 };
 
-const testOf = ({ test, outcome, explained, checkByHand, step, ticket, plan }: RunEntry): SummaryTest => ({
+const NOT_FOUND = "element not found";
+
+/** The "element not found" failures by the locator they missed, in the order first met. */
+function byLocator(tests: SummaryTest[]): Map<string, SummaryTest[]> {
+  const missed = new Map<string, SummaryTest[]>();
+  for (const test of tests) if (test.cause === NOT_FOUND && test.locator) missed.set(test.locator, [...(missed.get(test.locator) ?? []), test]);
+  return missed;
+}
+
+/** The locators two or more of these tests missed, each with its tests. */
+function sameLocatorOf(tests: SummaryTest[], home: string): SameLocator[] {
+  return [...byLocator(tests)]
+    .filter(([, missed]) => missed.length > 1)
+    .map(([locator, missed]) => ({ locator, tests: missed.map(({ file, line }) => `${fromHome(home, file)}:${line}`) }));
+}
+
+/** A verdict's tests as its lines: the tests that missed one locator as one line naming it, the others one each. */
+function joinedByLocator(tests: SummaryTest[]): Listed[] {
+  const missedBy = byLocator(tests);
+  const listed: Listed[] = [];
+  for (const test of tests) {
+    const missed = test.locator ? (missedBy.get(test.locator) ?? []) : [];
+    if (missed.length < 2) listed.push(test);
+    else if (missed[0] === test) {
+      listed.push({ title: `${missed.length} tests miss the same locator ${test.locator}`, cause: NOT_FOUND, verdict: test.verdict, checkByHand: test.checkByHand, members: missed });
+    }
+  }
+  return listed;
+}
+
+const testOf = ({ test, outcome, explained, checkByHand, step, ticket, plan, locator }: RunEntry): SummaryTest => ({
   id: test.id,
   title: test.title,
   file: test.location.file,
@@ -127,9 +172,10 @@ const testOf = ({ test, outcome, explained, checkByHand, step, ticket, plan }: R
   ticket,
   checkByHand,
   note: explained?.note,
+  locator: explained?.cause === NOT_FOUND ? locator : undefined,
 });
 
-/** The counts, the plans to refresh and the next line — from the tests the summary lists. */
+/** The counts, the plans to refresh, the locators several tests missed and the next line — from the tests the summary lists. */
 function completed(data: Pick<SummaryData, "startedAt" | "tests" | "slow" | "leftovers">, total: number, skipped: number, home: string): SummaryData {
   const failed = data.tests.filter(({ outcome }) => outcome !== "flaky");
   const knownBugs = failed.filter(({ cause }) => cause === "known bug").length;
@@ -142,6 +188,7 @@ function completed(data: Pick<SummaryData, "startedAt" | "tests" | "slow" | "lef
     ...data,
     counts: { total, passed, needLook, knownBugs, unstable, skipped, slow: data.slow.length },
     stalePlans,
+    sameLocator: sameLocatorOf(failed, home),
     ...nextStep(look, home),
   };
 }
@@ -152,7 +199,7 @@ function completed(data: Pick<SummaryData, "startedAt" | "tests" | "slow" | "lef
  * stand's slowness failed and any data a test may have left behind; the plans a changed product made
  * stale; last, the one line to give the agent. The same in Markdown (with what to check by hand).
  */
-function rendered(data: SummaryData) {
+function rendered(data: SummaryData, home: string) {
   const { counts } = data;
   const when = new Date(data.startedAt).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const line = [
@@ -170,16 +217,24 @@ function rendered(data: SummaryData) {
 
   const group = (title: string, items: Listed[], what: (test: Listed) => string, details = true) => {
     if (!items.length) return;
-    text.push(`${title} (${items.length})`, ...items.map((test) => `  ${cut(test.title)}${what(test) ? ` — ${what(test)}` : ""}`));
-    markdown.push("", `## ${title} (${items.length})`);
+    // A line for the tests that missed one locator counts each of them.
+    const count = items.reduce((sum, item) => sum + (item.members?.length ?? 1), 0);
+    text.push(`${title} (${count})`);
+    markdown.push("", `## ${title} (${count})`);
     for (const test of items) {
+      text.push(`  ${cut(test.title)}${what(test) ? ` — ${what(test)}` : ""}`);
       markdown.push(`- **${test.title}**${what(test) ? ` — ${what(test)}` : ""}`);
+      for (const member of test.members ?? []) {
+        const where = `${fromHome(home, member.file)}:${member.line}`;
+        text.push(`    ${cut(member.title)}${member.step ? ` — step "${member.step}"` : ""} (${where})`);
+        markdown.push(`  - ${member.title}${member.step ? ` — step "${member.step}"` : ""} (\`${where}\`)`);
+      }
       if (details && test.checkByHand) markdown.push(`  - Check by hand: ${test.checkByHand}`);
       if (details && test.note) markdown.push(`  - ${test.note}`);
     }
   };
   const failed = data.tests.filter(({ outcome }) => outcome !== "flaky");
-  for (const verdict of VERDICTS) group(verdict, failed.filter((test) => test.verdict === verdict), whatOf);
+  for (const verdict of VERDICTS) group(verdict, joinedByLocator(failed.filter((test) => test.verdict === verdict)), whatOf);
   group("Unstable — passed on a retry", data.tests.filter(({ outcome }) => outcome === "flaky"), (test) => (test.cause ? `first try: ${whatOf(test)}` : ""));
   group(SLOW, data.slow, (test) => `first pass: ${whatOf(test)}`, false);
   group("Cleanup failed — data may be left on the stand (npm run data:sweep)", data.leftovers.map((title) => ({ title })), () => "");
@@ -215,7 +270,7 @@ export function runSummary(entries: RunEntry[], startedAt: Date, { home, runner 
     entries.filter(({ outcome }) => outcome === "skipped").length,
     home,
   );
-  return { ...rendered(data), data };
+  return { ...rendered(data, home), data };
 }
 
 /**
@@ -248,5 +303,58 @@ export function afterSecondPass(first: SummaryData, again: RunEntry[], home: str
     first.counts.skipped,
     home,
   );
-  return { ...rendered(data), data };
+  return { ...rendered(data, home), data };
+}
+
+/** A test's last result as reports/last-results.json keeps it. */
+export interface LastResult {
+  app?: string;
+  /** From the test home, with forward slashes. */
+  file: string;
+  title: string;
+  project?: string;
+  /** As the report shows it: a known bug is grey (skipped). */
+  status: "passed" | "failed" | "skipped";
+  at: string;
+}
+
+export const LAST_RESULTS = path.join("reports", "last-results.json");
+
+/** How the report shows a test of this run; undefined for one Playwright did not run (skipped, no reason given). */
+function shownStatus({ test, outcome, explained }: RunEntry): LastResult["status"] | undefined {
+  if (outcome === "skipped") {
+    const reasons = [...test.annotations, ...(test.results.at(-1)?.annotations ?? [])].filter(({ type }) => type === "skip" || type === "fixme");
+    return reasons.length ? "skipped" : undefined;
+  }
+  if (explained) return explained.cause === "known bug" ? "skipped" : "failed";
+  return outcome === "unexpected" ? "failed" : "passed";
+}
+
+/**
+ * reports/last-results.json — each test's last result, merged by every run: a test this run holds gets
+ * its result now, the others keep theirs, so one app's run never blanks another's (suite:coverage reads
+ * it). A test Playwright did not run keeps its earlier result; a test whose spec is gone leaves. A run
+ * with a spoiled line (verify's can-fail, AQA_SPOILED_RUN) says nothing of the tests as written: none.
+ */
+export function keepLastResults(entries: RunEntry[], home: string, startedAt: Date): void {
+  if (process.env.AQA_SPOILED_RUN) return;
+  const file = path.join(home, LAST_RESULTS);
+  let kept: LastResult[] = [];
+  try {
+    kept = (JSON.parse(fs.readFileSync(file, "utf8")) as { tests?: LastResult[] }).tests ?? [];
+  } catch {
+    // None yet, or unreadable: this run starts it.
+  }
+  const key = ({ file: spec, title, project }: LastResult) => `${spec}|${title}|${project ?? ""}`;
+  const results = new Map(kept.map((result) => [key(result), result]));
+  for (const entry of entries) {
+    const status = shownStatus(entry);
+    if (!status) continue;
+    const platform = (entry.test.parent.project()?.metadata as { platform?: string } | undefined)?.platform;
+    const result: LastResult = { app: platform, file: fromHome(home, entry.test.location.file), title: entry.test.title, project: entry.test.parent.project()?.name, status, at: startedAt.toISOString() };
+    results.set(key(result), result);
+  }
+  const tests = [...results.values()].filter((result) => fs.existsSync(path.join(home, result.file))).sort((a, b) => key(a).localeCompare(key(b)));
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ tests }, null, 2));
 }

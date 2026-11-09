@@ -8,9 +8,9 @@ import type { KnownBug } from "../setup/known-bugs";
 import { defaultPlatform } from "../setup/platforms";
 import { explainFailure, type Explained } from "./failure-cause";
 import { contractFinding, planOf, screenFinding, type ContractFinding, type ScreenFinding } from "./product-change";
-import { headline, maskSecrets, readableMessage, readableTrace } from "./readable-error";
+import { headline, maskSecrets, missedLocator, readableMessage, readableTrace } from "./readable-error";
 import { reportLabels } from "./report-tree";
-import { afterSecondPass, runSummary, type RunEntry, type SummaryData } from "./run-summary";
+import { afterSecondPass, keepLastResults, runSummary, type RunEntry, type SummaryData } from "./run-summary";
 
 /** What the test's run left about its failure (pages.fixture.ts) and what the test says about itself. */
 interface Context {
@@ -164,7 +164,8 @@ interface Shown {
  * line; neither the suite's own annotations, tooling labels nor "Before/After Hooks" wrappers appear;
  * every test gets its place in the tree and its severity (report-tree.ts) — also one that failed before
  * its body ran. The run ends with its summary (run-summary.ts) in the terminal and in
- * reports/run-summary.md|json, closed by the line to give the agent. Other reporters (list, Playwright
+ * reports/run-summary.md|json, closed by the line to give the agent; each test's last result joins
+ * reports/last-results.json (run-summary.ts keepLastResults). Other reporters (list, Playwright
  * HTML, trace) keep the full raw data for debugging.
  */
 export default class ReadableAllureReporter extends AllureReporter {
@@ -264,7 +265,9 @@ export default class ReadableAllureReporter extends AllureReporter {
     const failure = error && (!passed || knownBug) ? readable(error, context) : undefined;
     if (failure) {
       const { explained, checkByHand } = failure;
-      this.failures.set(test.id, { explained, checkByHand, step: context.step, ticket: knownBug?.ticket, plan: planOf(test.location.file, this.home) });
+      // The locator an "element not found" missed — the run summary names it once for every test that missed it.
+      const locator = explained.cause === "element not found" ? missedLocator(result.errors.map((each) => each.message ?? "").join("\n")) : undefined;
+      this.failures.set(test.id, { explained, checkByHand, step: context.step, ticket: knownBug?.ticket, plan: planOf(test.location.file, this.home), locator });
     }
     if (note("cleanup-failed")) this.leftovers.add(test.id);
 
@@ -307,6 +310,7 @@ export default class ReadableAllureReporter extends AllureReporter {
     fs.writeFileSync(path.join(reports, "run-summary.md"), maskSecrets(summary.markdown));
     fs.writeFileSync(path.join(reports, "run-summary.json"), maskSecrets(JSON.stringify(summary.data, null, 2)));
     if (summary.data.tests.length || summary.data.slow.length || summary.data.leftovers.length) safeLogger.info(summary.text);
+    keepLastResults(entries, this.home, this.startedAt);
 
     // A test marked with a known bug counts its failure as expected — when something else failed it,
     // the run still fails: Playwright lets a reporter's onEnd set the run's status.

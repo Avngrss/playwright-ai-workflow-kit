@@ -5,7 +5,8 @@
  * (`components["schemas"]["Order"]`) and tie their answer schemas to it (`fieldsOf`,
  * src/assertions/shared/http.ts; .cursor/rules/api.mdc §Response schemas). Run again when the API
  * changes; `npm run typecheck` then names every client and test to update. A contract that cannot be
- * read leaves the app's file as it was. OpenAPI 3 only (openapi-typescript).
+ * read leaves the app's file as it was. OpenAPI 3 only (openapi-typescript); operations with a method it
+ * does not read (OpenAPI 3.2's `query`) are left out of the types — a warning names them.
  *
  *   npm run api:types              every app whose API row names a contract
  *   npm run api:types -- <app>     one app
@@ -45,6 +46,26 @@ try {
   process.exit(1);
 }
 
+// The methods openapi-typescript 6 writes; a path item's other fields are not operations.
+const READ_METHODS = new Set(["get", "put", "post", "delete", "options", "head", "patch", "trace"]);
+const PATH_FIELDS = new Set(["summary", "description", "servers", "parameters", "$ref", "additionalOperations"]);
+
+/**
+ * The operations the generated types leave out without a word: methods openapi-typescript 6 does not
+ * read — OpenAPI 3.2's `query`, a path item's `additionalOperations` — each { method, route }.
+ */
+function leftOut(contract) {
+  const left = [];
+  for (const [route, item] of Object.entries(contract.paths ?? {})) {
+    if (!item || typeof item !== "object") continue;
+    for (const [key, value] of Object.entries(item)) {
+      if (!READ_METHODS.has(key) && !PATH_FIELDS.has(key) && value && typeof value === "object") left.push({ method: key, route });
+    }
+    for (const method of Object.keys(item.additionalOperations ?? {})) left.push({ method, route });
+  }
+  return left;
+}
+
 let failed = 0;
 for (const { app, address } of apps) {
   const file = path.join("src", "api", "clients", app, "contract.client.ts");
@@ -66,6 +87,12 @@ for (const { app, address } of apps) {
     const schemas = Object.keys(contract.components?.schemas ?? {}).length;
     const what = before === types ? "unchanged" : before ? "updated — npm run typecheck names every place to update" : "written";
     console.log(`${app}: ${file.split(path.sep).join("/")} ${what} (${schemas} answer types).`);
+    const left = leftOut(contract);
+    if (left.length) {
+      const methods = [...new Set(left.map(({ method }) => method.toLowerCase()))].join(", ");
+      const where = left.map(({ method, route }) => `${method.toUpperCase()} ${route}`);
+      console.log(`! ${app}: ${left.length} operations left out — methods openapi-typescript 6 does not read: ${methods} (${where.slice(0, 5).join(", ")}${where.length > 5 ? `, … ${where.length - 5} more` : ""}) — a client for one keeps hand-written types`);
+    }
   } catch (error) {
     failed += 1;
     const reason = error.cause?.code ? `${error.message} (${error.cause.code})` : error.message;

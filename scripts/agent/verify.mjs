@@ -7,6 +7,9 @@
  *   npm run verify -- --restore      only put back what a verify cut off left spoiled
  *
  * A line anywhere inside a test names that test; a line in no test stops the call before anything runs.
+ * A spec named with a line runs whole when a file it imports under src/ changed against HEAD (in the
+ * index or the working tree) — its other tests may call what changed; the block says so. --also stays
+ * for other specs.
  *
  * 1. Gate — npm run qa:gate (its type check included). Failing, its findings are printed; nothing runs.
  * 2. Can fail — each --can-fail line is swapped for its spoiled text (one per test), exactly the tests
@@ -200,16 +203,57 @@ function testsHolding(tests, source, file, line) {
 }
 
 /**
+ * Files under src/ changed against HEAD — in the index or the working tree, new ones too — from the test
+ * home, with forward slashes. None without git. git names files from the repository's root; the test home
+ * may be a folder inside it.
+ */
+function changedSources() {
+  const git = (args) => spawnSync("git", args, { cwd: ROOT, encoding: "utf8" });
+  const prefix = git(["rev-parse", "--show-prefix"]);
+  const status = git(["status", "--porcelain", "-z", "--untracked-files=all", "--", "src"]);
+  if (prefix.status !== 0 || status.status !== 0) return new Set();
+  const home = prefix.stdout.trim();
+  const files = new Set();
+  const records = status.stdout.split("\0");
+  for (let at = 0; at < records.length; at += 1) {
+    const record = records[at];
+    if (!record) continue;
+    if (record.startsWith(home, 3)) files.add(record.slice(3 + home.length));
+    if (/[RC]/.test(record.slice(0, 2))) at += 1; // a rename's old path follows
+  }
+  return files;
+}
+
+/** The files under src/ a spec imports itself (`src/…` or a relative path), with forward slashes. */
+function importsOf(file) {
+  const source = read(file);
+  const named = [...source.matchAll(/^\s*(?:import|export)\b[^;'"`]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']/gm)].map((match) => match[1] ?? match[2]);
+  return named.flatMap((name) => {
+    const base = name.startsWith("src/") ? name : name.startsWith(".") ? posix(path.relative(ROOT, path.resolve(ROOT, path.dirname(file), name))) : undefined;
+    if (!base?.startsWith("src/")) return [];
+    const found = [base, `${base}.ts`, `${base}.mts`, `${base}.js`, `${base}.mjs`, `${base}/index.ts`].find((candidate) => fs.existsSync(path.join(ROOT, candidate)) && fs.statSync(path.join(ROOT, candidate)).isFile());
+    return found ? [found] : [];
+  });
+}
+
+/**
  * Each named spec with the tests it means. A line anywhere inside a test is that test — taken by its
  * `test(` line, the only line Playwright selects by; a line in no test stops the call before anything runs.
+ * A spec narrowed to a line runs whole when a file it imports under src/ changed: its other tests may
+ * call what changed (`widened` names the files).
  */
 function resolveNamed(entries) {
   if (!entries.length) return entries;
   const tests = listedTests([...new Set(entries.map(({ file }) => file))]);
+  let changed;
   return entries.map((entry) => {
-    if (entry.line === undefined) return { ...entry, tests: tests.filter(({ file }) => file === entry.file) };
+    const whole = tests.filter(({ file }) => file === entry.file);
+    if (entry.line === undefined) return { ...entry, tests: whole };
     const held = testsHolding(tests, read(entry.file), entry.file, entry.line);
     if (!held.length) wrong(`${entry.file}:${entry.line} is in no test — give a line inside the test, or the spec without a line`);
+    changed ??= changedSources();
+    const widened = [...new Set(importsOf(entry.file))].filter((file) => changed.has(file));
+    if (widened.length && whole.length > held.length) return { ...entry, line: undefined, arg: entry.file, tests: whole, widened: { named: `${entry.file}:${held[0].line}`, changed: widened } };
     return { ...entry, line: held[0].line, arg: `${entry.file}:${held[0].line}`, tests: held };
   });
 }
@@ -468,13 +512,26 @@ function coverage(app, files) {
   } catch {
     return { error: `suite:coverage gave no data (exit ${status})` };
   }
-  return Object.entries(data.cases ?? {})
+  const cases = Object.entries(data.cases ?? {})
     .filter(([, known]) => known.tests.some(({ file }) => files.has(file)))
     .map(([key, known]) => {
       const prefix = known.tests.map(({ title }) => new RegExp(`^(${CASE_PREFIX})${key}\\b`).exec(title)?.[1]).find(Boolean) ?? "";
       return { case: `${prefix}${key}`, coverage: known.coverage, lastRun: known.lastRun, ran: known.ran, missing: known.missing?.length ? known.missing : undefined, rework: known.rework?.length ? known.rework : undefined };
     });
+  // A plan with no TMS ids: its own counts (suite:coverage withoutTmsSummary), for each plan whose tests are among these specs.
+  const plans = [...new Set((data.withoutTms ?? []).filter(({ tests }) => tests.some(({ file }) => files.has(file))).map(({ plan }) => plan))];
+  const own = plans.flatMap((plan) => {
+    const counts = data.withoutTmsSummary?.byPlan?.[plan];
+    return counts ? [{ plan, feature: path.basename(plan, ".md"), ...counts }] : [];
+  });
+  return own.length ? [...cases, ...own] : cases;
 }
+
+/** A plan's own counts as the Coverage line words them. */
+const planWords = (item) =>
+  [`plan "${item.feature}" — ${item.cases} cases`, `automated ${item.automated}`, item["to rework"] && `to rework ${item["to rework"]}`, `not automated ${item["not automated"]}`, item.inconsistent && `inconsistent ${item.inconsistent}`]
+    .filter(Boolean)
+    .join(" · ");
 
 // ── The command ───────────────────────────────────────────────────────────────────────────────────
 const PHASES = { gate: "gate", canFail: "can fail", run: "run", coverage: "coverage" };
@@ -497,12 +554,14 @@ function finish(report, reason, code) {
     block.push(
       `- Can fail: ${red} of ${report.canFail.length} red on purpose · ${report.canFail.map((item) => `${item.test} (${item.at}): ${item.result}${item.result === "red at its line" ? "" : ` — ${item.why}`}`).join(" · ")}`,
     );
+    if (report.canFail.some(({ result }) => result === "red elsewhere")) block.push("  - Red elsewhere: the test does not reach its check — test-results/verify.log holds the error");
     block.push(`- Put back: ${report.restored.map(({ file }) => file).join(", ")} — each file's hash as before (sha256)`);
   }
   if (run) {
     const smoke = run.tests.length - run.listed.length;
     block.push(`- Run: ${run.counts ? `${run.counts.total} tests: ${countsLine(run.counts)}` : "no summary written"} — reports/run-summary.json${smoke ? ` (the sign-in smoke included: ${smoke})` : ""}${run.smokeAgain ? "; the sign-in smoke failed once, the run went again" : ""}`);
     block.push(`  \`${run.command}\``);
+    for (const { named, changed } of report.widened) block.push(`  - ${named} — whole spec: ${changed.join(", ")} changed`);
     // [app] with several apps, [firefox] / [webkit] / [mobile] for a run in another browser.
     const tag = (test) => {
       const parts = [report.apps.length > 1 && appOf(test.file), browserOf(test.project)].filter(Boolean);
@@ -520,9 +579,13 @@ function finish(report, reason, code) {
     block.push(`- Stand was slow: ${slow.length ? slow.map((test) => `${tag(test)}${test.title}`).join(" · ") : "none"}`);
   }
   if (report.coverage) {
-    const cases = Array.isArray(report.coverage) ? report.coverage : [];
-    const words = cases.map((item) => `${item.case} ${item.coverage}, last run ${item.lastRun}${item.ran ? ` (${item.ran})` : ""}${item.missing ? `, missing ${item.missing.join(", ")}` : ""}`);
-    block.push(`- Coverage (${report.app}): ${report.coverage.error ?? (words.join(" · ") || "no case links these specs")}`);
+    const items = Array.isArray(report.coverage) ? report.coverage : [];
+    const words = items
+      .filter((item) => item.case)
+      .map((item) => `${item.case} ${item.coverage}, last run ${item.lastRun}${item.ran ? ` (${item.ran})` : ""}${item.missing ? `, missing ${item.missing.join(", ")}` : ""}`);
+    const plans = items.filter((item) => item.plan).map(planWords);
+    const said = [words.join(" · "), ...plans].filter(Boolean).join("; ");
+    block.push(`- Coverage (${report.app}): ${report.coverage.error ?? (said || "no case links these specs")}`);
   }
   const times = Object.entries(report.ms).map(([phase, ms]) => `${PHASES[phase]} ${clock(ms)}`);
   block.push(`- Time: ${times.join(" · ")} · total ${clock(Date.now() - report.startedAt)}`);
@@ -533,6 +596,7 @@ function finish(report, reason, code) {
     app: report.app,
     specs: report.specs,
     also: report.also,
+    widened: report.widened.length ? report.widened : undefined,
     withBrowsers: report.withBrowsers || undefined,
     gate: report.gate,
     canFail: report.canFail,
@@ -559,7 +623,18 @@ function main(argv) {
   restoreLeftovers();
   const named = resolveNamed([...call.specs, ...call.also]);
   [call.specs, call.also] = [named.slice(0, call.specs.length), named.slice(call.specs.length)];
-  const report = { startedAt: Date.now(), app: call.app, apps: call.apps, specs: call.specs.map(({ arg }) => arg), also: call.also.map(({ arg }) => arg), withBrowsers: call.withBrowsers, canFail: [], restored: [], ms: {} };
+  const report = {
+    startedAt: Date.now(),
+    app: call.app,
+    apps: call.apps,
+    specs: call.specs.map(({ arg }) => arg),
+    also: call.also.map(({ arg }) => arg),
+    widened: named.flatMap(({ widened }) => (widened ? [widened] : [])),
+    withBrowsers: call.withBrowsers,
+    canFail: [],
+    restored: [],
+    ms: {},
+  };
   const phase = (name, work) => {
     const started = Date.now();
     try {
@@ -586,10 +661,13 @@ function main(argv) {
   if (items.length) {
     const run = phase("canFail", () => {
       spoil(items);
+      // A spoiled run says nothing of the tests as written: their last results (reports/last-results.json) stay.
+      process.env.AQA_SPOILED_RUN = "1";
       try {
         const locations = [...new Set(items.flatMap((item) => item.tests.map(({ file, line }) => `${file}:${line}`)))];
         return runTests([...new Set(items.map(({ file }) => appOf(file)))], locations);
       } finally {
+        delete process.env.AQA_SPOILED_RUN;
         report.restored = putBack(spoiledNow);
       }
     });

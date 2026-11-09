@@ -98,7 +98,7 @@ parsing, sync or comparison. In doubt, it goes to its home.
 | preparing the browser before a page opens; stand lookups, multi-step preparation without teardown | `src/setup/<app>/` |
 | payloads, form values, datasets, unique values | `src/data/builders\|datasets\|generators/` |
 | an API area's requests, their answer schemas (`json(…, schema)`) and the answer paths the page sends (`answerPath("POST", …, schema)`); the app's types from `npm run api:types` (`contract.client.ts`) | `src/api/clients/<app>/` |
-| what two or more tests stand on, disposable records, bound clients, a rule's oracle | `src/fixtures/<app>/data.fixture.ts` |
+| what two or more tests stand on, disposable records, bound clients, a rule's oracle | `src/fixtures/<app>/data.fixture.ts`; made through the page (a `UI setup`) → `pages.fixture.ts` |
 | logging (the only allowed console output) / redaction beyond `maskSecrets` | `src/logging/safe-logger.helper.ts` / `src/security/` |
 
 No second helper for the same responsibility — extend the existing one. An assertion helper computes from
@@ -107,8 +107,9 @@ is no assertion helper.
 
 ## The same thing twice → one helper in its home
 
-Written in a **second** test, the same preparation or check becomes a named helper (a plain function, not a
-fixture):
+Written in a **second** test, the same preparation or check becomes a named helper in its home (a function or
+method, below); a `Setup:` step two tests share is then an app fixture calling it (`data-and-fixtures.mdc`
+§Disposable data and what tests stand on):
 
 | The repeated piece | Its home | Example |
 |---|---|---|

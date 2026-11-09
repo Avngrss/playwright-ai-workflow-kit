@@ -1,165 +1,165 @@
 # Layer Routing Algorithm
 
-Алгоритм маршрутизации слоёв для автотестов, которые пишет агент. В этом ките он **включён**: правила (`.cursor/rules/plans.mdc` §Layers и §Routes), скиллы и гейт (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`) работают по нему, отчёт покрытия (`scripts/agent/suite-coverage.mjs`) считает по нему. Ниже — живой синтаксис; документ можно перенести в другой проект и сделать по нему (§15).
+A layer routing algorithm for the tests an agent writes. In this kit it is **switched on**: the rules (`.cursor/rules/plans.mdc` §Layers and §Routes), the skills and the gate (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`) work by it, and the coverage report (`scripts/agent/suite-coverage.mjs`) counts by it. Below is the syntax in use; the document can be taken to another project and applied there (§15).
 
-Примеры с заказом, оплатой и скидкой нейтральные. Они держат формулу и не описывают продукт. Разбор настоящего ручного кейса — §18.
+The examples with an order, a payment and a discount are neutral. They hold the formula and do not describe a product. A real manual case is worked through in §18.
 
-## 1. Что это решает
+## 1. What this solves
 
-Ручной кейс почти всегда описан как поведение на экране: человек нажал «Оплатить» и увидел, что заказ оплачен. В автоматизации у такого шага две разные цели, и им нужны разные инструменты:
+A manual case is almost always written as behaviour on the screen: a person clicked "Pay" and saw that the order is paid. In automation such a step has two different goals, and they need different tools:
 
-| Цель | Вопрос | Инструмент |
+| Goal | Question | Tool |
 |---|---|---|
-| Изменить состояние | Как пользователь это делает? | UI: клик, ввод, форма |
-| Подтвердить данные | Что сервер посчитал и сохранил? | Ответ, который этот жест уже вызвал |
-| Подтвердить рисунок | Браузер показал известное значение? | Локатор, текст, состояние контрола |
+| Change the state | How does the user do it? | UI: a click, typing, a form |
+| Confirm the data | What did the server compute and store? | The answer this gesture already caused |
+| Confirm the rendering | Did the browser show a known value? | A locator, a text, a control's state |
 
-Линейная схема «действие → посмотрели на экран» ломается, когда агент боится пропустить проверку и доказывает один и тот же исход дважды: глазами и отдельным запросом, часто ещё и вторым спеком. Получается дубль. Покрытие при этом не растёт: второй проход повторяет первый.
+The linear scheme "action → look at the screen" breaks when the agent is afraid to miss a check and proves the same outcome twice: by eye and by a separate request, often by a second spec as well. The result is a duplicate. Coverage does not grow: the second pass repeats the first.
 
-Алгоритм разрывает эту связку. У кейса один владелец и один тест. Внутри теста каждый шаг идёт по дереву: подготовка через API, жест через UI, истина из ответа этого жеста, экран только как отражение уже известных данных.
+The algorithm breaks this link. A case has one owner and one test. Inside the test each step goes down a tree: setup through the API, the gesture through the UI, the truth from this gesture's answer, the screen only as a reflection of data already known.
 
-Короткая формула: UI отвечает за «как». Ожидаемые значения берутся из данных кейса. Перехваченный ответ доказывает, что сервер их записал. Экран доказывает, что браузер их нарисовал. Отдельный API-тест существует только когда риск не в этом экране: матрица правила, доступ, контракт.
+The short formula: the UI answers for "how". The expected values come from the case data. The intercepted answer proves that the server stored them. The screen proves that the browser rendered them. A separate API test exists only when the risk is not on this screen: a rule's matrix, access, the contract.
 
-## 2. Почему это стоит сделать
+## 2. Why it is worth doing
 
-Запрет «не проверяй одно и то же дважды» агент уже видит и всё равно пишет дубль. Пока система награждает вторую галочку, он будет её ставить. Имеет смысл перенести запрет из промпта в данные плана и в гейт: второй spec на тот же кейс и проверка «только тост» становятся красными, а не «нежелательными».
+The agent already sees the ban "do not check the same thing twice" and still writes a duplicate. As long as the system rewards the second tick, the agent will keep adding it. It makes sense to move the ban from the prompt into the plan's data and into the gate: a second spec for the same case and a "toast only" check become red, not "undesirable".
 
-Что это даёт:
+What it gives:
 
-- Один пользовательский сценарий больше не живёт двумя файлами.
-- Бизнес-поля сценария всё равно проверены — в теле ответа, который породил клик. Отказ от слоя `API+UI` не выкидывает проверку данных.
-- Экран проверяется отдельно, поэтому баг «сервер записал верно, браузер показал старое» не теряется.
-- Матрица правил (другие суммы, чужие данные, `403`) остаётся на API и не раздувает UI.
-- Прогон короче и устойчивее: нет второго сценария в браузере и нет лишнего GET «на всякий случай».
-- Таблица покрытия перестаёт врать. Прочерк в колонке API у UI-кейса значит «близнеца нет», а не «данные не смотрели».
+- One user scenario no longer lives in two files.
+- The scenario's business fields are still checked — in the body of the answer the click produced. Dropping the `API+UI` layer does not throw out the data check.
+- The screen is checked on its own, so the bug "the server stored it right, the browser showed the old value" is not lost.
+- The rule matrix (other amounts, someone else's data, `403`) stays on the API and does not bloat the UI.
+- The run is shorter and steadier: no second scenario in the browser and no extra GET "just in case".
+- The coverage table stops lying. A dash in the API column of a UI case means "there is no twin", not "nobody looked at the data".
 
-## 3. Почему агент дублирует, хотя правило уже есть
+## 3. Why the agent duplicates although the rule already exists
 
-До включения в этом ките противоречие было собрано в коде. Тот же узор стоит поискать в другом проекте, даже если файлы называются иначе.
+Before the algorithm was switched on in this kit, the contradiction was built into the code. Look for the same pattern in another project, even when its files are named differently.
 
-Проза говорила «каждая сторона один раз» и «UI-кейс проверяет экран, не сохранённые данные». Сильнее были три других механизма:
+The prose said "each side once" and "a UI case checks the screen, not the stored data". Three other mechanisms were stronger:
 
-1. **Гейт требовал все слои из `Needs:`.** `scripts/gate/cases.mjs` падал, если у готового кейса в `Needs:` стояли API и UI, а теста с этим id не было на одном из них; отчёт покрытия считал кейс `automated` только при обеих галочках. Агент закрывал гейт двумя тестами с одним смыслом.
-2. **План сам назначал два слоя одному исходу.** Строка правил «серверное правило, которое показывает экран» требовала API на правило и отдельно UI, что экран показал ответ. Рядом: действие с сообщением проверяет точный текст **и** то, что действие оставило. Вторая половина читалась как «сходи ещё раз за данными».
-3. **Второй тест на тот же id был узаконен заголовком.** `repeats.mjs` считал дублем только два теста с одной и той же частью после ` — `, а правила учили называть половинки так: `— the server stores it` / `— the account shows it`.
+1. **The gate required every layer of `Needs:`.** `scripts/gate/cases.mjs` failed when a ready case had API and UI in `Needs:` and one of them had no test with that id; the coverage report counted the case `automated` only with both ticks. The agent closed the gate with two tests of the same meaning.
+2. **The plan itself gave one outcome two layers.** The rules line "a server rule the screen shows" demanded an API test for the rule and, separately, a UI test that the screen showed the answer. Next to it: an action with a message checks the exact text **and** what the action left. The second half read as "go and fetch the data once more".
+3. **A second test for the same id was made legal by its title.** `repeats.mjs` counted as a duplicate only two tests with the same part after ` — `, and the rules taught to name the halves like this: `— the server stores it` / `— the account shows it`.
 
-Порядок планирования добивал то же самое: сначала черновик API на сценарий, потом вопрос «что UI доказывает сверх API». Ответ «пользователь это видит» порождал близнеца. А проверить перехваченный ответ было нечем: `expectJson` принимает ответ API-клиента, не ответ браузера, и агент шёл в повторный GET.
+The planning order finished the job: first an API draft for the scenario, then the question "what does the UI prove beyond the API". The answer "the user sees it" produced a twin. And there was nothing to check the intercepted answer with: `expectJson` takes an API client's answer, not the browser's, so the agent went for a repeated GET.
 
-Абзац в скилле проигрывал этим механизмам. Поэтому их убрали, а агенту дали дерево и инструмент: `answerTo` берёт ответ жеста и проверяет его там же (§5).
+A paragraph in the skill lost to these mechanisms. So they were removed, and the agent was given a tree and a tool: `answerTo` takes the gesture's answer and checks it right there (§5).
 
-## 4. Идея
+## 4. The idea
 
-Кейс (кейс TMS, AC) делится на **сценарии** — обязательства, которые падают порознь (§18): «адрес сохранён и виден в списке» — один, «чужой клиент его не читает» — другой. Сценарий — блок плана и тест со своим заголовком `TC-101 · S2 · <что доказывает>`; кейс одного обязательства — один блок без `S<n>`.
+A case (a TMS case, an AC) splits into **scenarios** — obligations that fail separately (§18): "the address is saved and shown in the list" is one, "another customer cannot read it" is another. A scenario is a plan block and a test with its own title `TC-101 · S2 · <what it proves>`; a case of one obligation is one block without `S<n>`.
 
-У сценария один владелец: `API`, `UI` или `E2E`. Владелец — поле `Level`, с причиной: где кейс ищет результат (`- Level: UI — the result is on the same screen`). Второе поле `Owner` не заводится — два поля снова разъедутся.
+A scenario has one owner: `API`, `UI` or `E2E`. The owner is the `Level` field, with a reason: where the case looks for the result (`- Level: UI — the result is on the same screen`). No second field `Owner` is added — two fields would drift apart again.
 
-| Где кейс ищет результат | Владелец |
+| Where the case looks for the result | Owner |
 |---|---|
-| на экране той фичи, где было действие | UI |
-| в другом месте — другая фича, роль или приложение: действие здесь, результат там | E2E |
-| ни на каком экране: другой вход правила, доступ, который экран не пробует, контракт, содержимое файла, отказ без своего экрана | API |
+| on the screen of the feature where the action happened | UI |
+| somewhere else — another feature, role or app: the action here, the result there | E2E |
+| on no screen: another input of a rule, access the screen does not try, the contract, a file's content, a refusal with no screen of its own | API |
 
-`Needs:` не пишется. Вместо списка слоёв у сценария строка `Route:` — откуда берётся доказательство (несколько шагов — по строке на шаг, §7). Слой файла и `Route` обязаны совпасть:
+`Needs:` is not written. Instead of a list of layers a scenario has a `Route:` line — where the proof comes from (several steps — a line per step, §7). The file's layer and the `Route` must agree:
 
-- `Route` начинается с `api` → тест лежит в `tests/api`, `Level: API`.
-- `Route` — это `intercept`, `no-request` или `screen-only` → тест лежит в `tests/ui` или, если результат в другом месте, в `tests/e2e`.
+- `Route` starts with `api` → the test lives in `tests/api`, `Level: API`.
+- `Route` is `intercept`, `no-request` or `screen-only` → the test lives in `tests/ui` or, when the result is somewhere else, in `tests/e2e`.
 
-План, написанный до маршрутизации (`Needs:`, пары API + UI), гейт не валит, а предупреждает, а отчёт покрытия помечает `to rework`: такую фичу переделывают целиком при первом обновлении плана.
+A plan written before routing (`Needs:`, API + UI pairs) does not fail the gate but gets a warning, and the coverage report marks it `to rework`: such a feature is reworked whole at the first refresh of its plan.
 
-E2E не исчезает и не становится «просто UI». Исчезает только решение писать один исход дважды. Внутри пути путешествия работает то же дерево.
+E2E does not disappear and does not become "just UI". Only the decision to write one outcome twice disappears. Inside a journey the same tree works.
 
-Подготовка данных — не `Route`. Это по-прежнему `Data:` и предусловия. `Route` описывает, чем кейс доказан.
+Data setup is not `Route`. It is still `Data:` and the preconditions. `Route` describes what proves the case.
 
-## 5. Дерево решений
+## 5. The decision tree
 
-Агент не выбирает слой на глаз. На каждый шаг кейса — один вопрос.
+The agent does not pick a layer by eye. For each step of the case there is one question.
 
-### Подготовка
+### Setup
 
-Нужны данные до того, как пользователь начал? Создать их через API или фикстуру. Кликать меню ради сетапа нельзя: это медленно и хрупко, и это не сценарий кейса.
+Is data needed before the user starts? Create it through the API or a fixture. Clicking through menus for setup is not allowed: it is slow and brittle, and it is not the case's scenario.
 
-Исключение, которое уже есть в ките и его надо сохранить: эндпоинта нет. Тогда `Data: UI setup` — честный путь, он доходит до последнего сохранения и не считается проверкой кейса. Логин — фикстура, не шаги, пока сам кейс не про логин.
+An exception the kit already has, and it must stay: there is no endpoint. Then `Data: UI setup` is an honest path; it goes up to the last save and does not count as a check of the case. Sign-in is a fixture, not steps, unless the case itself is about signing in.
 
-### Действие
+### Action
 
-Что делает пользователь? Это UI: один метод Page Object. Тест передаёт этот метод фикстуре `answerTo` (`src/fixtures/pages.fixture.ts`) — она начинает слушать до клика, забирает ответ, который вызвал жест, и проверяет его там же:
+What does the user do? That is UI: one Page Object method. The test passes this method to the `answerTo` fixture (`src/fixtures/pages.fixture.ts`) — it starts listening before the click, takes the answer the gesture caused and checks it right there:
 
 ```ts
 const paid = await answerTo(payOf(order), () => ordersPage.pay(), { has: { status: "Paid", charged: order.total } });
 ```
 
-`payOf` — путь ответа, объявленный в API-клиенте приложения рядом с его вызовами (``answerPath("POST", `api/orders/${id}/pay`, payment)`` — метод, конец пути и схема ответа), так что спека не называет ни метод, ни путь, ни тип. Несколько ответов одного жеста — `answersTo([a, b], () => …, [{ … }, { … }])`. Слушает spec, не Page Object: объект страницы не имеет права проглотить ответ, из которого кейс берёт истину; `whenAnswered` остаётся ему только для ожидания своего экрана. Свой `waitForResponse` не пишется. Цикл опроса в спеке не пишется — это тот же класс, что фиксированное ожидание.
+`payOf` is an answer path declared in the app's API client next to its calls (``answerPath("POST", `api/orders/${id}/pay`, payment)`` — the method, the end of the path and the answer's schema), so the spec names neither the method, nor the path, nor the type. Several answers of one gesture — `answersTo([a, b], () => …, [{ … }, { … }])`. The spec listens, not the Page Object: a page object has no right to swallow the answer the case takes its truth from; `whenAnswered` stays with it only to wait for its own screen. No `waitForResponse` of its own is written. No polling loop is written in a spec — it is the same class of thing as a fixed wait.
 
-Фоновые запросы страницы не собираются «на всякий случай». В `Route` стоят только запросы, которые несут ожидаемый результат.
+The page's background requests are not collected "just in case". `Route` holds only the requests that carry the expected result.
 
-Если кейс доказывает, что ушёл правильный запрос, а не только что в ответе правильные поля (фильтр по периоду, маска ключа в форме), доказательство — сам запрос того же жеста: `query:` — параметры URL, `sent:` — поля тела запроса. Это тот же один перехват, не второй spec: `intercept GET /api/orders → query: from, to · items · screen table=value` и в тесте `answerTo(…, { query: { from, to }, has: … })`. Провал здесь — своя причина в отчёте («request did not match»): фронтенд отправил не то. «Создания не было» доказывает пустой список `captureRequests`.
+When the case proves that the right request went out, not only that the answer holds the right fields (a filter by period, a key mask in a form), the proof is the request of the same gesture: `query:` — the URL parameters, `sent:` — the request body's fields. It is the same one intercept, not a second spec: `intercept GET /api/orders → query: from, to · items · screen table=value` and in the test `answerTo(…, { query: { from, to }, has: … })`. A failure here is a cause of its own in the report ("request did not match"): the frontend sent the wrong thing. "Nothing was created" is proven by an empty `captureRequests` list.
 
-### Проверка
+### Check
 
-Вопрос один: что именно сейчас доказывается?
+One question: what exactly is being proven now?
 
-**Истина данных.** Статус стал `Paid`, сумма списалась, скидка легла в поле. Доказательство — названные поля перехваченного тела, свёренные с данными кейса (заказ, который тест сам создал): `has:` в `answerTo`. Не весь JSON: полный контракт — отдельный API-кейс. Не разбор HTML: текст на экране может быть красивым при кривых данных.
+**Data truth.** The status became `Paid`, the amount was charged, the discount landed in its field. The proof is the named fields of the intercepted body, matched against the case data (the order the test made itself): `has:` in `answerTo`. Not the whole JSON: the full contract is a separate API case. Not parsing HTML: the text on the screen can look fine over broken data.
 
-Истина бывает четырёх видов:
+The truth comes in four kinds:
 
-| Вид | Когда | Ответ проверяется | Экран сравнивается с |
+| Kind | When | The answer is checked by | The screen is compared with |
 |---|---|---|---|
-| данные кейса | тест сам их сделал, кейс назвал их заранее, или это факты предмета, который держат только для тестов | `has: { … }` — значения кейса | `shown…(данные кейса)`; серверные поля (новый id, дата) — вторым аргументом |
-| данные стенда | их никто не знает заранее (цифры дашборда) | `check: <правило>` — именной хелпер `src/assertions/<app>/`, который доказывает на ответе то, в чём сервер может ошибиться (части дают итог, границы периода); с аргументами — `check: paidAsInBilling(billing)` | `shown…(ответ)` — только здесь, после правила |
-| только экран | факт есть только на экране (маска карты, клиентский итог) | — сеть не слушается | своё ожидаемое значение экрана |
-| нет запроса | браузер решает сам (неактивная кнопка, поиск на клиенте) | — сеть не слушается | состояние контрола, сообщение; список, который браузер ищет или сортирует, — из прежнего ответа по правилу браузера |
+| case data | the test made it itself, the case named it beforehand, or these are the facts of an item kept only for the tests | `has: { … }` — the case's values | `shown…(case data)`; server fields (a new id, a date) — as the second argument |
+| stand data | nobody knows it beforehand (a dashboard's figures) | `check: <rule>` — a named helper of `src/assertions/<app>/` that proves on the answer what the server could get wrong (the parts add up to the total, a period's bounds); with arguments — `check: paidAsInBilling(billing)` | `shown…(answer)` — only here, after the rule |
+| screen only | the fact exists only on the screen (a card mask, a total the client computes) | — the network is not listened to | the screen's own expected value |
+| no request | the browser decides alone (a disabled button, a search on the client) | — the network is not listened to | a control's state, a message; a list the browser searches or sorts — from the earlier answer, by the browser's rule |
 
-Правило, которое лишь пересказывает ответ («в списке есть строки»), ничего не доказывает. Откуда правило — строка `- Rules:` в плане (кейс, PRD, документ); правило, которое никто не записал, — догадка. Оракул правила (другой эндпоинт, система-источник) читает фикстура или хелпер приложения, не шаг спеки.
+A rule that only retells the answer ("the list has rows") proves nothing. Where the rule comes from is the plan's `- Rules:` line (the case, the PRD, a document); a rule nobody wrote down is a guess. The rule's oracle (another endpoint, a source system) is read by a fixture or the app's helper, not by a spec step.
 
-**Отражение.** Появилось сообщение, кнопка стала неактивной, сводка показывает те же статус и сумму. Доказательство — читатель экрана или точный текст сообщения. Ожидание строится из данных кейса (`shownPaidSummary(order)`), тем же объектом, с которым сверили тело. Спека не форматирует деньги и даты и не вытаскивает `(await ответ).status` — это уже запрещает `scripts/gate/reading.mjs`, и новый алгоритм это не ослабляет.
+**Reflection.** A message appeared, the button became disabled, the summary shows the same status and amount. The proof is a block's reader or the message's exact text. The expectation is built from the case data (`shownPaidSummary(order)`), the same object the body was matched against. The spec does not format money and dates and does not pull out `(await answer).status` — `scripts/gate/reading.mjs` already forbids that, and the new algorithm does not weaken it.
 
-Поля, которых нет в данных кейса, потому что их выдал только сервер (новый id, назначенный курьер), передаются в хелпер отображения целиком, вторым аргументом: `shownSummary(order, paid)`. Выбор поля остаётся в `src/assertions/<app>/`. Спека не становится парсером.
+Fields that are not in the case data, because only the server issued them (a new id, an assigned courier), are passed to the display helper whole, as the second argument: `shownSummary(order, paid)`. Picking the field stays in `src/assertions/<app>/`. The spec does not become a parser.
 
-Сообщение после действия по-прежнему проверяется и само по себе кейс не закрывает. Истина — поля из `Route`, рисунок — токены `screen`.
+A message after the action is still checked, and by itself it does not close the case. The truth is the fields from `Route`, the rendering is the `screen` tokens.
 
-### Ветки, без которых дерево врёт
+### Branches without which the tree lies
 
-**Ответ не является новым состоянием.** `204`, `202`, редирект, эхо отправленного тела, id фоновой задачи, оптимистичный UI, сокет. Первое тело нельзя объявить истиной. В том же тесте берётся либо следующий ответ, который страница запрашивает сама (второй ответ в `answersTo`), либо ровно один GET этого ресурса через клиент. Это пишется в `Route` как `read`. Второй GET за теми же полями — дубль.
+**The answer is not the new state.** `204`, `202`, a redirect, an echo of the sent body, a background job's id, an optimistic UI, a socket. The first body cannot be declared the truth. In the same test either the next answer the page requests by itself is taken (the second answer in `answersTo`), or exactly one GET of this resource through the client. This is written in `Route` as `read`. A second GET for the same fields is a duplicate.
 
-**Запроса нет.** Клиентская валидация, неактивная кнопка, обязательное поле до отправки. Только экран: `disabled`, `aria-invalid`, текст ошибки. `answerTo` здесь повесит тест. Если кейс ещё и утверждает, что запрос не ушёл, пустой список даёт `captureRequests` — в ките это способ доказать «создания не было».
+**There is no request.** Client-side validation, a disabled button, a required field before submit. Only the screen: `disabled`, `aria-invalid`, the error text. `answerTo` would hang the test here. When the case also claims that the request did not go out, an empty `captureRequests` list proves it — in the kit this is the way to prove "nothing was created".
 
-**Браузер работает на прежнем ответе.** Поиск, сортировка или страницы на клиенте: ответ открытия — `→ input` (на нём ничего не проверяется, если кейс о нём ничего не говорит), шаг браузера — `no-request`, его экран ожидается из того ответа по правилу браузера (`shownTasks(answer, "Ivan")`), не чужим правилом данных стенда.
+**The browser works on an earlier answer.** A search, a sort or paging on the client: the opening's answer is `→ input` (nothing is checked on it unless the case says something about it), the browser's step is `no-request`, and its screen is expected from that answer by the browser's rule (`shownTasks(answer, "Ivan")`), not by a stand-data rule that belongs elsewhere.
 
-**Кэш фронтенда.** Живая проверка смотрит, уходит ли запрос каждый раз (первое открытие, повторное, другой период). `intercept` — только тот, что уходит; повторное открытие без запроса — `screen-only`.
+**A frontend cache.** The live check looks at whether the request goes out every time (the first open, a reopen, another period). `intercept` is only the one that goes out; a reopen with no request is `screen-only`.
 
-**Факт есть только на экране.** Маска карты, клиентский итог, текст, которого нет в JSON. Источник истины — экран. Эти поля в теле ответа не ищутся.
+**The fact exists only on the screen.** A card mask, a total the client computes, a text the JSON does not hold. The source of truth is the screen. These fields are not looked for in the answer's body.
 
-**Матрица правила.** Другие комбинации скидки, граница, чужой заказ, `401`/`403`, схема ответа. Отдельные кейсы с `Level: API` и своим id. В UI остаётся один проход экрана плюс негатив, у которого своё поведение на экране (поле подсветилось, форма не ушла). Негатив, который отличается только числом в той же формуле, в UI не копируется.
+**A rule's matrix.** Other discount combinations, a boundary, someone else's order, `401`/`403`, the answer's schema. Separate cases with `Level: API` and their own id. The UI keeps one pass of the screen plus a negative with behaviour of its own on the screen (a field highlighted, the form not sent). A negative that differs only by a number in the same formula is not copied into the UI.
 
-Два разных места падения остаются двумя кейсами. «Форма не пускает пустой email» — `no-request`. «Сервер отвергает пустой email» — `api` (или `intercept` с кодом ошибки, если отказ виден на том же экране и это единственный такой проход). Это не дубль: ломается разное.
+Two different places of failure stay two cases. "The form does not let an empty email through" — `no-request`. "The server rejects an empty email" — `api` (or `intercept` with an error code, when the refusal shows on the same screen and this is the only such pass). This is not a duplicate: different things break.
 
-Позитивный и негативный исход одной мутации — тоже два кейса, если контракт описывает ошибку. Негатив не становится вторым слоем позитивного теста.
+The positive and the negative outcome of one mutation are also two cases when the contract describes the error. The negative does not become a second layer of the positive test.
 
-`@visual`, `@cross-browser` и `@responsive` остаются метками UI-кейса, не слоями и не видами `Route`. Скриншот не заменяет поля из `Route`.
+`@visual`, `@cross-browser` and `@responsive` stay tags of a UI case, not layers and not kinds of `Route`. A screenshot does not replace the fields from `Route`.
 
-Путешествие через страницы, роли или приложения получает свой id и свой `Route` на итоговый исход. Оно не переиспользует id экранного кейса: иначе гейт увидит два теста на один id и будет прав.
+A journey across pages, roles or apps gets its own id and its own `Route` for the final outcome. It does not reuse a screen case's id: otherwise the gate sees two tests for one id and is right.
 
-## 6. Что считать дублем
+## 6. What counts as a duplicate
 
-Дубль — второй сценарий или второй предикат на тот же ожидаемый результат.
+A duplicate is a second scenario or a second predicate for the same expected result.
 
-| Это дубль | Это не дубль |
+| A duplicate | Not a duplicate |
 |---|---|
-| Второй spec с тем же id кейса | Проверка полей тела и проверка, что экран показал те же данные кейса |
-| Повторный GET за полями, которые уже лежали в перехваченном теле | Подготовка и очистка через API |
-| Повторный расчёт формулы по тексту из DOM | Один `read`, записанный в `Route`, когда тело мутации пустое |
-| Весь JSON внутри UI-теста «заодно» | Перехват того GET, который страница сама делает следом |
-| Тот же happy path отдельным API-тестом | Отдельный API-кейс на другой вход того же правила |
-| Заголовок с ` — ` как способ развести «сервер» и «экран» | Два кейса с двумя разными причинами падения |
-| GET в шаге `Setup:`, чей результат потом ожидается на экране — это чтение, не подготовка | Шаг `Setup:`, который создаёт данные и регистрирует их очистку |
+| A second spec with the same case id | A check of the body's fields and a check that the screen showed the same case data |
+| A repeated GET for fields that were already in the intercepted body | Setup and cleanup through the API |
+| Computing the formula again from the DOM's text | One `read`, written in `Route`, when the mutation's body is empty |
+| The whole JSON inside a UI test "while we are at it" | Intercepting the GET the page itself makes next |
+| The same happy path as a separate API test | A separate API case for another input of the same rule |
+| A title with ` — ` as a way to split "the server" from "the screen" | Two cases with two different reasons to fail |
+| A GET in a `Setup:` step whose result is then expected on the screen — it is a read, not setup | A `Setup:` step that creates data and registers its cleanup |
 
-Клиентский вызов в UI- или E2E-тесте — только в шагах `Setup:` / `Cleanup:` (создать, изменить, удалить данные; найти и проверить только чтением то, на чём стоит сценарий, — `expectStandData`) или как единственный `read` из `Route`. Вызов, чей результат использует `expect`, — проверка, как бы ни назывался шаг. Оракул правила данных стенда (§5) — не вызов спеки.
+A client call in a UI or E2E test belongs only in `Setup:` / `Cleanup:` steps (create, change, delete data; find and check, by reading only, what the scenario stands on — `expectStandData`) or as the one `read` from `Route`. A call whose result an `expect` uses is a check, whatever the step is called. The oracle of a stand-data rule (§5) is not a spec call.
 
-Сравнение тела с `order` и сравнение экрана с `shown…(order)` — два наблюдения одного ожидания. Они ловят разные поломки. Сравнение экрана с телом ответа (`shown…(paid)` без данных кейса) — слабее: сервер и экран могут быть одинаково неправы, и тест зелёный. Поэтому в хелпер экрана нельзя передавать только тело ответа, если поля были известны заранее.
+Comparing the body with `order` and comparing the screen with `shown…(order)` are two observations of one expectation. They catch different breakages. Comparing the screen with the answer's body (`shown…(paid)` without the case data) is weaker: the server and the screen can be wrong in the same way, and the test is green. So the screen helper must not get the answer's body alone when the fields were known beforehand.
 
-## 7. Формула `Route`
+## 7. The `Route` formula
 
-Одна строка на сценарий, её читают план, гейт (`scripts/gate/plans.mjs` `parseRoute`) и отчёт покрытия. Свободный текст агент обходит; формула — нет. Части разделяет ` · `.
+One line per scenario; it is read by the plan, the gate (`scripts/gate/plans.mjs` `parseRoute`) and the coverage report. An agent finds its way around free text; around a formula it cannot. Parts are separated by ` · `.
 
 ```text
 api <METHOD> <path> → <status>? <field>, <field>
@@ -177,22 +177,22 @@ no-request · screen <token>=<kind>, …
 screen-only · screen <token>=<kind>, …
 ```
 
-Сценарий из нескольких шагов — строка на шаг: `- Route (step <n>): …`, номера как у шагов кейса (сценарий, выделенный из кейса, номера сохраняет: S1 — шаги 1 и 4, S2 — 2 и 3). Шаг, который ждёт несколько ответов, — по строке на ответ под тем же номером (их берёт один `answersTo`). Каждый шаг с маршрутом доказывается в своём `test.step`: гейт считает проверку экрана каждого вида в каждом таком шаге. Шаги, которые добавил тест (открыть страницу), маршрута не имеют и номеров не сдвигают; запрос открытия принадлежит первому шагу кейса, чей результат он показывает.
+A scenario of several steps has a line per step: `- Route (step <n>): …`, numbered as the case numbers its steps (a scenario split out of a case keeps the numbers: S1 — steps 1 and 4, S2 — 2 and 3). A step that waits for several answers has a line per answer under the same number (one `answersTo` takes them). Each step with a route is proven in its own `test.step`: the gate counts a check of each screen kind in each such step. Steps the test added (opening a page) have no route and do not shift the numbers; the opening request belongs to the first step of the case whose result it shows.
 
-- `<METHOD>` важен: GET и PUT по одному адресу — два запроса; `answerPath` клиента несёт метод.
-- `<status>` необязателен. Указан (`201`, `400`, `204`) — тест передаёт его: `answerTo(…, { status: 201 })`, API-тест проверяет его в `expectJson` / `expectStatus`. Нет — `200`. Строка из одного статуса (`intercept GET /api/reports → 403`) — отказ, который страница получает на свой запрос.
-- `sent:` — поля тела запроса, которые ждёт кейс (`answerTo(…, { sent })`); `query:` — параметры его URL (`answerTo(…, { query })`). Это то, что отправил фронтенд; у `api` их нет — API-тест сам строит запрос.
-- `<field>` — только поля ожидаемого результата (`error.code` — `code` внутри `error`; `items.sku` — `sku` каждого элемента `items`). Это контракт автора и ревью, не то, что гейт вычитывает из исходника хелпера; в тесте они в `has:`.
-- `check: <rule>` — данные стенда (§5): доказательство — именной хелпер (`check: totalsAddUp`, с аргументами — `check: paidAsInBilling(billing)`), поля не перечисляются. Тест передаёт его в `answerTo(…, { check })`; API-тест вызывает правило на своём ответе.
-- `input` — ответ лишь кормит следующий шаг: браузер работает на нём (§5), правило `check:` следующего шага или — в API-сценарии — ответ, с которым сравнивают другой. На нём ничего не проверяется.
-- `empty` без `read` или `until` — незаконченная строка. Пустое тело не доказывает состояние. Непустое тоже не доказывает, если перезагрузка с ним расходится (§10).
-- `read` — один вызов клиента после действия, возвращающий состояние (обычно GET), или следующий ответ, который страница запрашивает сама, — тогда вторым ответом того же `answersTo`.
-- `until <helper>` — единственный способ ждать состояние, которое не появляется одним ответом. Именной хелпер приложения сам ограничивает повтор и возвращает тело, на котором поля уже сошлись. Цикл в спеке запрещён.
-- `<token>=<kind>` — что смотреть на экране и каким способом. `value` — блок, прочитанный читателем, против `shown…` (значение, которое кейс называет сам, — `shown…()` без аргумента). `text` — точные слова на экране: сообщение, подпись, выбор контрола. `state` — disabled, hidden, checked, количество. `visible` — только факт появления, и только когда содержимое не входит в обязательство кейса. Токен без вида не пишется: видимый `summary` не доказывает, что в нём верные поля.
-- Путь в `Route` — улика живого запроса, не продуктовое обещание. Обещание — вид маршрута, поля и токены экрана. Сменился endpoint, поля те же: путь обновляется в том же изменении, что и путь ответа в клиенте и тест, как локатор. Новый сценарий из-за этого не заводится. `{id}` — один сегмент пути.
-- Несколько ответов одного жеста — по строке на каждый, и только те, что несут ожидаемый результат, никогда «всё, что грузит страница». Один запрос дважды в шаге (список и его перезагрузка) — две строки; `answersTo([a, a])` берёт первый и второй ответ.
+- `<METHOD>` matters: GET and PUT on one address are two requests; the client's `answerPath` carries the method.
+- `<status>` is optional. When given (`201`, `400`, `204`), the test passes it: `answerTo(…, { status: 201 })`; an API test checks it in `expectJson` / `expectStatus`. When not given, it is `200`. A line of a status alone (`intercept GET /api/reports → 403`) is a refusal the page gets to its own request.
+- `sent:` — the request body's fields the case expects (`answerTo(…, { sent })`); `query:` — its URL parameters (`answerTo(…, { query })`). This is what the frontend sent; `api` has neither — an API test builds the request itself.
+- `<field>` — only the fields of the expected result (`error.code` — `code` inside `error`; `items.sku` — `sku` of each element of `items`). It is the contract of the author and the review, not what the gate reads out of a helper's source; in the test they are in `has:`.
+- `check: <rule>` — stand data (§5): the proof is a named helper (`check: totalsAddUp`, with arguments — `check: paidAsInBilling(billing)`); no fields are listed. The test passes it in `answerTo(…, { check })`; an API test calls the rule on its answer.
+- `input` — the answer only feeds the next step: the browser works on it (§5), the next step's `check:` rule uses it, or — in an API scenario — another answer is compared with it. Nothing is checked on it.
+- `empty` without `read` or `until` is an unfinished line. An empty body does not prove a state. A non-empty one does not either when a reload disagrees with it (§10).
+- `read` — one client call after the action that returns the state (usually a GET), or the next answer the page requests by itself — then it is the second answer of the same `answersTo`.
+- `until <helper>` — the only way to wait for a state that does not appear in one answer. The app's named helper bounds the retries itself and returns the body on which the fields have already settled. A loop in the spec is forbidden.
+- `<token>=<kind>` — what to look at on the screen and how. `value` — a block read by a reader, against `shown…` (a value the case names itself — `shown…()` without an argument). `text` — the exact words on the screen: a message, a label, a control's choice. `state` — disabled, hidden, checked, a count. `visible` — only the fact that it appeared, and only when the content is not part of the case's obligation. A token without a kind is not written: a visible `summary` does not prove that it holds the right fields.
+- The path in `Route` is evidence of a live request, not a product promise. The promise is the route's kind, the fields and the screen tokens. The endpoint changed and the fields are the same: the path is updated in the same change as the answer path in the client and the test, like a locator. No new scenario is added for that. `{id}` is one path segment.
+- Several answers of one gesture — a line for each, and only those that carry the expected result, never "everything the page loads". One request twice in a step (a list and its reload) — two lines; `answersTo([a, a])` takes the first and the second answer.
 
-Примеры:
+Examples:
 
 ```text
 intercept POST /api/orders/{id}/pay → status, charged · screen summary=value, toast=text
@@ -211,11 +211,11 @@ api POST /api/orders → 403 · error.code
 - Route (step 2): intercept DELETE /api/team/members/{id} → 204 · empty · read GET /api/team/members → id · screen members=value
 ```
 
-`Route` заполняется с живого стенда: в списке запросов видно, ушёл ли жест на сервер, что он отправил и какое тело вернулось. Строка `no-request` на оплате, которая на стенде шлёт `POST`, — ложь плана. Её видно в таблице подтверждения до написания теста. После подтверждения implement не имеет права подменить `Route`.
+`Route` is filled from the live stand: the request list shows whether the gesture reached the server, what it sent and what body came back. A `no-request` line on a payment that sends a `POST` on the stand is a lie of the plan. It shows in the confirm table before the test is written. After the confirmation, implement has no right to swap the `Route`.
 
-## 8. Как это выглядит
+## 8. What it looks like
 
-### План
+### The plan
 
 ```markdown
 ### 1. TC-401 · Customer pays for the order and sees it as paid
@@ -239,11 +239,11 @@ api POST /api/orders → 403 · error.code
      - expect: discount is capped, total matches the cap
 ```
 
-Пользовательский сценарий не получает черновик API. API-кейс появляется, когда ломается правило, доступ или контракт, которых этот экран не проходит.
+A user scenario does not get an API draft. An API case appears when what can break is a rule, access or a contract that this screen does not go through.
 
-### UI-тест
+### The UI test
 
-Ожидание и у тела, и у экрана — данные кейса (`order`). Шаг называется словами человека. Слова request, locator, payload в заголовок шага не попадают.
+The expectation of both the body and the screen is the case data (`order`). The step is named in a person's words. The words request, locator, payload do not go into a step title.
 
 ```ts
 test(
@@ -259,11 +259,11 @@ test(
 );
 ```
 
-`answerTo` проверяет ответ браузера так же, как `expectJson` — ответ API-клиента: статус (и `status:`), схему полей, которые читают тесты (из `answerPath` клиента), `has:` / `check:` / `sent:` / `query:`; промах называет запрос и начинается словами «The server's answer to the action —» (или «The request the action sent —»), по которым отчёт ставит причину. Спека сама `response.json()` не разбирает.
+`answerTo` checks the browser's answer the way `expectJson` checks an API client's answer: the status (and `status:`), the schema of the fields the tests read (from the client's `answerPath`), `has:` / `check:` / `sent:` / `query:`; a miss names the request and starts with the words "The server's answer to the action —" (or "The request the action sent —"), by which the report sets the cause. The spec does not parse `response.json()` itself.
 
-Page Object в этом жесте только кликает. `whenAnswered` внутри Page Object остаётся для открытия страницы, когда экрану нечем показать, что данные доехали, и кейс эти поля истиной не считает.
+The Page Object in this gesture only clicks. `whenAnswered` inside a Page Object stays for opening a page, when the screen has nothing to show that the data arrived and the case does not take those fields as its truth.
 
-Вариант с пустым телом мутации — один вызов клиента в шаге проверки, путь из `read`:
+The variant with an empty mutation body — one client call in the check step, the path from `read`:
 
 ```ts
 await answerTo(payOf(order.id), () => ordersPage.pay(), { status: 204 });
@@ -271,11 +271,11 @@ expect(await expectJson(orders.get(order.id)), "Order").toEqual(expect.objectCon
 expect(await ordersPage.summary.read(), "Order summary").toEqual(shownPaidSummary(order));
 ```
 
-Клиентские вызовы в шагах `Setup:` и `Cleanup:` разрешены всегда. В шаге проверки — только если в `Route` есть `read`, и ровно один.
+Client calls in `Setup:` and `Cleanup:` steps are always allowed. In a check step — only when `Route` has a `read`, and exactly one.
 
-### API-тест матрицы
+### The API matrix test
 
-Без браузера. Поля те же, что в `Route`. Это не пересказ TC-401.
+No browser. The fields are the same as in `Route`. It is not a retelling of TC-401.
 
 ```ts
 test(
@@ -295,132 +295,132 @@ test(
 );
 ```
 
-### Таблица покрытия
+### The coverage table
 
-Колонка `API+UI` и пара галочек уходят. `Route` в отчёт не копируется: он лежит в плане, а одинаковая фраза «Network Intercept + DOM Render» на каждой UI-строке не отличает валидацию до отправки от перехвата.
+The `API+UI` column and the pair of ticks go away. `Route` is not copied into the report: it lives in the plan, and the same phrase "Network Intercept + DOM Render" on every UI row does not tell validation before submit from an intercept.
 
-| Кейс | Владелец | Прогон | Статус |
+| Case | Owner | Run | Status |
 |---|---|---|---|
 | TC-401 Customer pays and sees the order as paid | UI | passed | automated |
 | TC-410 A discount never exceeds 20% | API | passed | automated |
 
-Статусы `npm run suite:coverage`: **automated** — у каждого сценария кейса один написанный руками тест в папке владельца; **to rework** — написан до маршрутизации: у плана нет `Route`, или сценарий доказан двумя тестами (API и UI) — второй тест не «покрыт лучше», его сливают в тест владельца при обновлении плана; **not automated** — тестов нет, причина в строке *Not now* или статусе плана; **inconsistent** — тесты ссылаются на кейс, который план держит в *Not now*, у сценария нет теста или тест лежит не в папке владельца: часть сценариев при остальных ненаписанных — ручной прогон этого кейса ещё нужен (гейт валит и это). Один TMS-id не дробится на два слоя. Он дробится на сценарии, если внутри несколько независимых обязательств.
+The statuses of `npm run suite:coverage`: **automated** — every scenario of the case has one hand-written test in its owner's folder; **to rework** — written before routing: the plan has no `Route`, or a scenario is proven by two tests (API and UI) — the second test is not "better coverage", it is merged into the owner's test when the plan is refreshed; **not automated** — there are no tests, the reason is in a *Not now* line or the plan's status; **inconsistent** — tests link a case the plan keeps in *Not now*, a scenario has no test, or a test lies outside its owner's folder: when part of the scenarios is written and the rest is not, a manual run of this case is still needed (the gate fails this too). One TMS id is not split into two layers. It is split into scenarios when it holds several independent obligations.
 
-## 9. Гейт
+## 9. The gate
 
-Промпт дерево не удержит. Ниже отказы `qa:gate` (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`). План или спек, который пишется сейчас (не закоммичен на ветке), падает; написанный до маршрутизации получает предупреждение — список «переделать», без красного гейта.
+A prompt will not hold the tree. Below are the refusals of `qa:gate` (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`). A plan or a spec being written now (not committed on the branch) fails; one written before routing gets a warning — a "rework" list, without a red gate.
 
-План (`checkPlanRoutes`, разбор — `parseRoute` в `plans.mjs`):
+The plan (`checkPlanRoutes`, parsed by `parseRoute` in `plans.mjs`):
 
-- У готового сценария есть `Level` и строка `Route` (несколько — каждая с `(step <n>)`). Нет `Route`, а `Needs:` называет два слоя — «один ожидаемый результат доказан дважды: разделить на сценарии».
-- `Level: API` стоит только при `Route`, который начинается с `api`; `Level: UI` и `Level: E2E` — только при `intercept`, `no-request` или `screen-only`.
-- Формула: начало `api|intercept <METHOD> <path> →`, `no-request` или `screen-only`; `→ empty` без `read` / `until` — ошибка; `api` / `intercept` называют хотя бы поле, `check:`, статус, `sent:`, `query:`, `empty` или `input`; `no-request` и `screen-only` не называют ни полей, ни статуса, но называют экран; у `api` нет `sent:` и экрана; `input` — только у `api` / `intercept`.
-- У каждого токена `screen` есть вид: `value`, `text`, `state` или `visible`. `visible` запрещён, если в строке есть поля тела, которые экран должен показать: для них только `value`.
+- A ready scenario has a `Level` and a `Route` line (several — each with `(step <n>)`). No `Route`, and `Needs:` names two layers — "one expected result proven twice: split it into scenarios".
+- `Level: API` stands only with a `Route` that starts with `api`; `Level: UI` and `Level: E2E` — only with `intercept`, `no-request` or `screen-only`.
+- The formula: the start is `api|intercept <METHOD> <path> →`, `no-request` or `screen-only`; `→ empty` without `read` / `until` is an error; `api` / `intercept` name at least a field, `check:`, a status, `sent:`, `query:`, `empty` or `input`; `no-request` and `screen-only` name neither fields nor a status, but name the screen; `api` has no `sent:` and no screen; `input` is only for `api` / `intercept`.
+- Every `screen` token has a kind: `value`, `text`, `state` or `visible`. `visible` is forbidden when the line holds body fields the screen must show: for them, only `value`.
 
-Тест. Гейт проверяет структуру, не смысл полей. Он не читает исходники хелперов и не ищет имя `status` в теле `shownSummary`: вложенные объекты, общий хелпер, псевдоним и переименование дают ложные падения, а рефакторинг начинает чинить гейт.
+The test. The gate checks the structure, not the meaning of the fields. It does not read the helpers' sources and does not look for the name `status` in the body of `shownSummary`: nested objects, a shared helper, an alias and a rename give false failures, and refactoring turns into fixing the gate.
 
-- Один сценарий — один написанный руками тест (`repeats.mjs`): ключ — приложение, id кейса и `S<n>` из заголовка. Часть заголовка после ` — ` второй тест не узаконивает. Не считаются вторым тестом: строки одного файла, собранные циклом (в заголовке есть `${`); тот же тест в другом проекте Playwright (браузер, шард); повтор прогона; скриншот в отдельном `<feature>-visual.ui.spec.ts` с `@visual`. Кейс в двух фичах — ошибка.
-- Папка файла совпадает с `Level`.
-- `intercept`: в тесте есть `answerTo` / `answersTo`; `check:`, `sent:`, `query:` и статус кроме `200` из `Route` переданы в нём (`{ check | sent | query | status }`).
-- `no-request` и `screen-only` (все маршруты сценария): в тесте нет ни `answerTo`, ни `whenAnswered`.
-- Чтения клиента (`expectJson`) в шагах проверки — не больше, чем `read` в маршрутах; `Setup:` и `Cleanup:` не считаются. Шаг `Setup:`, который читает (`expectJson`) и ничего не регистрирует к очистке, а его результат потом ожидается, — проверка под чужим именем.
-- `shown…(ответ)`, где ответ — результат `answerTo`, без маршрута `check:` — сравнение экрана с ответом там, где кейс знал значения: ожидание строится из данных кейса (`shown…(данные кейса, ответ)` для серверных полей).
-- Вид экрана в каждом шаге с маршрутом проверен: `value` — `toEqual` / `toMatchObject` / `toContainEqual` при вызове `shown…` или именная проверка; `text` — `toHaveText` / `toContainText` / `toHaveURL`, `expectToast` или именная проверка; `state` — `toBeDisabled`, `toBeEnabled`, `toBeHidden`, `toHaveCount`, `toHaveAttribute` и подобные; `visible` — `toBeVisible`. Одна проверка за все шаги не засчитывается.
-- `api`: правило `check:` вызвано на ответе, статус кроме `200` проверен.
-- Кейс написан целиком (`cases.mjs`): у написанного кейса тест есть у каждого готового сценария; тест не ссылается на кейс, который план держит в *Not now* (кроме «Covered by …»); строка `Blocked` без хвоста `· searched:` — предупреждение.
-- Мок не подменяет истину мутации: `mocked` показывает состояние, до которого стенд честно не довести, и никогда не является ответом действия под проверкой (`data-and-fixtures.mdc`).
+- One scenario — one hand-written test (`repeats.mjs`): the key is the app, the case id and `S<n>` from the title. The part of the title after ` — ` does not make a second test legal. Not counted as a second test: rows of one file built by a loop (the title holds `${`); the same test in another Playwright project (a browser, a shard); a repeated run; a screenshot in a separate `<feature>-visual.ui.spec.ts` with `@visual`. A case in two features is an error.
+- The file's folder matches `Level`.
+- `intercept`: the test has `answerTo` / `answersTo`; `check:`, `sent:`, `query:` and a status other than `200` from `Route` are passed in it (`{ check | sent | query | status }`).
+- `no-request` and `screen-only` (all of the scenario's routes): the test has neither `answerTo` nor `whenAnswered`.
+- Client reads (`expectJson`) in check steps — no more than the `read`s in the routes; `Setup:` and `Cleanup:` do not count. A `Setup:` step that reads (`expectJson`), registers nothing for cleanup, and whose result is then expected, is a check under another name.
+- `shown…(answer)`, where the answer is the result of `answerTo`, without a `check:` route — the screen compared with the answer where the case knew the values: the expectation is built from the case data (`shown…(case data, answer)` for server fields).
+- The screen kind is checked in each step with a route: `value` — `toEqual` / `toMatchObject` / `toContainEqual` with a call of `shown…`, or a named check; `text` — `toHaveText` / `toContainText` / `toHaveURL`, `expectToast` or a named check; `state` — `toBeDisabled`, `toBeEnabled`, `toBeHidden`, `toHaveCount`, `toHaveAttribute` and the like; `visible` — `toBeVisible`. One check for all the steps does not count.
+- `api`: the `check:` rule is called on the answer; a status other than `200` is checked.
+- A case is written whole (`cases.mjs`): a written case has a test for every ready scenario; a test does not link a case the plan keeps in *Not now* (except "Covered by …"); a `Blocked` line without a `· searched:` tail is a warning.
+- A mock does not stand in for a mutation's truth: `mocked` shows a state the stand cannot honestly be brought to, and is never the answer of the action under check (`data-and-fixtures.mdc`).
 
-Гейт закрывает второй тест, тест без `answerTo` там, где `Route` перехватывает, лишний GET и токен экрана без проверки. Он не закрывает подмену полей и путей: `has:` с чужим набором имён или другой `answerPath` останутся зелёными, пока это не увидит ревью. Имена полей в `Route` — контракт автора и ревьюера. Связывать их с AST хелперов не нужно.
+The gate closes off a second test, a test without `answerTo` where `Route` intercepts, an extra GET, and a screen token without a check. It does not close off swapped fields and paths: `has:` with another set of names, or another `answerPath`, stays green until review sees it. The field names in `Route` are the contract of the author and the reviewer. There is no need to tie them to the helpers' AST.
 
-Требовать `answerTo` во всех UI-тестах нельзя: ветка `no-request` сразу станет ложной тревогой. Сплошной запрет любых вызовов клиента ломает сетап, очистку и честный `204`.
+Requiring `answerTo` in every UI test is wrong: the `no-request` branch would at once become a false alarm. A blanket ban on any client call breaks setup, cleanup and an honest `204`.
 
-## 10. Уточнения, без которых покрытие дырявое
+## 10. Refinements without which coverage has holes
 
-Их легко потерять при переносе, потому что в первой формулировке алгоритма их не было.
+They are easy to lose when the algorithm is carried over, because its first wording did not have them.
 
-1. **Оба наблюдения сверяются с данными кейса, а не друг с другом.** Тело подтверждает, что сервер записал ожидаемые `status` и `charged`. Экран подтверждает, что нарисована отображаемая форма тех же данных. Расхождение «сервер верный, экран старый» падает на экране. «Сервер записал другое» падает на теле, даже если экран это другое честно показал.
-2. **Непустое тело ещё не сохранённое состояние.** `intercept` достаточен только если живая перезагрузка экрана (или GET того же ресурса) совпадает с телом мутации по полям кейса. Расходится — тело предварительное: черновик, расчёт, `{ accepted, jobId }`, эхо запроса. Тогда `Route` — `read` или `until`, даже при `200` и заполненном JSON. Пустые `202` и `204` сами по себе в эту же корзину. Решение записывает планировщик по стенду, не агент в коде.
-3. **В UI проверяются поля кейса, не контракт.** Весь payload, схема, пагинация — API-кейсы. Иначе дубль переедет внутрь одного файла.
-4. **Серверное поле, которого тест не знал заранее, не вытаскивается в спеке.** Оно приходит в хелпер вторым аргументом. Иначе `reading.mjs` (или аналог «спека читается как кейс») и алгоритм конфликтуют, и агент начнёт ломать одно из двух.
-5. **Один жест — один шаг словами человека.** Внутри шага действие, проверка тела и проверка экрана. Отдельный шаг «Verify the API» с запрещёнными словами в названии не заводится. Правило «шаг доказывает одно» сохраняется: доказывается один исход кейса, двумя наблюдениями.
-6. **Page Object не слушает ответ, из которого берётся истина.** Его метод передаётся в `answerTo`; если бы он сам забрал ответ, спеке нечего было бы проверить, и агент снова сделал бы GET.
-7. **Мок не считается серверной истиной.**
-8. **`Data: API setup` не есть покрытие правила.** Создать заказ через API и ни разу не проверить поля оплаты — дыра. Её закрывает список полей в `Route`, а не факт, что где-то в файле был HTTP.
+1. **Both observations are matched against the case data, not against each other.** The body confirms that the server stored the expected `status` and `charged`. The screen confirms that the displayed form of the same data was rendered. The mismatch "the server is right, the screen is stale" fails on the screen. "The server stored something else" fails on the body, even when the screen showed that something else faithfully.
+2. **A non-empty body is not yet the saved state.** `intercept` is enough only when a live reload of the screen (or a GET of the same resource) matches the mutation's body on the case's fields. When they differ, the body is preliminary: a draft, a calculation, `{ accepted, jobId }`, an echo of the request. Then `Route` is `read` or `until`, even with `200` and a filled JSON. Empty `202` and `204` fall into the same bucket by themselves. The planner writes the decision down from the stand, not the agent in code.
+3. **The UI checks the case's fields, not the contract.** The whole payload, the schema, paging are API cases. Otherwise the duplicate moves inside one file.
+4. **A server field the test did not know beforehand is not pulled out in the spec.** It goes to the helper as the second argument. Otherwise `reading.mjs` (or its counterpart, "a spec reads as its case") and the algorithm conflict, and the agent starts breaking one of the two.
+5. **One gesture — one step in a person's words.** Inside the step: the action, the body check and the screen check. A separate step "Verify the API" with forbidden words in its name is not added. The rule "a step proves one thing" holds: one outcome of the case is proven, by two observations.
+6. **The Page Object does not listen to the answer the truth comes from.** Its method is passed to `answerTo`; if it took the answer itself, the spec would have nothing to check, and the agent would make a GET again.
+7. **A mock does not count as the server's truth.**
+8. **`Data: API setup` is not coverage of a rule.** Creating an order through the API and never checking the payment fields is a hole. The list of fields in `Route` closes it, not the fact that there was HTTP somewhere in the file.
 
-## 11. Какое покрытие остаётся
+## 11. What coverage remains
 
-| Риск | Где живёт | Чем доказан |
+| Risk | Where it lives | What proves it |
 |---|---|---|
-| Пользователь совершил жест и увидел результат | Один UI- или E2E-тест | Поля `intercept` / `read` против данных кейса; токены `screen` |
-| Браузер не пускает действие | Один UI-тест | `no-request` и токены экрана |
-| На экране есть факт, которого нет в JSON | Один UI-тест | `screen-only` |
-| Другие входы правила, права, контракт, отказ сервера без своего экрана | Отдельные API-тесты, каждый со своим id | `api` и список полей |
-| Путь через страницы, роли или приложения | Один E2E-тест | Тот же `Route` на исход путешествия |
-| Стенд жив | Как и раньше: один смоук на фичу | Если смоук — это UI-сценарий, у него тот же `Route`, API-близнец смоуку не заводится |
+| The user made a gesture and saw the result | One UI or E2E test | The `intercept` / `read` fields against the case data; the `screen` tokens |
+| The browser does not let the action through | One UI test | `no-request` and the screen tokens |
+| The screen holds a fact the JSON does not | One UI test | `screen-only` |
+| Other inputs of a rule, permissions, the contract, a server refusal with no screen of its own | Separate API tests, each with its own id | `api` and the list of fields |
+| A path across pages, roles or apps | One E2E test | The same `Route` for the journey's outcome |
+| The stand is alive | As before: one smoke per feature | When the smoke is a UI scenario, it has the same `Route`; no API twin is added for the smoke |
 
-Пирамида остаётся: правил на API много, экранных проходов мало, путешествий единицы. Меняется только принадлежность пользовательского сценария. Он больше не копируется в API «потому что ушёл запрос».
+The pyramid stays: many rules on the API, few screen passes, only a few journeys. Only the ownership of the user scenario changes. It is no longer copied into the API "because a request went out".
 
-Пока источник плана — папка TMS, набор уже зафиксирован текущим правилом кита: каждый кейс папки становится строкой плана. Выкинуть матрицу при реализации нельзя — на её id не будет теста, и гейт это покажет.
+While the plan's source is a TMS folder, the set is already fixed by the kit's current rule: every case of the folder becomes a plan line. The matrix cannot be dropped during implementation — its ids would have no test, and the gate shows that.
 
-Когда TMS нет и фичу описали словами, скрипт не знает про скидку, которую никто не назвал. Это закрывается подтверждением плана, не регулярным выражением: каждый риск прохода (доступ, правила, целостность, расчёты, состояния, побочные эффекты) имеет либо кейс со своим `Route`, либо строку *Not now* с причиной. Подтверждённый список дальше стережёт гейт так же, как кейсы из TMS. Человек по-прежнему отвечает на вопрос «этот список и есть скоуп». Алгоритм отвечает на другой вопрос: «этот список нельзя реализовать вполсилы и нельзя реализовать дважды».
+When there is no TMS and the feature was described in words, a script does not know about a discount nobody named. That is closed by the plan's confirmation, not by a regular expression: every risk of the pass (access, rules, integrity, calculations, states, side effects) has either a case with its own `Route` or a *Not now* line with a reason. The gate then guards the confirmed list the same way as the cases from the TMS. A person still answers the question "this list is the scope". The algorithm answers another question: "this list cannot be implemented by half and cannot be implemented twice".
 
-## 12. Чего алгоритм не делает
+## 12. What the algorithm does not do
 
-- Не выдумывает бизнес-правило, которого нет ни в TMS, ни в рисках плана.
-- Не превращает каждый вариант формулы в UI-тест.
-- Не запрещает API-тесты.
-- Не объявляет любой сетевой вызов дублем.
-- Не заменяет живой просмотр запроса. Ложь «оплата ничего не шлёт» ловится глазами в таблице подтверждения. Гейт ловит её, только если написанный тест всё же слушает сеть при `no-request`; путь ответа в тесте с путём в `Route` он не сравнивает — это ревью.
-- Не включает совместимый режим «пока можно по-старому». Старый режим и есть награда за дубль. Написанное до маршрутизации гейт не валит, но и покрытием не считает: перечисляет предупреждением, отчёт ставит `to rework`, а каждый новый или изменённый тест идёт по дереву. Отдельный список исключений, который снова разрешает два слоя, не заводится.
+- It does not invent a business rule that is neither in the TMS nor in the plan's risks.
+- It does not turn every variant of a formula into a UI test.
+- It does not forbid API tests.
+- It does not declare every network call a duplicate.
+- It does not replace looking at the live request. The lie "the payment sends nothing" is caught by eye in the confirm table. The gate catches it only when the written test still listens to the network under `no-request`; it does not compare the answer path in the test with the path in `Route` — that is review.
+- It does not turn on a compatible mode "the old way, for now". The old mode is exactly the reward for a duplicate. What was written before routing the gate does not fail, but does not count as coverage either: it lists it in a warning, the report sets `to rework`, and every new or changed test goes by the tree. No separate list of exceptions that allows two layers again is added.
 
-## 13. Что не переносить из чернового чек-листа
+## 13. What not to carry over from the draft checklist
 
-Рядом с этой идеей был чек-лист внедрения. В работу берётся только то, что совпало с устройством кита.
+Next to this idea there was an adoption checklist. Only what matched the kit's design was taken into the work.
 
-| Предложение | Решение |
+| Proposal | Decision |
 |---|---|
-| Новое поле `Owner` | Не заводить. Владелец — уже существующий `Level`. В проекте без `Level` заводится одно поле владельца, не два |
-| Маркеры `async_state_check`, `client_validation`, `visual_only_truth` | Не заводить. Ветка видна из вида `Route` |
-| Колонка Verification Source с одним текстом на все UI-строки | Не заводить. Ветки различает `Route` в плане |
-| Запретить любой повторный GET статическим правилом без разбора шага | Не делать. Разрешены сетап, очистка и один `read` |
-| В промпте писать `page.waitForResponse` и polling | Не писать. Слушает `answerTo`. Поллинг — именной хелпер продукта (`until`), если он вообще есть, не цикл в спеке |
-| Сразу перегенерировать 5–10 кейсов | Не делать. Фичу, написанную до маршрутизации, гейт помечает «переделать», а отчёт — `to rework`; её переделывают целиком при первом обновлении плана |
-| Обучить агента абзацем и остановиться | Недостаточно. Абзац уже проигрывал гейту |
+| A new field `Owner` | Do not add. The owner is the existing `Level`. In a project without `Level`, one owner field is added, not two |
+| Markers `async_state_check`, `client_validation`, `visual_only_truth` | Do not add. The branch is seen from the kind of `Route` |
+| A Verification Source column with one text for all UI rows | Do not add. `Route` in the plan tells the branches apart |
+| Forbid any repeated GET by a static rule without looking at the step | Do not. Setup, cleanup and one `read` are allowed |
+| Write `page.waitForResponse` and polling into the prompt | Do not. `answerTo` listens. Polling is the product's named helper (`until`), if there is one at all, not a loop in a spec |
+| Regenerate 5–10 cases at once | Do not. A feature written before routing is marked "rework" by the gate and `to rework` by the report; it is reworked whole at the first refresh of its plan |
+| Teach the agent with a paragraph and stop | Not enough. A paragraph already lost to the gate |
 
-## 14. Где это живёт в ките
+## 14. Where it lives in the kit
 
-| Место | Что делает |
+| Place | What it does |
 |---|---|
-| `.cursor/rules/plans.mdc` §Layers, §Routes, §A case is written whole or not at all | Владелец сценария и его причина, строка `Route`, кейс целиком; `Needs` и пары слоёв не пишутся |
-| `.cursor/rules/specs.mdc`, `code.mdc`, `ui.mdc`, `api.mdc` | Один ручной кейс — один тест на сценарий (`TC-101 · S2 · …`, без ` — `); ответ жеста — `answerTo` в спеке; Page Object его не слушает; пути ответов и схемы — в клиенте |
-| `src/fixtures/pages.fixture.ts` | Фикстуры `answerTo` / `answersTo`: действие, ответ, проверки `has` / `check` / `sent` / `query` / `status` |
-| `src/assertions/shared/http.ts` | `answerPath` (метод, путь, схема ответа), `expectAnswer` для ответа браузера рядом с `expectJson` для ответа клиента |
-| `src/setup/request-capture.ts` | `answersOf` — слушатель `answerTo`; `whenAnswered` — ожидание Page Object для своего экрана; `captureRequests` — «запрос не ушёл» |
-| `src/reporting/failure-cause.ts` | Причины «request did not match» (фронтенд отправил не то) и «answer did not match» (сервер ответил не то) |
-| `scripts/gate/plans.mjs` | `parseRoute`, `ownersOfRoute`, `scenarioOf`; план, написанный до маршрутизации, читается с его `Needs` |
-| `scripts/gate/routes.mjs` | Правила §9 для плана и теста; написанное до маршрутизации — предупреждение |
-| `scripts/gate/cases.mjs` | Кейс закрыт тестами всех готовых сценариев; ссылка на кейс из *Not now*; хвост `searched:` у `Blocked` |
-| `scripts/gate/repeats.mjs` | `checkCaseTwice`: ключ — приложение, id и сценарий; суффикс ` — ` ничего не разводит |
-| `scripts/agent/suite-coverage.mjs` | `automated` — у каждого сценария один тест в папке владельца; два теста сценария или план без `Route` — `to rework`; чужая папка, недостающий сценарий, ссылка из *Not now* — `inconsistent` |
-| `scripts/agent/plan-block.mjs`, `plan-draft.mjs` | Блок плана в форме шаблона со строками `Route:` (по шагам), из пустого вызова или из сохранённого кейса TMS / бага |
-| `scripts/agent/spec-draft.mjs` | Скелет теста из заполненного блока: шаги с маршрутом и `expect` в комментариях; гейт валит оставленный скелет |
-| `.cursor/skills/*`, `.cursor/commands/*` | Ссылаются на правила и этот документ, грамматику не копируют |
-| Смоук `tests/smoke/sign-in.smoke.spec.ts` | Не трогается: это шаблон входа, не кейс с `Route` |
+| `.cursor/rules/plans.mdc` §Layers, §Routes, §A case is written whole or not at all | The scenario's owner and its reason, the `Route` line, a whole case; `Needs` and layer pairs are not written |
+| `.cursor/rules/specs.mdc`, `code.mdc`, `ui.mdc`, `api.mdc` | One manual case — one test per scenario (`TC-101 · S2 · …`, without ` — `); the gesture's answer — `answerTo` in the spec; the Page Object does not listen to it; answer paths and schemas — in the client |
+| `src/fixtures/pages.fixture.ts` | The `answerTo` / `answersTo` fixtures: the action, the answer, the checks `has` / `check` / `sent` / `query` / `status` |
+| `src/assertions/shared/http.ts` | `answerPath` (method, path, answer schema), `expectAnswer` for the browser's answer next to `expectJson` for the client's answer |
+| `src/setup/request-capture.ts` | `answersOf` — the listener behind `answerTo`; `whenAnswered` — the Page Object's wait for its own screen; `captureRequests` — "the request did not go out" |
+| `src/reporting/failure-cause.ts` | The causes "request did not match" (the frontend sent the wrong thing) and "answer did not match" (the server answered the wrong thing) |
+| `scripts/gate/plans.mjs` | `parseRoute`, `ownersOfRoute`, `scenarioOf`; a plan written before routing is read with its `Needs` |
+| `scripts/gate/routes.mjs` | The rules of §9 for the plan and the test; what was written before routing — a warning |
+| `scripts/gate/cases.mjs` | A case is closed by the tests of all its ready scenarios; a link to a case from *Not now*; the `searched:` tail of `Blocked` |
+| `scripts/gate/repeats.mjs` | `checkCaseTwice`: the key is the app, the id and the scenario; the ` — ` suffix splits nothing |
+| `scripts/agent/suite-coverage.mjs` | `automated` — every scenario has one test in its owner's folder; two tests of a scenario or a plan without `Route` — `to rework`; another owner's folder, a missing scenario, a link from *Not now* — `inconsistent` |
+| `scripts/agent/plan-block.mjs`, `plan-draft.mjs` | A plan block in the template's shape with `Route:` lines (per step), from an empty call or from a saved TMS case or bug |
+| `scripts/agent/spec-draft.mjs` | A test skeleton from a filled block: steps with the route and `expect` in comments; the gate fails a skeleton left as it is |
+| `.cursor/skills/*`, `.cursor/commands/*` | Point to the rules and this document, never copy the grammar |
+| The smoke `tests/smoke/sign-in.smoke.spec.ts` | Not touched: it is the sign-in template, not a case with a `Route` |
 
-## 15. Как перенести в другой проект
+## 15. How to carry it to another project
 
-Имена файлов будут другими. Переносится контракт, не дерево папок.
+File names will differ. The contract is carried over, not the folder tree.
 
-1. Найти награду за дубль и выключить её. Обычно это одно из: гейт или отчёт, который требует тест и на API, и на UI для одного id; шаблон заголовка «часть сервера / часть экрана»; инструкция «пиши кейс целиком на все слои»; фраза «проверь сообщение и что действие оставило» без указания, откуда читается «оставило».
-2. Оставить один идентификатор владельца кейса. Если поле уже есть — не добавлять второе.
-3. Ввести строку `Route` строго по §7. Не заменять её абзацем и не заводить параллельные маркеры.
-4. Дать один инструмент, который делает действие, берёт его ответ и проверяет его там же — статус, поля, правило, отправленное (в ките — `answerTo`). Спека не парсит тело руками, если местный линтер запрещает ей преобразовывать данные.
-5. Научить гейт отказам из §9. Пока гейта нет, агент будет соблюдать дерево выборочно.
-6. Поменять отчёт покрытия: одна строка — один владелец — один последний прогон. Две галочки на один кейс больше не значат «автоматизирован».
-7. Развести уже написанные пары. Кейс «человек сделал X и увидел Y» оставляет UI-тест и дописывает в него перехват. Кейс «формула Z при разных входах» оставляет API-тест. Второй файл удаляется, ссылка на id у него забирается. Пока оба файла держат один id, новый гейт обязан быть красным — иначе миграция не видна.
-8. Вставить в правила агента текст из §16 только вместе с гейтом. Один текст ситуацию возвращает к сегодняшней: правило есть, награда за дубль сильнее.
+1. Find the reward for a duplicate and switch it off. Usually it is one of: a gate or a report that demands both an API and a UI test for one id; a title template "the server's part / the screen's part"; an instruction "write the case whole on all layers"; the phrase "check the message and what the action left" with no word on where "left" is read from.
+2. Keep one identifier of the case's owner. When such a field already exists, do not add a second one.
+3. Bring in the `Route` line strictly as §7 says. Do not replace it with a paragraph and do not add parallel markers.
+4. Give one tool that performs the action, takes its answer and checks it right there — the status, the fields, the rule, what was sent (in the kit, `answerTo`). The spec does not parse the body by hand when the local linter forbids it to transform data.
+5. Teach the gate the refusals of §9. Until there is a gate, the agent will follow the tree only now and then.
+6. Change the coverage report: one row — one owner — one last run. Two ticks for one case no longer mean "automated".
+7. Take apart the pairs already written. The case "a person did X and saw Y" keeps the UI test and gets the intercept added to it. The case "formula Z for different inputs" keeps the API test. The second file is deleted, and its link to the id is removed. While both files hold one id, the new gate must be red — otherwise the migration is not visible.
+8. Put the text of §16 into the agent's rules only together with the gate. The text alone brings things back to where they are today: the rule is there, the reward for a duplicate is stronger.
 
-Что поискать по репозиторию при переносе:
+What to search the repository for when carrying it over:
 
 ```text
 API+UI
@@ -433,77 +433,77 @@ the screen shows
 split over layers
 ```
 
-Каждое вхождение — либо награда за второй тест, либо формулировка, которую агент читает как «проверь данные ещё раз».
+Each hit is either a reward for a second test or a wording the agent reads as "check the data once more".
 
-## 16. Текст для правил агента
+## 16. Text for the agent's rules
 
-Его имеет смысл класть в скилл после того, как гейт из §9 уже падает на нарушениях.
+It makes sense to put it into a skill once the gate of §9 already fails on violations.
 
 ```text
-Один id сценария — один написанный руками тест. Второй файл с тем же id не пишется.
-Цикл с данными в том же файле, другой браузер и повтор прогона — не второй тест.
-Один id из TMS может дать несколько сценариев, если обязательства падают порознь.
-Владелец UI или E2E, если сценарий про то, что человек делает и видит.
-Владелец API, если сценарий про другой вход правила, доступ или контракт.
-Внутри UI и E2E:
-- данные до жеста создаются через API, если эндпоинт есть;
-- жест — метод Page Object, переданный в answerTo, если Route начинается с intercept
-  и тело мутации совпадает с перезагрузкой: has — данные кейса, check — правило данных
-  стенда, sent / query — что отправила страница, status — не 200;
-- если тело пустое, предварительное или расходится с перезагрузкой — один read
-  либо один именной until, без цикла в спеке;
-- поля из Route проверяются против данных кейса;
-- экран проверяется так, как сказано в токене: value через shown…, text точной строкой,
-  state состоянием контрола. visible не заменяет значение;
-- в shown… не передаётся одно только тело ответа;
-- при no-request и screen-only сеть не слушается;
-- в шаге проверки нет вызова API-клиента, кроме одного read или одного until из Route.
-Повторный сценарий тех же полей отдельным запросом или отдельным файлом — ошибка, а не перестраховка.
+One scenario id — one hand-written test. A second file with the same id is not written.
+A data loop in the same file, another browser and a repeated run are not a second test.
+One TMS id may give several scenarios when its obligations fail separately.
+Owner UI or E2E when the scenario is about what a person does and sees.
+Owner API when the scenario is about another input of a rule, access or the contract.
+Inside UI and E2E:
+- data needed before the gesture is created through the API when there is an endpoint;
+- the gesture is a Page Object method passed to answerTo when Route starts with intercept
+  and the mutation's body matches the reload: has — the case data, check — the stand-data
+  rule, sent / query — what the page sent, status — when not 200;
+- when the body is empty, preliminary or differs from the reload — one read
+  or one named until, with no loop in the spec;
+- the fields from Route are checked against the case data;
+- the screen is checked as its token says: value through shown…, text by the exact string,
+  state by the control's state. visible does not replace the value;
+- shown… never gets the answer's body alone;
+- under no-request and screen-only the network is not listened to;
+- a check step holds no API client call except one read or one until from Route.
+Proving the same fields again by a separate request or a separate file is an error, not caution.
 ```
 
-## 17. Сводка
+## 17. Summary
 
-Алгоритм стоит делать, потому что дубль здесь не ошибка внимания, а рациональный ответ на гейт. Пока за один кейс нужны две галочки, агент напишет два теста и будет прав относительно гейта и неправ относительно покрытия.
+The algorithm is worth building because a duplicate here is not a lapse of attention but a rational answer to the gate. As long as one case needs two ticks, the agent will write two tests and be right by the gate and wrong by coverage.
 
-После включения схемы покрытие пользовательского сценария — это поля ответа, который действительно хранит состояние, и рисунок тех же данных на экране, в одном тесте. Покрытие правил — отдельные API-сценарии. Дубль — второй файл на тот же id сценария и лишний GET в шаге проверки. Гейт отклоняет эту структуру. Совпадение имён полей с проверкой он не доказывает: это ревью по контракту `Route`. Цена — один общий разбор строки `Route` для гейта и отчёта покрытия. Грамматику скиллы не копируют, они ссылаются на этот документ.
+With the scheme switched on, the coverage of a user scenario is the fields of the answer that really holds the state plus the rendering of the same data on the screen, in one test. The coverage of rules is separate API scenarios. A duplicate is a second file for the same scenario id and an extra GET in a check step. The gate rejects this structure. It does not prove that the field names match the check: that is review against the `Route` contract. The cost is one shared parse of the `Route` line for the gate and the coverage report. The skills do not copy the grammar; they point to this document.
 
-## 18. Разбор кейса из TMS
+## 18. Working through a TMS case
 
-Нейтральный пример, не продукт этого репозитория. Ручной кейс перегружен специально: так выглядит обычная карточка в TMS.
+A neutral example, not this repository's product. The manual case is overloaded on purpose: this is what an ordinary case in a TMS looks like.
 
-Разбор ниже уже учитывает ограничения, без которых алгоритм слишком жёсткий:
+The walkthrough below already allows for the limits without which the algorithm is too rigid:
 
-| Риск | Как он закрыт в этом документе |
+| Risk | How this document closes it |
 |---|---|
-| Гейт, который ищет имена полей в исходниках хелперов, сыпется на вложенности, общих хелперах и переименованиях | Гейт проверяет структуру вызова. Имена полей — контракт ревью (§9) |
-| Путь в плане приходится менять, хотя обязательство продукта то же | Путь — улика, как локатор. Обязательство — поля и вид токенов экрана (§7) |
-| Одного `read` мало при eventual consistency | `until` — один именной хелпер, без цикла в спеке (§7, §9) |
-| Непустое тело мутации может быть предварительным расчётом | `intercept` только если перезагрузка совпадает с этим телом по полям кейса (§10) |
-| Один id в TMS часто пачка обязательств | Режется на сценарии при планировании. Карточка TMS зелёная, когда зелёные все её сценарии (§8, ниже) |
-| Один id — один тест ломает параметризацию, браузеры, ретраи и шарды | Вторым тестом считается второй написанный руками тест сценария. Цикл в том же файле, другой проект Playwright и повтор прогона — нет (§9) |
-| Токен экрана проверяет видимость, а не содержимое | У токена обязателен вид: `value`, `text`, `state`, `visible`. `visible` не заменяет поля (§7, §9) |
-| Грамматика, парсер, гейт, отчёт и скиллы — отдельный компонент | Один разбор строки на гейт и покрытие. Скиллы ссылаются сюда и не копируют грамматику (§17) |
+| A gate that looks for field names in the helpers' sources falls apart on nesting, shared helpers and renames | The gate checks the call's structure. Field names are a contract for review (§9) |
+| The path in the plan has to change although the product's obligation is the same | The path is evidence, like a locator. The obligation is the fields and the kinds of the screen tokens (§7) |
+| One `read` is not enough under eventual consistency | `until` — one named helper, no loop in the spec (§7, §9) |
+| A non-empty mutation body may be a preliminary calculation | `intercept` only when the reload matches this body on the case's fields (§10) |
+| One id in a TMS is often a bundle of obligations | It is cut into scenarios while planning. The TMS case is green when all its scenarios are green (§8, below) |
+| One id — one test breaks parametrisation, browsers, retries and shards | A second test is a second hand-written test of the scenario. A loop in the same file, another Playwright project and a repeated run are not (§9) |
+| A screen token checks visibility, not content | A token must have a kind: `value`, `text`, `state`, `visible`. `visible` does not replace fields (§7, §9) |
+| The grammar, the parser, the gate, the report and the skills become a separate component | One parse of the line for the gate and coverage. The skills point here and do not copy the grammar (§17) |
 
-**TC-220 · Владелец управляет админами воркспейса.** Шаги карточки: открыть участников, добавить человека по email, увидеть его в списке с ролью Admin, проверить, что новый админ открывает настройки, удалить его, увидеть, что строка пропала и настройки ему больше недоступны, повторить добавление того же email, попытаться снять последнего владельца, зайти участником и убедиться, что кнопки «Добавить админа» нет.
+**TC-220 · The owner manages the workspace's admins.** The case's steps: open the members, add a person by email, see them in the list with the Admin role, check that the new admin opens the settings, remove them, see that the row is gone and the settings are no longer open to them, add the same email again, try to remove the last owner, sign in as a member and make sure there is no "Add admin" button.
 
-Это один id в TMS и несколько независимых обязательств. Падение «участник не получает 403» не делает бессмысленной проверку «кнопка скрыта», и наоборот. Резать на слои API и UI нельзя: каждый кусок — отдельный сценарий, блок плана и тест со своим `S<n>` (`TC-220 · S1 · Owner adds an admin and sees them listed`; `npm run plan:block -- <plan> --case state/sources/TC-220.json --scenario S1 --title "…" --take 1-3`). Карточка TC-220 закрыта в отчёте, только когда закрыт каждый сценарий. Иначе ручной прогон этой карточки ещё нужен.
+This is one id in the TMS and several independent obligations. A failure "a member does not get 403" does not make the check "the button is hidden" pointless, and the other way round. It must not be cut into API and UI layers: each piece is a separate scenario, a plan block and a test with its own `S<n>` (`TC-220 · S1 · Owner adds an admin and sees them listed`; `npm run plan:block -- <plan> --case state/sources/TC-220.json --scenario S1 --title "…" --take 1-3`). Case TC-220 is closed in the report only when each of its scenarios is closed. Until then a manual run of this case is still needed.
 
-Живое наблюдение, которое планировщик записывает до `Route` (здесь оно задано как условие примера):
+The live observation the planner writes down before the `Route` (here it is given as a condition of the example):
 
-- `POST /api/workspaces/{id}/members` отвечает `201` и телом участника. Повторный GET списка после перезагрузки содержит тот же email и ту же роль. Тело мутации — сохранённое состояние, хватает `intercept`.
-- `DELETE` отвечает `204`. Истина — следующий ответ, которым страница сама перечитывает список, либо один GET, если страница список не перечитывает.
-- Если удаление отвечает `202` и строка исчезает позже, одного чтения мало: `until`.
+- `POST /api/workspaces/{id}/members` answers `201` with the member's body. A repeated GET of the list after a reload holds the same email and the same role. The mutation's body is the saved state; `intercept` is enough.
+- `DELETE` answers `204`. The truth is the next answer with which the page re-reads the list by itself, or one GET when the page does not re-read the list.
+- When the removal answers `202` and the row disappears later, one read is not enough: `until`.
 
-| Сценарий | Владелец | Route | Почему не второй слой соседа |
+| Scenario | Owner | Route | Why it is not a second layer of its neighbour |
 |---|---|---|---|
-| S1. Владелец добавляет админа и видит его в списке | UI | `intercept POST /api/workspaces/{id}/members → 201 · email, role · screen members=value, toast=text` | Жест и рисунок списка. Отдельный API-тест того же POST с тем же email не нужен |
-| S2. Участник не может назначить админа | API | `api POST /api/workspaces/{id}/members → 403 · error.code` | Другие роли и чужой воркспейс — строки этой же матрицы, не копия S1 |
-| S3. Последнего владельца снять нельзя | API | `api DELETE /api/workspaces/{id}/members/{userId} → 409 · error.code` | Правило сервера. Если кнопка ещё и не нажимается до запроса, это отдельный UI-сценарий `no-request · screen Remove=state`, а не вторая проверка S3 |
-| S4. Владелец снимает админа, строка пропадает | UI | `intercept DELETE /api/workspaces/{id}/members/{userId} → 204 · empty · read GET /api/workspaces/{id}/members → email · screen members=value` | `204` не хранит список. `members=value` — список равен ожидаемому составу без этого email, не «список виден» |
-| S5. Участник не видит «Добавить админа» | UI | `no-request · screen Add admin=state` | Кнопки нет, запроса нет. S2 этим не покрыт: скрытая кнопка не доказывает `403` |
-| S6. Повторный email того же админа | UI | `intercept POST /api/workspaces/{id}/members → 409 · error.code · screen error=text` | Один проход экрана с текстом отказа. Другие кривые email остаются в API-матрице S2 |
+| S1. The owner adds an admin and sees them in the list | UI | `intercept POST /api/workspaces/{id}/members → 201 · email, role · screen members=value, toast=text` | The gesture and the list's rendering. A separate API test of the same POST with the same email is not needed |
+| S2. A member cannot make anyone an admin | API | `api POST /api/workspaces/{id}/members → 403 · error.code` | Other roles and someone else's workspace are rows of this same matrix, not a copy of S1 |
+| S3. The last owner cannot be removed | API | `api DELETE /api/workspaces/{id}/members/{userId} → 409 · error.code` | A server rule. When the button also cannot be pressed before any request, that is a separate UI scenario `no-request · screen Remove=state`, not a second check of S3 |
+| S4. The owner removes an admin, the row disappears | UI | `intercept DELETE /api/workspaces/{id}/members/{userId} → 204 · empty · read GET /api/workspaces/{id}/members → email · screen members=value` | `204` does not hold the list. `members=value` — the list equals the expected members without this email, not "the list is visible" |
+| S5. A member does not see "Add admin" | UI | `no-request · screen Add admin=state` | No button, no request. It does not cover S2: a hidden button does not prove `403` |
+| S6. The same admin's email added again | UI | `intercept POST /api/workspaces/{id}/members → 409 · error.code · screen error=text` | One pass of the screen with the refusal's text. Other malformed emails stay in the API matrix of S2 |
 
-S1 в коде — один тест. Ожидание и у тела, и у списка — приглашённый человек из данных кейса.
+S1 in code is one test. The expectation of both the body and the list is the invited person from the case data.
 
 ```ts
 await test.step("Add the admin and verify they appear", async () => {
@@ -513,14 +513,14 @@ await test.step("Add the admin and verify they appear", async () => {
 });
 ```
 
-Второй spec «POST member and the role is admin» на S1 не пишется. Поля `email` и `role` уже стоят в проверке ответа. Гейт это увидит как `answerTo` со `status: 201` и проверку экрана каждого вида, а что в `has:` именно эти поля — смотрит ревью по строке `Route`.
+A second spec "POST member and the role is admin" is not written for S1. The fields `email` and `role` are already in the answer's check. The gate sees it as `answerTo` with `status: 201` and a check of each screen kind; that `has:` holds exactly these fields is for review to see against the `Route` line.
 
-S4 не утверждает «список visible». Вид токена `value` требует `shownMembers` без снятого человека. Иначе формально зелёный тест не знает, кто остался в списке.
+S4 does not claim "the list is visible". The token kind `value` demands `shownMembers` without the removed person. Otherwise a test that is formally green does not know who stayed in the list.
 
-Если живой `DELETE` ведёт себя иначе и строка исчезает только после фоновой задачи, S4 меняет не владельца, а хвост `Route`: `until memberGone → email · screen members=value`. Хелпер `memberGone` один на приложение, спека вызывает его один раз и не крутит свой цикл. Пока перезагрузка не совпадает с телом `DELETE`, оставлять `intercept` без `read`/`until` нельзя, даже если тело непустое и в нём уже есть email.
+When the live `DELETE` behaves differently and the row disappears only after a background job, S4 changes not its owner but the tail of its `Route`: `until memberGone → email · screen members=value`. The helper `memberGone` is one per app; the spec calls it once and does not spin a loop of its own. As long as the reload does not match the `DELETE` body, `intercept` must not be left without `read`/`until`, even when the body is non-empty and already holds the email.
 
-Путь `/api/workspaces/{id}/members` в строке — улика стенда. Переезд на другой URL при тех же email и role обновляет путь и тест в одном изменении. S1 от этого не становится новым кейсом.
+The path `/api/workspaces/{id}/members` in the line is evidence from the stand. A move to another URL with the same email and role updates the path and the test in one change. S1 does not become a new case because of it.
 
-`@cross-browser` на S1, если контрол добавления это виджет, — тот же тест во втором проекте Playwright, не второй файл и не второй id. Таблица ролей в S2, собранная циклом в одном API-файле, — один сценарий. Два написанных руками файла на S1 — дубль, гейт красный.
+`@cross-browser` on S1, when the add control is a widget, is the same test in a second Playwright project, not a second file and not a second id. A table of roles in S2, built by a loop in one API file, is one scenario. Two hand-written files for S1 are a duplicate, and the gate is red.
 
-Регистрация отличается только хвостом, не схемой. «Форма не пускает пустой пароль» — `no-request`. «Аккаунт создан и человек видит кабинет» — `intercept` или `read`, если ответ регистрации не равен тому, что показывает кабинет после перезагрузки. «Письмо со ссылкой дошло» — чужая система: сценарий *Not now*, пока ящика нет. Это не повод завести API-близнеца на ту же форму.
+Sign-up differs only in the tail, not in the scheme. "The form does not let an empty password through" — `no-request`. "The account is created and the person sees their dashboard" — `intercept`, or `read` when the sign-up answer is not what the dashboard shows after a reload. "The email with the link arrived" — an outside system: a *Not now* scenario until there is a mailbox. It is no reason to add an API twin for the same form.

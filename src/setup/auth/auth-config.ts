@@ -31,14 +31,17 @@ export type FormStep =
 export type ApiMode = "token" | "refresh-token" | "session-token" | "session-cookies" | "login-request" | "key" | "basic" | "custom" | "none";
 const API_MODES: ApiMode[] = ["token", "refresh-token", "session-token", "session-cookies", "login-request", "key", "basic", "custom"];
 
-/** A value the signed-in app keeps in its storage: `localStorage oidc.user:* access_token`. */
+/**
+ * A value the signed-in app keeps in its storage: `localStorage oidc.user:* access_token` (a JSON entry,
+ * read its field) or `localStorage auth-token` (no field: the entry's value is the token itself).
+ */
 export interface StorageField {
   storage: "localStorage" | "sessionStorage";
   key: string;
-  field: string;
+  field?: string;
 }
 const storageField = (text: string | undefined): StorageField | undefined => {
-  const match = /^(localStorage|sessionStorage) (\S+) (\S+)$/.exec(text ?? "");
+  const match = /^(localStorage|sessionStorage) (\S+)(?: (\S+))?$/.exec(text ?? "");
   return match ? { storage: match[1] as StorageField["storage"], key: match[2], field: match[3] } : undefined;
 };
 // One field per line, so a value with spaces (an OAuth scope list) stays whole.

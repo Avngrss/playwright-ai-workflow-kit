@@ -21,6 +21,19 @@ const ACTION_TIMEOUT: Record<string, string> = {
   hover: "Could not hover the element",
   selectOption: "Could not select in the element",
   press: "Could not press a key in the element",
+  pressSequentially: "Could not type into the element",
+  clear: "Could not clear the element",
+  focus: "Could not focus the element",
+  tap: "Could not tap the element",
+  setChecked: "Could not tick or untick the element",
+  setInputFiles: "Could not attach a file to the element",
+  dragTo: "Could not drag the element",
+  scrollIntoViewIfNeeded: "Could not scroll to the element",
+  textContent: "Could not read the text of the element",
+  innerText: "Could not read the text of the element",
+  innerHTML: "Could not read the element",
+  inputValue: "Could not read the value of the element",
+  getAttribute: "Could not read an attribute of the element",
   waitFor: "The element did not appear",
   goto: "The page did not open",
 };
@@ -113,6 +126,20 @@ export function readableMessage(message: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\n\n(?=(?:Expected|Received|Waited|Element|Request)\b)/g, "\n")
     .trim();
+}
+
+/**
+ * The locator a failure could not find, as Playwright names it (`getByRole('button', { name: 'Save' })`) —
+ * from a strict-mode error, an assertion's Locator line, or the call log's "waiting for"; none otherwise.
+ */
+export function missedLocator(message: string): string | undefined {
+  const text = message.replace(ANSI, "");
+  const found =
+    /strict mode violation: (.+?) resolved to \d+ elements/.exec(text)?.[1] ??
+    /^Locator: (.+)$/m.exec(text)?.[1] ??
+    /^Element: (.+)$/m.exec(text)?.[1] ??
+    /waiting for (.+)$/m.exec(text)?.[1];
+  return found?.replace(/ to be (?:visible|hidden|attached|detached|enabled|editable|checked)$/, "").trim() || undefined;
 }
 
 /** First line only — what a failed step shows, so the full text is not repeated under every step. */
