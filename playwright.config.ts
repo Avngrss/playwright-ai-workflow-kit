@@ -2,12 +2,15 @@ import { defineConfig, devices, type PlaywrightTestConfig } from "@playwright/te
 
 import dotenv from "dotenv";
 import path from "node:path";
-import { testIdOf } from "./src/setup/app-wide";
+import { testIdOf, zoneAndLocaleOf } from "./src/setup/app-wide";
 import { skipIpv6LookupWhenAsked } from "./src/setup/network";
 import { isRegistered, platforms, urlOf, type Platform } from "./src/setup/platforms";
 
 dotenv.config({ path: path.resolve(__dirname, ".env"), quiet: true });
 skipIpv6LookupWhenAsked();
+// Test code's own clock: `new Date()` math in a worker gives the same day and hour on every machine (a laptop
+// in UTC+3, CI in UTC). The runner keeps the machine's zone, so the run summary shows the reader's time.
+if (process.env.TEST_WORKER_INDEX !== undefined) process.env.TZ = "UTC";
 
 type Options = { platform: string };
 type Projects = NonNullable<PlaywrightTestConfig<Options>["projects"]>;
@@ -27,8 +30,9 @@ function projectsOf(app: Platform, all: Platform[]): Projects {
   const name = (layer: string) => (perApp ? `${layer}:${app.slug}` : layer);
   const specs = (layer: string) => new RegExp(`tests${SEP}${layer}${SEP}${perApp ? `${app.slug}${SEP}` : ""}.*\\.${layer}\\.spec\\.ts$`);
   const others = all.filter((other) => other.slug !== app.slug).map((other) => other.slug);
-  // The app's web address and the attribute its elements carry for tests (the map's ```app-wide `test id:`).
-  const web = { platform: app.slug, baseURL: urlOf(app.slug, "ui"), testIdAttribute: testIdOf(app.slug) };
+  // The app's web address, the attribute its elements carry for tests (the map's ```app-wide `test id:`) and
+  // the time zone and language its pages run in (`timezone:`, `locale:`; UTC and en-US without them — as on CI).
+  const web = { platform: app.slug, baseURL: urlOf(app.slug, "ui"), testIdAttribute: testIdOf(app.slug), ...zoneAndLocaleOf(app.slug) };
   const browser = { ...devices["Desktop Chrome"], ...web };
   const common = { metadata: { platform: app.slug }, dependencies: [name("smoke")] };
   return [

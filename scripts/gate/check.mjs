@@ -2,7 +2,8 @@
  * qa:gate — the suite's conventions, checked before every commit (`npm run qa:gate`, then tsc). Every
  * problem is listed at once and says how to fix it; warnings never fail the gate. The rules live by
  * topic in this folder (scripts/gate/):
- *   patterns.mjs  one-line rules: what specs, Page Objects, clients and all test code may not do
+ *   patterns.mjs  one-line rules: what specs, Page Objects, clients and all test code may not do; no state at a
+ *                 file's top level that its tests share
  *   layout.mjs    where plans, specs and support code live
  *   specs.mjs     tags and scope, quarantine reasons, hooks, mocks, case links, a skeleton spec:draft left
  *   support.mjs   the fixture chain, roles from the map, a sweep for every disposable fixture
@@ -21,7 +22,7 @@ import { adviceRules } from "./advice.mjs";
 import { caseRules } from "./cases.mjs";
 import { collectFiles, createReport, ROOT } from "./context.mjs";
 import { layoutRules } from "./layout.mjs";
-import { checkPatterns } from "./patterns.mjs";
+import { patternRules } from "./patterns.mjs";
 import { repeatRules } from "./repeats.mjs";
 import { specRules } from "./specs.mjs";
 import { supportRules } from "./support.mjs";
@@ -35,7 +36,7 @@ const report = createReport();
 // A cut-off `npm run verify` leaves its spoiled lines listed here: a test checking a wrong value is never committed.
 if (fs.existsSync(path.join(ROOT, "reports", "verify-spoils.json")))
   report.fail(null, "reports/verify-spoils.json — a cut-off `npm run verify` left spoiled lines in the specs: `npm run verify -- --restore` puts them back");
-for (const rule of [checkPatterns, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
+for (const rule of [...patternRules, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
 
 console.log(`qa:gate — ${files.specs.length} spec(s), ${files.support.length} support file(s)`);
 for (const warning of report.warnings) console.log(`! ${warning}`);

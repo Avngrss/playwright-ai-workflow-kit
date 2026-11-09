@@ -62,7 +62,10 @@ Nothing said → a map with no app of its own yet → §2; otherwise ask which o
    the marked elements with the MCP's evaluate (no MCP: `page.evaluate` in the saved-session script, `live-app.mdc`):
    `() => Object.fromEntries(['data-testid', 'data-test', 'data-test-id', 'data-qa', 'data-cy'].map((a) => [a, document.querySelectorAll('[' + a + ']').length]))`.
    The most used one, when it is not `data-testid` → a `test id: <attribute>` line in the app's ```app-wide block
-   (§5). None on that page → nothing written; a feature's live check looks again (`live-app.mdc`).
+   (§5). None on that page → nothing written; a feature's live check looks again (`live-app.mdc`). **Its time zone
+   and language** — the page's `<html lang>` and the user's words give `locale:` / `timezone:` lines in the same
+   block when the app clearly serves one region (`lang="de"`, "our users are in Berlin"); otherwise nothing is
+   written and the defaults hold (UTC, en-US) — never a question.
 8. **First smoke** — `npx playwright test --project=smoke:<app>` green (§3.7), then `npm run qa:gate`.
 9. **Report** — the §3.4 shape; **Done** also says: App `<app>` — its tests go to `tests/<layer>/<app>/` (another
    name? say it now) · signs in like `<other app>` — the same test account | its own (`<APP>_LOGIN`) · from the
@@ -367,7 +370,7 @@ section is filled when it becomes known, never in advance:
 | Apps and services | one row per web app / API: `Platform` (the app's slug), Name, Kind, Env URL name, Docs (Swagger/OpenAPI), Notes | §2; the API row's Docs when the contract is found (§3.3); never an API URL derived from a UI URL |
 | Auth | one ```auth block per app (§4) | sign-in set up (§3); after a change `npm run auth:check` |
 | External systems | `App · System · What the app takes from it · The tests' access · Facts given by the engineer` | a plan first meets a fact another system owns (the plan skill); access `none`, `read-only — <ENV name>` or `through the app only` |
-| App-wide behaviour | an ```app-wide block per app: `dismiss: dialog "<text>" by "<button>"`, `ready when: hidden …`, `test id: <attribute>` | an overlay or global spinner the test does not cause is met; never a toast; `test id:` when the app marks its elements with another attribute than `data-testid` (§2 step 7) (format: `src/setup/app-wide.ts`) |
+| App-wide behaviour | an ```app-wide block per app: `dismiss: dialog "<text>" by "<button>"`, `ready when: hidden …`, `test id: <attribute>`, `timezone: <IANA zone>`, `locale: <BCP 47 tag>` | an overlay or global spinner the test does not cause is met; never a toast; `test id:` when the app marks its elements with another attribute than `data-testid`, `timezone:` / `locale:` when it clearly serves one region (§2 step 7) (format: `src/setup/app-wide.ts`) |
 | Test cases (TMS) | `- tms: <name>`, `- case link <app>: <one case URL with {id}, and {folder} when the TMS needs it>`, `- id format:` | the first case link of that app is pasted (ids → `{id}`, folders → `{folder}`); never guessed, never another app's |
 | Tracker queue | `- query:` in the tracker's own query language | only the user's own open tickets; empty disables it |
 | Allowed tags | the tag registry: tag, kind, apply when | before any spec uses the tag (`specs.mdc` §Tags and annotations) |

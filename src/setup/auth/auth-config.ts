@@ -90,7 +90,7 @@ function parseStep(text: string): FormStep {
   );
 }
 
-const cache = new Map<string, AuthConfig>();
+const cache = new Map<string, AuthConfig>(); // memo: each app's ```auth block
 
 /** The one role of an app whose block lists no roles — a single test account. */
 export const SINGLE_ACCOUNT = "user";
