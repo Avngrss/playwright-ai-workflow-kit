@@ -22,7 +22,10 @@ user, for a plan's live check (`plans.mdc`), and when healing a locator:
   dotenv.config({ quiet: true });
   selectors.setTestIdAttribute("data-test"); // the app's `test id:` line (the map's app-wide block); none → leave out
   const browser = await chromium.launch();
-  const context = await browser.newContext({ storageState: "state/shop.customer.<host>.session.json" });
+  const context = await browser.newContext({
+    storageState: "state/shop.customer.<host>.session.json",
+    timezoneId: "UTC", locale: "en-US", // the app's `timezone:` / `locale:` lines, as the tests run
+  });
   const page = await context.newPage();
   const answer = page.waitForResponse((response) => response.url().includes("api/orders"));
   await page.goto(`${process.env.UI_BASE_URL}/orders`);
@@ -33,6 +36,9 @@ user, for a plan's live check (`plans.mdc`), and when healing a locator:
 - **No Playwright MCP in this agent** → the saved-session script explores too (signed out: no `storageState`):
   `page.locator("body").ariaSnapshot()` for the snapshot, `page.on("request", …)` for the network list,
   `page.evaluate(…)` for the probes this rule runs through the MCP's evaluate.
+- **Dates seen live:** the MCP browser runs in the machine's time zone and language, the tests in the app's
+  (`timezone:` / `locale:`, UTC / en-US by default). A date or number read through the MCP gives its format, not
+  the value a test will see — the script above, pinned as the tests are, gives both.
 
 The session is a throwaway: nothing from either goes into a spec or Page Object except the resulting locators
 and findings.
