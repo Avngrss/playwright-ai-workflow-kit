@@ -74,12 +74,19 @@ Never a toast here: a toast after an action is the app's answer to it — tests 
 (`expectToast`), and a line here would close it before they could. One block per app, starting with
 `platform: <app>`.
 
+Two optional lines set the time zone and language the app's browser runs in — dates, weeks, months and
+numbers on screen follow them, and the expected texts are formatted the same way
+(`src/assertions/shared/display.ts`): `timezone: <IANA zone>` and `locale: <BCP 47 tag>`, written when the
+app clearly serves one region. Without them **UTC** and **en-US** — the same on every machine and on CI.
+
 ```app-wide
 # dismiss: dialog "<text in the dialog>" by "<button>"
 # dismiss: "<text the banner shows>" by "<button>"
 # ready when: hidden "<loading text>"
 # ready when: hidden role progressbar
 # test id: data-test
+# timezone: Europe/Berlin
+# locale: de-DE
 ```
 
 ## Playwright projects

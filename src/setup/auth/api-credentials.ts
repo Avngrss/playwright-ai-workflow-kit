@@ -25,7 +25,7 @@ import {
 type BrowserOnDemand = () => Promise<Browser>;
 
 // In-process reuse, re-checked on every call: a run longer than a token's life refreshes it.
-const heldApiHeaders = new Map<string, { headers: Promise<Record<string, string>>; until: number }>();
+const heldApiHeaders = new Map<string, { headers: Promise<Record<string, string>>; until: number }>(); // memo: each account's API headers
 const keyOf = ({ platform, role }: Account) => `${platform}/${role}`;
 
 interface SavedApiHeaders {

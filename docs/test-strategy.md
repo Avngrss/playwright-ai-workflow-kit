@@ -161,6 +161,10 @@ No TMS → each plan's own scenarios instead.
   A state the stand cannot give honestly is shown with a faked server answer, and the test says so.
 - **Accounts** — <shared QA accounts | dedicated test users>. Shared accounts mean runs on one stand
   must not overlap.
+- **Same on every machine** — the browser runs in the app's time zone and language (UTC and en-US
+  unless the map names others), test code in UTC, so a date check gives the same result on a laptop
+  and on CI, at midnight and at a month's edge. Nothing outlives one test: no state at a file's top
+  level (the gate checks), and a sign-in lock a killed worker left is released when the run ends.
 
 ## 7. Continuous integration
 

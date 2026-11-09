@@ -13,7 +13,7 @@ import { cookiesFromSession, tokenFromSession } from "./token";
 
 const REUSE_MARGIN_SECONDS = 5 * 60;
 // In-process reuse, re-checked on every call: a run longer than a token's life refreshes it.
-const sessions = new Map<string, { state: Promise<StorageState>; until: number }>();
+const sessions = new Map<string, { state: Promise<StorageState>; until: number }>(); // memo: each account's session
 const keyOf = ({ platform, role }: Account) => `${platform}/${role}`;
 
 /**

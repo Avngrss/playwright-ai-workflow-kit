@@ -96,8 +96,10 @@ await test.step("Open the delivery details and verify them", async () => {
   as shown (`{ Address: "…", Window: "10:00–12:00", Courier: "…" }`). An action of the case is one method.
 - **What is expected** → `shown<Block>(data)` in `src/assertions/<app>/`: a plain object literal of the block
   as the screen shows it, built with the app's display helpers (`shownDate`, `shownMoney` in `display.ts`,
-  matched to what the page shows live — never a locale's own formatting). One function per block, never
-  per-field helpers glued in the test.
+  matched to what the page shows live — never a locale's own formatting). They format through
+  `dateAsShown` / `numberAsShown` (`src/assertions/shared/display.ts`): the app's time zone and language, as
+  its browser runs (the map's ```app-wide `timezone:` / `locale:`) — never `toLocale…String()`, which follows
+  the machine. One function per block, never per-field helpers glued in the test.
 - **Never in a UI or E2E spec**: a function with parameters (`(row) => …`); `map`, `filter`, `sort`, `slice`,
   `Object.fromEntries`, `new Set`; a conversion (`toFixed`, `toUpperCase`, `trim`, `split`); `??` or `!` on
   data; a value picked from `(await …).x` — `qa:gate` (`reading.mjs`) fails them in specs being written.
@@ -155,6 +157,16 @@ with the name (`Add address button / Expected: … / Received: …`). Noun phras
 ## Isolation and shared state
 
 - Tests are independent and parallel: no order, no state left by another test, no global mutable state.
+- A file's top level lives as long as its worker: a `let` / `var` there, or an array, object, `Map` or `Set`
+  the file changes, is shared by every test the worker runs — in specs and in `src/` alike. The value goes
+  into the test, a fixture, or `oncePerWorker` for a stand lookup; only a read-only memo of a file or the map
+  stays, marked on its line `// memo: <what>`. `qa:gate` fails the rest:
+
+  ```ts
+  let placedOrderId: string; // bad — the next test of the worker reads the last one's order
+  const placedOrderId = await test.step("Setup: place an order", () => placeOrder(orders)); // good — the test's own
+  ```
+
 - No `test.describe.configure` line: `mode: "default"` (the whole file in one worker) fails the gate; `mode:
   "serial"` only together with `beforeAll`/`afterAll`, and those only for a one-time read-only bootstrap.
 - Some tests change something on the shared account others see — a UI state the app saves per user (a panel
@@ -208,12 +220,13 @@ in the app's ```auth block.
 - Final check: the user-visible outcome, never "the URL changed" alone. Data: disposable and removed; never a
   shared account's mutable state without its lock.
 - Several roles: one signed-in browser context per role in one test, roles only from the map; which role acts at which step comes only from the journey
-  brief, and a role missing from the map or `.env` blocks the whole journey:
+  brief, and a role missing from the map or `.env` blocks the whole journey. A context of its own takes the
+  project's `locale` and `timezoneId` (the app's, as `page` has them):
 
 ```ts
-test("A customer places an order, a manager approves it", { tag: ["@e2e", "@regression"] }, async ({ browser, platform }) => {
-  const customer = await browser.newContext({ storageState: await browserSession(browser, { platform, role: "customer" }) });
-  const manager = await browser.newContext({ storageState: await browserSession(browser, { platform, role: "manager" }) });
+test("A customer places an order, a manager approves it", { tag: ["@e2e", "@regression"] }, async ({ browser, platform, locale, timezoneId }) => {
+  const customer = await browser.newContext({ locale, timezoneId, storageState: await browserSession(browser, { platform, role: "customer" }) });
+  const manager = await browser.newContext({ locale, timezoneId, storageState: await browserSession(browser, { platform, role: "manager" }) });
   try {
     await test.step("The customer places the order", async () => { /* customer's Page Objects */ });
     await test.step("The manager approves it", async () => { /* manager's Page Objects */ });
