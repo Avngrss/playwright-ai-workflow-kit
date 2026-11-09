@@ -124,9 +124,10 @@ npm run verify -- <app> <spec[:line]…> [--also <spec…>] [--can-fail <spec>:<
 2. **Can fail** — for each test whose check the run wrote or changed, the expected value in that check is
    spoiled and the test runs once: it must go red at that line. Every line is put back and each file's
    hash proven. Green means the check is blind: it is fixed and proven again.
-3. **One run** with `--retries=0`: the specs, the neighbours that call what the run changed (`--also`), and
-   with `--with-browsers` the tagged tests in Firefox, WebKit and a phone. A pass on a retry is unstable,
-   not green. A test that failed because the stand was slow or down gets one second pass.
+3. **One run** with `--retries=0`: the specs (one narrowed to a line runs whole when a file it imports
+   changed), the neighbours that call what the run changed (`--also`), and with `--with-browsers` the
+   tagged tests in Firefox, WebKit and a phone. A pass on a retry is unstable, not green. A test that
+   failed because the stand was slow or down gets one second pass.
 4. **One block** of results, copied from the result files (`test-results/verify.json`). A verify cut off
    with lines spoiled: `npm run verify -- --restore` puts them back (the gate fails until it does).
 
@@ -220,8 +221,9 @@ Give the TMS folder link. You get every case of the suite with one of four statu
 - **inconsistent** — part of a case is written, or a test sits outside its scenario's owner; `qa:gate`
   fails it, and it is fixed before anything is marked.
 
-The table is built from the TMS, `npm run suite:coverage -- --app <app>`, the plans and the last run.
-It is read-only. Without a TMS, or for a plan without TMS ids, you get the plan's own scenarios.
+The table is built from the TMS, `npm run suite:coverage -- --app <app>`, the plans and each test's last
+result, kept until a later run holds that test. It is read-only. Without a TMS, or for a plan without TMS
+ids, you get the plan's own scenarios and counts.
 
 ### Before a commit
 

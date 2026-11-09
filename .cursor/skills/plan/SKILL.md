@@ -185,8 +185,8 @@ Try every case's `Data:` and `Preconditions:` now, before the confirm table (`da
   criterion";
 - `stand` — confirmed live; the plan names what was found and the date;
 - `API setup` — one real create, `AQA`-marked, removed at once; its shape and required fields → API brief;
-- `UI setup` — the probe that answers a request; a probe that changes something kept or shared → all such probes
-  in one question first (`live-app.mdc` §Probes);
+- `UI setup` — the probe that answers a request (none for state only the browser keeps); a probe that changes
+  something kept or shared → all such probes in one question first (`live-app.mdc` §Probes);
 - removal is tried with the create; what cannot be removed is the finding: ask "1. Keep one object made once for the
   tests (named in the plan and the map) · 2. Block the case".
 

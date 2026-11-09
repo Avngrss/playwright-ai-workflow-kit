@@ -18,8 +18,9 @@ user, for a plan's live check (`plans.mdc`), and when healing a locator:
 
   ```js
   import dotenv from "dotenv";
-  import { chromium } from "@playwright/test";
+  import { chromium, selectors } from "@playwright/test";
   dotenv.config({ quiet: true });
+  selectors.setTestIdAttribute("data-test"); // the app's `test id:` line (the map's app-wide block); none → leave out
   const browser = await chromium.launch();
   const context = await browser.newContext({ storageState: "state/shop.customer.<host>.session.json" });
   const page = await context.newPage();
@@ -28,6 +29,10 @@ user, for a plan's live check (`plans.mdc`), and when healing a locator:
   console.log((await answer).status(), await page.getByRole("row").count());
   await browser.close();
   ```
+
+- **No Playwright MCP in this agent** → the saved-session script explores too (signed out: no `storageState`):
+  `page.locator("body").ariaSnapshot()` for the snapshot, `page.on("request", …)` for the network list,
+  `page.evaluate(…)` for the probes this rule runs through the MCP's evaluate.
 
 The session is a throwaway: nothing from either goes into a spec or Page Object except the resulting locators
 and findings.

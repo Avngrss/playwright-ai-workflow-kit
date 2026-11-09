@@ -8,7 +8,7 @@ is in [Workflow](workflow.md).
 - Node.js and npm (the CI uses Node 22), Git.
 - Cursor with this folder open. The rules, skills and slash commands load from `.cursor/`.
 - The Playwright MCP from `.cursor/mcp.json`, enabled in Cursor. The agent uses it to look at the
-  live app.
+  live app; without it, the agent looks through a short Playwright script instead.
 - A test environment of the app (dev or QA) and a **test account** for it, not your personal one.
   Sign in with it by hand once before you give it to the tests.
 - Optional: an MCP server or API access for your TMS and tracker, so the agent can read cases and
@@ -46,8 +46,8 @@ npm run qa:gate     # the suite's conventions, then tsc
 npm run test:list   # lists the tests without running them
 ```
 
-Both pass with zero tests. If one fails on a fresh clone, report the failure as it is. Do not work
-around it.
+Both pass with no feature tests: the template's sign-in smoke is listed, skipped until an app has
+an ```auth block. If one fails on a fresh clone, report the failure as it is. Do not work around it.
 
 ## 4. Add the first app: `/setup app`
 

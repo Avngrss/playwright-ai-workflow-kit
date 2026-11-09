@@ -21,7 +21,8 @@ Prevention comes first. The scrubbing is a safety net. The rules are in
   - prints names as filled or empty, never a value;
   - copies the names into `.env.example`, where only URLs keep their values;
   - edits both files in place — your lines, headings and notes stay; `-- --tidy` alone lays them out by
-    app again.
+    app again;
+  - removes a name no map row or ```auth block uses any more (`-- --drop <NAME>`) from both files.
 - **`env:prepare` refuses to run while git would commit `.env`.** Add `.env` and `state/` to
   `.gitignore` first. The kit's `.gitignore` already has both.
 - **You type logins, passwords, tokens and client secrets into `.env` yourself.** The agent never

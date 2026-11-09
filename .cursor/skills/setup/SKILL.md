@@ -35,8 +35,9 @@ Nothing said → a map with no app of its own yet → §2; otherwise ask which o
 ## 2. Add an app — a fresh clone first
 
 0. **A fresh clone** (no `node_modules`) — `npm install` first (its postinstall fetches the Chromium this Playwright
-   runs), then `npm run test:list` and `npm run qa:gate` must pass with zero tests; a failure there is reported as
-   it is, not worked around.
+   runs), then `npm run test:list` and `npm run qa:gate` must pass with no feature tests (the template's sign-in
+   smoke is listed, skipped until an app has an ```auth block); a failure there is reported as it is, not worked
+   around.
 1. **The address** — from the user's words; otherwise one message, then wait:
 
    > **New app — its address.**
@@ -47,17 +48,18 @@ Nothing said → a map with no app of its own yet → §2; otherwise ask which o
 2. **Its slug** — kebab-case: the user's name for it (`crm`, `order-desk`), else from its title or host ("Order
    Desk" → `order-desk`). Never a separate question: the report names it and the user may rename it there.
 3. **Its rows** in §Apps and services (§5). **First app** (only the template's `default` rows) — they become this
-   app's: `| <app> | <app>-web | UI | UI_BASE_URL | — | … |`, `| <app> | <app>-api | API | API_BASE_URL | — | … |`.
-   **Further app** — rows of its own: `| <app> | <app>-web | UI | <APP>_UI_URL | — | … |`; its API row
-   (`<APP>_API_URL`) once its API is found (§3.3 step 3). Rows of other apps are not edited.
+   app's: `| <app> | <app>-web | UI | UI_BASE_URL | — | … |`, `| <app> | <app>-api | API | API_BASE_URL | — | … |`;
+   no API of its own (§3.3 step 3 finds no data request) → the API row goes, then `npm run env:prepare -- --drop
+   API_BASE_URL`. **Further app** — rows of its own: `| <app> | <app>-web | UI | <APP>_UI_URL | — | … |`; its
+   API row (`<APP>_API_URL`) once its API is found (§3.3 step 3). Rows of other apps are not edited.
 4. **Save the address** as given: `npm run env:prepare -- <its UI env name>=<url>`. An app under a path
    (`https://host/shop`) is opened there (`ui.mdc` §Opening a page).
 5. **Its fixtures**: `npm run app:add -- <app>` — `src/fixtures/<app>/data.fixture.ts`, `pages.fixture.ts` and
    `test.ts` (the `test` its specs import, and `caseLinks`); it refuses an app the map does not list (rows first)
    and keeps files that exist. Its other folders appear with the first plan and test, never in advance.
 6. **Its sign-in** → §3: the first app from §3.1 (the offer); a further app from §3.8.
-7. **Its test id attribute** — on the first page the app shows (signed in when it signs in: the saved session in the
-   MCP browser), count the marked elements with the MCP's evaluate:
+7. **Its test id attribute** — on the first page the app shows (signed in when it signs in: the saved session), count
+   the marked elements with the MCP's evaluate (no MCP: `page.evaluate` in the saved-session script, `live-app.mdc`):
    `() => Object.fromEntries(['data-testid', 'data-test', 'data-test-id', 'data-qa', 'data-cy'].map((a) => [a, document.querySelectorAll('[' + a + ']').length]))`.
    The most used one, when it is not `data-testid` → a `test id: <attribute>` line in the app's ```app-wide block
    (§5). None on that page → nothing written; a feature's live check looks again (`live-app.mdc`).
@@ -65,10 +67,11 @@ Nothing said → a map with no app of its own yet → §2; otherwise ask which o
 9. **Report** — the §3.4 shape; **Done** also says: App `<app>` — its tests go to `tests/<layer>/<app>/` (another
    name? say it now) · signs in like `<other app>` — the same test account | its own (`<APP>_LOGIN`) · from the
    second app on, `npm run test:app -- <app>` runs only this app (`npx playwright test --project="*:<app>"`),
-   `npm run test:ui` every app, and this app's report is `reports/allure/html/awesome-<app>/`. **A rename** said
-   there → the slug changes in its rows, its block's `platform:` line, the `src/fixtures/<app>/` folder and any
-   `.env` names made for it (new names prepared with `env:prepare`; a secret the user already typed is moved by the
-   user); nothing else exists yet.
+   `npm run test:ui` every app, and this app's report is `reports/allure/html/awesome-<app>/` · its new `.env` names
+   are in the CI workflow's `env:` (same change, `00-project-map.mdc` §Playwright projects and CI) — create them as
+   CI variables and secrets. **A rename** said there → the slug changes in its rows, its block's `platform:` line,
+   the `src/fixtures/<app>/` folder and any `.env` names made for it (new names prepared with `env:prepare`; a
+   secret the user already typed is moved by the user); nothing else exists yet.
 10. Next: `/plan` for the app's first feature.
 
 ## 3. Sign-in — once per app
@@ -78,8 +81,9 @@ contract in the Apps table; a passing sign-in smoke. No rows yet → §2 first (
 
 ### 3.1 Offer — the first app only
 
-The map has no ```auth block at all. Ask "Your tests may need to sign in to the application. Set up
-authentication now?":
+The map has no ```auth block at all. The signed-out look (§3.3 step 1) finds no sign-in anywhere (no link, page,
+form or redirect) → no question: the block `ui: none` / `api: none`, said in the report. Otherwise ask "Your tests
+may need to sign in to the application. Set up authentication now?":
 
 1. **Set it up for me** — share the application's URL here (and the Swagger link if you plan API tests); I save them
    to .env, prepare the test account's entries, find and configure the sign-in and verify it. You type the
@@ -104,8 +108,9 @@ Never ask what you can find out (the product name from the URL or title; the API
 > Reply with the URL of the application you are testing (for example its dev or QA environment). I'll find the
 > API and its Swagger myself after signing in.
 
-Save it with `env:prepare` (the name from the app's UI row), explore (§3.3), prepare the account entries (§3.5
-names), then message 2:
+Save it with `env:prepare` (the name from the app's UI row), explore (§3.3), write the block's `login:` /
+`password:` lines (§3.5 names; the block may stay partial), then prepare those entries (§1 — they join the app's
+group), then message 2:
 
 > **Step 2 of 2 — the test account.**
 > Open `.env` and fill in `<APP>_LOGIN` and `<APP>_PASSWORD` for a test account (not your personal one) that
@@ -121,9 +126,10 @@ line; more only when the user asks (§3.9).
 
 ### 3.3 Explore signed out — facts, not guesses
 
-With the Playwright MCP as `live-app.mdc` says. **Look, never submit:** no form gets made-up data — it loads the
-stand's sign-in service and its limits and shows nothing the real sign-in won't. What is invisible signed out (the
-password step's button) gets the likeliest label, corrected from the first real sign-in's message (§3.7).
+With the Playwright MCP — none in this agent → the saved-session script, signed out — as `live-app.mdc` says.
+**Look, never submit:** no form gets made-up data — it loads the stand's sign-in service and its limits and shows
+nothing the real sign-in won't. What is invisible signed out (the password step's button) gets the likeliest label,
+corrected from the first real sign-in's message (§3.7).
 
 1. Open the URL. Where does it land — the app (public), its own sign-in page, an external identity provider (OIDC:
    `<host>/.well-known/openid-configuration` — its token endpoint and allowed grants), an SSO page? **No answer**
@@ -137,17 +143,17 @@ password step's button) gets the likeliest label, corrected from the first real 
    repo at hand → its auth setup **in source code** (an OIDC client, a sign-in request — never its `.env`): where
    the signed-in app keeps its token.
 3. **API base and Swagger** (not given) — after the first successful sign-in (§3.7 step 3): load the saved session
-   into the MCP browser, read the hosts of its data requests (`browser_network_requests`), save the API row
-   (`<APP>_API_URL`, or `API_BASE_URL` for the first app) through `env:prepare`. Then find the contract **without
-   guessing**, each once, in this order: (1) a Swagger UI page on the API host → the definition's address from the
-   page itself (its `swagger-initializer.js`, `configUrl`, the `url` / `urls` it loads); (2) otherwise the common
-   paths `/swagger.json`, `/swagger/v1/swagger.json`, `/openapi.json`, `/v3/api-docs`, `/api-docs`, `/swagger`,
-   `/swagger/index.html`; (3) the definition answers 401 → one more request with the test account's headers
-   (through the auth code; the token is never shown). Judge a hit by **content**, never the status: JSON with an
-   `openapi` / `swagger` key, or a page with `swagger-ui`. A hit → the Docs column of the app's API row
-   (`{<API env name>}/<path>`), not `.env`; its answer types by `npm run api:types -- <app>` once the app's first
-   client is written (the implement skill), and again whenever the API changes. Nothing → stop looking; report it
-   as **Missing** (§3.4). It blocks only API tests.
+   into the MCP browser, read the hosts of its data requests (`browser_network_requests`; the script:
+   `page.on("request")`), save the API row (`<APP>_API_URL`, or `API_BASE_URL` for the first app) through
+   `env:prepare`. Then find the contract **without guessing**, each once, in this order: (1) a Swagger UI page on
+   the API host → the definition's address from the page itself (its `swagger-initializer.js`, `configUrl`, the
+   `url` / `urls` it loads); (2) otherwise the common paths `/swagger.json`, `/swagger/v1/swagger.json`,
+   `/openapi.json`, `/v3/api-docs`, `/api-docs`, `/swagger`, `/swagger/index.html`; (3) the definition answers 401
+   → one more request with the test account's headers (through the auth code; the token is never shown). Judge a
+   hit by **content**, never the status: JSON with an `openapi` / `swagger` key, or a page with `swagger-ui`. A
+   hit → the Docs column of the app's API row (`{<API env name>}/<path>`), not `.env`; its answer types by `npm run
+   api:types -- <app>` once the app's first client is written (the implement skill), and again whenever the API
+   changes. Nothing → stop looking; report it as **Missing** (§3.4). It blocks only API tests.
 
 ### 3.4 Report — the action first
 
@@ -196,14 +202,15 @@ test account.
 | 1 | the contract: an API key or Basic | `key` / `basic` | the key in `.env` / nothing | nothing else |
 | 2 | the provider allows `password` | `token` — password grant with the app's own client id and scopes, no secret | nothing | the identity provider only — no browser |
 | 3 | 2 refused, the session keeps a refresh token | `refresh-token` | nothing | one browser sign-in, then new tokens over HTTP |
-| 4 | the signed-in app keeps a token | `session-token` | nothing | the UI sign-in (once per run, cached) |
-| 5 | cookies only | `login-request` if the app has its own sign-in request, else `session-cookies` | nothing | that request / the UI sign-in |
-| 6 | the team gives a test client | `token` with its secret, or `client_credentials` (no user — no per-role tests) | client id (chat is fine), secret (`.env`, by the user) | the identity provider only |
-| 7 | none fits | `custom` (§3.6) | — | — |
+| 4 | the app has its own sign-in request that answers a token | `login-request` with `session from: json <field>` | nothing | that request only — no browser |
+| 5 | the signed-in app keeps a token | `session-token` — no field in `session token:` when the entry holds the token itself | nothing | the UI sign-in (once per run, cached) |
+| 6 | cookies only | `login-request` if the app has its own sign-in request, else `session-cookies` | nothing | that request / the UI sign-in |
+| 7 | the team gives a test client | `token` with its secret, or `client_credentials` (no user — no per-role tests) | client id (chat is fine), secret (`.env`, by the user) | the identity provider only |
+| 8 | none fits | `custom` (§3.6) | — | — |
 
 **The one trial (row 2)** — after "ready", write the block with the app's client id and run once: `npx playwright
 test --project=smoke:<app> --no-deps -g "data requests"`. Passed → keep it. `unauthorized_client` /
-`unsupported_grant_type` → this client may not sign in this way; nothing is paused — go to row 3 or 4; never guess
+`unsupported_grant_type` → this client may not sign in this way; nothing is paused — go to rows 3–5; never guess
 another client id. `invalid_grant` → wrong login or password; the account pauses as in §3.7.
 
 A question only for a real choice — e.g. row 2 works **and** the team offers a test client: "Where should API tests
@@ -297,7 +304,8 @@ Another account a case needs (a role, a user without some right) — only on the
    auth:check -- <app>:<role>` and `npm run auth:sign-in -- <app> <role>` (the account really signs in; the smoke
    checks only the first one). Tests use `test.use({ role: "<role>" })`.
 
-**Done** — the map holds the block, the API row and its Docs; `.env.example` lists the names. One closing line:
+**Done** — the map holds the block, the API row and its Docs; `.env.example` lists the names, the CI workflow's
+`env:` too (the summary asks the user to create those CI variables and secrets). One closing line:
 "Authentication is ready: the test account signs in to the web app and the API accepts the session." Then back to
 what asked for it (§2, the plan skill), or the next command `/plan`.
 
@@ -329,8 +337,10 @@ session check: ${API_BASE_URL}/me
   <url>` or `text "<visible text>"`.
 - **`api:` modes**: `token` (token url + `token field:` lines; a public client's password grant needs no secret; no
   browser) · `refresh-token` (one browser sign-in, then tokens over HTTP) · `session-token` (the signed-in app keeps a
-  bearer token; API tests depend on the UI login, once per run) · `session-cookies` · `login-request` (the app's own
-  sign-in request; `login url:`, `login body:`, `login format:`, `session from:`) · `key` (`key header:`, `key:`) ·
+  bearer token, `session token: <storage> <key> [<field>]` — no field: the entry's value is the token; API tests
+  depend on the UI login, once per run) · `session-cookies` · `login-request` (the app's own sign-in request, no
+  browser; `login url:`, `login body:`, `login format:`, `session from:` `cookie` — the default — or `json <field>`, a
+  token in the answer) · `key` (`key header:`, `key:`) ·
   `basic` · `custom` (`project.ts`, §3.6) · `none`. `ui: none` + `api: none` = a public app.
 - **Optional**: `session check: <url>` (a cheap "who am I") · `session max age: <minutes>` · `members only: <url>` (an
   app open to visitors: a page that sends a visitor to sign in — the sign-in smoke opens it, §3.3 step 1) · `tenants:

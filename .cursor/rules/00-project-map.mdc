@@ -76,7 +76,7 @@ features of one area. `qa:gate` (`layout.mjs`) fails any other place, depth or n
 | `npm run stand:find -- <app> --in "GET <path>" --where "<condition>"` | every account × tenant searched for stand data before a case is blocked |
 | `npm run api:types [-- <app>]` | the app's answer types from its contract → `src/api/clients/<app>/contract.client.ts` (`api.mdc` §Response schemas) |
 | `npm run auth:check` · `auth:sign-in -- <app> <role\|all>` | empty login entries of `.env` (names only) · sign roles in, sessions in `state/` |
-| `npm run app:add -- <app>` · `env:prepare` | an app's own fixtures · create and fill `.env` safely, edited in place (`--tidy` lays it out; `02-guardrails.mdc`) |
+| `npm run app:add -- <app>` · `env:prepare` | an app's own fixtures · create and fill `.env` safely, edited in place (`--tidy` lays it out; `--drop <NAME>` removes a name no row or block uses; `02-guardrails.mdc`) |
 | `npm run suite:coverage -- --app <app>` · `data:sweep` | each case automated / to rework / not automated / inconsistent · remove `AQA` leftovers |
 | `npm run allure:report` / `allure:open` | build / open the Allure report |
 | `npm run browsers:install` / `browsers:install:all` | Chromium / every browser |

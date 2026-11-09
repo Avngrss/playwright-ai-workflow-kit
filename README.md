@@ -60,9 +60,11 @@ npm run allure:open
    ```
 
 3. Open the folder in Cursor and turn on the `playwright` MCP server it lists (Cursor Settings → MCP;
-   `.cursor/mcp.json`) — the agent explores your app with it. Then type in the chat:
+   `.cursor/mcp.json`) — the agent explores your app with it (without it, through a short Playwright
+   script). Then type in the chat:
    - `/setup` — registers your application and sets up how tests sign in (a fresh clone is checked
-     first: `test:list` and `qa:gate` pass with zero tests);
+     first: `test:list` and `qa:gate` pass with no feature tests — the template's sign-in smoke is
+     listed, skipped until an app has an ```auth block);
    - `/plan` — the first feature's plan; answer **Yes, write them** and the same run writes the tests,
      checks them with one `npm run verify`, heals a failure once and sums up with one next command —
      for new tests, the `/review` line to paste into a new chat.

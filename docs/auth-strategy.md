@@ -29,7 +29,7 @@ session check: ${API_BASE_URL}/me
 - The block holds `.env` **names** (`${NAME}`), never values. You type the values into `.env`.
 - With no block, sign-in is not set up yet, and the sign-in smoke is skipped.
 - `ui: none` together with `api: none` means a public app; the tests run signed out. Its smoke is one test,
-  "The web app opens": the app's address answers and its page shows (the sign-in tests are skipped).
+  "The web app opens": the app's address answers and its page shows (no sign-in test is listed).
 - An app open to visitors that also has accounts (a shop, a portal) names a page only a signed-in user may
   open: `members only: ${UI_BASE_URL}/account`. Its home page looks the same signed in and out, so the sign-in
   smoke checks there: a visitor is sent to the sign-in page, a signed-in user stays.
@@ -58,8 +58,9 @@ test a mode. Most web apps need nothing beyond the test account.
 | `key` / `basic` | a key in `.env` / the account |
 | `token` | the identity provider only, with no browser. Uses a password grant with the app's client id, or a test client the team gives |
 | `refresh-token` | one browser sign-in, then new tokens over HTTP |
-| `session-token` | the UI sign-in, once per run: the token that the signed-in app keeps |
-| `session-cookies` / `login-request` | the UI sign-in's cookies / the app's own sign-in request |
+| `login-request` | the app's own sign-in request, with no browser: the cookie it sets, or the token its answer holds (`session from: json <field>`) |
+| `session-token` | the UI sign-in, once per run: the token that the signed-in app keeps (`session token: <storage> <key> [<field>]` — without a field, the entry itself is the token) |
+| `session-cookies` | the UI sign-in's cookies |
 | `custom` / `none` | `project.ts` / nothing |
 
 API specs never sign in themselves. They get credentials only from `authHeaders`. The sign-in code

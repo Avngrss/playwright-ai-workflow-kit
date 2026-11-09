@@ -16,7 +16,8 @@ Run 23/10, 14:05 — 42 tests: 38 passed · 2 need a look · 1 known bug · 1 un
 ```
 
 Under that line, every failure is listed in its verdict group, in the order below. Each one names
-its cause and step and says what to check by hand. Then come more lists:
+its cause and step and says what to check by hand. Failures that miss the same locator (`element not
+found`) are one entry: the locator once, then its tests. Then come more lists:
 
 - tests that passed only on a retry;
 - tests the stand alone failed that passed on their second pass (below): "Stand was slow — passed
@@ -93,7 +94,9 @@ Playwright HTML report (`playwright-report/`).
 - **Retries:** a failed test is retried once locally and twice on CI. The sign-in smoke is never
   retried. A test that passes on the retry stays green but is marked **unstable**, and is listed in
   the summary and in the Categories tab under "Unstable — passed on a retry". `npm run verify` runs
-  once with `--retries=0`, so a new or healed test must pass without a retry.
+  once with `--retries=0`, so a new or healed test must pass without a retry. Before that run, a check
+  spoiled on purpose that fails at another line stops verify ("red elsewhere"), and its block says "the
+  test does not reach its check — test-results/verify.log holds the error".
 - **Quarantine:** a flaky test whose cause cannot be fixed now gets `@flaky` with a reason and runs
   only in `npm run test:flaky`.
 - **Known bugs** (`specs/known-bugs.md`): add a row once you have confirmed the bug by hand and a

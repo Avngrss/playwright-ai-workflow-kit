@@ -80,8 +80,9 @@ disposableAddress: async ({ addresses }, use) => {
 - Teardown stays thin and idempotent. Every `disposable…` fixture ships its `src/data/sweeps.ts` entry in the
   same change, naming the fixture in a comment; every entry says `platform: "<app>"`.
 - What two or more tests stand on (an item found on the stand, an object prepared for them) is an app fixture
-  named after what it is; the lookup stays a function in `src/setup/<app>/`, called in a boxed step that
-  still shows in the report:
+  named after what it is — in `data.fixture.ts`, or in `pages.fixture.ts` when it is made through the page (a
+  `UI setup`: the data fixtures cannot see Page Objects); the lookup stays a function in `src/setup/<app>/`
+  (a `UI setup`: the Page Object's method), called in a boxed step that still shows in the report:
 
   ```ts
   reportedProject: async ({ projects, reports }, use) => {
@@ -89,6 +90,9 @@ disposableAddress: async ({ addresses }, use) => {
   },
   ```
 
+- **The order** (Playwright): auto fixtures and the fixtures a `beforeEach` hook takes are set up before the hook;
+  a fixture only the test takes, after it. So a `UI setup` fixture acts on the page the `beforeEach` opened —
+  it never opens the page again, and no hook takes it (it would run before the page is open).
 - An app's setup file holds one subject (the stand items its tests need, one prepared object's upkeep).
 - **A test reads every fixture it lists** (`tsc` fails an unread one). A precondition the test does not read
   goes into what it reads: the fixture it takes depends on it (`sharedBoardPage: async ({ sharedBoard,
@@ -132,8 +136,9 @@ const address = { street: "Main 1", name: `John ${Date.now()}`, city: "Berlin" }
 The plan's `Data:` names the source; implementing never picks another — a different source goes back to the
 plan. The source is **tried on the stand before the plan is shown**: what `stand` names exists now; an `API
 setup` creates and removes one (`AQA`-marked); a `UI setup` reaches its last button with the saving request
-answered in place (a probe, `live-app.mdc`). Unproven → `blocked` after the search (`plans.mdc` §Searched
-before blocked).
+answered in place (a probe, `live-app.mdc`) — state only the browser keeps (its storage, no request) that the
+test makes itself is a `UI setup` with no probe and nothing to clean. Unproven → `blocked` after the search
+(`plans.mdc` §Searched before blocked).
 
 **Each value the case names, first: a rule or an illustration.** A rule value (a boundary, a status, an error
 text, a value a requirement names) is tested as written. An illustration ("e.g.", the ticket's example, a plain
@@ -151,7 +156,7 @@ Then take the first source that fits:
 | `none` | nothing needs to exist (a form, a page, a rejected request) | — |
 | `stand` | what the case needs already exists | read live at run time; never "the account has N items" |
 | `API setup` | it must be created and an endpoint exists | fast, stable; the UI create flow gets its own UI case |
-| `UI setup` | it must be created, no endpoint or no access | slower, honest |
+| `UI setup` | it must be created, no endpoint or no access; or it lives only in the browser | slower, honest |
 | `mocked` | the state cannot be reached honestly (an empty list on a shared account, a server error, 500 items) | tests how the UI shows the state; the title says what is shown |
 
 - `mocked`: UI specs only, only the response the screen renders — never in API or E2E, never the response of
