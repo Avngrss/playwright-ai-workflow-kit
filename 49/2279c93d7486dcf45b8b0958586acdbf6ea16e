@@ -1,0 +1,23 @@
+README.md
+  s_6563cd141fe7d2::t_92ca13908ed043 43
+package-lock.json
+  s_6563cd141fe7d2::t_7be33784d68bea 3,9
+package.json
+  s_6563cd141fe7d2::t_300a7c3aa82469 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "492279c93d7486dcf45b8b0958586acdbf6ea16e",
+  "prompts": {},
+  "sessions": {
+    "s_6563cd141fe7d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_6563cd141fe7d2",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
