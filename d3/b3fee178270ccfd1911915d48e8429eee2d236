@@ -1,0 +1,19 @@
+.cursor/rules/live-app.mdc
+  s_f55637ee50787f::t_0714c050694050 25-28,39-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d3b3fee178270ccfd1911915d48e8429eee2d236",
+  "prompts": {},
+  "sessions": {
+    "s_f55637ee50787f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_f55637ee50787f",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
