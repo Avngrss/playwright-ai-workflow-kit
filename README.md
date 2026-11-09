@@ -73,6 +73,21 @@ npm run allure:open
 
 Step by step: [docs/getting-started.md](docs/getting-started.md).
 
+### Already have a repository?
+
+The kit can also live in a folder of your product's repository, for example `qa/`:
+
+1. Copy the kit's files into the folder (without its `.git`). Its own `.gitignore` comes along and keeps `.env`,
+   `state/` and the reports out of git from there.
+2. In the folder: `npm install`, then `npm run env:prepare`.
+3. Open **that folder** in Cursor — the rules, skills and commands load from its `.cursor/`.
+4. CI: copy `.github/workflows/playwright.yml` to the repository's own `.github/workflows/` (GitLab:
+   `ci/gitlab/gitlab-ci.yml` to `.gitlab-ci.yml` at the root) and follow the note at its top — the working
+   directory, the cache path and `qa/` in front of its paths.
+
+The scripts work from the folder as they are: the gate, the test list and `npm run verify` with its check that
+a new test can fail.
+
 ---
 
 ## Commands
@@ -307,7 +322,7 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 - [docs/failure-reporting.md](docs/failure-reporting.md) — how to read a failure
 - [docs/security-data-handling.md](docs/security-data-handling.md) — secrets and sensitive data
 - [docs/Layer Routing Algorithm.md](docs/Layer%20Routing%20Algorithm.md) — the design behind one owner and
-  one test per scenario: the routes, the duplicates they rule out, what the gate checks (in Russian)
+  one test per scenario: the routes, the duplicates they rule out, what the gate checks
 
 ---
 
@@ -318,11 +333,15 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 - **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
   `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
   system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.
-- **The agent works with the live app.** `/setup`, `/plan` and `/heal` open your app through the Playwright MCP,
-  so the app must be reachable from your machine; an app behind a sign-in needs a test account you create.
+- **The agent works with the live app.** `/setup`, `/plan` and `/heal` open your app through the Playwright MCP
+  (or a short Playwright script without it), so the app must be reachable from your machine; an app behind a
+  sign-in needs a test account you create.
 - **The Allure report's own page carries an older DOMPurify.** The copy in `node_modules` is fixed by an
   override in `package.json`, but the prebuilt report UI that Allure ships bundles its own until Allure
   releases a build with the fix. Open the report locally and share it with restricted access.
+- **`npm audit` lists moderate findings in Allure's report packages** (`glob`, `minimatch` under `allure`):
+  they touch only the report build on your machine or in CI, not the tests or your app, and go when Allure
+  updates them.
 
 ---
 

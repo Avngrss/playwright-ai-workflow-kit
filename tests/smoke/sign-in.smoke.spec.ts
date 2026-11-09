@@ -41,7 +41,9 @@ for (const { slug: platform, ui: webApp } of platforms()) {
       test.describe(`Sign-in as ${user} (smoke)`, () => {
         test.use({ role });
 
-        test.describe(() => {
+        // A set-up app declares only the checks its block has: no web sign-in (`ui: none`) → no web test,
+        // no API sign-in (`api: none`) → no API test.
+        if (!(configured && ui.mode === "none")) test.describe(() => {
           test.skip(ui.mode === "none", noWebSignIn);
 
           test(`The ${user} is signed in to the web app`, smoke, async ({ page }) => {
@@ -54,7 +56,7 @@ for (const { slug: platform, ui: webApp } of platforms()) {
           });
         });
 
-        test.describe(() => {
+        if (!(configured && api.mode === "none")) test.describe(() => {
           test.skip(api.mode === "none", "The app has no API sign-in");
           // No page here: the API check gets its credentials its own way (a token needs no browser) —
           // Playwright would otherwise sign in through the browser for every test it runs.

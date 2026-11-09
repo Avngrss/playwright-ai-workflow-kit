@@ -29,7 +29,9 @@ session check: ${API_BASE_URL}/me
 - The block holds `.env` **names** (`${NAME}`), never values. You type the values into `.env`.
 - With no block, sign-in is not set up yet, and the sign-in smoke is skipped.
 - `ui: none` together with `api: none` means a public app; the tests run signed out. Its smoke is one test,
-  "The web app opens": the app's address answers and its page shows (no sign-in test is listed).
+  "The web app opens": the app's address answers and its page shows (no sign-in test is listed). Any
+  set-up app lists only the checks its block has: no web sign-in (`ui: none`) → no web or signed-out test,
+  no API sign-in (`api: none`) → no API test.
 - An app open to visitors that also has accounts (a shop, a portal) names a page only a signed-in user may
   open: `members only: ${UI_BASE_URL}/account`. Its home page looks the same signed in and out, so the sign-in
   smoke checks there: a visitor is sent to the sign-in page, a signed-in user stays.
