@@ -1,0 +1,21 @@
+.claude/agents/reviewer.md
+  s_5a14ef979817d5::t_490919a55a44b5 3
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_a00e8d8888f97a 95-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c5592507a57598aee54993bd1e41d4120fd1464f",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
