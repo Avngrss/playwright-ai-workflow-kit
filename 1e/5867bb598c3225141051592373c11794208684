@@ -1,0 +1,27 @@
+.claude/rules/plans.md
+  s_5a14ef979817d5::t_e3072deac91749 103-105,260-261
+.cursor/rules/plans.mdc
+  s_5a14ef979817d5::t_e1e0115b2f9df5 104-106,261-262
+agents/rules/plans.md
+  s_5a14ef979817d5::t_5867bcbd6897c5 103-105,260-261
+scripts/gate/cases.mjs
+  s_5a14ef979817d5::t_36517b3e012b78 2,121-139
+scripts/gate/routes.mjs
+  s_5a14ef979817d5::t_e6a41e381206ce 41-47,49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1e5867bb598c3225141051592373c11794208684",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
