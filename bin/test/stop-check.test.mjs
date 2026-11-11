@@ -31,7 +31,7 @@ const write = (root, file, text) => {
   fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
   fs.writeFileSync(path.join(root, file), text);
 };
-const stop = (kit, hook) => spawnSync(process.execPath, [CHECK, "--agent", "claude"], { cwd: kit, encoding: "utf8", input: JSON.stringify({ stop_hook_active: false, ...hook }) });
+const stop = (kit, hook, agent = "claude") => spawnSync(process.execPath, [CHECK, "--agent", agent], { cwd: kit, encoding: "utf8", input: JSON.stringify({ stop_hook_active: false, ...hook }) });
 const lastLog = (kit) => fs.readFileSync(path.join(kit, "reports", "stop-check.log"), "utf8").trim().split("\n").at(-1);
 
 // A plan the gate fails: a ready case and no `## Owners`.
@@ -74,4 +74,27 @@ test("a copy of agents/ the agent edited by hand is its own to undo", (t) => {
   const result = stop(kit, {});
   assert.equal(result.status, 2);
   assert.match(result.stderr, /\.cursor\/rules\/ui\.mdc — differs from its source agents\/rules\/ui\.md/);
+});
+
+test("Copilot: the agent is sent back with decision block, its second stop goes through", (t) => {
+  const kit = clone(t);
+  write(kit, "specs/shop/cart/cart/cart.md", BAD_PLAN);
+  const first = stop(kit, { sessionId: "s1", cwd: kit, transcriptPath: "t.jsonl", stopReason: "end_turn" }, "copilot");
+  assert.equal(first.status, 0, first.stderr);
+  const answer = JSON.parse(first.stdout);
+  assert.equal(answer.decision, "block");
+  assert.match(answer.reason, /specs\/shop\/cart\/cart\/cart\.md — no "## Owners"/);
+  const second = stop(kit, { sessionId: "s1", stop_hook_active: true }, "copilot");
+  assert.equal(second.stdout, "");
+});
+
+test("with Copilot chosen, Claude Code's hook run by Copilot leaves the stop to Copilot's own; run by Claude Code it checks", (t) => {
+  const kit = clone(t);
+  write(kit, "agents/agents.json", '{ "agents": ["claude", "copilot"] }\n');
+  write(kit, "specs/shop/cart/cart/cart.md", BAD_PLAN);
+  const byCopilot = stop(kit, { session_id: "s1", hook_event_name: "Stop", transcript_path: "t.jsonl" });
+  assert.equal(byCopilot.status, 0, byCopilot.stderr);
+  assert.match(lastLog(kit), /skipped — Copilot runs its own stop hook/);
+  const byClaude = stop(kit, { session_id: "s1", hook_event_name: "Stop", permission_mode: "default", last_assistant_message: "Plan saved." });
+  assert.equal(byClaude.status, 2);
 });

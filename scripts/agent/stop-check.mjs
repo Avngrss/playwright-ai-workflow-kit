@@ -9,12 +9,14 @@
  * that message) goes through at once — the check comes after the answer. A tree unchanged since the last check is
  * never reported twice. Any error of its own → silent: the hook never stands in the agent's way.
  *
- *   node scripts/agent/stop-check.mjs --agent claude|cursor     the hook's JSON on stdin
+ *   node scripts/agent/stop-check.mjs --agent claude|cursor|copilot     the hook's JSON on stdin
  *
- * Claude Code: exit 2, the message on stderr. Cursor: {"followup_message": "…"} on stdout. Cursor also runs
- * Claude Code's hooks (.claude/settings.json): called as claude with Cursor's input, it leaves the stop to
- * Cursor's own hook; a second run while one is checking stays silent. Each run leaves one line in
- * reports/stop-check.log — which agent, what it found — the last 50 kept.
+ * Claude Code: exit 2, the message on stderr. Cursor: {"followup_message": "…"} on stdout. Copilot (agentStop):
+ * {"decision": "block", "reason": "…"} on stdout. Cursor and Copilot also run Claude Code's hooks
+ * (.claude/settings.json): called as claude with another agent's input — Cursor's fields, or, with Copilot chosen,
+ * none of the fields Claude Code always sends — it leaves the stop to that agent's own hook; a second run while one
+ * is checking stays silent. Each run leaves one line in reports/stop-check.log — which agent, what it found — the
+ * last 50 kept.
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -68,7 +70,14 @@ function asksTheUser(hook) {
 /** A stop right after the hook sent the agent back, or one the person cut short, goes through. */
 function secondTry(hook) {
   if (agent === "cursor") return (hook.loop_count ?? 0) > 0 || (hook.status !== undefined && hook.status !== "completed");
-  return hook.stop_hook_active === true;
+  return hook.stop_hook_active === true || hook.stopHookActive === true;
+}
+
+/** Claude Code's hook run by another agent: Cursor's fields, or — Copilot chosen — none of those Claude Code always sends. */
+function anotherAgentsRun(hook) {
+  if ("cursor_version" in hook || "conversation_id" in hook) return "Cursor";
+  const chosen = readJson(path.join(ROOT, "agents", "agents.json"))?.agents ?? [];
+  return chosen.includes("copilot") && !("permission_mode" in hook) && !("last_assistant_message" in hook) ? "Copilot" : undefined;
 }
 
 /** The work in the tree: the files changed against HEAD (new ones too) under WORK, and one fingerprint of them and the verify state. */
@@ -146,8 +155,9 @@ function locked() {
 function main() {
   const hook = hookInput();
   fs.mkdirSync(path.dirname(SEEN), { recursive: true });
-  if (!["claude", "cursor"].includes(agent)) return note(hook, "no --agent claude|cursor");
-  if (agent === "claude" && ("cursor_version" in hook || "conversation_id" in hook)) return note(hook, "skipped — Cursor runs its own stop hook");
+  if (!["claude", "cursor", "copilot"].includes(agent)) return note(hook, "no --agent claude|cursor|copilot");
+  const other = agent === "claude" && anotherAgentsRun(hook);
+  if (other) return note(hook, `skipped — ${other} runs its own stop hook`);
   if (secondTry(hook)) return note(hook, "let through — the second stop");
   if (asksTheUser(hook)) return note(hook, "let through — the agent asks the user; the check comes after the answer");
   if (!locked()) return note(hook, "skipped — another check is running");
@@ -174,6 +184,7 @@ function check(hook) {
     "Do it now, then stop. Stopped for a question the user must answer first → ask it and stop again.",
   ].join("\n");
   if (agent === "cursor") process.stdout.write(JSON.stringify({ followup_message: message }));
+  else if (agent === "copilot") process.stdout.write(JSON.stringify({ decision: "block", reason: message }));
   else {
     process.stderr.write(`${message}\n`);
     process.exitCode = 2;

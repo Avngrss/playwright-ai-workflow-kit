@@ -1,7 +1,7 @@
 # Playwright AI Workflow Kit
 
-Starter repository for **Playwright + TypeScript** test automation with an AI agent — **Cursor or
-Claude Code**: rules, skills, slash commands and a stop check, written once in `agents/`.
+Starter repository for **Playwright + TypeScript** test automation with an AI agent — **Claude Code,
+Cursor or GitHub Copilot**: rules, skills, slash commands and a stop check, written once in `agents/`.
 
 Create your own repository from it on GitHub, add your application, and let the agent plan and write
 tests under rules it cannot quietly break. The kit ships with **no application tests** — only the
@@ -55,8 +55,9 @@ npm run allure:open
    ```
 
    It asks three things — where (`qa` by default; `.` when the folder holds no project yet; any path), which AI
-   (Claude Code, Cursor or both) and which CI (GitHub, GitLab or none, guessed from the remote) — then copies the
-   kit there with only your AI's files, writes the CI at the repository's root with the paths to that folder,
+   (Claude Code, Cursor, GitHub Copilot — one or several) and which CI (GitHub, GitLab or none, guessed from the
+   remote) — then copies the kit there with only your AI's files, writes the CI at the repository's root with the
+   paths to that folder,
    runs `npm ci` (Chromium too) and creates `.env`. It never overwrites a file: a folder of your project the kit
    would mix into (`src/`, `tests/` …) stops it before anything is written. Nothing is committed.
 
@@ -65,10 +66,10 @@ npm run allure:open
 
    ```text
    $ npx github:Avngrss/playwright-ai-workflow-kit
-   Playwright AI Workflow Kit 1.4.0
+   Playwright AI Workflow Kit 1.5.0
 
    ? Folder for the kit? (Enter = qa)
-   ? Which AI do you work with? 1 Claude Code · 2 Cursor · 3 both (Enter = 1)
+   ? Which AI do you work with? 1 Claude Code · 2 Cursor · 3 GitHub Copilot — one or several, e.g. 1,3 (Enter = 1)
    ? CI? 1 GitHub Actions · 2 GitLab CI · 3 none (Enter = 1)
    The kit goes into qa/ for Claude Code, CI: github — from https://github.com/Avngrss/playwright-ai-workflow-kit.git at <commit>.
    ? Install? (Y/n)
@@ -96,16 +97,17 @@ npm run allure:open
    plan first) — the kit's files you never changed are replaced, the ones you changed stay with the new version
    beside them (`<file>.kit-new`), your map, plans, tests and app code are never touched.
 
-3. Open **the kit's folder** in Cursor or Claude Code and turn on the `playwright` MCP server — Cursor: Cursor
-   Settings → MCP (`.cursor/mcp.json`); Claude Code: approve it when asked (`.mcp.json`). The agent explores
-   your app with it (without it, through a short Playwright script). Then type in the chat:
+3. Open **the kit's folder** in your AI and turn on the `playwright` MCP server — Cursor: Cursor Settings → MCP
+   (`.cursor/mcp.json`); Claude Code: approve it when asked (`.mcp.json`); Copilot CLI reads `.mcp.json`, VS Code's
+   Copilot once its workspace MCP setting is on. The agent explores your app with it (without it, through a short
+   Playwright script). Then type in the chat:
    - `/setup` — registers your application and sets up how tests sign in (a fresh clone is checked
      first: `test:list` and `qa:gate` pass with no feature tests — the template's sign-in smoke is
      listed, skipped until an app has an ```auth block);
    - `/plan` — the first feature's plan; answer **Yes, write them** and the same run writes the tests,
      checks them with one `npm run verify`, heals a failure once and sums up with one next command —
-     for new tests, the independent review: Claude Code runs it as its `reviewer` subagent, Cursor gives
-     the `/review` line to paste into a new chat.
+     for new tests, the independent review: Claude Code and Copilot run it as their `reviewer` agent, Cursor
+     gives the `/review` line to paste into a new chat.
 
    The other commands are for later runs: the table below.
 
@@ -115,7 +117,7 @@ Step by step: [docs/getting-started.md](docs/getting-started.md).
 
 Installed into `qa/` (or any folder), the kit is its own npm project there: its `package.json`, `.gitignore` and
 `.env`, its scripts working from the folder as they are — the gate, the test list and `npm run verify`. Open
-**that folder** in your AI: the rules and commands load from its `.cursor/` or `.claude/`. The CI the installer
+**that folder** in your AI: the rules and commands load from its `.cursor/`, `.claude/` or `.github/`. The CI the installer
 wrote runs every step in it (GitHub: `working-directory`; GitLab: `qa/ci/gitlab-ci.yml`, included from the root
 `.gitlab-ci.yml` — when one is there already, the installer prints the `include:` line to add).
 
@@ -123,7 +125,8 @@ wrote runs every step in it (GitHub: `working-directory`; GitLab: `qa/ci/gitlab-
 
 ## Commands
 
-Type them in the agent's chat — Cursor or Claude Code; each one asks for what you leave out.
+Type them in the agent's chat — Claude Code, Cursor or Copilot (where they are skills called by name); each one
+asks for what you leave out.
 
 | Command | When |
 |---|---|
@@ -134,7 +137,7 @@ Type them in the agent's chat — Cursor or Claude Code; each one asks for what 
 | `/heal` | one or two red tests, each from its verdict; `/heal explain` only explains the failures |
 | `/triage` | three or more red tests, or a CI run: every failure sorted, every changed expectation traced to its source |
 | `/coverage` | a TMS folder case by case — read-only |
-| `/review` | an independent review of new tests, in a **new chat** — the verify summary gives the line to paste; Claude Code runs it itself as the `reviewer` subagent (Cursor lists that subagent too) |
+| `/review` | an independent review of new tests, in a **new chat** — the verify summary gives the line to paste; Claude Code and Copilot run it themselves as the `reviewer` agent (Cursor lists Claude Code's too) |
 
 Which one comes after a run: a product or rule change you can name → `/plan <plan> — <what changed>`, even
 with red tests at hand; one or two red tests → `/heal`; three or more, or a CI run → `/triage`. The run
@@ -155,7 +158,7 @@ with what to do; a question it must ask you still gets through.
 | `agents/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
 | `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
 | `agents/agents.json`, `hooks.json`, `permissions.json`, `mcp.json` | Which AI this folder works with (`npm run agents:use`), the stop hook's command, what Claude Code may run without asking (and never: reading cookies and storage), the Playwright MCP server |
-| `.cursor/`, `.claude/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
+| `.cursor/`, `.claude/`, `.github/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too; Copilot — its instructions, skills, `reviewer` agent and hook under `.github/`) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
 | `bin/` | The installer and its update (`npx github:Avngrss/playwright-ai-workflow-kit [--update]`), whose each file is (`ownership.mjs`), and the kit's own tests (`npm run kit:test`, run on every PR by `.github/workflows/kit.yml`) — they stay in the kit, a project never gets them |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
@@ -186,7 +189,7 @@ script, the projects and CI.
 agents/rules/       ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
 agents/skills/      ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
 agents/commands/    ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
-.cursor/, .claude/  ← each agent's copy of agents/ (npm run agents:sync)
+.cursor/, .claude/  ← each agent's copy of agents/ (npm run agents:sync); Copilot's under .github/
 specs/project-map.md← the living registry the code and gate read
 scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 ```
@@ -285,8 +288,8 @@ its API test proves. A case is written whole, every scenario, or not at all.
 | Sign-in from the map | an ```auth block per app; UI form or custom, API token, refresh token, session, key, basic …; one sign-in per role per run; a refused password is never retried |
 | One scenario, one test | each scenario has one owner and one route in the plan; the gate fails a scenario with two tests, a test outside its owner's folder, or a UI test listening where its route does not |
 | No owner skipped silently | a plan says what its owner check found (`## Owners`); for an app with an API and no API scenario it says why for each place one comes from — other inputs, access, the contract — or the gate fails it |
-| A stop check | the agent cannot end a turn on a red gate or with the automatic heal undone: its stop hook sends it back once (Claude Code and Cursor) |
-| One source, every agent | the rules, skills, commands, MCP and hooks live in `agents/`; `npm run agents:sync` writes Cursor's and Claude Code's copies, and the gate fails a copy edited by hand |
+| A stop check | the agent cannot end a turn on a red gate in a file it changed or with the automatic heal undone: its stop hook sends it back once (Claude Code, Cursor, Copilot) |
+| One source, every agent | the rules, skills, commands, MCP and hooks live in `agents/`; `npm run agents:sync` writes Claude Code's, Cursor's and Copilot's copies, and the gate fails a copy edited by hand |
 | Every new check can fail | `npm run verify` with `--can-fail` spoils the expected value of each new or changed check; the test must go red at that line, and every line is put back |
 | Test data | sources none / stand / API setup / UI setup / mocked; `AQA`-marked data removed by the test; leftovers swept before and after every run |
 | Searched before blocked | `npm run stand:find` looks for what a case needs in every account and tenant; a `Blocked` line ends with where it was searched |
@@ -378,8 +381,11 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 
 ## Known limitations
 
-- **Cursor and Claude Code.** GitHub Copilot and Codex are not set up yet: a new agent is one more target of
+- **Claude Code, Cursor and GitHub Copilot.** Codex is not set up yet: a new agent is one more target of
   `npm run agents:sync` (`scripts/agent/agents-sync.mjs`) and its hook format in `scripts/agent/stop-check.mjs`.
+  Copilot reads no command files — its commands are skills called by name (`/heal`, `/triage`, `/coverage`) — and
+  VS Code's Copilot reads a workspace `.mcp.json` only with its workspace MCP setting on. With Claude Code and
+  Copilot both chosen, Copilot CLI sees each skill in `.claude/skills/` and `.github/skills/`.
 - **A rule is still text.** A weaker model can skip what no script checks. The gate, `npm run verify` and the
   stop check hold what can be checked (the owners of a plan, routes, can-fail, the automatic heal); the plan's
   confirm table is where you catch the rest.
