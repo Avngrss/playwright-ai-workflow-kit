@@ -1,0 +1,33 @@
+.mcp.json
+  s_5a14ef979817d5::t_5025c125d9dae9 4
+bin/install.mjs
+  s_5a14ef979817d5::t_80e949aa1df377 11,39,43,72,74-75,78-79,162,164-165
+bin/test/install.test.mjs
+  s_5a14ef979817d5::t_d373f1c6cb4dcc 77-92
+agents/notes/copilot.md
+  s_5a14ef979817d5::t_bb82b7845fbf64 1-17
+bin/test/stop-check.test.mjs
+  s_5a14ef979817d5::t_8ad40ff7407db9 34,78-100
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_8ac1eea70396e3 9-15,38,91,94,96,101-137,155-158,175-176,179-181,188-189,203,207,217-233,236-238,240,242,252,262,264,266,268,290
+scripts/agent/agents-use.mjs
+  s_5a14ef979817d5::t_a91885bb5b1b5f 8-9,20,22
+scripts/agent/stop-check.mjs
+  s_5a14ef979817d5::t_30ff46a566194c 12,14-19,73-80,158-160,187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b8b937730ff3f2b8af8c1c7a1626f1af5ff25677",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
