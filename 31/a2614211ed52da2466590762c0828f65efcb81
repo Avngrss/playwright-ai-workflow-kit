@@ -1,0 +1,21 @@
+bin/update.mjs
+  s_5a14ef979817d5::t_d9375849d8b97a 1-74
+bin/test/update.test.mjs
+  s_5a14ef979817d5::t_6fd68763ed72de 1-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "31a2614211ed52da2466590762c0828f65efcb81",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
