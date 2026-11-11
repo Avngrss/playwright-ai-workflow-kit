@@ -1,0 +1,25 @@
+package.json
+  s_5a14ef979817d5::t_709c07ba7bcc4c 4
+README.md
+  s_5a14ef979817d5::t_84f35ee6af6a30 3-4,58-60,72,100-103,109-110,120,128-129,140,161,192,291-292,384,386-388
+docs/getting-started.md
+  s_5a14ef979817d5::t_97a4759acae655 9-14,28-30
+docs/workflow.md
+  s_5a14ef979817d5::t_d1d4490167c901 11-13,596
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "34ce3a214dccd06235bfd9ceaffb0e1e87b2af2a",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
