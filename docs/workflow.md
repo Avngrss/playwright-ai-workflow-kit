@@ -8,8 +8,9 @@ reviews, audits and refactors live, what you will see in the chat, and example p
 
 Eight slash commands live in `agents/commands/`. Seven open the four skills in `agents/skills/`
 (setup, plan, implement, verify); `/review` is the brief of an independent review, run in a new chat
-(Claude Code: the `reviewer` subagent). In the agent's chat — Cursor or Claude Code — type `/<command>` and
-then what it needs: a link, a plan path or a few words. If you leave something out, the skill asks.
+(Claude Code and Copilot: the `reviewer` agent). In the agent's chat — Claude Code, Cursor or Copilot, where
+the commands are skills called by name — type `/<command>` and then what it needs: a link, a plan path or a few
+words. If you leave something out, the skill asks.
 
 When the agent ends a turn, its stop hook (`scripts/agent/stop-check.mjs`) runs the gate on the work in the
 tree and checks that a red verify of new tests got its one automatic heal. Found → the agent is sent back once
@@ -592,7 +593,7 @@ planned yet: `/plan` with this folder link".
 
 ## 6. Example prompts
 
-What to type in the agent's chat (Cursor or Claude Code), and what happens next. Replace the app, links and
+What to type in the agent's chat (Claude Code, Cursor or Copilot), and what happens next. Replace the app, links and
 paths with your own.
 
 | # | Type | What happens |
