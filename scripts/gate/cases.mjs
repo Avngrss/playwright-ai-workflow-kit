@@ -84,7 +84,7 @@ function checkBrowsersPhoneScreens(_files, report) {
     if (missing.length) {
       report.fail(
         file,
-        `has UI cases but no ${missing.map((name) => `"${name}:"`).join(", ")} line in "## Browsers, phone, screenshots" — run the probe of live-app.mdc on its screens and record each decision, or "none — <what was checked>" (the plan skill, "Browsers, phone, screenshots")`,
+        `has UI cases but no ${missing.map((name) => `"${name}:"`).join(", ")} line in "## Browsers, phone, screenshots" — run the probe of live-app.md on its screens and record each decision, or "none — <what was checked>" (the plan skill, "Browsers, phone, screenshots")`,
       );
       continue;
     }

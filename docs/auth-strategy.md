@@ -4,8 +4,8 @@ This guide explains how the tests sign in. Each app has one ```auth block in `sp
 §Auth. The template's sign-in code (`src/setup/auth/`, `src/fixtures/auth.fixture.ts`)
 reads that block and nothing else, so specs never sign in by hand. The setup skill §3
 (`/setup sign-in`) writes the block. Its full format, the `api:` modes and roles are in the
-[setup skill](../.cursor/skills/setup/SKILL.md) §4; what the sign-in code guarantees is in
-[`data-and-fixtures.mdc`](../.cursor/rules/data-and-fixtures.mdc) §Sign-in setup.
+[setup skill](../agents/skills/setup/SKILL.md) §4; what the sign-in code guarantees is in
+[`data-and-fixtures.md`](../agents/rules/data-and-fixtures.md) §Sign-in setup.
 
 ## The ```auth block
 

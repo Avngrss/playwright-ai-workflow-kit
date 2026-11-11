@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { at, inProgress, read, workingStatementsOf } from "./context.mjs";
 
 /**
- * Warnings, never failures: smells a reviewer weighs (.cursor/rules/code.mdc, specs.mdc).
+ * Warnings, never failures: smells a reviewer weighs (agents/rules/code.md, specs.md).
  * The readability and structure ones look only at what is being written now — committed tests are
  * not reworked for a later rule.
  */
@@ -51,7 +51,7 @@ function adviseCodeWeight(files, report) {
   }
 
   // A client is the requests of one API area and the types of their bodies — nothing else
-  // (.cursor/rules/code.mdc): dates, screen formats and counting helpers live where they are used.
+  // (agents/rules/code.md): dates, screen formats and counting helpers live where they are used.
   for (const client of files.clients) {
     const text = read(client);
     // Response types may be long; the requests show whether one client holds several API areas.
@@ -69,7 +69,7 @@ function adviseCodeWeight(files, report) {
     }
   }
 
-  // An app's setup file holds one subject (.cursor/rules/data-and-fixtures.mdc): the stand items its tests need, one prepared object's upkeep.
+  // An app's setup file holds one subject (agents/rules/data-and-fixtures.md): the stand items its tests need, one prepared object's upkeep.
   for (const file of files.support.filter((support) => /[\\/]src[\\/]setup[\\/](?!auth[\\/])[^\\/]+[\\/][^\\/]+\.ts$/.test(support))) {
     const size = workingStatementsOf(read(file)).length;
     if (size > CLIENT_LINES_GUIDE) report.warn(file, `${size} statements (guide ≤ ${CLIENT_LINES_GUIDE}) — one subject per setup file (the stand items the tests need; one prepared object's upkeep)`);
@@ -112,9 +112,9 @@ function adviseReadability(files, report) {
   const changed = inProgress();
   for (const spec of files.specs.filter((file) => !changed || changed.has(file))) {
     const content = read(spec);
-    // A check without a name reads in the report as "expect(locator)…" (.cursor/rules/specs.mdc).
+    // A check without a name reads in the report as "expect(locator)…" (agents/rules/specs.md).
     const unnamed = [...content.matchAll(/(?<![.\w])expect\(/g)].filter((m) => callArguments(content, m.index + "expect".length).length < 2).length;
-    if (unnamed > 0) report.warn(spec, `${unnamed} check(s) without a name — expect(x, "<what the user sees>"), .cursor/rules/specs.mdc`);
+    if (unnamed > 0) report.warn(spec, `${unnamed} check(s) without a name — expect(x, "<what the user sees>"), agents/rules/specs.md`);
 
     const longestComment = content.split(/\r?\n/).reduce(
       (state, line) => {
@@ -128,7 +128,7 @@ function adviseReadability(files, report) {
 }
 
 function adviseStructure(files, report) {
-  // .cursor/rules/code.mdc: hand-rolled lookups and app addresses built in a spec (copied lines:
+  // agents/rules/code.md: hand-rolled lookups and app addresses built in a spec (copied lines:
   // repeats.mjs).
   const changed = inProgress();
   for (const spec of files.specs.filter((file) => !changed || changed.has(file))) {

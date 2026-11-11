@@ -185,10 +185,10 @@ export function main(argv) {
   const kind = call.bug ? "bug" : "case";
   const source = readSource(call[kind], kind);
   const notes = [];
-  if (source.severity && !/^(Critical|Major|Minor)$/.test(source.severity)) notes.push(`! Severity "${source.severity}" is the source's word — left as the plan's choice Critical | Major | Minor (.cursor/rules/01-workflow.mdc §Severity): pick its match`);
-  if (source.priority && !/^P[123]$/.test(source.priority)) notes.push(`! Priority "${source.priority}" is the source's word — left as the plan's choice P1 | P2 | P3 (.cursor/rules/plans.mdc §Rating): pick its match`);
+  if (source.severity && !/^(Critical|Major|Minor)$/.test(source.severity)) notes.push(`! Severity "${source.severity}" is the source's word — left as the plan's choice Critical | Major | Minor (agents/rules/01-workflow.md §Severity): pick its match`);
+  if (source.priority && !/^P[123]$/.test(source.priority)) notes.push(`! Priority "${source.priority}" is the source's word — left as the plan's choice P1 | P2 | P3 (agents/rules/plans.md §Rating): pick its match`);
   if (!source.shown.startsWith("state/")) notes.push(`! ${source.shown} is outside state/ — a source is kept in the gitignored state/sources/, never committed`);
-  notes.push(`! The values its steps name are the ${kind}'s words — each a rule or an example (.cursor/rules/data-and-fixtures.mdc §Data sources); Data: says which`);
+  notes.push(`! The values its steps name are the ${kind}'s words — each a rule or an example (agents/rules/data-and-fixtures.md §Data sources); Data: says which`);
 
   let steps = source.steps;
   const draft = { plan: call.plan, owner: call.owner, why: call.why, role: call.role, tags: call.tags, rules: call.rules, preconditions: source.precondition, value: valueOf(source, kind === "bug" ? "tracker" : "TMS") };
@@ -212,7 +212,7 @@ export function main(argv) {
       rules: call.rules ?? `<each check: rule of the routes> — ${source.id} (its expected result)`,
       after: [`- Seen: ${source.actual} — ${source.id} "${source.title}": the bug's behaviour, never an expect`],
     });
-    notes.push(`! While ${source.id} is open its test fails at its step — then a row in specs/known-bugs.md (.cursor/rules/plans.mdc §Known bugs); fixed, it passes`);
+    notes.push(`! While ${source.id} is open its test fails at its step — then a row in specs/known-bugs.md (agents/rules/plans.md §Known bugs); fixed, it passes`);
   }
   Object.assign(draft, { steps: steps.map(({ action }) => action), expects: steps.map(({ expected }) => expected) });
 
@@ -228,7 +228,7 @@ export function main(argv) {
       return found && `${source.id} is block #${found.n} already ("${found.title}") — a case given again is never written again; another scenario of it: --scenario S<k> --title "<what it proves>" [--take <n>-<m>]`;
     }
     const whole = mine.find(({ title }) => !scenarioOf(title));
-    if (whole) return `${source.id} is block #${whole.n} as one scenario ("${whole.title}") — splitting it reworks that block (.cursor/rules/plans.mdc §When the product changes), not a block more`;
+    if (whole) return `${source.id} is block #${whole.n} as one scenario ("${whole.title}") — splitting it reworks that block (agents/rules/plans.md §When the product changes), not a block more`;
     const same = mine.find(({ title }) => scenarioOf(title) === call.scenario);
     return same && `${source.id} · ${call.scenario} is block #${same.n} already ("${same.title}")`;
   };

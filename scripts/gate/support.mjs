@@ -3,7 +3,7 @@ import { at, read, registeredPlatforms } from "./context.mjs";
 
 /** The support code's wiring: the fixture chain, roles from the map, a sweep for every disposable fixture. */
 
-// The chain, in order (.cursor/rules/data-and-fixtures.mdc): each layer imports the one before it and
+// The chain, in order (agents/rules/data-and-fixtures.md): each layer imports the one before it and
 // test.ts re-exports the last. Auth sits before data, so project data fixtures have `authHeaders`.
 const CHAIN = ["base", "reporting", "api", "auth", "data", "pages"];
 

@@ -1,0 +1,121 @@
+---
+description: Exploring the live app — the Playwright MCP to explore, the saved-session script to check what is known and to heal a locator — for a plan's live check, before writing locators or a Page Object, and when healing; signing in without typing a password, roles, test ids, capturing the app's messages, network evidence for routes, probes that need request routing (outside tests/), probes that change shared items
+globs: specs/**, src/pages/**, src/components/**
+alwaysApply: false
+---
+
+# Exploring the live app
+
+Two tools, by the task — whenever a locator, a request or a message would otherwise be guessed or asked of the
+user, for a plan's live check (`plans.md`), and when healing a locator:
+- **The Playwright MCP** the kit configures (`agents/mcp.json`, copied to each agent by `npm run agents:sync`) —
+  navigate, snapshot, click, fill, network requests: exploring what is not known yet (a new Page Object, a
+  screen's first look, its requests).
+- **The saved-session script** — a check of what the plan already names (a text, a count, a request's answer),
+  a locator heal, and whenever the MCP gives no answer within a minute (close it; never a second browser over a
+  hung one): a one-off `scripts/scratch-<what>.mjs` (outside `tests/`, deleted after — `01-workflow.md`
+  §Cleanup), run with `node`, printing only what the check needs. It opens the page as the test does, with
+  the role's session as `storageState`, and walks the case's own gesture:
+
+  ```js
+  import dotenv from "dotenv";
+  import { chromium, selectors } from "@playwright/test";
+  dotenv.config({ quiet: true });
+  selectors.setTestIdAttribute("data-test"); // the app's `test id:` line (the map's app-wide block); none → leave out
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    storageState: "state/shop.customer.<host>.session.json",
+    timezoneId: "UTC", locale: "en-US", // the app's `timezone:` / `locale:` lines, as the tests run
+  });
+  const page = await context.newPage();
+  const answer = page.waitForResponse((response) => response.url().includes("api/orders"));
+  await page.goto(`${process.env.UI_BASE_URL}/orders`);
+  console.log((await answer).status(), await page.getByRole("row").count());
+  await browser.close();
+  ```
+
+- **No Playwright MCP in this agent** → the saved-session script explores too (signed out: no `storageState`):
+  `page.locator("body").ariaSnapshot()` for the snapshot, `page.on("request", …)` for the network list,
+  `page.evaluate(…)` for the probes this rule runs through the MCP's evaluate.
+- **Dates seen live:** the MCP browser runs in the machine's time zone and language, the tests in the app's
+  (`timezone:` / `locale:`, UTC / en-US by default). A date or number read through the MCP gives its format, not
+  the value a test will see — the script above, pinned as the tests are, gives both.
+
+The session is a throwaway: nothing from either goes into a spec or Page Object except the resulting locators
+and findings.
+
+## A signed-in session
+
+- **Never type a password (or a login) into the MCP browser** — the call and its echo put the real value in
+  the chat.
+- `npm run auth:sign-in -- <app> <role>` (or `all`) signs the role in and writes
+  `state/<app>.<role>.<host>.session.json`; the MCP browser takes that session with `browser_set_storage_state`
+  (`filename: state/<app>.<role>.<host>.session.json` — it replaces the cookies and storage, so switching roles is
+  one more call). The tool comes with `--caps=storage` in `agents/mcp.json`; never edit it or its copies. Never read
+  a cookie or a storage value into the chat (`browser_localstorage_get`, `browser_storage_state`) — they hold
+  tokens. The tool missing → ask the user to sign in by hand in the MCP browser and wait.
+- No ```auth block for the app yet → the setup skill's sign-in first; it explores the sign-in page signed out.
+- A 401 or an expired-looking error in a probe means an old session: sign in again first.
+- Default to the map's default role; explore as another role only when the scenario is role-specific, once
+  per role. A role without `.env` values gets no exploration — its cases go straight to `blocked`.
+
+## Writing a new Page Object
+
+1. Navigate to the real URL from the map / `.env`, never an invented one.
+2. Snapshot — the interactive elements with their real accessible names.
+3. Walk the path the test will take — its clicks, no shortcut by address (a new tab, a redirect, a dialog on
+   the way). A click that seemed to do nothing → list the tabs. A switch of context (workspace, account,
+   language) is made from the page the test switches on; record where it lands (UI brief `Lands:`).
+4. After an action that saves, deletes, sends — or fails — capture what the app says, right after the action
+   (a toast closes within seconds), through the MCP's evaluate:
+   `() => [...document.querySelectorAll('[role=alert], [role=status]')].map((e) => e.textContent.trim()).filter(Boolean)`;
+   none yet → once more. Write the exact texts into the UI brief (`Messages: <action> → success "<text>" ·
+   error "<text>"`), the error from a case that makes it fail.
+5. Check the element's test id first (`(el) => el.getAttribute('<attribute>')` on its ref — the app's
+   ```app-wide `test id:` line in the map, `data-testid` without one; the app marks its elements with another
+   attribute → that line is missing or wrong: fix the map): a value → `getByTestId("<value>")`; none → the locator the MCP's action code
+   shows. Never second-guess it into CSS (`ui.md` §Locators).
+6. Use the network requests list for the `Route:` evidence (`plans.md` §Routes): whether the move goes to the
+   server, its method, path and query, what it sent and what the answer holds (the script prints a body the
+   list does not show; never a request's headers — they carry the token) — twice where the app caches; and
+   the real method and path of a request a mock must match.
+7. Close the browser when done.
+
+## Browsers, phone, screenshots
+
+On each screen a UI case uses — at the plan's live check, and again when implementing its Page Object — once,
+in this order, the evidence for the plan's `## Browsers, phone, screenshots` (`plans.md`):
+1. **Controls engines treat differently** — the MCP's evaluate:
+   `() => Object.fromEntries(Object.entries({ date: 'input[type=date],input[type=time],input[type=datetime-local],input[type=month],input[type=week]', file: 'input[type=file]', colourOrRange: 'input[type=color],input[type=range]', editable: '[contenteditable=""],[contenteditable=true]', draggable: '[draggable=true]' }).map(([kind, css]) => [kind, document.querySelectorAll(css).length])))`,
+   plus what the snapshot shows the case driving: a custom date picker, drag and drop, a copy button.
+2. **The phone** — `browser_resize` to 393 × 851 (the `mobile:<app>` project's Pixel 5), a snapshot, compared
+   with the desktop one for the controls the cases use: hidden, behind a menu, covered — fields that only stack
+   are no risk; then back to 1280 × 720.
+3. **The look** — the stable states the cases reach (a form, a dialog, an empty, error or confirmation state)
+   and what in them changes from run to run (generated names, dates, counts → masks).
+
+The numbers and what the phone showed go into the plan's lines as evidence — "none — no date, file or
+editable control; at 393 px every field and the button stay visible".
+
+## Probes
+
+- **Request routing** (answering a save in place for a `UI setup` proof, a mocked state): a one-off scratch
+  spec in a temporary folder **outside `tests/`**, with its own minimal config, using the role's `state/`
+  session; run it, read its output, delete the folder (`01-workflow.md` §Cleanup). Its route is built from
+  the real request (paths are case-sensitive; a RegExp, or a glob ending in `**`), and the run proves the
+  answer came from the route. A miss is a real write: compare with the state before, put it back at once,
+  say so in the summary. A probe longer than one line is a script file, never a nested-quote one-liner.
+- **A probe that changes something kept or shared** (a setting, a membership, another account's data) is
+  asked of the user before the first try — all such probes in one question, with how each is put back.
+  Declined → those cases are `blocked` "needs the user's OK", never retried in another form.
+
+## Healing a locator drift
+
+Only when the failure looks like a moved or renamed element: read its error (`Page: …`), screenshot and trace
+in `test-results/`; then **the saved-session script first** — the page opened as the test opens it, walked by
+the case's gesture to the failing step, printing the candidates' texts and roles, the app's test id, how many
+match and the block they sit in (the MCP browser when the script cannot reach the state); the corrected
+locator, scoped to its block, proven by the script printing `1` for it; the smallest fix to the Page Object.
+The element or flow no longer existing as documented is requirement drift — stop and route to the plan
+(`plans.md` §When the product changes). Unclear which Page Object or component owns a block → `ui.md`
+§Ownership decisions.

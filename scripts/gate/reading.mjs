@@ -1,7 +1,7 @@
 import { inProgress, read, statementsOf, workingStatementsOf } from "./context.mjs";
 
 /**
- * A UI test reads as its case (.cursor/rules/specs.mdc): it acts through Page
+ * A UI test reads as its case (agents/rules/specs.md): it acts through Page
  * Object methods and compares readers with shown<Block>(…), shaping no data itself. A spec being
  * written fails; a committed one is warned, not reworked for a later rule.
  */
@@ -32,7 +32,7 @@ function readsAsItsCase(files, report) {
     const found = SHAPING.map(([words, pattern]) => [words, statements.filter(({ text }) => pattern.test(text)).map(({ line }) => line)]).filter(([, lines]) => lines.length);
     if (found.length) {
       const where = found.map(([words, lines]) => `${words} (line${lines.length > 1 ? "s" : ""} ${lines.slice(0, 4).join(", ")}${lines.length > 4 ? ", …" : ""})`).join("; ");
-      const message = `the test shapes data itself: ${where} — a UI test reads as its case: an action of the case is a Page Object method, a block is one check of its read() against shown<Block>(…) in src/assertions/<app>/ (.cursor/rules/specs.mdc §A UI test reads as its case)`;
+      const message = `the test shapes data itself: ${where} — a UI test reads as its case: an action of the case is a Page Object method, a block is one check of its read() against shown<Block>(…) in src/assertions/<app>/ (agents/rules/specs.md §A UI test reads as its case)`;
       if (written) report.fail(spec, message);
       else report.warn(spec, message);
     }

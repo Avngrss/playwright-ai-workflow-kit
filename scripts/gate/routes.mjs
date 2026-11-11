@@ -18,7 +18,7 @@ import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
 const why = "docs/Layer Routing Algorithm.md";
 
-// Where an API scenario comes from when no screen shows the result (plans.mdc §Layers — the owner check).
+// Where an API scenario comes from when no screen shows the result (plans.md §Layers — the owner check).
 const API_PLACES = ["other inputs", "access", "contract"];
 
 function checkOwners(files, report) {
@@ -30,18 +30,18 @@ function checkOwners(files, report) {
     const file = at(...plan.split("/"));
     const say = (message) => (!changed || changed.has(file) ? report.fail(file, message) : report.warn(file, message));
     if (!owners?.line) {
-      say(`no "## Owners" with its "- found: UI <n> · API <n> · E2E <n> — <why>" line — what the owner check found (plans.mdc §Plan body)`);
+      say(`no "## Owners" with its "- found: UI <n> · API <n> · E2E <n> — <why>" line — what the owner check found (plans.md §Plan body)`);
       continue;
     }
     if (!owners.counts || owners.why.startsWith("<")) {
-      say(`"found: ${owners.line}" does not read as "UI <n> · API <n> · E2E <n> — <why>" with each <…> filled (plans.mdc §Plan body)`);
+      say(`"found: ${owners.line}" does not read as "UI <n> · API <n> · E2E <n> — <why>" with each <…> filled (plans.md §Plan body)`);
       continue;
     }
     if (owners.counts.API > 0 || !withApi.has(app)) continue;
     // An agent that plans every case on the screen says, place by place, why no API scenario exists.
     const unsaid = API_PLACES.filter((place) => !new RegExp(`\\b${place}:\\s*[^\\s<·]`, "i").test(owners.why));
     if (unsaid.length) {
-      say(`${app} has an API (specs/project-map.md), and "found:" names no API scenario — say why for each place one comes from: "API 0 · … — none · other inputs: <why> · access: <why> · contract: <why>" (not said: ${unsaid.join(", ")}) (plans.mdc §Layers, the owner check)`);
+      say(`${app} has an API (specs/project-map.md), and "found:" names no API scenario — say why for each place one comes from: "API 0 · … — none · other inputs: <why> · access: <why> · contract: <why>" (not said: ${unsaid.join(", ")}) (plans.md §Layers, the owner check)`);
     }
   }
 }

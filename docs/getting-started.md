@@ -125,5 +125,5 @@ paste it into a new chat for an independent review. Continue with [Workflow](wor
 | `reports/run-summary.md`, `reports/allure/` | the last run's summary and the Allure results |
 
 An app's folders appear with its first plan and test. They are never created empty in advance. Every
-npm script is listed in `.cursor/rules/00-project-map.mdc`. The strategy in one page is
+npm script is listed in `agents/rules/00-project-map.md`. The strategy in one page is
 [docs/test-strategy.md](test-strategy.md).

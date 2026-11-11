@@ -115,9 +115,10 @@ summary's last line names the one it needs.
 
 | Area | Purpose |
 |------|---------|
-| `.cursor/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
-| `.cursor/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
-| `.cursor/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
+| `agents/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
+| `agents/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
+| `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
+| `.cursor/` | The agent's own copy of `agents/` — written by `npm run agents:sync`; edit `agents/`, never the copy (the gate fails one that differs) |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
@@ -134,7 +135,7 @@ summary's last line names the one it needs.
 | `.github/workflows/`, `ci/gitlab/` | CI: gate, secret scan, test list, test matrix |
 | `docs/` | Guides for people — start with [docs/test-strategy.md](docs/test-strategy.md) |
 
-The agent's entry point is `.cursor/rules/00-project-map.mdc`: where the map lives, every npm
+The agent's entry point is `agents/rules/00-project-map.md`: where the map lives, every npm
 script, the projects and CI.
 
 ---
@@ -144,9 +145,10 @@ script, the projects and CI.
 ### Control stack
 
 ```text
-.cursor/rules/      ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
-.cursor/skills/     ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
-.cursor/commands/   ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
+agents/rules/       ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
+agents/skills/      ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
+agents/commands/    ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
+.cursor/            ← the agent's copy of agents/ (npm run agents:sync)
 specs/project-map.md← the living registry the code and gate read
 scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 ```
@@ -287,7 +289,7 @@ workflow names: add each `.env` name of the map to the test job's `env:` — `va
 
 ## Scripts
 
-The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
+The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 
 | Script | What it does |
 |---|---|

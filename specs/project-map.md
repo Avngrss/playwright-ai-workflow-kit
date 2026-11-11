@@ -22,7 +22,7 @@ when set, planning that service reads it as the primary contract source instead 
 
 `Platform` is the kebab-case product slug (the app) that becomes the first folder level under
 `specs/`, `tests/<layer>/` and `src/fixtures|pages|api/clients|data/…` (see
-`.cursor/rules/00-project-map.mdc`). Feature plans only use platform slugs listed here.
+`agents/rules/00-project-map.md`). Feature plans only use platform slugs listed here.
 
 **One app or many — the same layout.** Each app is a `Platform` with its own rows — its web app, its
 API — and its own `.env` names (the first app keeps `UI_BASE_URL` / `API_BASE_URL`, a further one
@@ -34,7 +34,7 @@ tag, so adding an app adds rows, blocks and folders and changes nothing of anoth
 
 How tests log in: an ```auth block below, one per app — written by the setup skill the first time
 it meets the app (it asks how the app logs in, explores it, verifies the login; format: the skill's
-`.cursor/skills/setup/SKILL.md`). No block yet = login not set up. Only **names** of `.env` variables
+`agents/skills/setup/SKILL.md`). No block yet = login not set up. Only **names** of `.env` variables
 go here, never values.
 
 - one test account by default; roles (`roles:`, `default role:`) only when tests need users with
@@ -109,7 +109,7 @@ Built by `playwright.config.ts` from §Apps and services — nothing to write he
   page). A public app (`ui: none` + `api: none`): one test, "The web app opens". Every other test of
   the app waits for it. A further role's account: `npm run auth:sign-in -- <app> <role|all>`.
 - **Features** — at most one test per feature, under the app's first account (a public app: signed
-  out), tagged `@smoke` besides `@regression` (`plans.mdc` §Smoke). They run with `npm run test:smoke`
+  out), tagged `@smoke` besides `@regression` (`plans.md` §Smoke). They run with `npm run test:smoke`
   and in the regression, in their own layer — a red one never stops the other tests. The list:
   `npx playwright test --list --grep @smoke`.
 
@@ -167,7 +167,7 @@ Cross-cutting tags (properties that do not follow folders) are added here first,
 
 The locks of tests that change or read something other tests see — registered here before a test
 declares one (`qa:gate` rejects an unregistered lock); a real stand item under **Stand item**, exactly
-as the app names it. How locks and stand items work: `specs.mdc` §Isolation and shared state.
+as the app names it. How locks and stand items work: `specs.md` §Isolation and shared state.
 
 | Lock | The shared state it protects | Stand item |
 |---|---|---|

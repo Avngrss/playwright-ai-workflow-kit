@@ -6,7 +6,7 @@ reviews, audits and refactors live, what you will see in the chat, and example p
 
 ## 1. Commands
 
-Eight slash commands live in `.cursor/commands/`. Seven open the four skills in `.cursor/skills/`
+Eight slash commands live in `agents/commands/`. Seven open the four skills in `agents/skills/`
 (setup, plan, implement, verify); `/review` is the brief of an independent review, run in a new chat.
 In Cursor's chat, type `/<command>` and then what it needs: a link, a plan path or a few words. If you
 leave something out, the skill asks.
@@ -22,7 +22,7 @@ leave something out, the skill asks.
 | `/coverage` | verify, §9 Coverage | A TMS suite case by case: automated, to rework, not automated or inconsistent. Read-only | the TMS folder link |
 | `/review` | — (in a new chat) | An independent review of new tests against their cases | the plan and its blocks, the spec paths — the verify summary gives the whole line |
 
-Without a command of its own — ask in words, or reference `@.cursor/skills/<name>/SKILL.md`:
+Without a command of its own — ask in words, or reference `@agents/skills/<name>/SKILL.md`:
 
 - **A change to the project map** (an external system, a TMS case link, the tracker queue, a tag, a
   lock, an app's `tenants:` line): the setup skill §5.
@@ -32,7 +32,7 @@ Without a command of its own — ask in words, or reference `@.cursor/skills/<na
 - **Allure metadata** (severity, a `tms(<id>)` case link): `/implement` writes it from the plan.
   Readable failures and the report tree are built in; there is nothing to configure.
 - **A refactor of passing tests** ("split OrdersPage into components"): on request only — §4.
-- **Turning a project back into the reusable kit**: `01-workflow.mdc` §Starter conversion.
+- **Turning a project back into the reusable kit**: `01-workflow.md` §Starter conversion.
 
 ## 2. The everyday path
 
@@ -181,7 +181,7 @@ expected and received, what to check by hand, the next step.
   cause cannot be fixed now, the test is quarantined with `@flaky` and a `// flaky: <cause> — <ticket>`
   line, and runs only in `npm run test:flaky`.
 - **The same failure again and again** → the agent proposes the smallest change to a rule, a skill,
-  the gate or the docs (`01-workflow.mdc` §Hardening rules); shared code changes only on your yes.
+  the gate or the docs (`01-workflow.md` §Hardening rules); shared code changes only on your yes.
 
 After a fix, each healed test runs once more through `npm run verify -- <app> <spec>:<line>` and gets the
 light review.
@@ -378,7 +378,7 @@ to the all-apps report. One app's broken sign-in stops only that app's tests.
   to update.
 - Shared code (`src/setup/`, `src/reporting/`, `src/fixtures/*.ts`, `src/assertions/shared/`,
   `scripts/`) is changed only when you ask for it, and the summary names every such change
-  (`02-guardrails.mdc` §Shared code).
+  (`02-guardrails.md` §Shared code).
 
 ## 4. Where reviews, audits and refactors live
 
@@ -395,9 +395,9 @@ concern is covered here:
 | Test data: shared data, cleanup, isolation | the plan proves every case's `Data:` and setup on the stand before you confirm, and searches every account and tenant (`npm run stand:find`) before a case is blocked; the gate (a `disposable…` fixture without its sweep, a UI/E2E spec shaping data, copied setup); `npm run data:sweep`; the review's data line |
 | Security: secrets and sensitive data | the gate (tokens, `process.env`, raw `console.*`, unmasked attachments); the CI secret scan (gitleaks) over the whole repository; the review's two security lines for changed code, config and CI ([Security and data](security-data-handling.md)) |
 | An API collection: inventory and coverage | `/plan <collection path>` (plan §4.4) |
-| Refactor: an over-abstraction, a Page Object grown too large, siblings repeating their base | on request only, usually after a gate warning: a behaviour-preserving refactor, then `npm run verify` of the impacted specs; a component split only for one of the three reasons (`ui.mdc` §Ownership decisions and refactoring) |
-| Hardening after a recurring failure or agent mistake | `/heal` (verify §8.9, `01-workflow.mdc` §Hardening rules) |
-| Turning a project back into the reusable kit | ask in words (`01-workflow.mdc` §Starter conversion) |
+| Refactor: an over-abstraction, a Page Object grown too large, siblings repeating their base | on request only, usually after a gate warning: a behaviour-preserving refactor, then `npm run verify` of the impacted specs; a component split only for one of the three reasons (`ui.md` §Ownership decisions and refactoring) |
+| Hardening after a recurring failure or agent mistake | `/heal` (verify §8.9, `01-workflow.md` §Hardening rules) |
+| Turning a project back into the reusable kit | ask in words (`01-workflow.md` §Starter conversion) |
 
 ## 5. What you will see
 

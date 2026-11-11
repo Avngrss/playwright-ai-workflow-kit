@@ -71,7 +71,7 @@ export function apiPlatforms() {
   return new Set(appRows().filter(({ kind }) => /\bAPI\b/i.test(kind)).map(({ platform }) => platform));
 }
 
-// Support-code folders split by app (.cursor/rules/00-project-map.mdc): <kind>/<app>/….
+// Support-code folders split by app (agents/rules/00-project-map.md): <kind>/<app>/….
 export const PER_APP_KINDS = [["fixtures"], ["pages"], ["components"], ["api", "clients"], ["data", "builders"], ["data", "datasets"], ["data", "generators"], ["assertions"], ["setup"]];
 
 /** The app a file or folder belongs to — by its place under tests/<layer>/<app>/ or src/<kind>/<app>/ — or undefined for shared code. */

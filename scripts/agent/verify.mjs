@@ -1,5 +1,5 @@
 /**
- * Verify in one command — the verify skill's targeted run (.cursor/skills/verify/SKILL.md): the gate,
+ * Verify in one command — the verify skill's targeted run (agents/skills/verify/SKILL.md): the gate,
  * then each check this run wrote proven able to fail, then one run of the tests with their neighbours,
  * then one block to paste, every number copied from the run's own result files.
  *

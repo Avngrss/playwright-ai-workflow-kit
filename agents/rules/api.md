@@ -1,0 +1,128 @@
+---
+description: API tests and clients — bound clients per API area, what a client holds (answer schemas, the answer paths UI tests take), expectJson/expectStatus, what an API scenario is, one primary action per test, never guessing a status, contract drift; answer schemas from the contract (npm run api:types, fieldsOf, where they live, shape vs behaviour); API collections (Bruno) as planning input
+globs: tests/api/**, src/api/**, collections/**
+alwaysApply: false
+---
+
+# API tests and clients
+
+## Principles
+
+- API tests use requests and responses only — no Page Objects, components or UI patterns, no browser; headers
+  come from `authHeaders` (`specs.md` §Signing in).
+- `apiRequestContext` targets the test's app API (its `.env` name from the map); paths are relative, no
+  leading slash (`orders/42`).
+- Statuses, fields and messages come from the plan and the contract (the map's registered Swagger/OpenAPI
+  docs). An undocumented status or message is never guessed — the case is `blocked`.
+
+## Bound clients
+
+An endpoint group used by more than one test is a **bound client** from the app's fixture: the request
+context, owner id and caller's headers given once; tests call `addresses.get(id)`.
+
+```ts
+// src/api/clients/shop/addresses.client.ts
+export const address = fieldsOf<components["schemas"]["Address"]>()({ id: z.string(), city: z.string(), isDefault: z.boolean() });
+
+export function addressesApi(request: APIRequestContext, customerId: string, headers: Record<string, string>) {
+  const base = `customers/${customerId}/addresses`;
+  return {
+    list: () => json(request.get(base, { headers }), z.array(address)),
+    get: (id: string) => json(request.get(`${base}/${id}`, { headers }), address),
+    create: (data: Partial<AddressPayload> = {}) => json(request.post(base, { headers, data: addressBuilder.build(data) }), address),
+    remove: (id: string) => request.delete(`${base}/${id}`, { headers }),
+  };
+}
+
+// the request the page sends when the person adds one — a UI test takes its answer through answerTo
+export const addressAdded = (customerId: string) => answerPath("POST", `customers/${customerId}/addresses`, address);
+
+// src/fixtures/shop/data.fixture.ts
+addresses: async ({ apiRequestContext, customerId, authHeaders }, use) => {
+  await use(addressesApi(apiRequestContext, customerId, authHeaders));
+},
+```
+
+- A call used once may stay a direct `request.get(…)` — no client for one line or one one-off request; never
+  five positional arguments repeated on every call; no service hierarchy without need.
+- **A client holds the requests of one API area, their answer schemas and answer paths — nothing else.**
+  Periods and unique values → `src/data/generators/<app>/`; how the screen shows a value →
+  `src/assertions/<app>/`; finding an item on the stand → `src/setup/<app>/`; a payload built from saved values
+  → `src/data/builders/<app>/`. The gate warns past ~100 statements of requests (one client per API area) and
+  on an export that sends no request.
+- Each endpoint's answer is declared with its schema, `json(…, schema)` (§Response schemas); `expectJson`
+  infers the body — specs never write `expectJson<T>(…)`.
+- **Answer paths**: beside its calls, a client declares each request the page sends whose answer a UI or E2E
+  scenario takes as truth — `answerPath("<METHOD>", <path>, schema)`, matched by method and the end of the
+  request's path — so a spec names no method, path or body type; a GET and a POST to one address are two.
+- Clients fill default request bodies from the builder; tests pass only the fields under test.
+- Clients never check (no `expect`, no schema assertion), never hide prerequisite data, a sign-in or a
+  business workflow behind one name (`createUserAndVerify` is wrong), never read `process.env` or hold
+  credentials.
+
+## Tests
+
+- An API scenario is what no screen shows — another input of a rule, access the page never tries, the
+  contract, a file's content (`plans.md` §Layers); a person's scenario is never written here again "to check
+  the data". Its route names the fields to check; a `check: <rule>` route calls that rule on the answer.
+- One primary API action per test; setup and cleanup calls are fine and stay visibly setup. Several business
+  actions in one test only when the workflow itself is the case, named so.
+- HTTP checks in one line: `expectJson(response, 201)` asserts the status (200 by default) and returns the
+  body; `expectStatus(response, 204)` for unread bodies. Never `expect(res.status())` + `res.json()` + checks.
+- Check the case's essential fields with real expected values (`code.md` §Checks; a rejection:
+  `specs.md` §One step proves one thing).
+
+## When the contract drifts
+
+Observed behaviour contradicts the plan (a status, a field, a message) → stop: it is a plan change, not a heal
+(`plans.md` §When the product changes). A heal touches only test mechanics: fixture wiring, payload shape
+against an unchanged contract, setup isolation, a right answer moved (the same fields at another path — the
+client's path and the plan's route, like a locator).
+
+## Response schemas
+
+`zod` and `openapi-typescript` are dependencies of the kit: a read answer is checked by a schema of the fields
+its tests read, typed from the app's contract. No schema-only tests — the schema rides on the case's own call.
+- **Types from the contract**: an app whose API row links its contract (the map's Docs cell, OpenAPI 3, `.env`
+  names in braces: `{API_BASE_URL}/swagger.json`) gets its answer types from `npm run api:types [-- <app>]` →
+  `src/api/clients/<app>/contract.client.ts`, committed, never edited by hand. Run it for the app's first
+  client and whenever the API changes; `npm run typecheck` then names every schema and test to update.
+- **A schema holds only the fields the tests read**, tied to that type, beside its call in the client of the API
+  area: `const order = fieldsOf<components["schemas"]["Order"]>()({ id: z.string(), total: z.number().nullable() })`,
+  passed to ``json(request.get(`orders/${id}`, { headers }), order)`` — or to `answerPath("GET", …, order)` for
+  an answer the page receives. The body's type is the schema's (`expectJson` infers it — no parallel interface,
+  no `json<T>` beside it); a field a test starts reading joins the schema. A field the contract does not have,
+  or allows other values for, fails `npm run typecheck` at the schema.
+- **At run time** `expectJson` / `expectAnswer` check a success answer by its schema: a field missing or retyped
+  fails at the request and names the field ("a field the tests read is missing or retyped"), which the run
+  summary reads as `API changed` — refresh the plan, not a heal; a field the answer adds passes.
+- **No readable contract** → a plain `z.object({ … })`, the same way. An app whose clients predate its types
+  (`json<T>(…)`, no `contract.client.ts`) keeps that form in new calls until `npm run api:types` has run for
+  it — moving all its clients is a change of its own, never inside a case.
+- **Where**: the client that owns the resource; another client needing it imports the exported schema (the
+  gate accepts an exported schema in a client). Never a schema in a spec, Page Object, component, builder,
+  generator or fixture; specs never call `schema.parse()` (a Zod error, not an assertion failure).
+- **Per contract**: `.nullable()` only where the contract allows `null`; a field the contract may omit is read
+  only when the scenario guarantees it or the test handles its absence (`.optional()`) — live data happening to
+  include it is not enough. A contract with no `required` lists at all (every field optional): the fields the
+  live answers always carry are read as required, a one-line comment beside the schema saying so. Never
+  loosened to make a test pass; `.strict()` only when the contract forbids extra fields; enums only with
+  documented values. An unclear contract or live data off it → report a
+  contract gap, never widen the schema silently.
+- **Shape vs behaviour**: the schema proves the fields are there and typed; values, sorted order, filters,
+  access and business outcomes stay checks in the spec (`code.md` §Checks), never restated field by field.
+  A schema contradicting an assertion is Critical.
+
+## API collections (Bruno)
+
+- Collections are planning input, never a source of tests: OpenAPI/Swagger is the contract (it
+  wins), the reviewed plan decides what is automated, `tests/api/**` implements it. Bruno and OpenAPI
+  disagree → report the drift, never guess which is right; no field, status or behaviour inferred from a
+  collection alone. Its examples may inform payloads and builders, never replace contract checks.
+- Curated team collections live in `collections/bruno/<service-or-domain>/`; personal and debug ones stay
+  out, and so do secrets and environment files with real values — Bruno variables use the map's `.env` names.
+- A destructive or stateful request (DELETE, payment, order creation, user mutation, admin operations) is
+  automated only with plan approval and its cleanup or isolation defined first.
+- Planning from a collection (the plan skill §4.4) compares collections, OpenAPI, plans and `tests/api/**`:
+  requests covered, not planned, planned but untested, tests without a source, OpenAPI/Bruno mismatches,
+  destructive requests without cleanup.

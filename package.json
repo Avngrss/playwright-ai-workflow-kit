@@ -36,6 +36,7 @@
     "env:prepare": "node scripts/agent/prepare-env.mjs",
     "app:add": "node scripts/agent/add-app.mjs",
     "api:types": "node scripts/agent/api-types.mjs",
+    "agents:sync": "node scripts/agent/agents-sync.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",
     "test:failed": "node scripts/run-tests.mjs failed",
     "browsers:install": "npx playwright install chromium",

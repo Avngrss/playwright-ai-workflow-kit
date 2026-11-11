@@ -8,7 +8,7 @@ import { defaultPlatform, missingUrl, urlOf } from "../setup/platforms";
  * home never needs it. `apiRequestContext` targets that app's API (its address from .env, by the
  * name in the map — specs never read process.env) whatever project runs, so UI specs that need API
  * preconditions hit the API, not the UI app. Paths are relative to it (`items/42`, no leading
- * slash). Bound clients built on it (`.cursor/rules/api.mdc`) go to the app's own
+ * slash). Bound clients built on it (`agents/rules/api.md`) go to the app's own
  * src/fixtures/<app>/data.fixture.ts, never here; the signed-in role's headers come from
  * auth.fixture.ts (`authHeaders`).
  */
