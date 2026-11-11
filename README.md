@@ -389,8 +389,10 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
   home installed before the kit kept its commit (1.3.0) is matched to the kit's commit by its files, which takes
   a few seconds more.
 - **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
-  `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
-  system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.
+  `…-linux.png`), so a baseline approved on Windows or a Mac does not cover the Linux CI. CI writes its own:
+  GitHub — Actions → Playwright Starter CI → **Run workflow** on the branch (`baselines: missing`, or `all` to
+  approve the look the run sees), the `*-linux.png` files committed to that branch; GitLab — the manual
+  `test:visual-baselines` job, its artifact to commit.
 - **The agent works with the live app.** `/setup`, `/plan` and `/heal` open your app through the Playwright MCP
   (or a short Playwright script without it), so the app must be reachable from your machine; an app behind a
   sign-in needs a test account you create.
