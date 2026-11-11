@@ -49,8 +49,10 @@ Without a command of its own — ask in words, or name the skill (`.claude/skill
   the kit's `npm run …` and `node scripts/…`, git that only reads. Reading cookies or storage is denied; file
   edits follow the mode you chose in Claude Code (Manual asks each time). Cursor keeps such settings in its own
   user settings.
-- **The stop check** — when the agent stops with the gate red on its work, or with a red run's automatic heal
-  undone, it is sent back once with what to do. `reports/stop-check.log` lists each check: which AI, what it found.
+- **The stop check** — when the agent stops with the gate red in a file it changed, or with a red run's automatic
+  heal undone, it is sent back once with what to do. A failure in a file it did not change is the tree's from
+  before: logged, not sent back. A turn that ends with a question to you goes through at once (Claude Code passes
+  the agent's last message; in Cursor the second stop goes through). `reports/stop-check.log` lists each check.
 - **The kit's newest version** — `npx github:Avngrss/playwright-ai-workflow-kit --update` in this folder (`--dry-run`
   first to see the plan): the kit's files you never changed are replaced, the ones you changed stay with the new
   version beside them (`<file>.kit-new` — compare, keep, delete), your plans, tests and app code are never touched
