@@ -17,11 +17,24 @@ is in [Workflow](workflow.md).
 
 ## 1. Install
 
+Into a folder of your project — in the project's folder:
+
 ```bash
-npm install
+npx github:Avngrss/playwright-ai-workflow-kit
 ```
 
-This also installs the Chromium build that this Playwright version runs (postinstall). Set
+The installer asks where (`qa` by default), which AI (Claude Code, Cursor or both) and which CI (GitHub, GitLab or
+none), copies the kit with only your AI's files, writes the CI at the repository's root, then runs `npm ci` and
+step 2 itself — skip to step 3 in the kit's folder. `--help` lists its flags (`--agent`, `--ci`, `--yes` …).
+
+From a clone of the kit (or a repository made with **Use this template**) instead:
+
+```bash
+npm install
+npm run agents:use -- claude    # or cursor, or cursor,claude — the AI you work with
+```
+
+`npm install` also installs the Chromium build that this Playwright version runs (postinstall). Set
 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` to skip it, and install it later with `npm run browsers:install`.
 Firefox and WebKit are needed only for `@cross-browser` tests — the runs that need them download them once
 (`npm run browsers:install:all` does it in advance).

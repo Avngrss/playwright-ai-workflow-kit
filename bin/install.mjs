@@ -266,7 +266,7 @@ function ownPackage(target, projectRoot) {
   pkg.version = "0.1.0";
   pkg.description = `Playwright tests written with an AI agent — from the Playwright AI Workflow Kit ${VERSION}`;
   pkg.playwrightAiKit = VERSION;
-  for (const key of ["bin", "repository", "bugs", "homepage", "author", "license", "keywords"]) delete pkg[key];
+  for (const key of ["bin", "files", "repository", "bugs", "homepage", "author", "license", "keywords"]) delete pkg[key];
   fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 

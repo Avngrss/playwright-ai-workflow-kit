@@ -14,6 +14,10 @@
   "bin": {
     "playwright-ai-workflow-kit": "bin/install.mjs"
   },
+  "files": [
+    "bin/",
+    "scripts/run-tests.mjs"
+  ],
   "scripts": {
     "test:visual": "node scripts/run-tests.mjs visual",
     "test:cross-browser": "node scripts/run-tests.mjs cross-browser",

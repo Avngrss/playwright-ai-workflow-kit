@@ -48,18 +48,26 @@ npm run allure:open
 
 ## Quick start
 
-1. On this repository's GitHub page, click **Use this template** → **Create a new repository**, and
-   create your own copy (yours to change; this kit stays as it is).
-2. Clone **your new repository** and install:
+1. **Install the kit into your project.** In the project's folder (Node 20+ and git):
 
    ```bash
-   git clone https://github.com/<you>/<your-repo>.git
-   cd <your-repo>
-   npm install            # also installs Chromium
-   npm run env:prepare    # creates .env from .env.example — you fill the values, never commit it
+   npx github:Avngrss/playwright-ai-workflow-kit
    ```
 
-3. Open the folder in Cursor or Claude Code and turn on the `playwright` MCP server — Cursor: Cursor
+   It asks three things — where (`qa` by default; `.` when the folder holds no project yet; any path), which AI
+   (Claude Code, Cursor or both) and which CI (GitHub, GitLab or none, guessed from the remote) — then copies the
+   kit there with only your AI's files, writes the CI at the repository's root with the paths to that folder,
+   runs `npm ci` (Chromium too) and creates `.env`. It never overwrites a file: a folder of your project the kit
+   would mix into (`src/`, `tests/` …) stops it before anything is written. Nothing is committed.
+
+   Without questions: `npx github:Avngrss/playwright-ai-workflow-kit qa --agent claude --ci github --yes`.
+   A repository by its link: `npx github:Avngrss/playwright-ai-workflow-kit <git URL> --dir qa` clones it here
+   first. A new repository of its own instead: **Use this template** on GitHub, clone it, `npm install`,
+   `npm run env:prepare`, `npm run agents:use -- <claude|cursor>`.
+
+2. Change the AI later in that folder: `npm run agents:use -- cursor` (or `claude`, `cursor,claude`).
+
+3. Open **the kit's folder** in Cursor or Claude Code and turn on the `playwright` MCP server — Cursor: Cursor
    Settings → MCP (`.cursor/mcp.json`); Claude Code: approve it when asked (`.mcp.json`). The agent explores
    your app with it (without it, through a short Playwright script). Then type in the chat:
    - `/setup` — registers your application and sets up how tests sign in (a fresh clone is checked
@@ -74,21 +82,13 @@ npm run allure:open
 
 Step by step: [docs/getting-started.md](docs/getting-started.md).
 
-### Already have a repository?
+### The kit in a folder of your project
 
-The kit can also live in a folder of your product's repository, for example `qa/`:
-
-1. Copy the kit's files into the folder (without its `.git`). Its own `.gitignore` comes along and keeps `.env`,
-   `state/` and the reports out of git from there.
-2. In the folder: `npm install`, then `npm run env:prepare`.
-3. Open **that folder** in Cursor or Claude Code — the rules and commands load from its `.cursor/` or `.claude/`,
-   the skills from `.claude/skills/` for both.
-4. CI: copy `.github/workflows/playwright.yml` to the repository's own `.github/workflows/` (GitLab:
-   `ci/gitlab/gitlab-ci.yml` to `.gitlab-ci.yml` at the root) and follow the note at its top — the working
-   directory, the cache path and `qa/` in front of its paths.
-
-The scripts work from the folder as they are: the gate, the test list and `npm run verify` with its check that
-a new test can fail.
+Installed into `qa/` (or any folder), the kit is its own npm project there: its `package.json`, `.gitignore` and
+`.env`, its scripts working from the folder as they are — the gate, the test list and `npm run verify`. Open
+**that folder** in your AI: the rules and commands load from its `.cursor/` or `.claude/`. The CI the installer
+wrote runs every step in it (GitHub: `working-directory`; GitLab: `qa/ci/gitlab-ci.yml`, included from the root
+`.gitlab-ci.yml` — when one is there already, the installer prints the `include:` line to add).
 
 ---
 
