@@ -14,7 +14,8 @@ Never put passwords, tokens, or session JSON in this file.
 
 | Platform | Name | Kind | Env URL name | Docs (Swagger/OpenAPI) | Notes |
 |---|---|---|---|---|---|
-| todomvc | todomvc-web | UI | `UI_BASE_URL` | — | Playwright demo TodoMVC; no API — the list lives in the browser (localStorage) |
+| default | default-ui | UI | `UI_BASE_URL` | — | replace name with the real app, e.g. frontend |
+| default | default-api | API | `API_BASE_URL` | (optional URL) | replace name with the real service, e.g. auth |
 
 Add a row per extra app/service. Do not invent env names in specs. Docs column is optional —
 when set, planning that service reads it as the primary contract source instead of guessing.
@@ -46,12 +47,6 @@ go here, never values.
   account opens (stores, projects, organisations): each entry's id and name fields, or
   `<list>[].id, <list>[].name` when the list is a field of the answer. `npm run stand:find` searches every
   account × tenant with it (`scripts/agent/stand-find.mjs`)
-
-```auth
-platform: todomvc
-ui: none
-api: none
-```
 
 ## External systems
 
