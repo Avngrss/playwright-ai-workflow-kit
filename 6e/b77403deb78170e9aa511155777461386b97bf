@@ -1,0 +1,25 @@
+scripts/agent/verify.mjs
+  s_5a14ef979817d5::t_54312af7b21860 59
+docs/failure-reporting.md
+  s_5a14ef979817d5::t_07adfa2d34828f 42,58
+src/reporting/failure-cause.ts
+  s_5a14ef979817d5::t_d1b2d20bff60a1 12,43,123-124,126-133
+src/reporting/run-summary.ts
+  s_5a14ef979817d5::t_7bfa0a2325da3f 82,115-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6eb77403deb78170e9aa511155777461386b97bf",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
