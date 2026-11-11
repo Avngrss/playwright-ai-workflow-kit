@@ -1,0 +1,35 @@
+.cursor/commands/coverage.md
+  s_5a14ef979817d5::t_a8473fed2e8246 1-2,14-15
+.cursor/commands/heal.md
+  s_5a14ef979817d5::t_d728bb9448ad1a 1-2,16-17
+.cursor/commands/implement.md
+  s_5a14ef979817d5::t_c94efb4e974f53 1-2,17-18
+.cursor/commands/plan.md
+  s_5a14ef979817d5::t_0ad51f5c5f3c08 1-2,21-22
+.cursor/commands/review.md
+  s_5a14ef979817d5::t_eaab59e9efb4a8 1-2,39-40
+.cursor/commands/setup.md
+  s_5a14ef979817d5::t_b3d9ab8964fcc0 1-2,16-17
+.cursor/commands/triage.md
+  s_5a14ef979817d5::t_b684b44a7d9536 1-2,17-18
+.cursor/commands/verify.md
+  s_5a14ef979817d5::t_cee94e98a24ac2 1-2,15-16
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_7eb31df9b14782 47-54,117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "48582badd3d374468272c79d8c59db09f41717c0",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
