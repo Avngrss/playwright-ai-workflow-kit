@@ -37,3 +37,5 @@ reports/run-summary.json
 reports/last-results.json
 # Lines a verify cut off left spoiled (npm run verify -- --restore puts them back)
 reports/verify-spoils.json
+# The last verify's result and its automatic-heal attempt (an agent's stop hook reads it)
+reports/verify-state.json

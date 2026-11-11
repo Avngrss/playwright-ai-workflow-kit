@@ -96,7 +96,9 @@ The block's first word: `passed` | `failed` | `partly passed` | `not run`. This 
 implement skill, a refresh's edits) and it is `failed` or `partly passed` → §8 once, the command again (§2 "A fix
 after it"; `--can-fail` only for a test not proven yet or whose check the heal changed), then review the retried
 result. One automatic attempt; requirement drift (§8.4) → stop, the user decides. Still failing, or a heal or a
-verify on its own → report the real state honestly.
+verify on its own → report the real state honestly. The block's last line says which: `now the automatic heal:
+<spec>:<line> …` — done before anything else, never left for the user — or `still red after the automatic heal`
+(`reports/verify-state.json` keeps the attempt).
 
 ## 6. Review
 
