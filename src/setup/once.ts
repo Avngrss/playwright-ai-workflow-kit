@@ -8,7 +8,7 @@ import { checkSharedItems } from "./shared-state";
  * reads it again. What it finds is checked for every test that takes it: an item other tests change
  * needs their lock (shared-state.ts).
  */
-const found = new Map<string, Promise<unknown>>();
+const found = new Map<string, Promise<unknown>>(); // memo: what each lookup found, per worker
 
 export async function oncePerWorker<T>(key: string, find: () => Promise<T>): Promise<T> {
   if (!found.has(key)) found.set(key, find());

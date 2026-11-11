@@ -93,7 +93,7 @@ function checkSpecPlacement(files, report) {
   }
 }
 
-// One home per kind of support code (.cursor/rules/code.mdc "The same thing twice"): a <platform>
+// One home per kind of support code (agents/rules/code.md "The same thing twice"): a <platform>
 // (or shared) folder where the kind is product-specific, the kind in the file name.
 const SOURCE_LAYOUT = [
   /^api\/clients\/[a-z0-9-]+\/[a-z0-9-]+\.client\.ts$/,
@@ -118,7 +118,7 @@ function checkSourceLayout(files, report) {
         file,
         "outside the support-code layout — api/clients/<platform>/*.client.ts, pages/<platform>/*.page.ts, " +
           "components/<platform>/*.component.ts, data/builders|generators|datasets/<platform>/ (generators and datasets no app owns: shared/), data/sweeps.ts, " +
-          "assertions/<shared|platform>/, setup/, fixtures/*.fixture.ts, fixtures/<platform>/*.fixture.ts; no utils/, helpers/ or other folders (.cursor/rules/code.mdc)",
+          "assertions/<shared|platform>/, setup/, fixtures/*.fixture.ts, fixtures/<platform>/*.fixture.ts; no utils/, helpers/ or other folders (agents/rules/code.md)",
       );
     }
   }

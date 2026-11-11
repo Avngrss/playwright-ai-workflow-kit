@@ -1,0 +1,283 @@
+---
+description: Writing a spec — the spec:draft skeleton, imports, titles of cases and scenarios, steps, hooks, tags per test, a UI test reads as its case, the action's answer (answerTo), named checks, one step proves one thing, isolation and locks, signing in (auth as, role, session), multi-role and E2E specs, smoke, @visual / @cross-browser / @responsive
+globs: tests/**
+alwaysApply: false
+---
+
+# Specs
+
+## The shape of a test
+
+A test reads like the manual case it automates: the title is the outcome, the steps are what a person does,
+the checks are what they see — nothing else.
+
+```ts
+import { expect, test } from "src/fixtures/shop/test";
+import { severity } from "src/reporting/severity";
+
+test.describe("Account — Addresses (API)", () => {
+  test("Adds a delivery address", { tag: ["@api", "@regression"], annotation: severity.critical }, async ({ addresses, cleanup }) => {
+    const payload = addressBuilder.build();
+
+    const id = await test.step("Add the address", async () => {
+      const created = await expectJson(addresses.create(payload), 201);
+      cleanup.add(() => addresses.remove(created.id));
+      return created.id;
+    });
+
+    await test.step("Verify it reads back as saved", async () => {
+      const saved = await expectJson(addresses.get(id));
+      expect(saved, "Delivery address").toEqual(expect.objectContaining({ city: payload.city, isDefault: false }));
+    });
+  });
+});
+```
+
+- **Each test starts as `npm run spec:draft -- <plan> <#>`** — the plan block's title, tags, case link, role
+  and one `test.step` per plan step, each holding its route and `expect` as comments, in the owner's spec; the
+  code replaces the comments. `qa:gate` fails a test still holding `// Route…:` / `// expect:` comments or a
+  `<…>` in its title or a step's.
+- `test` and `expect` come from `src/fixtures/<app>/test` — the app of the spec's folder, never
+  `@playwright/test`, an intermediate fixture layer or the shared chain.
+- One `describe` title per feature in a file — same-titled describes group as one suite in the report.
+
+## Titles
+
+- The outcome in one sentence, capitalised; no ticket ids, layer words or "should".
+- A test from a TMS case is named after it: `<case id> · <the case's title as the TMS writes it>`
+  (`TC-101 · Customer adds a delivery address`); a scenario of a split case: `TC-102 · S2 · A member cannot
+  invite` — ≤ 8 words after `S2 ·` (the gate warns past 10). Never split by layer (`… — the server stores it` /
+  `… — the account shows it`): one scenario, one test (`plans.md` §Layers).
+- One test covering several cases takes the main case's title and links each. The test follows the case in
+  meaning, not word for word: preconditions → role and `Data:` (fixtures), steps → `test.step` in the case's
+  words, each expected fact → one named check.
+
+## Steps
+
+- Every UI and E2E test uses `test.step`; API tests do when there is more than one phase.
+- 2–5 steps (3–6 for a journey), imperative and capitalised, in a manual tester's order; each routed step of
+  the plan in a `test.step` of its own (the gate counts a screen check per routed step). The check step starts
+  with **Verify** (a one-step case: "<Action> and verify <what>"), setup with **Setup:**, cleanup with **Cleanup:**.
+- No implementation words in step names — API, request, response, fixture, locator, payload, id. "Open the
+  browser" and "log in" are fixtures, not steps. Never wrap every action in a step, never the whole body in
+  one generic step.
+
+## A UI test reads as its case
+
+A UI test is the plan's case in code: its steps are the plan's steps, each holding that step's action and
+checks. The step titles and check names alone tell the case — a reader never opens another file to follow it.
+
+```ts
+await test.step("Open the delivery details and verify them", async () => {
+  await order.delivery.open();
+  expect(await order.delivery.read(), "Delivery details").toEqual(shownDelivery(placedOrder));
+});
+```
+
+- **What the server answered the action** (an `intercept` route) → one line with the action in it, the answer
+  checked inside the call; then the screen:
+
+  ```ts
+  const invitation = await answerTo(inviteTo(team), () => members.invite(email), { has: invited });
+  expect(await members.invitation(email), "Pending invitation").toEqual(shownInvitation(invited, invitation));
+  ```
+
+  `has:` the case's own values (a list: a list, or `expect.arrayContaining([…])`) · `check:` a named rule of
+  `src/assertions/<app>/` for stand data (`check: paidAsInBilling(billing)`) · `sent:` / `query:` what the page
+  must send · `status:` when not 200 · `answersTo([a, b], () => …, [{ … }, { … }])` for several answers. The
+  screen is expected from the case's data — the answer joins only for what the server alone knows,
+  `shown<Block>(answer)` only for stand data; a value the case states (an empty account's zeros) is
+  `shown<Block>()`. The spec never parses an answer, reads it again or names a path (the client's `answerPath`).
+  A `no-request` / `screen-only` step listens to nothing; a client call in a check step only as the route's one
+  `read` — a `Setup:` read whose result an `expect` uses is a check (the gate fails both).
+- **A block that changes in place** after the action (no spinner, no sign of new data) is read until it
+  matches, never once: `await expect.poll(() => members.read(), { message: "Members" }).toEqual(shownMembers(…))`.
+- **What the screen shows** → a reader of the Page Object, one per block a test checks, returning the block
+  as shown (`{ Address: "…", Window: "10:00–12:00", Courier: "…" }`). An action of the case is one method.
+- **What is expected** → `shown<Block>(data)` in `src/assertions/<app>/`: a plain object literal of the block
+  as the screen shows it, built with the app's display helpers (`shownDate`, `shownMoney` in `display.ts`,
+  matched to what the page shows live — never a locale's own formatting). They format through
+  `dateAsShown` / `numberAsShown` (`src/assertions/shared/display.ts`): the app's time zone and language, as
+  its browser runs (the map's ```app-wide `timezone:` / `locale:`) — never `toLocale…String()`, which follows
+  the machine. One function per block, never per-field helpers glued in the test.
+- **Never in a UI or E2E spec**: a function with parameters (`(row) => …`); `map`, `filter`, `sort`, `slice`,
+  `Object.fromEntries`, `new Set`; a conversion (`toFixed`, `toUpperCase`, `trim`, `split`); `??` or `!` on
+  data; a value picked from `(await …).x` — `qa:gate` (`reading.mjs`) fails them in specs being written.
+- **These stay**: a short template text (`` `${count} items` ``), a table of values driving a `for`, an
+  action handed to a helper (`() => page.reload()`), a mock's route handler.
+
+## Every check names what it checks
+
+`expect(x, "<what a person calls it on screen>")` on every locator, page or body check — the report leads
+with the name (`Add address button / Expected: … / Received: …`). Noun phrases, never personal data.
+`expectJson` / `expectStatus` already name the endpoint.
+
+## One step proves one thing — once
+
+- Drop a step re-proving the previous one: after "delete → reading it answers 404", "and it is not in the
+  list" adds nothing.
+- A step checks only this case's facts: "Open the tab" does not re-verify the header, buttons and headings —
+  layout is its own case.
+- A rejected request is proven by status and error code
+  (`expect(body, "Error").toMatchObject({ error: { code: "BadArgument" } })`), never the whole error body.
+
+## Hooks
+
+- `beforeEach` only opens the page and waits for its loaded marker. Tests opening a page the same way share
+  a `describe` with that hook — an opening copied into two tests fails the gate — unless a test takes that
+  opening's answer (`answerTo(…, () => reports.open(shop))`): then the opening is its action and stays in it. A
+  test of navigation itself never sits under a `beforeEach` that already went to the destination.
+- No UI login in `beforeEach` unless login is the feature; sessions come from the `role` option.
+- Any other setup or cleanup: the mechanism ladder in `data-and-fixtures.md`.
+
+## Tags and annotations — on each test
+
+`{ tag: ["@<layer>", "@regression"], annotation: severity.<critical|major|minor> }`
+
+- Exactly one layer tag, by the folder: `@api`, `@ui` or `@e2e` (an E2E spec is never `@ui`).
+- `@regression` on every feature test (all of `tests/api`, `tests/ui`, `tests/e2e`), each test on its own —
+  or quarantine `@wip` / `@flaky` with its reason comment (`code.md` §Flaky tests). Without one a test never
+  runs in `test:regression`.
+- `@smoke` only on the one test the plan chose as the feature's smoke (`plans.md` §Smoke), besides
+  `@regression`, on the test itself — never on a describe; a quarantined test drops it until healed.
+- Any other tag is registered in the map's §Allowed tags with its "apply when" before a spec uses it — the
+  registry lives there (`@visual`, `@cross-browser`, `@responsive` are). No feature, area, browser, engine or
+  device tags: the folder carries the feature, Playwright projects carry the browser.
+- Severity comes from the plan's case (`src/reporting/severity.ts`), never redeclared in a spec.
+- A case link: `const tms = caseLinks(<folder>)` once per spec from the app's `test.ts` (the folder only when
+  the case link has `{folder}`), then `annotation: [severity.major, tms(101)]` — one `tms(…)` per merged
+  case; the URL is built from the map, never spelled in a spec.
+- A lock: `lock: "<name>"` (§Isolation).
+
+## Switched off or failing on purpose
+
+- `test.skip(condition, "<why>")` only; never an unconditional `test.skip()` / `test.fixme()`.
+- A bug confirmed by hand is a row of `specs/known-bugs.md`, never `test.fail` (`plans.md` §Known bugs).
+
+## Isolation and shared state
+
+- Tests are independent and parallel: no order, no state left by another test, no global mutable state.
+- A file's top level lives as long as its worker: a `let` / `var` there, or an array, object, `Map` or `Set`
+  the file changes, is shared by every test the worker runs — in specs and in `src/` alike. The value goes
+  into the test, a fixture, or `oncePerWorker` for a stand lookup; only a read-only memo of a file or the map
+  stays, marked on its line `// memo: <what>`. `qa:gate` fails the rest:
+
+  ```ts
+  let placedOrderId: string; // bad — the next test of the worker reads the last one's order
+  const placedOrderId = await test.step("Setup: place an order", () => placeOrder(orders)); // good — the test's own
+  ```
+
+- No `test.describe.configure` line: `mode: "default"` (the whole file in one worker) fails the gate; `mode:
+  "serial"` only together with `beforeAll`/`afterAll`, and those only for a one-time read-only bootstrap.
+- Some tests change something on the shared account others see — a UI state the app saves per user (a panel
+  left open, a chosen view or sort), a widget showing only the newest entries, a real stand item (a
+  project's settings, a profile). Every test that **changes or reads** it declares the same lock, and
+  Playwright never runs those at once — across files, workers and projects; the rest stays parallel:
+
+  ```ts
+  test("Collapsing the filter panel is remembered", { tag: ["@ui", "@regression"], lock: "order-filter-panel" }, async ({ ordersPage }) => { … });
+  test.describe("Order board settings (UI)", { lock: "board-settings" }, () => { … });
+  ```
+
+- A lock is registered first in the map's §Shared state (test locks): kebab-case, named after the state it
+  protects, and for a real stand item its exact name in **Stand item**. The plan's UI brief names it
+  (`Locks:`).
+- A lookup finds items by their data, so it may return an item another feature's tests change: every
+  `oncePerWorker` result is checked against the Stand item column, and a test reading a listed item without
+  its lock fails at once, saying what to do (`src/setup/shared-state.ts`); a finder not going through
+  `oncePerWorker` calls `checkSharedItems(lookup, found)`. The plan's `Data:` line says the choice: leave the
+  item out of the lookup, take its lock, or ask for another item on the stand.
+
+## Signing in — auth as, role, session
+
+- The plan's `auth as:` — `action`: login is under test, visible in the spec; `precondition`: a session is
+  needed, the template's universal login gives it; `none`: signed out. Never a `loggedInPage` / `adminPage`
+  fixture hiding the role.
+- A role: `test.use({ role: "member" })`; `role: "none"` = signed out. `page`, `context`, every Page Object
+  and `authHeaders` follow it. Never a Page Object per role, `…AsManager` fixtures or
+  `browser.newContext({ storageState })` in a UI spec. A role not set up fails loudly; a test never runs
+  signed out by accident. API specs never sign in through a browser — headers come only from `authHeaders`.
+
+| `test.use({ session })` | The browser | For |
+|---|---|---|
+| `"shared"` (default) | the run's shared session | everything else |
+| `"own"` | a fresh sign-in of its own, never shared | a test that signs out, changes the password, ends sessions |
+| `"signed-out"` | no session — the test calls `await signIn()` (or `signIn("<role>")`) | a sign-in or sign-out case |
+
+The gate fails a spec that signs out, changes the password or ends sessions without `"own"` or
+`"signed-out"`. With the app's first sign-out test, check once whether signing out ends every session of the
+account: run it, then `npx playwright test --project=smoke:<app> -g "data requests"`. Refused → sign-out
+tests get their own account (`roles: user, sign-out-user` + `session: "own"`); record the answer as a comment
+in the app's ```auth block.
+
+## E2E specs and several roles
+
+- 3–6 steps in a manual tester's order; the journey stays visible in the spec — never a `runWholeFlow()`, a
+  fixture, hook or Page Object method doing it. Tags `@e2e` + `@regression`.
+- API and fixtures only create preconditions and clean up (`Setup:` / `Cleanup:` steps, or the route's one
+  `read`) — never instead of a UI step, no full contract checks, no mocked responses; the action's answer
+  through `answerTo` as in a UI test. Reuse the area's Page Objects; explore live any screen they do not cover.
+- Final check: the user-visible outcome, never "the URL changed" alone. Data: disposable and removed; never a
+  shared account's mutable state without its lock.
+- Several roles: one signed-in browser context per role in one test, roles only from the map; which role acts at which step comes only from the journey
+  brief, and a role missing from the map or `.env` blocks the whole journey. A context of its own takes the
+  project's `locale` and `timezoneId` (the app's, as `page` has them):
+
+```ts
+test("A customer places an order, a manager approves it", { tag: ["@e2e", "@regression"] }, async ({ browser, platform, locale, timezoneId }) => {
+  const customer = await browser.newContext({ locale, timezoneId, storageState: await browserSession(browser, { platform, role: "customer" }) });
+  const manager = await browser.newContext({ locale, timezoneId, storageState: await browserSession(browser, { platform, role: "manager" }) });
+  try {
+    await test.step("The customer places the order", async () => { /* customer's Page Objects */ });
+    await test.step("The manager approves it", async () => { /* manager's Page Objects */ });
+    await test.step("Verify the customer sees the approved status", async () => { /* customer again */ });
+  } finally {
+    await customer.close();
+    await manager.close();
+  }
+});
+```
+
+## Visual checkpoints — `@visual`
+
+- A UI test comparing a screenshot (`toHaveScreenshot`) is tagged `["@ui", "@visual", "@regression"]`
+  (never `@smoke` — screenshots are environment-sensitive, `plans.md` §Smoke).
+  Only where appearance matters in a stable state (forms, dialogs, empty, error or confirmation states,
+  layout-critical blocks) — never for timestamps, random or user-generated data, ads, animations, videos,
+  carousels, live counters, third-party widgets, uncontrolled lists, environment-specific content, nor just
+  because a page exists. It never replaces a functional check.
+- A checkpoint lives in the feature's own `<feature>-visual.ui.spec.ts`, tagged `@visual` — a check of how a
+  state looks, never a second test of a scenario (the gate leaves such a file out of its one-test-per-scenario
+  and route checks; a screenshot test linking the case in the feature's spec is a second test). It reaches the state
+  through the Page Objects and checks it is ready first; the smallest stable target (a block, then a page, a
+  full page only when justified), a clear screenshot name; several checkpoints when the state moves through
+  meaningful steps, never after every action.
+- A stable state: loaded, data shown, animations done, no overlay or spinner, the same project and viewport —
+  never `waitForTimeout`. Dynamic content, in order: a state without it → deterministic data → mask only
+  what is irrelevant to the risk → style overrides only when masking is not enough and the project allows.
+  Never mask what is under test, never a broad mask, never update a baseline to hide noise.
+- Masks are required when a filled form or profile, a generated email, phone, name, id, order number or
+  timestamp, a password or token field, or a field the UI brief names is visible; omitted only for an empty
+  default state (the plan says so). `mask:` sits in the spec's `toHaveScreenshot`, taking the Page Object's
+  `visualMaskTargets` locators (plan-backed fields only); a helper reusing masks lives in
+  `src/assertions/<app>/` (`screenshot-masks.ts`), never with guessed default selectors. Cannot be
+  stabilized safely → postpone the checkpoint and say why.
+- Baselines are created or updated only on the user's explicit request — never approved, kept or committed
+  silently. By default: add the checkpoint, run it once, report a missing baseline. Asked to approve: run
+  with the snapshot update, report the files, run again without it, report both results. A baseline is
+  committed only once approved in the environment the regression runs in (same OS, browser, fonts, viewport,
+  scale, theme, locale); an unexpected diff is investigated. A failure screenshot (`screenshot:
+  only-on-failure`) is never a baseline and takes no mask. The gate runs no tests: `npm run test:visual`
+  runs only `@visual`, and as UI tests they also run in `test:ui` and the regression.
+
+## Cross-browser and responsive
+
+Focused UI tests for a risk the plan documents — never the suite as a browser or viewport matrix, never API
+or schema tests per browser, never E2E (`e2e:<app>` is desktop only; the tags select nothing there).
+`@cross-browser` on the test itself also runs it in `firefox:<app>` and `webkit:<app>`; `@responsive` in
+`mobile:<app>` — never on a describe, never without the plan's `## Browsers, phone, screenshots` naming the case;
+`npm run test:cross-browser` / `test:responsive`, or `--with-browsers` on `test:app` (Firefox and WebKit installed
+when missing). Never browser, engine, viewport or device
+names as tags (`@chromium`, `@firefox`, `@webkit`, `@mobile`, `@tablet`, `@desktop`). Responsive checks are
+functional (visible controls, menus, layout state); exact pixels only as planned visual coverage with a
+baseline approved per viewport or engine; never browser or viewport setup hidden in a fixture.

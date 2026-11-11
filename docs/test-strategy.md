@@ -161,6 +161,10 @@ No TMS → each plan's own scenarios instead.
   A state the stand cannot give honestly is shown with a faked server answer, and the test says so.
 - **Accounts** — <shared QA accounts | dedicated test users>. Shared accounts mean runs on one stand
   must not overlap.
+- **Same on every machine** — the browser runs in the app's time zone and language (UTC and en-US
+  unless the map names others), test code in UTC, so a date check gives the same result on a laptop
+  and on CI, at midnight and at a month's edge. Nothing outlives one test: no state at a file's top
+  level (the gate checks), and a sign-in lock a killed worker left is released when the run ends.
 
 ## 7. Continuous integration
 
@@ -183,7 +187,8 @@ serialised (<the CI's lock on the stand>).
 
 A test is done when its case is ready in the plan and was live-checked; one `npm run verify` passed:
 the gate, its check proven able to fail (red when the expected value is spoiled), one run on the
-stand without a retry; a review that did not write it (a new chat) found no way it passes while its
+stand without a retry; a review that did not write it (a new chat, or Claude Code's `reviewer` subagent)
+found no way it passes while its
 case is broken, or its findings were fixed or answered; it cleans up what it created; the report shows
 it in the right place with readable steps; the plan and, when there is one, the manual case are
 updated.

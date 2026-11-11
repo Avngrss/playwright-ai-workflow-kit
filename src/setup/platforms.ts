@@ -34,7 +34,7 @@ function readPlatforms(): Platform[] {
   return found.size ? [...found.values()] : [CLASSIC];
 }
 
-let cached: Platform[] | undefined;
+let cached: Platform[] | undefined; // memo: the map's apps
 
 /** Every app of the test home, in the map's order. */
 export const platforms = (): Platform[] => (cached ??= readPlatforms());

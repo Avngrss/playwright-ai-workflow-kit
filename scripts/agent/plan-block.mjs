@@ -1,5 +1,5 @@
 /**
- * A plan's next case block — the plan template (.cursor/rules/plans.mdc §Plan body, its "### 1."
+ * A plan's next case block — the plan template (agents/rules/plans.md §Plan body, its "### 1."
  * block) in its exact shape: every field line, what the call gives filled in, the rest the template's
  * own <…> and choices for the agent to fill from the live check. Appended at the end of the plan's
  * `## Test cases`, numbered after the last block; no other line of the plan changes. Any source (a TMS
@@ -13,7 +13,7 @@
  *   --role   a role of specs/project-map.md
  *   --tag    a tag besides @regression on its Level line (@smoke, @cross-browser, @responsive); once per tag
  *   --rules  where the rule a route checks is written (a route with `check:`): the block's Rules line —
- *            without it the block has none (.cursor/rules/plans.mdc §Routes: stand data only)
+ *            without it the block has none (agents/rules/plans.md §Routes: stand data only)
  *   --steps  one argument per step, in the case's words; a scenario of several steps gets one "Route (step <n>)" line per step
  *
  * Drafted from a source the agent saved — a TMS case or a confirmed bug (scripts/agent/plan-draft.mjs,
@@ -152,11 +152,11 @@ export function appendBlock(call, { held, notes = [] } = {}) {
   const place = planPlace(call.plan);
   const full = path.resolve(ROOT, call.plan);
   if (!fs.existsSync(full)) {
-    stop(`no plan at ${posix(call.plan)}: a new plan is written by the agent through the plan skill (.cursor/rules/plans.mdc §Plan body), its cases then added here`);
+    stop(`no plan at ${posix(call.plan)}: a new plan is written by the agent through the plan skill (agents/rules/plans.md §Plan body), its cases then added here`);
   }
   if (!place) stop(`${posix(call.plan)} is not a plan — specs/<app>/<area>/<feature>/<feature>.md, or a journey's specs/e2e/<app>/<area>/<journey>.md`);
   if (place.kind === "feature" && call.owner === "E2E") {
-    stop(`an E2E scenario has a journey plan of its own — specs/e2e/${place.platform}/${place.area}/<journey>.md (.cursor/rules/plans.mdc §E2E journeys); this plan keeps a Not now line "Covered by <its spec>"`);
+    stop(`an E2E scenario has a journey plan of its own — specs/e2e/${place.platform}/${place.area}/<journey>.md (agents/rules/plans.md §E2E journeys); this plan keeps a Not now line "Covered by <its spec>"`);
   }
   if (place.kind === "journey" && call.owner && call.owner !== "E2E") stop(`a journey plan holds E2E scenarios — ${call.owner === "API" ? "an" : "a"} ${call.owner} scenario goes in its feature's plan`);
 
@@ -164,7 +164,7 @@ export function appendBlock(call, { held, notes = [] } = {}) {
   const eol = original.includes("\r\n") ? "\r\n" : "\n";
   const text = original.replace(/\r\n/g, "\n");
   const head = /^## Test cases[ \t]*$/m.exec(text);
-  if (!head) stop(`${place.file} has no "## Test cases" section — the plan template's sections come first (.cursor/rules/plans.mdc §Plan body)`);
+  if (!head) stop(`${place.file} has no "## Test cases" section — the plan template's sections come first (agents/rules/plans.md §Plan body)`);
   const start = head.index + head[0].length;
   const next = /^## /m.exec(text.slice(start));
   const end = next ? start + next.index : text.length;

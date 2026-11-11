@@ -1,7 +1,7 @@
 import { inProgress, read, workingStatementsOf } from "./context.mjs";
 
 /**
- * Page Objects and components (.cursor/rules/ui.mdc): locators as
+ * Page Objects and components (agents/rules/ui.md): locators as
  * `readonly` fields, actions and readers of what is shown — nothing else. These rules look only at
  * the files being written: committed code is not reworked for a later rule.
  */
@@ -90,7 +90,7 @@ function checkModels(files, report) {
   for (const [key, models] of siblings) {
     if (models.length < 2 || !models.some(({ file }) => writing(file))) continue;
     const [base, method] = key.split(".");
-    report.warn(models.find(({ file }) => writing(file)).file, `${method}() is written in ${models.map(({ name }) => name).join(", ")}, all extending ${base} — pages built alike: the base does it, each page declares what differs (.cursor/rules/ui.mdc)`);
+    report.warn(models.find(({ file }) => writing(file)).file, `${method}() is written in ${models.map(({ name }) => name).join(", ")}, all extending ${base} — pages built alike: the base does it, each page declares what differs (agents/rules/ui.md)`);
   }
 }
 

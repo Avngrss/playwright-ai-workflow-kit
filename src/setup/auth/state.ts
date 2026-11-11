@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { test } from "@playwright/test";
 import { authConfig, envNames, forAccount, resolve, who, type Account } from "./auth-config";
 
 /**
@@ -11,6 +12,7 @@ import { authConfig, envNames, forAccount, resolve, who, type Account } from "./
  *   <app>.<role>.<host>.refresh.json  the latest refresh token (api: refresh-token)
  *   <app>.<role>.<host>.failed.json   a refused sign-in: never tried again with the same login and password
  *   <app>.<role>.<host>.<name>.lock   one worker signs in at a time; the others wait and reuse its result
+ *                                     (the lock names the worker's process and the test it signs in for)
  */
 
 const STATE_DIR = path.resolve(__dirname, "..", "..", "..", "state");
@@ -101,14 +103,14 @@ export function clearRefused(account: Account): void {
 /**
  * Runs `work` while holding the account's `name` lock, so parallel workers sign in once instead of
  * once each: the others wait, then find the session or the refusal the first one left. A lock older
- * than two minutes belongs to a run that died and is taken over.
+ * than a minute belongs to a worker that died and is taken over.
  */
 export async function withLock<T>(account: Account, name: string, work: () => Promise<T>): Promise<T> {
   const file = stateFile(account, `${name}.lock`).replace(/\.json$/, "");
   const deadline = Date.now() + LOCK_WAIT_MS;
   for (;;) {
     try {
-      fs.closeSync(fs.openSync(file, "wx"));
+      fs.writeFileSync(file, JSON.stringify(holderNow()), { flag: "wx" });
       break;
     } catch {
       const age = fs.existsSync(file) ? Date.now() - fs.statSync(file).mtimeMs : 0;
@@ -122,4 +124,53 @@ export async function withLock<T>(account: Account, name: string, work: () => Pr
   } finally {
     fs.rmSync(file, { force: true });
   }
+}
+
+/** Who holds a sign-in lock: the worker's process and the test it signs in for. */
+interface LockHolder {
+  pid: number;
+  test?: string;
+}
+
+function holderNow(): LockHolder {
+  try {
+    return { pid: process.pid, test: test.info().titlePath.join(" › ") };
+  } catch {
+    return { pid: process.pid }; // not inside a test (a worker fixture, a script)
+  }
+}
+
+function isRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM"; // running, as another user
+  }
+}
+
+/**
+ * Sign-in locks left behind: a worker killed or out of time while signing in never reaches withLock's
+ * `finally`, and its lock would hold up the next run's sign-in. Called before and after every run
+ * (sweep.global.ts): a lock whose worker is gone is removed and named with the test that held it; a lock
+ * a running process holds (a parallel run) stays.
+ */
+export function releaseLeftLocks(): string[] {
+  if (!fs.existsSync(STATE_DIR)) return [];
+  const released: string[] = [];
+  for (const name of fs.readdirSync(STATE_DIR).filter((entry) => entry.endsWith(".lock"))) {
+    const file = path.join(STATE_DIR, name);
+    try {
+      const text = fs.readFileSync(file, "utf8");
+      // An empty lock — an older template's, or one being written this moment — is gone once it is stale.
+      const holder: Partial<LockHolder> = text ? JSON.parse(text) : {};
+      const gone = holder.pid !== undefined ? !isRunning(holder.pid) : Date.now() - fs.statSync(file).mtimeMs > LOCK_STALE_MS;
+      if (!gone) continue;
+      fs.rmSync(file, { force: true });
+      released.push(`state/${name} — held by ${holder.test ? `"${holder.test}"` : "a test the lock does not name"}`);
+    } catch {
+      // released by its holder meanwhile
+    }
+  }
+  return released;
 }

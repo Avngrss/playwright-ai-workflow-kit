@@ -1,5 +1,5 @@
 /**
- * A test's skeleton from its plan block — the implement skill (Naming) and .cursor/rules/specs.mdc (the
+ * A test's skeleton from its plan block — the implement skill (Naming) and agents/rules/specs.md (the
  * shape of a test, Titles, Steps, Tags and annotations): the title, its tags and case link, the role
  * (`test.use({ role })` when not the app's default), one `test.step` per plan step in the case's words —
  * the check step reading "verify", Setup: / Cleanup: steps as the block has them — and in each step its
@@ -92,7 +92,7 @@ function draftOf(block) {
   if (!data || data === PLACEHOLDER.data) unfilled.push("Data");
   const cleanup = value("Cleanup");
   if (!cleanup || cleanup === PLACEHOLDER.cleanup) unfilled.push("Cleanup");
-  // A route naming a rule (`check: <rule>`, stand data) cites where the rule is written (plans.mdc §Routes).
+  // A route naming a rule (`check: <rule>`, stand data) cites where the rule is written (plans.md §Routes).
   const checks = block.routes.map(({ line }) => parseRoute(line).check).filter(Boolean);
   const rules = value("Rules");
   if (checks.length && (!rules || rules.startsWith("<each check"))) unfilled.push(`Rules (where ${checks.join(", ")} is written — the route names it)`);
@@ -321,13 +321,13 @@ function main(argv) {
   const app = place.platform;
 
   if (place.kind === "journey" && draft.owner !== "E2E") stop(`a journey plan's scenario is E2E — "${draft.title}" says ${draft.owner}`);
-  if (place.kind === "feature" && draft.owner === "E2E") stop(`an E2E scenario has a journey plan of its own (specs/e2e/${app}/${place.area}/<journey>.md) and its spec tests/e2e/${app}/${place.area}/<journey>.e2e.spec.ts (.cursor/rules/plans.mdc §E2E journeys)`);
+  if (place.kind === "feature" && draft.owner === "E2E") stop(`an E2E scenario has a journey plan of its own (specs/e2e/${app}/${place.area}/<journey>.md) and its spec tests/e2e/${app}/${place.area}/<journey>.e2e.spec.ts (agents/rules/plans.md §E2E journeys)`);
   if (!fs.existsSync(path.join(ROOT, "src", "fixtures", app, "test.ts"))) stop(`${app} has no fixtures of its own yet — npm run app:add -- ${app}, then draft again`);
   const spec =
     place.kind === "journey" ? `tests/e2e/${app}/${place.area}/${place.name}.e2e.spec.ts` : `tests/${draft.layer}/${app}/${place.area}/${place.name}/${place.name}.${draft.layer}.spec.ts`;
 
   // A scenario's test is written once: never again in its own spec, nor anywhere else in the app. A
-  // screenshot checkpoint in its own -visual spec is not a second test of it (.cursor/rules/specs.mdc).
+  // screenshot checkpoint in its own -visual spec is not a second test of it (agents/rules/specs.md).
   for (const layer of ["api", "ui", "e2e"]) {
     const dir = path.join(ROOT, "tests", layer, app);
     const specs = fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).map(String).filter((name) => name.endsWith(".spec.ts")) : [];

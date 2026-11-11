@@ -6,7 +6,7 @@ import { knownBugOf } from "../setup/known-bugs";
  * each test's severity are applied by the reporter (src/reporting/report-tree.ts) from the
  * spec's folder and annotations — so a test that fails before its body still lands in its place,
  * and specs need no Allure calls. Links come from the test's annotations (`tms` for its manual
- * case); extra text goes through testInfo.attach — see the code rule (.cursor/rules/code.mdc, reporting part).
+ * case); extra text goes through testInfo.attach — see the code rule (agents/rules/code.md, reporting part).
  */
 export const test = base.extend<{ knownBug: void }>({
   // A test listed in specs/known-bugs.md is expected to fail on its bug: the reporter shows it grey

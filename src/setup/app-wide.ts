@@ -5,7 +5,8 @@ import { defaultPlatform } from "./platforms";
 /**
  * What an app does on its own, whatever the test: overlays that pop up over any page (a
  * promotion pop-up, a cookie banner, "what's new", "session expired"), the sign that a page has
- * finished loading, and the attribute it marks its elements for tests with. Written once in
+ * finished loading, the attribute it marks its elements for tests with, and the time zone and
+ * language its pages show dates and numbers in. Written once in
  * specs/project-map.md (the ```app-wide block, one per app with `platform: <app>`) by the kit's
  * skills when they meet them; installed for every page by pages.fixture.ts — specs and Page Objects
  * never handle them.
@@ -15,6 +16,8 @@ import { defaultPlatform } from "./platforms";
  *   ready when: hidden "<text>"                            e.g. hidden "Loading…"
  *   ready when: hidden role <role>                         e.g. hidden role progressbar
  *   test id: <attribute>                                   e.g. test id: data-test (none: data-testid)
+ *   timezone: <IANA zone>                                  e.g. timezone: Europe/Berlin (none: UTC)
+ *   locale: <BCP 47 tag>                                   e.g. locale: de-DE (none: en-US)
  */
 
 interface Dismiss {
@@ -58,7 +61,30 @@ export function testIdOf(platform: string): string {
   return attribute;
 }
 
-const cache = new Map<string, AppWide>();
+/**
+ * The time zone and language the app's browser runs in — given to its browser projects by
+ * playwright.config.ts and to the expected texts by src/assertions/shared/display.ts. The block's
+ * `timezone:` and `locale:` lines; without them UTC and en-US, as on CI — a date or a number on
+ * screen never follows the machine running the tests.
+ */
+export function zoneAndLocaleOf(platform: string): { timezoneId: string; locale: string } {
+  const block = readMapBlock("app-wide", platform);
+  const timezoneId = block?.get("timezone")?.[0] ?? "UTC";
+  const locale = block?.get("locale")?.[0] ?? "en-US";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezoneId });
+  } catch {
+    throw new Error(`Unknown line "timezone: ${timezoneId}" in specs/project-map.md (app-wide) — use: timezone: <IANA zone>, e.g. timezone: Europe/Berlin`);
+  }
+  try {
+    Intl.getCanonicalLocales(locale);
+  } catch {
+    throw new Error(`Unknown line "locale: ${locale}" in specs/project-map.md (app-wide) — use: locale: <BCP 47 tag>, e.g. locale: de-DE`);
+  }
+  return { timezoneId, locale };
+}
+
+const cache = new Map<string, AppWide>(); // memo: each app's ```app-wide block
 const appWide = (platform: string): AppWide => cache.get(platform) ?? cache.set(platform, read(platform)).get(platform)!;
 // Which app a page belongs to, so a Page Object's appReady(page) needs nothing but the page.
 const pageApp = new WeakMap<Page, string>();

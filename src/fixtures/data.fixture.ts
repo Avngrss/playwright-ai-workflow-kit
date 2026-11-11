@@ -1,6 +1,6 @@
 import { expect, test as base } from "./auth.fixture";
 
-/** Undo steps a test registers for what it created (.cursor/rules/data-and-fixtures.mdc). */
+/** Undo steps a test registers for what it created (agents/rules/data-and-fixtures.md). */
 export interface Cleanup {
   add(step: () => Promise<unknown>): void;
 }

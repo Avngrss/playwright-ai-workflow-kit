@@ -3,7 +3,7 @@
  * specs/project-map.md §Apps and services (`{API_BASE_URL}/swagger.json`, .env names in braces) — to
  * src/api/clients/<app>/contract.client.ts. The app's clients take their answer types from it
  * (`components["schemas"]["Order"]`) and tie their answer schemas to it (`fieldsOf`,
- * src/assertions/shared/http.ts; .cursor/rules/api.mdc §Response schemas). Run again when the API
+ * src/assertions/shared/http.ts; agents/rules/api.md §Response schemas). Run again when the API
  * changes; `npm run typecheck` then names every client and test to update. A contract that cannot be
  * read leaves the app's file as it was. OpenAPI 3 only (openapi-typescript); operations with a method it
  * does not read (OpenAPI 3.2's `query`) are left out of the types — a warning names them.

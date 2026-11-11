@@ -1,5 +1,5 @@
 import path from "node:path";
-import { at, read, ROOT } from "./context.mjs";
+import { at, inProgress, read, ROOT } from "./context.mjs";
 import { caseLinksIn, keepsOut, readPlans, scenarioOf } from "./plans.mjs";
 import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
@@ -84,7 +84,7 @@ function checkBrowsersPhoneScreens(_files, report) {
     if (missing.length) {
       report.fail(
         file,
-        `has UI cases but no ${missing.map((name) => `"${name}:"`).join(", ")} line in "## Browsers, phone, screenshots" — run the probe of live-app.mdc on its screens and record each decision, or "none — <what was checked>" (the plan skill, "Browsers, phone, screenshots")`,
+        `has UI cases but no ${missing.map((name) => `"${name}:"`).join(", ")} line in "## Browsers, phone, screenshots" — run the probe of live-app.md on its screens and record each decision, or "none — <what was checked>" (the plan skill, "Browsers, phone, screenshots")`,
       );
       continue;
     }
@@ -118,4 +118,22 @@ function checkBlockedSearched(files, report) {
   }
 }
 
-export const caseRules = [checkWholeCases, checkBrowsersPhoneScreens, checkBlockedSearched];
+/**
+ * A plan with a case ready to implement holds none of the plan body's `<…>` (plans.md §Plan body): each is
+ * filled from the live check and the sources, or its line is dropped — never a ready case shown to the user over
+ * "<what was checked>". A code span (`<script>`) is not one.
+ */
+function checkPlanPlaceholders(files, report) {
+  const changed = inProgress("specs");
+  for (const { plan, cases } of readPlans(ROOT)) {
+    if (!cases.some(({ status }) => /^ready/i.test(status))) continue;
+    const file = at(...plan.split("/"));
+    const lines = read(file).replace(/\r\n/g, "\n").replace(/^```[\s\S]*?^```/gm, (block) => block.replace(/[^\n]/g, " ")).split("\n");
+    const left = lines.flatMap((line, index) => [...line.replace(/`[^`]*`/g, "").matchAll(/<[^\s<>][^<>]*>/g)].map(([text]) => `${index + 1}: ${text}`));
+    if (!left.length) continue;
+    const say = !changed || changed.has(file) ? report.fail : report.warn;
+    say(file, `holds ${left.length} <…> of the plan template (${left.slice(0, 4).join(" · ")}${left.length > 4 ? " …" : ""}) — fill each from the live check and the sources, or drop its line (plans.md §Plan body)`);
+  }
+}
+
+export const caseRules = [checkWholeCases, checkBrowsersPhoneScreens, checkBlockedSearched, checkPlanPlaceholders];

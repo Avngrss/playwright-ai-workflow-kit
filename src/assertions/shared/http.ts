@@ -28,7 +28,7 @@ export const fieldsOf =
 
 const responseSchemas = new WeakMap<APIResponse, z.ZodType>();
 /** "POST /api/teams/42/invitations" → the schema of its answer, for `expectAnswer`. */
-const answerSchemas = new Map<string, z.ZodType>();
+const answerSchemas = new Map<string, z.ZodType>(); // memo: each answer path's schema, as its client declares it
 const answerKey = (method: string, path: string) => `${method.toUpperCase()} /${path.replace(/^\/+/, "").toLowerCase()}`;
 
 const fieldPath = (path: readonly PropertyKey[]) =>

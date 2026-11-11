@@ -8,7 +8,7 @@ import { readMap } from "./map-block";
  * §Shared state, the Stand item column names the item); a test reading the same item while it changes
  * sees it half-changed. Lookups find items by their data, so which one comes back is known only at
  * run time: every lookup's result passes this check, and a test that reads such an item without its
- * lock fails at once with what to do, instead of failing now and then (.cursor/rules/specs.mdc).
+ * lock fails at once with what to do, instead of failing now and then (agents/rules/specs.md).
  */
 
 /** Each stand item tests change, by name → the lock their tests hold. */
@@ -79,7 +79,7 @@ export function checkSharedItems(lookup: string, found: unknown): void {
     throw new Error(
       `${lookup} found "${name}", which tests change (lock "${lock}", specs/project-map.md §Shared state). ` +
         `A test reading it while they run sees it half-changed: declare { lock: "${lock}" } on this test or its describe, ` +
-        `or leave the item out of the lookup, or add another item to the stand (.cursor/rules/specs.mdc).`,
+        `or leave the item out of the lookup, or add another item to the stand (agents/rules/specs.md).`,
     );
   }
 }

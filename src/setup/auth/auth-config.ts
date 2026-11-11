@@ -19,7 +19,7 @@ export type FormStep =
   | { action: "wait"; target: string };
 
 /**
- * Where API tests get their credentials (.cursor/skills/setup/SKILL.md):
+ * Where API tests get their credentials (agents/skills/setup/SKILL.md):
  *   token           a token endpoint, fields from the map (a public client's password grant needs no secret)
  *   refresh-token   one browser sign-in, then new tokens over HTTP with its refresh token
  *   session-token   the token the signed-in app keeps in the browser
@@ -90,7 +90,7 @@ function parseStep(text: string): FormStep {
   );
 }
 
-const cache = new Map<string, AuthConfig>();
+const cache = new Map<string, AuthConfig>(); // memo: each app's ```auth block
 
 /** The one role of an app whose block lists no roles — a single test account. */
 export const SINGLE_ACCOUNT = "user";

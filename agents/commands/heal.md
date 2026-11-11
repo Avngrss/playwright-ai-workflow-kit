@@ -1,0 +1,16 @@
+---
+description: "Heal one or two red tests"
+---
+Use Skill: {{skill:verify}} — §8 "Heal".
+
+One or two red tests (a run summary's last line: "heal the red tests: <spec>:<line> …"), each by its verdict on §8's
+short path: the test needs fixing → the locator recipe (the saved-session script first, the Playwright MCP to
+explore) and the smallest fix · the stand → its second pass decides · the product changed → no test edit, `/plan
+<plan path> — <what changed>` · a bug you confirmed by hand → a `specs/known-bugs.md` row on your yes · unstable →
+`--repeat-each 3`, classified, `@flaky` only with its reason. Then `npm run verify -- <app> <spec>:<line>` per healed
+test. "explain" → only explains the failures (§8.1).
+
+Three or more red tests, or a CI run → `/triage`; a named product or rule change → `/plan <plan path> — <what changed>`.
+
+Failing tests (optional — default: the "heal the red tests" line of `reports/run-summary.md`): <spec>:<line> … | a test title | the pasted error — no secrets
+Mode (optional): <heal | explain>

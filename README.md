@@ -1,7 +1,7 @@
 # Playwright AI Workflow Kit
 
-Starter repository for **Playwright + TypeScript** test automation with **Cursor rules, skills and
-slash commands**.
+Starter repository for **Playwright + TypeScript** test automation with an AI agent — **Cursor or
+Claude Code**: rules, skills, slash commands and a stop check, written once in `agents/`.
 
 Create your own repository from it on GitHub, add your application, and let the agent plan and write
 tests under rules it cannot quietly break. The kit ships with **no application tests** — only the
@@ -48,51 +48,53 @@ npm run allure:open
 
 ## Quick start
 
-1. On this repository's GitHub page, click **Use this template** → **Create a new repository**, and
-   create your own copy (yours to change; this kit stays as it is).
-2. Clone **your new repository** and install:
+1. **Install the kit into your project.** In the project's folder (Node 20+ and git):
 
    ```bash
-   git clone https://github.com/<you>/<your-repo>.git
-   cd <your-repo>
-   npm install            # also installs Chromium
-   npm run env:prepare    # creates .env from .env.example — you fill the values, never commit it
+   npx github:Avngrss/playwright-ai-workflow-kit
    ```
 
-3. Open the folder in Cursor and turn on the `playwright` MCP server it lists (Cursor Settings → MCP;
-   `.cursor/mcp.json`) — the agent explores your app with it (without it, through a short Playwright
-   script). Then type in the chat:
+   It asks three things — where (`qa` by default; `.` when the folder holds no project yet; any path), which AI
+   (Claude Code, Cursor or both) and which CI (GitHub, GitLab or none, guessed from the remote) — then copies the
+   kit there with only your AI's files, writes the CI at the repository's root with the paths to that folder,
+   runs `npm ci` (Chromium too) and creates `.env`. It never overwrites a file: a folder of your project the kit
+   would mix into (`src/`, `tests/` …) stops it before anything is written. Nothing is committed.
+
+   Without questions: `npx github:Avngrss/playwright-ai-workflow-kit qa --agent claude --ci github --yes`.
+   A repository by its link: `npx github:Avngrss/playwright-ai-workflow-kit <git URL> --dir qa` clones it here
+   first. A new repository of its own instead: **Use this template** on GitHub, clone it, `npm install`,
+   `npm run env:prepare`, `npm run agents:use -- <claude|cursor>`.
+
+2. Change the AI later in that folder: `npm run agents:use -- cursor` (or `claude`, `cursor,claude`).
+
+3. Open **the kit's folder** in Cursor or Claude Code and turn on the `playwright` MCP server — Cursor: Cursor
+   Settings → MCP (`.cursor/mcp.json`); Claude Code: approve it when asked (`.mcp.json`). The agent explores
+   your app with it (without it, through a short Playwright script). Then type in the chat:
    - `/setup` — registers your application and sets up how tests sign in (a fresh clone is checked
      first: `test:list` and `qa:gate` pass with no feature tests — the template's sign-in smoke is
      listed, skipped until an app has an ```auth block);
    - `/plan` — the first feature's plan; answer **Yes, write them** and the same run writes the tests,
      checks them with one `npm run verify`, heals a failure once and sums up with one next command —
-     for new tests, the `/review` line to paste into a new chat.
+     for new tests, the independent review: Claude Code runs it as its `reviewer` subagent, Cursor gives
+     the `/review` line to paste into a new chat.
 
    The other commands are for later runs: the table below.
 
 Step by step: [docs/getting-started.md](docs/getting-started.md).
 
-### Already have a repository?
+### The kit in a folder of your project
 
-The kit can also live in a folder of your product's repository, for example `qa/`:
-
-1. Copy the kit's files into the folder (without its `.git`). Its own `.gitignore` comes along and keeps `.env`,
-   `state/` and the reports out of git from there.
-2. In the folder: `npm install`, then `npm run env:prepare`.
-3. Open **that folder** in Cursor — the rules, skills and commands load from its `.cursor/`.
-4. CI: copy `.github/workflows/playwright.yml` to the repository's own `.github/workflows/` (GitLab:
-   `ci/gitlab/gitlab-ci.yml` to `.gitlab-ci.yml` at the root) and follow the note at its top — the working
-   directory, the cache path and `qa/` in front of its paths.
-
-The scripts work from the folder as they are: the gate, the test list and `npm run verify` with its check that
-a new test can fail.
+Installed into `qa/` (or any folder), the kit is its own npm project there: its `package.json`, `.gitignore` and
+`.env`, its scripts working from the folder as they are — the gate, the test list and `npm run verify`. Open
+**that folder** in your AI: the rules and commands load from its `.cursor/` or `.claude/`. The CI the installer
+wrote runs every step in it (GitHub: `working-directory`; GitLab: `qa/ci/gitlab-ci.yml`, included from the root
+`.gitlab-ci.yml` — when one is there already, the installer prints the `include:` line to add).
 
 ---
 
 ## Commands
 
-Type them in Cursor's chat; each one asks for what you leave out.
+Type them in the agent's chat — Cursor or Claude Code; each one asks for what you leave out.
 
 | Command | When |
 |---|---|
@@ -103,11 +105,16 @@ Type them in Cursor's chat; each one asks for what you leave out.
 | `/heal` | one or two red tests, each from its verdict; `/heal explain` only explains the failures |
 | `/triage` | three or more red tests, or a CI run: every failure sorted, every changed expectation traced to its source |
 | `/coverage` | a TMS folder case by case — read-only |
-| `/review` | an independent review of new tests, in a **new chat** — the verify summary gives the line to paste |
+| `/review` | an independent review of new tests, in a **new chat** — the verify summary gives the line to paste; Claude Code runs it itself as the `reviewer` subagent (Cursor lists that subagent too) |
 
 Which one comes after a run: a product or rule change you can name → `/plan <plan> — <what changed>`, even
 with red tests at hand; one or two red tests → `/heal`; three or more, or a CI run → `/triage`. The run
 summary's last line names the one it needs.
+
+**Before the agent stops.** Each agent's stop hook runs `scripts/agent/stop-check.mjs` when the agent ends a
+turn: the gate on the work in the tree (a plan that leaves out the API without saying why, a route, a copy of
+`agents/` edited by hand …) and the automatic heal a red verify still owes. Found → the agent is sent back once
+with what to do; a question it must ask you still gets through.
 
 ---
 
@@ -115,9 +122,10 @@ summary's last line names the one it needs.
 
 | Area | Purpose |
 |------|---------|
-| `.cursor/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
-| `.cursor/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
-| `.cursor/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
+| `agents/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
+| `agents/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
+| `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
+| `.cursor/`, `.claude/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
@@ -134,7 +142,7 @@ summary's last line names the one it needs.
 | `.github/workflows/`, `ci/gitlab/` | CI: gate, secret scan, test list, test matrix |
 | `docs/` | Guides for people — start with [docs/test-strategy.md](docs/test-strategy.md) |
 
-The agent's entry point is `.cursor/rules/00-project-map.mdc`: where the map lives, every npm
+The agent's entry point is `agents/rules/00-project-map.md`: where the map lives, every npm
 script, the projects and CI.
 
 ---
@@ -144,9 +152,10 @@ script, the projects and CI.
 ### Control stack
 
 ```text
-.cursor/rules/      ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
-.cursor/skills/     ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
-.cursor/commands/   ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
+agents/rules/       ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
+agents/skills/      ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
+agents/commands/    ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
+.cursor/, .claude/  ← each agent's copy of agents/ (npm run agents:sync)
 specs/project-map.md← the living registry the code and gate read
 scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 ```
@@ -206,7 +215,9 @@ and each new check seen red once with its expected value spoiled; no second gree
    call what the run changed (`--also`), and `--with-browsers` for tests tagged `@cross-browser` or
    `@responsive`. A test that failed because the stand was slow or down gets one second pass.
 4. **One block** of results, every number copied from the result files (`test-results/verify.json`): the
-   verdict, each test's outcome, can-fail, the cases' coverage, the time.
+   verdict, each test's outcome, can-fail, the cases' coverage, the time. A red run of tests written in this
+   session ends `now the automatic heal: <spec>:<line> …`; red again after it — `still red after the automatic
+   heal` (`reports/verify-state.json` keeps the attempt; the stop check reads it).
 
 ### Test layers
 
@@ -242,15 +253,19 @@ its API test proves. A case is written whole, every scenario, or not at all.
 |---|---|
 | Sign-in from the map | an ```auth block per app; UI form or custom, API token, refresh token, session, key, basic …; one sign-in per role per run; a refused password is never retried |
 | One scenario, one test | each scenario has one owner and one route in the plan; the gate fails a scenario with two tests, a test outside its owner's folder, or a UI test listening where its route does not |
+| No owner skipped silently | a plan says what its owner check found (`## Owners`); for an app with an API and no API scenario it says why for each place one comes from — other inputs, access, the contract — or the gate fails it |
+| A stop check | the agent cannot end a turn on a red gate or with the automatic heal undone: its stop hook sends it back once (Claude Code and Cursor) |
+| One source, every agent | the rules, skills, commands, MCP and hooks live in `agents/`; `npm run agents:sync` writes Cursor's and Claude Code's copies, and the gate fails a copy edited by hand |
 | Every new check can fail | `npm run verify` with `--can-fail` spoils the expected value of each new or changed check; the test must go red at that line, and every line is put back |
 | Test data | sources none / stand / API setup / UI setup / mocked; `AQA`-marked data removed by the test; leftovers swept before and after every run |
 | Searched before blocked | `npm run stand:find` looks for what a case needs in every account and tenant; a `Blocked` line ends with where it was searched |
 | Shared stand | items tests change are listed with a lock; a test reading one without the lock fails at once |
+| Same on every machine | browsers run in each app's time zone and language (the map's `timezone:` / `locale:`; UTC and en-US by default), test code in UTC, and expected dates and numbers are formatted the same way; the gate fails state at a file's top level that tests would share; a sign-in lock a killed worker left is named and released when the run ends |
 | Readable failures | each failure opens with a verdict (possible bug, the product changed, stand or data, test needs fixing …) and what to check by hand; a test that failed because the stand was slow or down runs once more at the end; `reports/run-summary.md` and `.json` end with the next step: heal one or two red tests by name, triage three or more |
 | Triage with sources | what a test expects changes only with a quoted source — a ticket's field, the product's code at `file:line`, a commit; without one it is a question ("is this intended?") and the test stays as it is |
 | Answer types and schemas | `npm run api:types` writes the app's answer types from its OpenAPI contract; a client's schema holds only the fields its tests read, tied to those types; a field missing or retyped fails the type check and reads "API changed" in a run |
 | Case blocks and test skeletons | `npm run plan:block` writes a case block in the plan's exact shape — empty, or drafted from a saved TMS case or confirmed bug (`--case`, `--bug`); `npm run spec:draft` writes a test's skeleton from a filled block |
-| Independent review | `/review` in a new chat for every new test: only the cases, the plan's `Data:` and `Rules:`, the tests and the run's report; an edited test gets the same five questions in the same chat |
+| Independent review | for every new test, a reviewer that did not write it — Claude Code's `reviewer` subagent, or `/review` in a new chat: only the cases, the plan's `Data:` and `Rules:`, the tests and the run's report; an edited test gets the same five questions in the same chat |
 | Known bugs | `specs/known-bugs.md`; the test is grey while it fails at its step, red when it changes |
 | Case links and coverage | tests link their TMS case through the map's case link line; `npm run suite:coverage` |
 | Quality gate | layout, tags per test, fixture chain, Page Object rules, repeats, routes and whole cases, "a UI test reads as its case", a test still holding its skeleton, a spoiled line not put back, masked attachments, no secrets in specs; then `tsc` |
@@ -286,7 +301,7 @@ workflow names: add each `.env` name of the map to the test job's `env:` — `va
 
 ## Scripts
 
-The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
+The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 
 | Script | What it does |
 |---|---|
@@ -308,6 +323,8 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 | `npm run data:sweep` | remove `AQA`-marked leftovers from the stand (also runs around every test run) |
 | `npm run allure:report` / `allure:open` | the report |
 | `npm run env:prepare` / `app:add` | used by `/setup`: `.env` names and addresses, edited in place (`-- --tidy` lays the file out by app) / an app's fixtures |
+| `npm run agents:sync` | after an edit in `agents/`: writes the chosen agents' copies (`.cursor/`, `.claude/`, `.mcp.json`); `-- --check` only lists what differs |
+| `npm run agents:use -- <cursor\|claude\|cursor,claude>` | which agents this folder works with: writes `agents/agents.json`, adds the chosen agents' copies, removes the others' |
 
 ---
 
@@ -328,8 +345,11 @@ The full table is in `.cursor/rules/00-project-map.mdc`. The ones you use most:
 
 ## Known limitations
 
-- **Cursor only, for now.** The rules, skills and commands are written for Cursor (`.cursor/`). Other agents
-  (Claude Code, GitHub Copilot, Codex) are planned.
+- **Cursor and Claude Code.** GitHub Copilot and Codex are not set up yet: a new agent is one more target of
+  `npm run agents:sync` (`scripts/agent/agents-sync.mjs`) and its hook format in `scripts/agent/stop-check.mjs`.
+- **A rule is still text.** A weaker model can skip what no script checks. The gate, `npm run verify` and the
+  stop check hold what can be checked (the owners of a plan, routes, can-fail, the automatic heal); the plan's
+  confirm table is where you catch the rest.
 - **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
   `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
   system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.

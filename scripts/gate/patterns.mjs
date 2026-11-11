@@ -15,7 +15,7 @@ const PATTERN_RULES = [
   { in: ["specs"], require: /\bexpect\w*\s*\(|\banswers?To\(|from\s+["'][^"']*\/assertions\//, says: "checks nothing — add expect(…), an assertion helper (expectJson, expectSignedIn, …) or an app's rule from src/assertions/<app>/" },
   { in: ["ui", "e2e", "smoke"], require: /\btest\.step\(/, says: "has no test.step() — the report shows a browser test as the steps a person takes" },
   { in: ["specs"], forbid: /import\s*{[^}]*\btest\b[^}]*}\s*from\s*["']@playwright\/test["']/, says: 'imports test from @playwright/test — import { test, expect } from "src/fixtures/<app>/test" (the app of its folder)' },
-  // E2E may: a second role's browser context has its own page (.cursor/rules/specs.mdc).
+  // E2E may: a second role's browser context has its own page (agents/rules/specs.md).
   { in: ["ui", "smoke"], forbid: /new\s+\w+Page\s*\(/, says: "creates a Page Object itself — take it from its app's fixtures (src/fixtures/<app>/pages.fixture.ts)" },
   { in: ["specs"], forbid: /process\.env/, says: "reads process.env — settings come through fixtures and the config" },
   { in: ["specs"], forbid: /["'][^"']*\.env["']/, says: "names the .env file — secrets and settings are never test assets" },
@@ -37,7 +37,7 @@ const PATTERN_RULES = [
   { in: ["uiModels"], warn: true, forbid: /\.waitForURL\s*\(/, says: "waits for the address — a client-side route changes it before the screen: wait for what the screen shows (the selected tab, the new heading)" },
   { in: ["uiModels"], forbid: /Date\.now\s*\(|Math\.random\s*\(/, says: "makes test data (Date.now, Math.random) — data comes from generators" },
   { in: ["uiModels"], forbid: /toHaveScreenshot\s*\(/, says: "compares screenshots — a visual check belongs in a spec" },
-  // They hold locators, actions and readers of what is shown — nothing else (.cursor/rules/ui.mdc).
+  // They hold locators, actions and readers of what is shown — nothing else (agents/rules/ui.md).
   {
     in: ["uiModels"],
     forbid: /\.(?:waitForResponse|waitForRequest)\s*\(|\.(?:on|waitForEvent)\(\s*["'](?:request|response|requestfinished|requestfailed)["']|\bcaptureRequests\s*\(/,
@@ -61,7 +61,7 @@ const PATTERN_RULES = [
   },
 
   // One home for each concern across all test code.
-  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, code: true, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (.cursor/rules/code.mdc)" },
+  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, code: true, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (agents/rules/code.md)" },
   { in: ["testCode"], except: /[\\/]src[\\/](logging|security)[\\/]/, forbid: /console\.(log|debug|info)\s*\(/, says: "writes to the console — use safeLogger (src/logging/safe-logger.helper.ts), never with secrets" },
   { in: ["testCode"], except: /[\\/]src[\\/]setup[\\/]app-wide\.ts$/, forbid: /addLocatorHandler\s*\(/, says: "closes an overlay itself — add it to the app-wide block of specs/project-map.md (dismiss: …)" },
   { in: ["testCode"], when: /(?:allure\.attachment|testInfo\.attach)\s*\(/, require: /maskSecrets|sanitize|redact/, says: "attaches text without masking it — pass it through maskSecrets (src/reporting/readable-error.ts)" },
@@ -75,6 +75,15 @@ const PATTERN_RULES = [
   },
   // A warning: the locale's own short month ("Sept" in en-GB) is seldom what the page shows.
   { in: ["testCode"], warn: true, forbid: /toLocale(?:Date)?String\(\s*[^,)]*["']en-GB["'][^)]*month\s*:\s*["']short/, says: 'formats a short month the en-GB way ("Sept") — expected texts come from the app\'s display helper (src/assertions/<app>/), matched to what the page shows' },
+  // A warning: toLocale…String() follows the machine's language and zone — a laptop and CI give different texts.
+  {
+    in: ["testCode"],
+    except: /[\\/]src[\\/](reporting|pages|components)[\\/]/,
+    code: true,
+    warn: true,
+    forbid: /\.toLocale(?:Date|Time)?String\s*\(/,
+    says: "formats by the machine's language and time zone (toLocale…String) — an expected date or number comes from the app's display helper, built on dateAsShown / numberAsShown (src/assertions/shared/display.ts)",
+  },
 ];
 
 /** The text without its comments: a line that is one (`//`, `/*`, `*`) and the rest of a line after " //". */
@@ -85,7 +94,7 @@ const codeOf = (text) =>
     .map((line) => line.replace(/\s\/\/.*$/, ""))
     .join("\n");
 
-export function checkPatterns(files, report) {
+function checkPatterns(files, report) {
   for (const rule of PATTERN_RULES) {
     const targets = new Set(rule.in.flatMap((group) => files[group]));
     for (const file of targets) {
@@ -97,3 +106,48 @@ export function checkPatterns(files, report) {
     }
   }
 }
+
+/**
+ * State at a file's top level lives as long as its worker and is shared by every test the worker runs — an
+ * order between tests nobody sees: a `let` / `var`, or an array, object, Map or Set the file changes. A
+ * read-only memo (of a file, of the map) says so on its line: `// memo: <what>`. src/reporting/ runs in the
+ * runner, once per run, and is left out; a WeakMap keyed by a test's own page or answer is not shared.
+ */
+const MEMO = /\/\/\s*memo:\s*\S/;
+const TOP_LEVEL_VARIABLE = /^(?:export\s+)?(let|var)\s+([A-Za-z_$][\w$]*)/;
+const TOP_LEVEL_CONTAINER = /^(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*(?::.+?)?=\s*(\[|\{|new\s+(?:Map|Set)\b)/;
+const KIND = { "[": "array", "{": "object" };
+const STATE_GOES =
+  "shared by every test its worker runs. Keep it in the test (a value built in it), a fixture (src/fixtures/<app>/data.fixture.ts) or, for a stand lookup, oncePerWorker; " +
+  "a read-only memo of a file or the map says so on its line: // memo: <what> (agents/rules/specs.md §Isolation and shared state)";
+
+/** A statement changing `name` in place: a mutating method, an assignment to one of its fields, Object.assign or delete. */
+const changes = (identifier) => {
+  const name = identifier.replace(/\$/g, "\\$");
+  return new RegExp(
+    `\\b${name}\\s*\\.\\s*(?:push|unshift|splice|pop|shift|sort|reverse|fill|set|add|delete|clear)\\s*\\(` +
+      `|\\b${name}\\s*(?:\\[[^\\]]*\\]|\\.[A-Za-z_$][\\w$]*)+\\s*(?:(?:[-+*/%]|\\*\\*|\\?\\?|\\|\\||&&)?=(?!=)|\\+\\+|--)` +
+      `|\\bObject\\.assign\\(\\s*${name}\\b|\\bdelete\\s+${name}\\s*[.[]`,
+  );
+};
+
+function checkModuleState(files, report) {
+  for (const file of files.testCode.filter((each) => !/[\\/]src[\\/]reporting[\\/]/.test(each))) {
+    const lines = read(file).split(/\r?\n/);
+    // Comments blanked, not dropped: the line numbers stay those of the file.
+    const code = lines.map((line) => (/^\s*(\/\/|\/\*|\*)/.test(line) ? "" : line.replace(/\s\/\/.*$/, "")));
+    lines.forEach((line, index) => {
+      if (MEMO.test(line)) return;
+      const variable = TOP_LEVEL_VARIABLE.exec(line);
+      if (variable) report.fail(file, `line ${index + 1}: a top-level ${variable[1]} ${variable[2]} — ${STATE_GOES}`);
+      const container = TOP_LEVEL_CONTAINER.exec(line);
+      if (!container) return;
+      const [, name, opener] = container;
+      const changed = code.findIndex((text, other) => other !== index && changes(name).test(text));
+      const kind = KIND[opener] ?? (/Map/.test(opener) ? "Map" : "Set");
+      if (changed !== -1) report.fail(file, `line ${index + 1}: ${name}, a top-level ${kind} changed on line ${changed + 1} — ${STATE_GOES}`);
+    });
+  }
+}
+
+export const patternRules = [checkPatterns, checkModuleState];

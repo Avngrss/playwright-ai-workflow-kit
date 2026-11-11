@@ -17,7 +17,7 @@ import {
 } from "./token";
 
 /**
- * The headers API requests send, made the way the app's `api:` line says (.cursor/skills/setup/SKILL.md
+ * The headers API requests send, made the way the app's `api:` line says (agents/skills/setup/SKILL.md
  * of the kit's skills). A browser is opened only by the modes that sign in through one — the caller
  * passes how to get it, so a token, a key or a refresh token never starts a browser.
  */
@@ -25,7 +25,7 @@ import {
 type BrowserOnDemand = () => Promise<Browser>;
 
 // In-process reuse, re-checked on every call: a run longer than a token's life refreshes it.
-const heldApiHeaders = new Map<string, { headers: Promise<Record<string, string>>; until: number }>();
+const heldApiHeaders = new Map<string, { headers: Promise<Record<string, string>>; until: number }>(); // memo: each account's API headers
 const keyOf = ({ platform, role }: Account) => `${platform}/${role}`;
 
 interface SavedApiHeaders {

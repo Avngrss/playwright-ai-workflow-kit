@@ -1,5 +1,5 @@
 import path from "node:path";
-import { at, inProgress, read, ROOT, statementsOf } from "./context.mjs";
+import { apiPlatforms, at, inProgress, read, ROOT, statementsOf } from "./context.mjs";
 import { caseLinksIn, ownersOfRoute, readPlans, scenarioOf } from "./plans.mjs";
 import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
@@ -11,11 +11,45 @@ import { isVisualCheckpoint, testsOf } from "./specs.mjs";
  * no second read of it, nothing listened to when the browser decides alone, a screen check of each
  * kind in each routed step; an API test calls its stand-data rule. The gate checks the
  * test's structure, not which field a helper compares — that stays the review's, against the route.
- * What is being written fails; what was written before routing is warned — listed to rework, never
- * blocking the gate.
+ * A feature plan says what its owner check found; an app with an API never gets a plan with no API
+ * scenario and no word on why. What is being written fails; what was written before routing is warned —
+ * listed to rework, never blocking the gate.
  */
 
 const why = "docs/Layer Routing Algorithm.md";
+
+// Where an API scenario comes from when no screen shows the result (plans.md §Layers — the owner check).
+const API_PLACES = ["other inputs", "access", "contract"];
+
+function checkOwners(files, report) {
+  const changed = inProgress("specs");
+  const withApi = apiPlatforms();
+  for (const { plan, app, journey, owners, cases, notNow } of readPlans(ROOT)) {
+    // A journey plan has no `## Owners`: E2E owns each of its blocks.
+    if (journey || (!cases.length && !notNow.length)) continue;
+    const file = at(...plan.split("/"));
+    const say = (message) => (!changed || changed.has(file) ? report.fail(file, message) : report.warn(file, message));
+    if (!owners?.line) {
+      say(`no "## Owners" with its "- found: UI <n> · API <n> · E2E <n> — <why>" line — what the owner check found (plans.md §Plan body)`);
+      continue;
+    }
+    if (!owners.counts || owners.why.startsWith("<")) {
+      say(`"found: ${owners.line}" does not read as "UI <n> · API <n> · E2E <n> — <why>" with each <…> filled (plans.md §Plan body)`);
+      continue;
+    }
+    if (owners.counts.API > 0 || !withApi.has(app)) continue;
+    // An agent that plans every case on the screen says, place by place, why no API scenario exists — a reason
+    // of a few words from what it saw ("one role, no ids in the address"), never a bare "none".
+    const reasonOf = (place) => new RegExp(`\\b${place}:\\s*([^·]*)`, "i").exec(owners.why)?.[1].trim() ?? "";
+    const unsaid = API_PLACES.filter((place) => {
+      const reason = reasonOf(place);
+      return !reason || reason.startsWith("<") || reason.split(/\s+/).length < 3 || /^(none|n\/a|no|nothing|-|—)\W*$/i.test(reason);
+    });
+    if (unsaid.length) {
+      say(`${app} has an API (specs/project-map.md), and "found:" names no API scenario — say why for each place one comes from, a reason of a few words from the live check, never a bare "none": "API 0 · … — none · other inputs: <why> · access: <why> · contract: <why>" (not said: ${unsaid.join(", ")}) (plans.md §Layers, the owner check)`);
+    }
+  }
+}
 
 function checkPlanRoutes(files, report) {
   const changed = inProgress("specs");
@@ -198,4 +232,4 @@ function checkTestRoutes(files, report) {
   }
 }
 
-export const routeRules = [checkPlanRoutes, checkTestRoutes];
+export const routeRules = [checkOwners, checkPlanRoutes, checkTestRoutes];
