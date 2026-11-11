@@ -1,0 +1,23 @@
+.cursor/skills/verify/SKILL.md
+  s_cc6b67d1fdb3d9::t_207d584503a89b 99-101
+.gitignore
+  s_cc6b67d1fdb3d9::t_8629bbdb7a4aac 40-41
+scripts/agent/verify.mjs
+  s_cc6b67d1fdb3d9::t_d73fa70678befd 31-35,51,212-214,216,219,506,542-564,569,636-637,658-659,664-665,745-753
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "af40e26a8f8de1ee963e005bcc0f587b8e4d2a3d",
+  "prompts": {},
+  "sessions": {
+    "s_cc6b67d1fdb3d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_cc6b67d1fdb3d9",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
