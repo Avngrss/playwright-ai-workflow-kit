@@ -292,6 +292,7 @@ async function main(argv) {
   folder ??= await ask(`Folder for the kit? (Enter = ${isEmpty(process.cwd()) ? ". — this folder" : "qa"})`, isEmpty(process.cwd()) ? "." : "qa");
   const target = path.resolve(folder);
   const where = path.relative(process.cwd(), target).split(path.sep).join("/") || ".";
+  const place = where === "." ? "this folder" : `${where}/`;
 
   // Which agents.
   let agents = call.agents ? agentsOf(call.agents) : undefined;
@@ -318,9 +319,9 @@ async function main(argv) {
   if (plan.collisions.length) {
     source.done();
     const shown = plan.collisions.slice(0, 8).join(", ");
-    stop(`${where}/ already has what the kit would write (${shown}${plan.collisions.length > 8 ? ", …" : ""}) — nothing was written; choose another folder (qa, tests/e2e …)`);
+    stop(`${place} already has what the kit would write (${shown}${plan.collisions.length > 8 ? ", …" : ""}) — nothing was written; choose another folder (qa, tests/e2e …)`);
   }
-  say(`The kit goes into ${where}/ for ${agents.map((id) => AGENTS[id]).join(" and ")}, CI: ${ci} — from ${source.from}.`);
+  say(`The kit goes into ${place} for ${agents.map((id) => AGENTS[id]).join(" and ")}, CI: ${ci} — from ${source.from}.`);
   if (plan.kept.length) say(`  kept as they are: ${plan.kept.join(", ")}`);
   if (plan.ignoreLines.length) say(`  .gitignore: ${plan.ignoreLines.length} line(s) of the kit added`);
   if (rl && !/^(y|yes|д|да)?$/i.test(await ask("Install? (Y/n)", ""))) {
@@ -348,12 +349,12 @@ async function main(argv) {
 
   if (call.install) {
     say("Installing (npm ci, then Chromium) …");
-    if (npm(["ci"], target).status !== 0) stop(`npm ci failed in ${where}/ — run it there yourself, then npm run env:prepare`);
+    if (npm(["ci"], target).status !== 0) stop(`npm ci failed in ${place} — run it there yourself, then npm run env:prepare`);
     say("✓ npm ci");
-    if (npm(["run", "env:prepare"], target).status !== 0) stop(`npm run env:prepare failed in ${where}/`);
-  } else say(`- not installed (--no-install): in ${where}/ run npm ci, then npm run env:prepare`);
+    if (npm(["run", "env:prepare"], target).status !== 0) stop(`npm run env:prepare failed in ${place}`);
+  } else say(`- not installed (--no-install): in ${place} run npm ci, then npm run env:prepare`);
 
-  say(`\nDone. Next, in ${where}/:`);
+  say(`\nDone. Next, in ${place}:`);
   agents.forEach((id, index) => say(`  ${index + 1}. ${OPEN[id]}`));
   if (git(["rev-parse", "--is-inside-work-tree"], target).stdout?.trim() === "true") say("  The new files are not committed — review them and commit yourself.");
 }
