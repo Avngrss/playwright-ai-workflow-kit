@@ -1,179 +1,96 @@
 # Getting started
 
-From a fresh clone to a green sign-in smoke and the first feature plan. The everyday path after that
-is in [Workflow](workflow.md).
+From install to the first plan. The everyday path after that: [Workflow](workflow.md).
 
-## Prerequisites
+## Before you start
 
-- Node.js and npm (the CI uses Node 22), Git.
-- Claude Code, Cursor or GitHub Copilot (VS Code or Copilot CLI) with this folder open. The rules and commands
-  load from `.claude/`, `.cursor/` or `.github/` — copies of `agents/` (`npm run agents:sync`); in Copilot the
-  commands are skills called by name (`/plan`, `/heal` …).
-- The Playwright MCP from `.cursor/mcp.json` (Cursor: enable it) or `.mcp.json` (Claude Code: approve it once;
-  Copilot CLI reads it; VS Code's Copilot with its workspace MCP setting on). The agent uses it to look at the
-  live app; without it, the agent looks through a short Playwright script instead.
-- A test environment of the app (dev or QA) and a **test account** for it, not your personal one.
-  Sign in with it by hand once before you give it to the tests.
-- Optional: an MCP server or API access for your TMS and tracker, so the agent can read cases and
-  tickets. Without one, you paste them into the chat.
+- Node 20+ (CI uses 22) and git.
+- Claude Code, Cursor or GitHub Copilot (VS Code or Copilot CLI).
+- A test environment of the app (dev or QA) and a **test account** for it — not your own; sign in with it by hand
+  once first.
+- Optional: MCP or API access to your TMS and tracker, so the agent reads cases and tickets itself.
 
 ## 1. Install
 
-Into a folder of your project — in the project's folder:
+In your project's folder:
 
 ```bash
 npx github:Avngrss/playwright-ai-workflow-kit
 ```
 
-The installer asks where (`qa` by default), which AI (Claude Code, Cursor, GitHub Copilot — one or several) and
-which CI (GitHub, GitLab or none), copies the kit with only your AI's files, writes the CI at the repository's root,
-then runs `npm ci` and
-step 2 itself — skip to step 3 in the kit's folder. `--help` lists its flags (`--agent`, `--ci`, `--yes` …).
-
-When the installer stops, nothing was written yet:
+It asks where (`qa` by default), which AI and which CI, copies the kit, writes the CI, runs `npm ci` (Chromium
+too) and creates `.env`. `--help` lists the flags (`--agent`, `--ci`, `--yes` …). When it stops, nothing was written:
 
 | It says | Do |
 |---|---|
-| `… already has what the kit would write (src/, tests/ …)` | the folder is your project's own — give another one: `qa`, `tests/e2e` |
-| `Node … — the kit needs Node 20 or newer` | update Node (the CI uses 22) |
-| `could not fetch the kit — git clone … failed` | check the network or proxy for github.com, then run it again |
-| `npm ci failed in …` | the kit is copied; run `npm ci` and `npm run env:prepare` in its folder yourself |
-| `… .gitlab-ci.yml is there already — add to it:` | paste the printed `include:` lines into your `.gitlab-ci.yml` |
+| `already has what the kit would write (src/, tests/ …)` | that folder is your project's own — give another: `qa`, `tests/e2e` |
+| `could not fetch the kit` | check the network or proxy for github.com, then run it again |
+| `npm ci failed` | the kit is copied: run `npm ci` and `npm run env:prepare` in its folder |
+| `.gitlab-ci.yml is there already — add to it:` | paste the printed `include:` lines into it |
 
-**Later — the kit's newest version.** In the kit's folder:
+A repository made with **Use this template** instead: `npm install`, `npm run env:prepare`,
+`npm run agents:use -- claude` (or `cursor`, `copilot`, several).
 
-```bash
-npx github:Avngrss/playwright-ai-workflow-kit --update --dry-run   # the plan, nothing changed
-npx github:Avngrss/playwright-ai-workflow-kit --update             # the same plan, then "Update? (Y/n)"
-```
+## 2. Open it in your AI
 
-| The plan says | What it means |
-|---|---|
-| `replaced` · `added` · `removed` | the kit's files you never changed: they become the kit's new ones |
-| `beside yours (.kit-new)` | you and the kit both changed it: yours stays, the kit's new version is `<file>.kit-new` — compare, keep what you want, delete the `.kit-new` |
-| `yours kept` | you changed it and the kit did not: nothing to do |
-| `package.json: …` · `.gitignore: …` | the kit's new scripts and packages where you kept the kit's, its new ignore lines |
-| `the kit's template changed` | the map or `.env.example`: yours stays, the template's new version beside it |
-| `CI …` | the workflow the installer wrote — replaced when you never changed it, else beside it |
+Open **the kit's folder** (not the repository's root, when the kit is in `qa/`) and turn on the `playwright` MCP
+server: Claude Code — approve it when asked; Cursor — Cursor Settings → MCP; Copilot CLI reads `.mcp.json`, VS
+Code's Copilot with its workspace MCP setting on. In Copilot the commands are skills called by name.
 
-Your plans, tests, app code, `.env` and the AI you chose are never in the plan. After it the agents' copies are
-written again, `npm install` runs and the gate says how the folder stands. Nothing is committed.
-
-From a clone of the kit (or a repository made with **Use this template**) instead:
-
-```bash
-npm install
-npm run agents:use -- claude    # or cursor, or cursor,claude — the AI you work with
-```
-
-`npm install` also installs the Chromium build that this Playwright version runs (postinstall). Set
-`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` to skip it, and install it later with `npm run browsers:install`.
-Firefox and WebKit are needed only for `@cross-browser` tests — the runs that need them download them once
-(`npm run browsers:install:all` does it in advance).
-
-## 2. Create `.env`
-
-```bash
-npm run env:prepare
-```
-
-This creates `.env` from `.env.example`. It refuses to run while git would commit `.env`. From now on
-the agent changes `.env` only through this script. It writes addresses and adds empty entries, and it
-prints names and filled/empty only, never a value. It edits `.env` and `.env.example` in place: your
-lines, headings and notes stay where they are, a value changes in its own line and a new name joins its
-app's group. Only `npm run env:prepare -- --tidy` lays both files out by app again. **You type logins,
-passwords and secrets into `.env` yourself.** Do not type them into the chat (see
-[Security and data](security-data-handling.md)).
-
-## 3. Check the empty kit
-
-```bash
-npm run qa:gate     # the suite's conventions, then tsc
-npm run test:list   # lists the tests without running them
-```
-
-Both pass with no feature tests: the template's sign-in smoke is listed, skipped until an app has
-an ```auth block. If one fails on a fresh clone, report the failure as it is. Do not work around it.
-
-## 4. Add the first app: `/setup app`
+## 3. Add your app: `/setup`
 
 ```text
 /setup app https://qa.shop.example.com
 ```
 
-The setup skill (§2, Add an app):
+The agent registers the app in `specs/project-map.md`, saves its address in `.env`, finds the sign-in flow
+(signed out — it never submits a form), prepares empty login entries in `.env` — **you fill them yourself, never
+in the chat**, then reply `ready` — and proves it with the sign-in smoke. A one-time code, a captcha or SSO-only
+sign-in is reported with what the team must provide. Details: [Sign-in](auth-strategy.md).
 
-- turns the template's `default` rows in `specs/project-map.md` §Apps and services into your app's
-  rows. The first app keeps `UI_BASE_URL` / `API_BASE_URL`.
-- saves the address with `env:prepare`.
-- runs `npm run app:add -- <app>`. This creates `src/fixtures/<app>/` with `data.fixture.ts`,
-  `pages.fixture.ts` and `test.ts` (the `test` that the app's specs import).
-- goes on to set up sign-in (step 5), then runs the app's first sign-in smoke and `qa:gate`.
-
-The app gets a kebab-case slug (`shop`). The report names it, and you can rename it there before any
-test exists.
-
-## 5. Set up sign-in: `/setup sign-in`
-
-`/setup app` goes on to sign-in, the setup skill's §3. Run `/setup sign-in` yourself if you chose
-"Later" there, or later to change how tests sign in or fix a broken sign-in; another role is
-`/setup another account or role`.
-
-1. The agent opens the app signed out and finds the sign-in flow. It never submits a form.
-2. It prepares empty entries such as `SHOP_LOGIN`, `SHOP_PASSWORD` in `.env`. **You fill them** and
-   reply `ready`.
-3. It writes the app's ```auth block in `specs/project-map.md` §Auth (names of `.env` entries only),
-   finds the API and its Swagger/OpenAPI, and chooses where API tests get their credentials.
-4. It verifies the result: `npm run auth:check`, then the sign-in smoke.
-
-Blockers such as a one-time code, a captcha or SSO-only sign-in are reported with what the team needs
-to provide, and never worked around. Details: [Auth strategy](auth-strategy.md).
-
-## 6. Run the gate and the smoke
+## 4. Check
 
 ```bash
-npm run qa:gate
-npm run test:smoke
+npm run qa:gate      # the conventions, then tsc
+npm run test:smoke   # the app opens and its first account signs in
 ```
 
-The sign-in smoke (`tests/smoke/sign-in.smoke.spec.ts`, part of the template, never edited) checks,
-per app, that the first account signs in to the web app, that the API accepts its session, and that
-a signed-out visitor is sent to sign in. A public app (no sign-in at all) gets one test instead: "The
-web app opens". Every other test of the app waits for it, so a dead stand stops the run early. Until
-the app has an ```auth block, the smoke is skipped.
-
-## 7. Plan the first feature
+## 5. Plan the first feature
 
 ```text
 /plan Account → Addresses
 ```
 
-The agent asks only what it cannot find out, checks the feature on the stand and shows a plan to
-confirm. Each case's scenarios get one owner each — API, UI or E2E, from what the stand shows — so no
-scenario is tested twice. No test is written before you say yes. After your yes, the same run writes
-the tests (`/implement`) and checks them with one `npm run verify` (`/verify`): the gate, each new check
-proven able to fail, one run without a retry. For new tests comes an independent review: Claude Code runs
-it as its `reviewer` subagent; in Cursor the summary ends with a `/review` line — paste it into a new chat.
-Before the agent ends a turn, its stop hook runs the gate on the work and checks that a red run got its one
-automatic heal; it sends the agent back once when not. Continue with [Workflow](workflow.md).
+The agent checks the feature on the live app and shows the plan: each case's owner (API, UI or E2E), its checks,
+priority and reason. Nothing is written before your yes. After **Yes, write them** it writes the tests, runs one
+`npm run verify`, heals a failure once, has new tests reviewed by a reviewer that did not write them and sums up
+with the next command.
+
+## Later — the kit's newest version
+
+```bash
+npx github:Avngrss/playwright-ai-workflow-kit --update --dry-run   # the plan, nothing changed
+npx github:Avngrss/playwright-ai-workflow-kit --update             # the plan, then "Update? (Y/n)"
+```
+
+| The plan says | It means |
+|---|---|
+| `replaced` · `added` · `removed` | kit files you never changed take the new version |
+| `beside yours (.kit-new)` | you and the kit both changed it — compare with `<file>.kit-new`, keep what you want, delete it |
+| `yours kept` | you changed it, the kit did not — nothing to do |
+
+Your map, plans, tests, app code, `.env` and AI choice are never touched. Nothing is committed.
 
 ## Where things live
 
 | Path | What |
 |---|---|
-| `agents/` | the rules, skills and commands your AI follows — edit them here, then `npm run agents:sync` |
-| `.cursor/`, `.claude/`, `.mcp.json` | your AI's copies of `agents/`, written by `npm run agents:sync` — never edited by hand |
-| `specs/project-map.md` | the project map: apps, `.env` names, ```auth blocks, TMS case links, tags, locks. Code and the gate read it |
-| `specs/known-bugs.md` | confirmed bugs the suite tracks |
-| `specs/<app>/<area>/<feature>/<feature>.md` | a feature's plan |
-| `specs/e2e/<app>/<area>/<journey>.md` | an E2E journey's plan |
-| `tests/<api\|ui>/<app>/<area>/<feature>/<feature>.<layer>.spec.ts` | a feature's tests |
-| `tests/e2e/<app>/<area>/<journey>.e2e.spec.ts` | a journey's test |
-| `tests/smoke/sign-in.smoke.spec.ts` | the template's sign-in smoke |
-| `src/fixtures/<app>/`, `pages/<app>/`, `components/<app>/`, `api/clients/<app>/`, `data/…/<app>/` | the app's support code |
-| `state/` | saved sign-in sessions, and the TMS cases or bugs a plan was drafted from (git-ignored) |
-| `reports/run-summary.md`, `reports/allure/` | the last run's summary and the Allure results |
+| `agents/` | the rules, skills and commands your AI follows — edit here, then `npm run agents:sync` |
+| `.claude/`, `.cursor/`, `.github/`, `.mcp.json` | your AI's copies of `agents/` — never edited by hand |
+| `specs/project-map.md` | apps, `.env` names, sign-in, tags, locks — code and the gate read it |
+| `specs/<app>/<area>/<feature>/<feature>.md` | a feature's plan (an E2E journey's: `specs/e2e/<app>/<area>/`) |
+| `tests/<api\|ui\|e2e>/<app>/…` | the tests; `tests/smoke/` holds the sign-in smoke |
+| `src/…/<app>/` | the app's fixtures, Page Objects, clients, data |
+| `reports/run-summary.md`, `reports/allure/` | the last run's summary and report |
 
-An app's folders appear with its first plan and test. They are never created empty in advance. Every
-npm script is listed in `agents/rules/00-project-map.md`. The strategy in one page is
-[docs/test-strategy.md](test-strategy.md).
+Every npm script: `agents/rules/00-project-map.md`. The strategy in one page: [Test strategy](test-strategy.md).
