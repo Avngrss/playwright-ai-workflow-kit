@@ -1,0 +1,27 @@
+README.md
+  s_6dd1efff380800::t_8ceb87d70d948d 3-4,62-64,70-71,97,108,114-118,218-220,256-258,268,326,347-351
+docs/getting-started.md
+  s_6dd1efff380800::t_c99ed01763f110 110-113
+docs/test-strategy.md
+  s_6dd1efff380800::t_daa90296a62fbe 190-191
+docs/workflow.md
+  s_6dd1efff380800::t_23efad0f946ddd 10-16,27,29,156-158,571-572
+package.json
+  s_6dd1efff380800::t_171617448e3b10 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "31abf455fe2f6a62975d4419f9290a8c6dc65698",
+  "prompts": {},
+  "sessions": {
+    "s_6dd1efff380800": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_6dd1efff380800",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
