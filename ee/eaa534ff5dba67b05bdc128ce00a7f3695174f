@@ -1,0 +1,25 @@
+bin/upgrade.mjs
+  s_5a14ef979817d5::t_9c194eb61d1724 178
+README.md
+  s_5a14ef979817d5::t_6b33c3d444e7c1 114-117,179,379-380,406-410
+docs/getting-started.md
+  s_5a14ef979817d5::t_dc9dd6dee85f24 40-58
+docs/workflow.md
+  s_5a14ef979817d5::t_bbf56d30a565df 54-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eeeaa534ff5dba67b05bdc128ce00a7f3695174f",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
