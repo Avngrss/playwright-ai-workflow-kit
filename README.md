@@ -65,7 +65,7 @@ npm run allure:open
 
    ```text
    $ npx github:Avngrss/playwright-ai-workflow-kit
-   Playwright AI Workflow Kit 1.3.0
+   Playwright AI Workflow Kit 1.4.0
 
    ? Folder for the kit? (Enter = qa)
    ? Which AI do you work with? 1 Claude Code · 2 Cursor · 3 both (Enter = 1)
