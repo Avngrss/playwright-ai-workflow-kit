@@ -1,0 +1,35 @@
+.claude/rules/00-project-map.md
+  s_5a14ef979817d5::t_c837e153955337 80
+.cursor/rules/00-project-map.mdc
+  s_5a14ef979817d5::t_cace4e0ee87267 84
+README.md
+  s_5a14ef979817d5::t_cb76e83662f6f1 326-327
+agents/rules/00-project-map.md
+  s_5a14ef979817d5::t_054857319bf525 83
+agents/agents.json
+  s_5a14ef979817d5::t_f6f43a9f85ba49 1-6
+package.json
+  s_5a14ef979817d5::t_b5c6380c3c6887 40
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_4d5b2bf3cebfea 2-5,10-11,14-15,17,28,31-33,36-46,64,67,80-81,122-123,125-126,130,132-133,136-137,144,146-147,151,163-164,167,172-174,177-179,189-193,197-206,216-228
+scripts/agent/agents-use.mjs
+  s_5a14ef979817d5::t_2131ec98a9304c 1-59
+scripts/gate/agents.mjs
+  s_5a14ef979817d5::t_9d847c9fbca67a 5-7,11-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf669b76b1c594e3b67f5063fe32b9e353f222cb",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
