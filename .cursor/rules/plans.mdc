@@ -99,7 +99,9 @@ one test in that owner's folder, decided by where a failure would point:
 - **Owner check** — never a test for the sake of an owner, from evidence only: no API when nothing falls outside
   the screens · no UI without a screen · no E2E when no journey crosses pages, roles or services. A run limited
   to one owner that finds none → ask: drop the limit · stop; E2E asked, nothing crossing → ask: write it as UI
-  scenarios · stop. The outcome → `## Owners`.
+  scenarios · stop. The outcome → `## Owners`. An app with an API (its map row) and no API scenario says, for each
+  place one comes from, why there is none — `none · other inputs: <why> · access: <why> · contract: <why>`;
+  `qa:gate` fails a plan without it.
 
 ## Routes — how each scenario proves its result
 
@@ -262,7 +264,7 @@ from the live check (`npm run spec:draft` refuses a block still holding one).
 
 ## Owners
 - this run: auto | api | ui | e2e
-- found: UI <n> · API <n> · E2E <n> — <why each API scenario exists (another input of a rule, access, the contract) | none: the screens' answers prove the rules>
+- found: UI <n> · API <n> · E2E <n> — <why each API scenario exists (another input of a rule, access, the contract) | an app with an API and API 0: none · other inputs: <why> · access: <why> · contract: <why> | an app without one: none: <why>>
 
 ## Scope
 - in: / out:

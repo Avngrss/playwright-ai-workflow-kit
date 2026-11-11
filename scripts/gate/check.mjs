@@ -11,7 +11,8 @@
  *   repeats.mjs   the same thing twice: copied lines, the same code in two apps, a scenario automated twice
  *   cases.mjs     a manual case automated whole or not at all: every scenario of it with its test; a Blocked one says where
  *                 the tests looked; browsers, phone and screenshots decided
- *   routes.mjs    one scenario, one owner, one test, proven as its route says (docs/Layer Routing Algorithm.md)
+ *   routes.mjs    one scenario, one owner, one test, proven as its route says (docs/Layer Routing Algorithm.md); a plan
+ *                 says what its owner check found — an app with an API never left without API scenarios unsaid
  *   reading.mjs   a UI test reads as its case: no data shaped in the spec, a step is one action and its checks
  *   pointers.mjs  every rule and skill the code names exists in .cursor/
  *   advice.mjs    warnings: size, readability

@@ -47,18 +47,28 @@ export function collectFiles() {
   };
 }
 
-/** The apps the map lists (§Apps and services, `Platform` column) — empty while it holds only the template's `default` rows. */
-export function registeredPlatforms() {
+/** The map's §Apps and services rows: { platform, kind } each. */
+function appRows() {
   const map = at("specs", "project-map.md");
   if (!fs.existsSync(map)) return [];
   const section = /^## Apps and services\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(read(map).replace(/\r\n/g, "\n"))?.[1] ?? "";
-  const slugs = section
+  return section
     .split("\n")
     .filter((line) => line.startsWith("|"))
-    .map((line) => line.split("|")[1]?.trim())
-    .filter((slug) => slug && slug !== "Platform" && !/^-+$/.test(slug));
-  const unique = [...new Set(slugs)];
+    .map((line) => line.split("|").map((cell) => cell.trim()))
+    .filter(([, slug]) => slug && slug !== "Platform" && !/^-+$/.test(slug))
+    .map(([, platform, , kind]) => ({ platform, kind: kind ?? "" }));
+}
+
+/** The apps the map lists (§Apps and services, `Platform` column) — empty while it holds only the template's `default` rows. */
+export function registeredPlatforms() {
+  const unique = [...new Set(appRows().map(({ platform }) => platform))];
   return unique.length === 1 && unique[0] === "default" ? [] : unique;
+}
+
+/** The apps with an API row in the map (its `Kind` names API) — the apps an API scenario can be planned for. */
+export function apiPlatforms() {
+  return new Set(appRows().filter(({ kind }) => /\bAPI\b/i.test(kind)).map(({ platform }) => platform));
 }
 
 // Support-code folders split by app (.cursor/rules/00-project-map.mdc): <kind>/<app>/….

@@ -18,7 +18,8 @@ formula, §18 a TMS case split into scenarios), `01-workflow.mdc` (asking, the T
    skill (add an app) first; no ```auth block and the feature needs a signed-in user → the setup skill (sign-in).
 2. **Which app** — from the user's words; several apps and none named → ask "Which app?": one numbered option per
    app, the last "Add a new app" (→ the setup skill).
-3. **Owners** — never asked: every owner the stand shows is written (§6 Whole case). A limit in the user's words
+3. **Owners** — never asked: every owner the stand shows is written (§6 Whole case); an app with an API and no API
+   scenario says why place by place (`plans.mdc` §Layers, the owner check). A limit in the user's words
    ("API tests for …", "only UI") → only that owner's scenarios, the rest `Needs <owner>` (the confirm offers to
    drop the limit). "E2E", or a journey described → §7. One line, no question: API scenarios and the map's `api:`
    takes credentials from a browser (`session-token`, `session-cookies`, `refresh-token`) → "API tests take their

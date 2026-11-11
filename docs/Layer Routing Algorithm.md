@@ -310,8 +310,9 @@ The statuses of `npm run suite:coverage`: **automated** — every scenario of th
 
 A prompt will not hold the tree. Below are the refusals of `qa:gate` (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`). A plan or a spec being written now (not committed on the branch) fails; one written before routing gets a warning — a "rework" list, without a red gate.
 
-The plan (`checkPlanRoutes`, parsed by `parseRoute` in `plans.mjs`):
+The plan (`checkOwners`, `checkPlanRoutes`, parsed by `parseRoute` in `plans.mjs`):
 
+- A feature plan has `## Owners` with a filled `found: UI <n> · API <n> · E2E <n> — <why>` line. An app with an API row in the map and `API 0` says why for each place an API scenario comes from: `none · other inputs: <why> · access: <why> · contract: <why>` — an agent that plans every case on the screen never skips the API silently.
 - A ready scenario has a `Level` and a `Route` line (several — each with `(step <n>)`). No `Route`, and `Needs:` names two layers — "one expected result proven twice: split it into scenarios".
 - `Level: API` stands only with a `Route` that starts with `api`; `Level: UI` and `Level: E2E` — only with `intercept`, `no-request` or `screen-only`.
 - The formula: the start is `api|intercept <METHOD> <path> →`, `no-request` or `screen-only`; `→ empty` without `read` / `until` is an error; `api` / `intercept` name at least a field, `check:`, a status, `sent:`, `query:`, `empty` or `input`; `no-request` and `screen-only` name neither fields nor a status, but name the screen; `api` has no `sent:` and no screen; `input` is only for `api` / `intercept`.
