@@ -27,10 +27,15 @@ env:
   UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
   API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
 
+# A new push to the same branch cancels the run still going — no stale run left spinning.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   baseline:
     name: Baseline Gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       has_tests: ${{ steps.detect-tests.outputs.has_tests }}
@@ -72,7 +77,7 @@ jobs:
     name: ${{ matrix.name }}
     needs: baseline
     if: needs.baseline.outputs.has_tests == 'true' && github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -109,6 +114,7 @@ jobs:
         run: npm ci
       - name: Install Playwright browser runtime
         if: matrix.browser != 'none'
+        timeout-minutes: 10
         # Chromium always: every project waits for the app's sign-in smoke, which runs in Chromium.
         run: npx playwright install --with-deps chromium ${{ matrix.browser }}
       - name: Run matrix command
@@ -160,7 +166,7 @@ jobs:
     name: Visual Baselines (Linux)
     needs: baseline
     if: github.event_name == 'workflow_dispatch' && needs.baseline.outputs.has_tests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write
