@@ -1,0 +1,23 @@
+README.md
+  s_c954c0b86e0c1e::t_64a72681ea0584 392-395
+docs/workflow.md
+  s_c954c0b86e0c1e::t_c86effe36c5fe9 372-375
+src/reporting/failure-cause.ts
+  s_c954c0b86e0c1e::t_3586ac838bc2ce 199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bfc8f70dd19fc709afd5519cb2e6233f64b37d18",
+  "prompts": {},
+  "sessions": {
+    "s_c954c0b86e0c1e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_c954c0b86e0c1e",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
