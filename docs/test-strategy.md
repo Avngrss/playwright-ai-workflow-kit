@@ -187,7 +187,8 @@ serialised (<the CI's lock on the stand>).
 
 A test is done when its case is ready in the plan and was live-checked; one `npm run verify` passed:
 the gate, its check proven able to fail (red when the expected value is spoiled), one run on the
-stand without a retry; a review that did not write it (a new chat) found no way it passes while its
+stand without a retry; a review that did not write it (a new chat, or Claude Code's `reviewer` subagent)
+found no way it passes while its
 case is broken, or its findings were fixed or answered; it cleans up what it created; the report shows
 it in the right place with readable steps; the plan and, when there is one, the manual case are
 updated.

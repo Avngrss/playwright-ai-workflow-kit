@@ -107,8 +107,10 @@ The agent asks only what it cannot find out, checks the feature on the stand and
 confirm. Each case's scenarios get one owner each — API, UI or E2E, from what the stand shows — so no
 scenario is tested twice. No test is written before you say yes. After your yes, the same run writes
 the tests (`/implement`) and checks them with one `npm run verify` (`/verify`): the gate, each new check
-proven able to fail, one run without a retry. For new tests the summary ends with a `/review` line —
-paste it into a new chat for an independent review. Continue with [Workflow](workflow.md).
+proven able to fail, one run without a retry. For new tests comes an independent review: Claude Code runs
+it as its `reviewer` subagent; in Cursor the summary ends with a `/review` line — paste it into a new chat.
+Before the agent ends a turn, its stop hook runs the gate on the work and checks that a red run got its one
+automatic heal; it sends the agent back once when not. Continue with [Workflow](workflow.md).
 
 ## Where things live
 

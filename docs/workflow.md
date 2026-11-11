@@ -7,9 +7,13 @@ reviews, audits and refactors live, what you will see in the chat, and example p
 ## 1. Commands
 
 Eight slash commands live in `agents/commands/`. Seven open the four skills in `agents/skills/`
-(setup, plan, implement, verify); `/review` is the brief of an independent review, run in a new chat.
-In Cursor's chat, type `/<command>` and then what it needs: a link, a plan path or a few words. If you
-leave something out, the skill asks.
+(setup, plan, implement, verify); `/review` is the brief of an independent review, run in a new chat
+(Claude Code: the `reviewer` subagent). In the agent's chat — Cursor or Claude Code — type `/<command>` and
+then what it needs: a link, a plan path or a few words. If you leave something out, the skill asks.
+
+When the agent ends a turn, its stop hook (`scripts/agent/stop-check.mjs`) runs the gate on the work in the
+tree and checks that a red verify of new tests got its one automatic heal. Found → the agent is sent back once
+with what to do; a question it must ask you still gets through.
 
 | Command | Skill | When to use | Fields |
 |---|---|---|---|
@@ -20,9 +24,9 @@ leave something out, the skill asks.
 | `/heal` | verify, §8 Heal | One or two red tests, each from its verdict, or only explain the failures | the failing tests `<spec>:<line> …` (default: the "heal the red tests" line of `reports/run-summary.md`) · mode `heal` or `explain` |
 | `/triage` | verify, §10 Triage the run | Three or more red tests, or a CI run: every failure sorted by its verdict, every changed expectation traced to a source | the run (default: `reports/run-summary.json`) · later, your answers: `1 yes, 2 no` |
 | `/coverage` | verify, §9 Coverage | A TMS suite case by case: automated, to rework, not automated or inconsistent. Read-only | the TMS folder link |
-| `/review` | — (in a new chat) | An independent review of new tests against their cases | the plan and its blocks, the spec paths — the verify summary gives the whole line |
+| `/review` | — (in a new chat; Claude Code: the `reviewer` subagent) | An independent review of new tests against their cases | the plan and its blocks, the spec paths — the verify summary gives the whole line |
 
-Without a command of its own — ask in words, or reference `@agents/skills/<name>/SKILL.md`:
+Without a command of its own — ask in words, or name the skill (`.claude/skills/<name>/SKILL.md`):
 
 - **A change to the project map** (an external system, a TMS case link, the tracker queue, a tag, a
   lock, an app's `tenants:` line): the setup skill §5.
@@ -149,7 +153,9 @@ give (an account, a fact from another system), and one next command (§5).
 ### Review: `/review`
 
 Run it in a **new chat**, so the reviewer has not seen how the tests were written. The verify summary
-gives the line: `/review <plan path> #<n> … — <spec paths>`. The reviewer reads only the cases as their
+gives the line: `/review <plan path> #<n> … — <spec paths>`. In Claude Code the agent runs it itself as the
+`reviewer` subagent — a fresh context, the same brief — and the summary reads `full`, with no line to paste;
+Cursor lists that subagent too. The reviewer reads only the cases as their
 source states them, each block's `Data:` and `Rules:` lines, the tests and the files they import, and
 `reports/run-summary.md` — and edits nothing. Per test it asks one question: where would it pass although
 its case is broken? Five kinds of finding: an unasserted step, a check that cannot fail, assumed data, a
@@ -562,7 +568,8 @@ planned yet: `/plan` with this folder link".
 
 ## 6. Example prompts
 
-What to type in Cursor's chat, and what happens next. Replace the app, links and paths with your own.
+What to type in the agent's chat (Cursor or Claude Code), and what happens next. Replace the app, links and
+paths with your own.
 
 | # | Type | What happens |
 |---|---|---|

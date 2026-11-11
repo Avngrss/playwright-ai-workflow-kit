@@ -1,7 +1,7 @@
 {
   "name": "playwright-ai-workflow-kit",
   "version": "1.1.0",
-  "description": "A Playwright + TypeScript test home for Cursor: plan, implement and verify API, UI and E2E tests with AI agents.",
+  "description": "A Playwright + TypeScript test home for Cursor and Claude Code: plan, implement and verify API, UI and E2E tests with AI agents.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Avngrss/playwright-ai-workflow-kit.git"
