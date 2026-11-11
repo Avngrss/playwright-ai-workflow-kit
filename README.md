@@ -60,12 +60,41 @@ npm run allure:open
    runs `npm ci` (Chromium too) and creates `.env`. It never overwrites a file: a folder of your project the kit
    would mix into (`src/`, `tests/` …) stops it before anything is written. Nothing is committed.
 
+   <details>
+   <summary>What it looks like</summary>
+
+   ```text
+   $ npx github:Avngrss/playwright-ai-workflow-kit
+   Playwright AI Workflow Kit 1.4.0
+
+   ? Folder for the kit? (Enter = qa)
+   ? Which AI do you work with? 1 Claude Code · 2 Cursor · 3 both (Enter = 1)
+   ? CI? 1 GitHub Actions · 2 GitLab CI · 3 none (Enter = 1)
+   The kit goes into qa/ for Claude Code, CI: github — from https://github.com/Avngrss/playwright-ai-workflow-kit.git at <commit>.
+   ? Install? (Y/n)
+   ✓ 165 files of the kit copied
+   ✓ CI: .github/workflows/playwright.yml — add the app's addresses and logins in GitHub (Settings → Secrets and variables → Actions) and to its env: block
+   ✓ the rules, skills and commands for Claude Code
+   Installing (npm ci, then Chromium) …
+   ✓ npm ci
+   ✓ .env created from .env.example — enter the empty values there yourself
+
+   Done. Next, in qa/:
+     1. Claude Code — open the folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then type /setup
+     The new files are not committed — review them and commit yourself.
+   ```
+
+   </details>
+
    Without questions: `npx github:Avngrss/playwright-ai-workflow-kit qa --agent claude --ci github --yes`.
    A repository by its link: `npx github:Avngrss/playwright-ai-workflow-kit <git URL> --dir qa` clones it here
    first. A new repository of its own instead: **Use this template** on GitHub, clone it, `npm install`,
    `npm run env:prepare`, `npm run agents:use -- <claude|cursor>`.
 
-2. Change the AI later in that folder: `npm run agents:use -- cursor` (or `claude`, `cursor,claude`).
+2. Change the AI later in that folder: `npm run agents:use -- cursor` (or `claude`, `cursor,claude`). Bring it to
+   the kit's newest version there: `npx github:Avngrss/playwright-ai-workflow-kit --update` (`--dry-run` shows the
+   plan first) — the kit's files you never changed are replaced, the ones you changed stay with the new version
+   beside them (`<file>.kit-new`), your map, plans, tests and app code are never touched.
 
 3. Open **the kit's folder** in Cursor or Claude Code and turn on the `playwright` MCP server — Cursor: Cursor
    Settings → MCP (`.cursor/mcp.json`); Claude Code: approve it when asked (`.mcp.json`). The agent explores
@@ -127,7 +156,7 @@ with what to do; a question it must ask you still gets through.
 | `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
 | `agents/agents.json`, `hooks.json`, `permissions.json`, `mcp.json` | Which AI this folder works with (`npm run agents:use`), the stop hook's command, what Claude Code may run without asking (and never: reading cookies and storage), the Playwright MCP server |
 | `.cursor/`, `.claude/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
-| `bin/install.mjs` | The installer `npx github:Avngrss/playwright-ai-workflow-kit` runs — it stays in the kit, a project never gets it |
+| `bin/` | The installer and its update (`npx github:Avngrss/playwright-ai-workflow-kit [--update]`), whose each file is (`ownership.mjs`), and the kit's own tests (`npm run kit:test`, run on every PR by `.github/workflows/kit.yml`) — they stay in the kit, a project never gets them |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
@@ -327,6 +356,8 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 | `npm run env:prepare` / `app:add` | used by `/setup`: `.env` names and addresses, edited in place (`-- --tidy` lays the file out by app) / an app's fixtures |
 | `npm run agents:sync` | after an edit in `agents/`: writes the chosen agents' copies (`.cursor/`, `.claude/`, `.mcp.json`); `-- --check` only lists what differs |
 | `npm run agents:use -- <cursor\|claude\|cursor,claude>` | which agents this folder works with: writes `agents/agents.json`, adds the chosen agents' copies, removes the others' |
+| `npx github:Avngrss/playwright-ai-workflow-kit --update [--dry-run]` | bring this test home to the kit's newest version — the plan shown first |
+| `npm run kit:test` | in the kit's own repository: its tests — the installer, whose each file is, the update |
 
 ---
 
@@ -352,9 +383,11 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 - **A rule is still text.** A weaker model can skip what no script checks. The gate, `npm run verify` and the
   stop check hold what can be checked (the owners of a plan, routes, can-fail, the automatic heal); the plan's
   confirm table is where you catch the rest.
-- **The installer does not update a kit it installed.** A newer version goes into a new folder; to move an
-  installed kit along, take `agents/`, `scripts/` and the shared `src/` code from the new version by hand and run
-  `npm run agents:sync` and `npm run qa:gate`. Your plans, tests and app code stay yours.
+- **An update merges no file by itself.** A kit file you changed (a rule, a script, the CI the installer wrote)
+  is kept and the kit's new version goes beside it as `<file>.kit-new`: you compare, keep what you want and delete
+  the `.kit-new`. So does a template you filled in (the map, `.env.example`) whose kit version changed. A test
+  home installed before the kit kept its commit (1.3.0) is matched to the kit's commit by its files, which takes
+  a few seconds more.
 - **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
   `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
   system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.
