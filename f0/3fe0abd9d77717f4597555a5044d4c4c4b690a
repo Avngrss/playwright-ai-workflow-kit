@@ -1,0 +1,21 @@
+README.md
+  s_6d8adc7becedaa::t_60561f5a876adf 68
+package.json
+  s_6d8adc7becedaa::t_9cd6f001158542 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f03fe0abd9d77717f4597555a5044d4c4c4b690a",
+  "prompts": {},
+  "sessions": {
+    "s_6d8adc7becedaa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_6d8adc7becedaa",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
