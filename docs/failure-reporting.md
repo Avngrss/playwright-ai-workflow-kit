@@ -2,8 +2,8 @@
 
 How to read a red run. Readable failures are built in, so there is nothing to configure. The code is
 `src/reporting/failure-cause.ts`, `product-change.ts`, `readable-error.ts` and `run-summary.ts`,
-behind the reporters in `playwright.config.ts`. The rules are in `.cursor/rules/code.mdc` (§Failures
-explain themselves, §The Allure report, §Flaky tests) and `plans.mdc` §Known bugs; the verify skill §8.1
+behind the reporters in `playwright.config.ts`. The rules are in `agents/rules/code.md` (§Failures
+explain themselves, §The Allure report, §Flaky tests) and `plans.md` §Known bugs; the verify skill §8.1
 explains a failure, §8 heals one or two, §10 triages a red run.
 
 ## 1. Start with the run's summary

@@ -1,0 +1,317 @@
+---
+name: plan
+description: Plan automated coverage before any test is written — from TMS cases (plan from TMS, a TMS link), a ticket, a confirmed bug, a requirements doc, the user's own words, an API collection (Bruno + OpenAPI/Swagger) or an E2E journey; a live check, preconditions proven, stand data searched before blocking (npm run stand:find), one owner (API, UI or E2E) and route per scenario, blocks by npm run plan:block, then "Write these n now?". An existing plan starts a later pass by itself — automated first, blocked lines re-checked, a TMS alignment, one or two cases, or a refresh after a product or rule change (refresh the plan, update the plan), only the changed part. Writes no tests.
+---
+
+# Plan
+
+Writes `specs/<app>/<area>/<feature>/<feature>.md` (a journey: `specs/e2e/<app>/<area>/<journey>.md`) so
+implementation never guesses — no tests. This skill is the order of work; the rules are never restated here:
+**`plans.md`** (what a plan is), `docs/Layer Routing Algorithm.md` (§6 one scenario proven once, §7 the `Route`
+formula, §18 a TMS case split into scenarios), `01-workflow.md` (asking, the TMS read-only, language),
+`02-guardrails.md` (secrets), `live-app.md` (the browser, probes), `data-and-fixtures.md` (data), `api.md`
+(collections).
+
+## 1. Inputs and basis
+
+1. Read `specs/project-map.md` (`plans.md` §Read the map first): the app not in §Apps and services → the setup
+   skill (add an app) first; no ```auth block and the feature needs a signed-in user → the setup skill (sign-in).
+2. **Which app** — from the user's words; several apps and none named → ask "Which app?": one numbered option per
+   app, the last "Add a new app" (→ the setup skill).
+3. **Owners** — never asked: every owner the stand shows is written (§6 Whole case); an app with an API and no API
+   scenario says why place by place (`plans.md` §Layers, the owner check). A limit in the user's words
+   ("API tests for …", "only UI") → only that owner's scenarios, the rest `Needs <owner>` (the confirm offers to
+   drop the limit). "E2E", or a journey described → §7. One line, no question: API scenarios and the map's `api:`
+   takes credentials from a browser (`session-token`, `session-cookies`, `refresh-token`) → "API tests take their
+   credentials from a browser sign-in — a broken sign-in page fails them too."; no Docs (Swagger) link in the app's
+   API row → API scenarios need the contract, blocked until the user shares it.
+4. **What we cover** — not given yet → send this message and nothing else, then wait:
+
+   > **What are we covering?** Paste one of these, or several:
+   > - **A TMS link** to a folder or one case — the plan covers exactly those cases.
+   > - **A ticket** (its id or link) — its acceptance criteria become the requirements.
+   > - **A confirmed bug** (its id or link) — the expected result it names becomes a case.
+   > - **A requirements doc** (a path or link) — every documented rule gets a case.
+   > - **An API collection** (`collections/bruno/<service>/…`, with the OpenAPI/Swagger if there is one) — its requests become candidates, rated by risk.
+   > - **The feature in your own words**, e.g. "Account → Addresses" — the app is explored live: user scenarios first, then the risks around them.
+
+   Every line stays until the user says there is no such system — a map naming no TMS or tracker yet too (the first
+   link pasted fills it, the setup skill §5). A §Tracker queue query → up to 2 of the user's own open tickets
+   (read-only) as numbered options; an error or no result adds nothing, silently. QA work tracked as a sub-task (the
+   map's note) → plan for the parent story.
+5. **Read the reply by its content** — the first match is the basis (what each puts in the plan: `plans.md`
+   §Sources of truth), the feature named after it; everything else is context:
+   - a TMS link → `test-cases`, the folder title → §4.2; a link to **one case inside a folder** → ask "1. Only
+     <case id> — <title> · 2. The whole folder (<n> cases)"; an app with no `case link <app>` line → write it from
+     this link (the setup skill §5);
+   - a ticket id or link → `requirements`, its summary: the summary, description and acceptance criteria (the
+     parent too when the story alone does not explain the feature); the header's `Ticket:`;
+   - a confirmed bug's id or link → `requirements`, the feature it breaks: its steps, expected and actual result;
+     its block by `--bug` (§4.5);
+   - a doc path or link → `requirements`, the doc title → §4.1;
+   - a collection path → `value-and-risk` over its requests, the service or domain → §4.4;
+   - only words → `value-and-risk`, the user's words: the app explored live, no documentation search of your own (a
+     blocker's aside: §5 Searched before blocked).
+6. **Slugs** (`00-project-map.md` §Layout): `feature` from the ticket or the user's words, never a page you
+   noticed; `area` groups siblings — an existing area clearly holding them → ask "1. <area> · 2. New area". An
+   existing feature folder clearly the same feature → ask which is meant, never a near-duplicate.
+7. The plan file exists → §3, never straight to code.
+
+## 2. Gates — before any case is drafted
+
+- **Stability gate** (`plans.md` §Stability gate) — it stops the run as it says.
+- **Owner check** (`plans.md` §Layers) — its two questions, numbered: "1. Drop the limit — write every owner · 2. Stop";
+  "1. Write it as UI scenarios · 2. Stop".
+- **Roles** (`plans.md` §Read the map first: `npm run auth:check -- <app>:<role>`, then "Fill APP_MANAGER_LOGIN,
+  APP_MANAGER_PASSWORD in .env, then reply ready" before the confirm table). A role the user asks for that the map
+  lacks → the setup skill §3.9.
+
+## 3. A later pass, an alignment, a refresh
+
+Starts by itself when the plan exists (§1 step 7), no command of its own; the user's words or link say which.
+
+### Already automated — every pass starts here
+
+`plans.md` §A later pass and §TMS cases (Already automated), in this order:
+1. `npm run suite:coverage -- --app <app>` (clean JSON: `node scripts/agent/suite-coverage.mjs --app <app>`): this
+   plan's cases are those whose `plan.plan` is this plan, and its `withoutTms` rows (matched by title).
+2. Show the rule's "Already automated" line and table — automated cases first, then the rest with their status and
+   since date.
+3. Re-check every `Blocked` line — stand data with the `npm run stand:find` its `searched:` tail names — and say it
+   in one line ("Unblocked: TC-408 — the map now has a second account · still blocked: TC-416").
+4. **Nothing left** (and no refresh asked) → stop as the rule says, no confirm question: the table, the re-check
+   line and one next step (a failed last run → `/heal` or `/triage`; never run → the run command; the product or a
+   rule changed → `/plan <plan path> — <what changed>`; new cases → their link).
+
+### Alignment with TMS cases
+
+TMS cases pasted for an existing plan, or its TMS folder changed: the plan and the folder's cases (§4.2 step 1),
+"Already automated" first, then
+1. **every case of the folder** → its plan blocks (`TMS:` carries its id) or one *Not now* line; a case new to the
+   plan → §4.5, §5, §6;
+2. case drift → the one question of §4.2; corrections in the TMS by hand (the agent only on the user's explicit yes
+   to that write);
+3. **a plan case with no TMS case** stays (it has its `Why`), listed "not in the TMS — add a case or keep it
+   plan-only";
+4. one `## Change log` line; then step 4 above, or the confirm (§8).
+
+### One or two cases of a planned feature
+
+Adding, unblocking or reworking one or two cases, no change named — **read only**: §1 steps 1 and 7, the plan; §4
+for the case's source and §4.5; §5 with what the case meets; §6 Whole case (the rating only for a case with no TMS
+priority); §8. Not read: the stability gate, the owner check (unless the run is limited), §6 Smoke. A case leaving
+*Not now* becomes a new block; its *Not now* line, the `## Owners` count, the briefs' and the map's lock lines it
+needs and a `## Change log` line change with it.
+
+### Refresh after a product or rule change
+
+The steps of `plans.md` §When the product changes. A locator-only breakage is a heal (`/heal`), never a refresh;
+nothing changed → "Already automated" alone.
+1. **Evidence first** (the rule's step 2; the run summary's `Plans to refresh:` too; a rule change — the text of
+   the rule, the gate or the review finding the user names); "update the plan" with no evidence → ask what changed.
+   From the TMS only the touched cases (the whole folder for a broad change or on request): a step the TMS dropped
+   leaves the plan and its test, an added step is planned.
+2. **The changed part only — read only**: "Already automated" (its table only when cases are added or removed); §4
+   for its source; §5 for the changed screen, request, contract or `Data:` (Searched before blocked only when met; a
+   rule change touches the stand only where it moves an owner or a check); §6 Whole case for a changed or new
+   scenario (an edited expected text with the same route and owner is not one), §4.5 for a new one; §8 (its short
+   form when only tests change). Not read: the map (unless the change brings a role or app the plan does not use
+   yet), the owner check, §6 Smoke (unless the change touches the `@smoke` case).
+3. Each touched case as the rule's steps 3–4 say (`S2 folded into S1`; a rule named in the change-log line).
+4. Then the implement skill for the edited tests (the sections their lines meet) and the new ones, and the verify
+   skill (§2, §6.2 — light review for an edited test, full for a new one).
+
+**From triage** (the verify skill §10 — a "Product changed" verdict or a "yes"): its quote (or the user's yes) is
+the evidence and the source, nothing it cites searched again; step 3, the edited tests, then back to the triage for
+its verify and its one message — no confirm here.
+
+## 4. Sources of truth
+
+### 4.1 Requirements
+
+A ticket → each acceptance criterion is a candidate; a doc → read in full, every flow, edge case, business rule,
+access rule and documented negative is one (a confirmed bug: `plans.md` §Known bugs).
+
+### 4.2 TMS cases and case drift
+
+1. Load the folder's cases (id, title, precondition, steps, expected results, priority); unreachable → "No TMS is
+   reachable from here — paste the cases' text, or describe the feature", then as `plans.md` §TMS cases says.
+2. `plans.md` §TMS cases for every case, **case drift** its one question per plan. A value or drift the user
+   already decided (the request, the plan's `Data:`, *Not now* or `## Manual case corrections` lines) is not asked
+   again.
+
+### 4.3 The contract
+
+The app's API row's Docs, a few real calls where it is ambiguous (`plans.md` §Sources of truth, `api.md`
+§Principles).
+
+### 4.4 An API collection
+
+Planning input, never the set by itself (`api.md` §API collections):
+1. **Inventory** — read-only, no request executed: its path and format; requests by service or domain, each with
+   its method, path, body or example, headers, auth hints and variables; service and env names against the map;
+   stateful or destructive ones flagged (production-looking loudly); the comparison with the contract, plans and
+   `tests/api/**` → the `## API brief`.
+2. Requests grouped into **business capabilities**, never one test per request; each rated (§6).
+3. Service ownership and `.env` names only from the map (unregistered → the setup skill §5 first); auth by the
+   app's `api:` mode — a protected request without a working sign-in → `blocked`.
+4. Contract and collection disagree → a drift line, the affected cases `blocked` or `postponed`; a destructive or
+   stateful request is `ready` only with its cleanup or isolation proven (§5).
+5. A secret in it is never copied — a finding. The summary → `## API brief` and `## Scope`, implementation
+   advice apart from the cases; the collection, the contract and the TMS stay unmodified.
+
+### 4.5 Case blocks by command
+
+Each block is appended to `## Test cases` by `npm run plan:block` (`plans.md` §Plan body — its shape and the
+`--title` form; a new plan's other sections by hand), its `<…>` and choices yours to fill from the live check (§5).
+**From a TMS case or a confirmed bug**: save what the TMS or tracker tool returned as `state/sources/<id>.json` in
+the neutral shape of `scripts/agent/plan-draft.mjs`, then `npm run plan:block -- <plan> --case|--bug
+state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner …] [--why …]
+[--role …]` — copied in its own words (`plans.md` §TMS cases, §Known bugs; a bug's expected result is its last
+expect). A case of several scenarios (`docs/Layer Routing Algorithm.md` §18) → one call per scenario with
+`--scenario` and `--take`.
+
+## 5. Live check and preconditions — proven, never promised
+
+Confirm every candidate on the stand before it gets a status — a targeted confirm/refute pass, not exploration
+(`plans.md` §Sources of truth), with the tool `live-app.md` names for it (the MCP explores, the saved-session
+script checks). Record as you go what `plans.md` §Sources of truth asks — each action's requests (the evidence
+of §6), the exact messages (the brief's `Messages:`), a lock (registered in the map, the setup skill §5; the
+brief's `Locks:`), an app-wide overlay or spinner (the map's ```app-wide block, said in one line) — and the probe
+of `live-app.md` §Browsers, phone, screenshots on each UI screen (the evidence for §6).
+
+Try every case's `Data:` and `Preconditions:` now, before the confirm table (`data-and-fixtures.md` §Data sources):
+- **each value the case names, first** — a rule or an illustration as that section says, on the confirm's
+  test-data line; its question when unclear: "1. A rule — test it as written · 2. An example — test by the
+  criterion";
+- `stand` — confirmed live; the plan names what was found and the date;
+- `API setup` — one real create, `AQA`-marked, removed at once; its shape and required fields → API brief;
+- `UI setup` — the probe that answers a request (none for state only the browser keeps); a probe that changes
+  something kept or shared → all such probes in one question first (`live-app.md` §Probes);
+- removal is tried with the create; what cannot be removed is the finding: ask "1. Keep one object made once for the
+  tests (named in the plan and the map) · 2. Block the case".
+
+### What the tests can neither read nor make
+
+A fact another system owns: the ladder of `data-and-fixtures.md` §Facts only another system knows (the map's
+§External systems: the setup skill §5); its "ask the user" step is the verify skill's "What only the engineer can
+give" message.
+
+Not proven → `blocked`: what was tried, what failed, what unblocks it — the cheapest way first; proven only in part
+→ named on the confirm's test-data line (§8).
+
+### Searched before blocked
+
+`plans.md` §Searched before blocked — the three searches, in full:
+1. **the rule** — the run's requirements (the ticket and its parent, the doc, the case), the API docs the map links,
+   this repository's `docs/` on the feature, the feature's tickets in the map's tracker (read-only) — to prove this
+   case, never to add one; found → the block's `- Rules:` line cites it;
+2. **the data** — every other tenant (store, project, team) each map account can open, and the outside systems the
+   tests can read (the map's §External systems). Stand data first by `npm run stand:find` — every account × tenant
+   (the app's `tenants:` line, added when missing; the header of `scripts/agent/stand-find.mjs`): found → `stand`,
+   the item named; nowhere → its last `searched:` line is the tail's place;
+3. **making it** — an API creating it (`API setup`), or an item kept for the tests alone, made once with the map's
+   accounts, offered in the one probe question above; declined → blocked. Only a way tried now, its removal too,
+   lifts the block — found but untried (declined, refused, unanswered) stays `Blocked`, the reason naming the way.
+
+A missing account: step 2 is the map's other accounts (their rights read live) and `.env`; step 3 never makes one
+(the verify skill's "What only the engineer can give").
+
+The `searched:` tail — each place as a person repeats it, its result in brackets (`docs/orders.md (no limit
+stated)`, `GET /api/shops as manager (2 shops, none closed)`, `kept team offered, declined 2026-11-03`); `none
+(<why>)` as the rule says. One readable line: the reason ≤ ~40 words, the tail ≤ ~5 places.
+
+## 6. Rating, whole case, smoke
+
+Read the app's other plans (`specs/<app>/**`) first, then rate every candidate (`plans.md` §Rating); a case
+without `Why` is not written.
+
+### Whole case
+
+Per case, from the live check's evidence, as `plans.md` §Layers, §Routes and §A case is written whole or not at all
+say: its **scenarios**, each one's **owner** (`Level:`) and **route** (`Route:`, `docs/Layer Routing Algorithm.md`
+§7) from the requests seen; the data a scenario stands on is preparation, never a check. Every route proven →
+every scenario written this run; otherwise the whole case goes to *Not now* (`Blocked` / `Cannot be automated`
+naming the step, or `Needs <owner>`) — `qa:gate` enforces it.
+
+### Smoke
+
+Propose the one case `plans.md` §Smoke allows (none fits → one line why); a later plan keeps the one already
+tagged.
+
+### Browsers, phone, screenshots
+
+A plan with UI cases decides all three from the probe's evidence, as `plans.md` §Visual, cross-browser,
+responsive says, and one line of the confirm says them. A later pass re-runs the probe on a screen that changed.
+
+## 7. An E2E journey — its plan
+
+What counts as a journey, its statuses and its plan: `plans.md` §E2E journeys. **One journey over planned features
+— read only**: steps 1–7 below, §4 for its source, §5 with what the journey meets, §6 Whole case; then the
+implement skill §5 and the verify skill §2, §3 per further role, §6.2 **Full**, §7.
+
+1. **Inputs** — the app and the sources as §1, and the plans of the features it crosses (the blocks and UI briefs
+   of the screens its steps pass). No journey described yet → ask, free text, and wait: "Describe the journey in a
+   sentence or two — who does what, from the start to what they must see at the end."
+2. **Is it a journey?** Nothing to connect → ask: 1. Write it as UI scenarios (§3 "One or two cases") · 2. Stop.
+3. **Roles** — which role acts at which step only from the description, each ready (§2); one missing → the whole
+   journey `blocked`, naming it (the setup skill §3.9).
+4. **Already covered** — the app's plans and `npm run test:list`: a lower-layer case proving a step stays there, the
+   journey checks the hand-over; the same journey planned already → a later pass over that plan (§3).
+5. **Live check** — walk it on the stand as each role, every step and the final outcome; note what each step needs
+   (data, a mailbox, a payment, cleanup); preconditions and cleanup proven as §5.
+6. **Write it** — `specs/e2e/<app>/<area>/<journey>.md`, `<journey>` kebab-case after the outcome
+   (`place-order-then-manager-approves`); each block by `npm run plan:block -- <plan> … --owner E2E` (§4.5); its
+   `## E2E brief` in the shape of `plans.md` §Plan body (3–6 steps: role — what they do — what they see).
+7. **Confirm** — the journey as a short table (`# | Step | Role | Checks`), the test-data line and anything blocked;
+   then ask "Write this journey now?": 1. Yes, write it · 2. Let me adjust the plan first. **Yes** → the implement
+   skill §5, then the verify skill, in the same run.
+
+## 8. Confirm — "Write these n now?"
+
+The tables and lines of `plans.md` §Confirm before any code, printed in chat:
+
+```markdown
+Plan: `specs/<app>/<area>/<feature>/<feature>.md` · basis: value-and-risk · role: customer
+
+**Will be written (<n>)**
+
+| # | Test | Owner | Why this owner | Checks | Suite | Priority | Why it is needed |
+|---|------|-------|----------------|--------|-------|----------|------------------|
+| 1 | Customer adds a delivery address | UI | the result on the same screen: the list | answer: street, city · screen: the list, the toast | Regression + Smoke | P1 · Critical | main scenario: keep my addresses |
+| 2 | Another customer cannot read the addresses | API | no screen: a direct request is refused | answer: 403 · error code | Regression | P1 · Critical | risk: someone else's data |
+
+Test data: the tests create their own entries and remove them (create and delete tried today).
+Priority: P1 is looked at first when it fails · Critical / Major / Minor — how bad a breakage is.
+Smoke: #1 — the feature's main scenario, under the first account — say "no smoke" to keep it regression only.
+Browsers, phone, screenshots: #1 @cross-browser — the delivery date is an input type=date · phone: none — at 393 px the form keeps its fields · screenshot of the empty list (your approval) — say "no" to any of them.
+
+**Will be changed or removed (<c>)**
+
+| Test | Spec | Change | Why |
+|------|------|--------|-----|
+| The address list answers street and city | `addresses.api.spec.ts` | removed — folded into #1 | #1 checks that answer on its own action |
+
+**Not now (<m>)**
+
+| Test | Why not now |
+|------|-------------|
+| 200-character limit on Street | P3, low risk |
+```
+
+**A pass that only changes tests** — the rule's short form; *Not now* there only for a case entering or leaving it.
+A claim about another plan's test ("it will fail") only after running it: `npm run test:app -- <app> <layer> <its
+spec> -g "<its title>" --retries=0`.
+
+Then ask "Write these <n> now?" with the rule's options:
+1. **Yes, write them** — "<n> to write (API <a>, UI <u>) · <c> to change or remove · <m> not now: <reasons>".
+2. **Drop the limit and write <k> more** — only when the rule says.
+3. **Add them to <feature> instead** — only for a new plan whose cases sit on another plan's screen or requests (its
+   `Covered by <that plan>` lines): this plan file is removed, the cases join that plan as a later pass with a
+   `## Change log` line there.
+4. **Let me adjust the plan first** — back into this skill.
+
+Only after **Yes** → the implement skill (each test from `npm run spec:draft`), then the verify skill.
+
+**Stop** — no feature, or a scenario with no route proven on the stand → `blocked`, never a guessed route; no answer
+about the feature → ask once. Never implement from this skill.

@@ -1,0 +1,3 @@
+{
+  "stop": "node scripts/agent/stop-check.mjs"
+}

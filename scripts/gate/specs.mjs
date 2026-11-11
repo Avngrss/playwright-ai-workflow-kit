@@ -78,7 +78,7 @@ export function testsOf(content) {
 }
 
 /**
- * A screenshot checkpoint in a file of its own (`<feature>-visual.ui.spec.ts`, .cursor/rules/specs.mdc
+ * A screenshot checkpoint in a file of its own (`<feature>-visual.ui.spec.ts`, agents/rules/specs.md
  * "Visual checkpoints"): it checks how a state looks — no second test of its scenario, not held to its route.
  */
 export const isVisualCheckpoint = (spec, tags) => /-visual\.ui\.spec\.ts$/.test(spec) && tags.has("@visual");
@@ -201,7 +201,7 @@ function setupBodies(source) {
 
 function checkRepeatedSetup(files, report) {
   // What several tests stand on is a fixture of the app: the same `Setup:` step — the same call — in
-  // two tests of an app, in one spec or in several, is a repeat (.cursor/rules/code.mdc).
+  // two tests of an app, in one spec or in several, is a repeat (agents/rules/code.md).
   const byApp = new Map();
   for (const spec of [...files.api, ...files.ui, ...files.e2e]) {
     const app = path.relative(at("tests"), spec).split(path.sep)[1];
@@ -215,7 +215,7 @@ function checkRepeatedSetup(files, report) {
     for (const [call, specs] of [...calls].filter(([, specs]) => specs.length > 1)) {
       const where = [...new Set(specs.map((spec) => path.basename(spec)))].join(", ");
       for (const spec of new Set(specs)) {
-        report.fail(spec, `"${call.slice(0, 90)}" is the Setup of ${specs.length} tests (${where}) — what tests stand on is a fixture of the app (src/fixtures/<app>/data.fixture.ts, or pages.fixture.ts when it is made through a Page Object), taken as a parameter (.cursor/rules/code.mdc)`);
+        report.fail(spec, `"${call.slice(0, 90)}" is the Setup of ${specs.length} tests (${where}) — what tests stand on is a fixture of the app (src/fixtures/<app>/data.fixture.ts, or pages.fixture.ts when it is made through a Page Object), taken as a parameter (agents/rules/code.md)`);
       }
     }
   }
@@ -293,7 +293,7 @@ function checkUiSpecs(files, report) {
       if (opening) openings.set(opening, [...(openings.get(opening) ?? []), title]);
     }
     for (const [opening, titles] of [...openings].filter(([, titles]) => titles.length > 1)) {
-      report.fail(spec, `"${opening}" opens ${titles.length} tests (${titles.map((title) => `"${title}"`).join(", ")}) — open it once in a test.beforeEach of their describe (.cursor/rules/code.mdc "No repeats")`);
+      report.fail(spec, `"${opening}" opens ${titles.length} tests (${titles.map((title) => `"${title}"`).join(", ")}) — open it once in a test.beforeEach of their describe (agents/rules/code.md "No repeats")`);
     }
   }
 }

@@ -3,7 +3,7 @@ import { safeLogger } from "../../logging/safe-logger.helper";
 
 /**
  * Sorting and filtering checks that prove the behaviour, not today's data
- * (.cursor/rules/code.mdc): the order of what is shown, or that every
+ * (agents/rules/code.md): the order of what is shown, or that every
  * shown item matches — never a fixed count or a fixed first row on data the test does not control.
  * A passing check prints what it inspected, so a green run shows it looked at real data.
  */

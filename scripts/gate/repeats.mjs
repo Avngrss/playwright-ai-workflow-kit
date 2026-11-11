@@ -4,7 +4,7 @@ import { caseLinksIn, scenarioOf } from "./plans.mjs";
 import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
 /**
- * The same thing twice (.cursor/rules/code.mdc "No repeats"), checked for what is being written now
+ * The same thing twice (agents/rules/code.md "No repeats"), checked for what is being written now
  * against the whole suite: two lines copied within a file, between files of one app or out of shared
  * code; the same code in two apps; one scenario of a manual case automated by two tests.
  */
@@ -29,7 +29,7 @@ const IDIOM = [
 const substantial = (line) => line.length >= 25 && !IDIOM.some((pattern) => pattern.test(line));
 
 // Across apps, a short block made only of the kit's own calls is the kit's idiom, not a copy: a Page
-// Object's prescribed opening (`await this.page.goto("./"); await appReady(this.page);`, .cursor/rules/ui.mdc
+// Object's prescribed opening (`await this.page.goto("./"); await appReady(this.page);`, agents/rules/ui.md
 // §Opening a page) or ≤ 3 lines each calling a helper the shared code exports. No app can share it with
 // another without importing across apps.
 const KIT_IDIOM_LINES = 3;
@@ -62,7 +62,7 @@ function ownCode(files, apps) {
 /** Where the repeat goes instead, by the kind of file it was found in. */
 function homeFor(file) {
   if (file.endsWith(".spec.ts")) return "one thing in its home, never copied: what tests stand on is a fixture of the app, the same steps one method of the Page Object";
-  if (/[\\/]src[\\/](pages|components)[\\/]/.test(file)) return "one thing in its home, never copied: a block on 2+ pages is one component (.cursor/rules/ui.mdc)";
+  if (/[\\/]src[\\/](pages|components)[\\/]/.test(file)) return "one thing in its home, never copied: a block on 2+ pages is one component (agents/rules/ui.md)";
   return "one thing in its home, never copied";
 }
 
@@ -94,7 +94,7 @@ function checkCopiedLines(files, report) {
     const quote = `"${block.split("\n")[0].slice(0, 80)}…"`;
     const inFiles = [...new Set(places.map(({ file }) => file))];
     if (inFiles.length === 1) {
-      report.fail(inFiles[0], `the same two lines at lines ${places.map(({ line }) => line).join(", ")} — ${quote}: one thing in its home, never copied (.cursor/rules/code.mdc "No repeats")`);
+      report.fail(inFiles[0], `the same two lines at lines ${places.map(({ line }) => line).join(", ")} — ${quote}: one thing in its home, never copied (agents/rules/code.md "No repeats")`);
       continue;
     }
     const byOwner = new Map();
@@ -132,9 +132,9 @@ function checkCopiedLines(files, report) {
     if (hit.kind !== "copy" && isKitIdiom(hit.statements, (helpers ??= kitHelpers(files, apps)))) continue;
     const lines = `lines ${hit.line}–${hit.last + 1}`;
     if (hit.kind === "copy") {
-      report.fail(hit.file, `${lines} are the same as ${where(hit.others)} — ${hit.quote}: ${homeFor(hit.file)} (.cursor/rules/code.mdc "No repeats")`);
+      report.fail(hit.file, `${lines} are the same as ${where(hit.others)} — ${hit.quote}: ${homeFor(hit.file)} (agents/rules/code.md "No repeats")`);
     } else if (hit.kind === "apps") {
-      report.fail(hit.file, `${lines}: the same code in ${hit.apps.join(" and ")} (${where(hit.others)}) — ${hit.quote}: what no app owns has one copy in a shared home every app imports — src/data/generators/shared/, data/datasets/shared/, assertions/shared/ (.cursor/rules/code.mdc "No repeats")`);
+      report.fail(hit.file, `${lines}: the same code in ${hit.apps.join(" and ")} (${where(hit.others)}) — ${hit.quote}: what no app owns has one copy in a shared home every app imports — src/data/generators/shared/, data/datasets/shared/, assertions/shared/ (agents/rules/code.md "No repeats")`);
     } else {
       report.warn(hit.file, `${lines}: the same lines in ${hit.apps.join(" and ")} (${where(hit.others)}) — ${hit.quote}: a block both apps show is one component in src/components/<library>/ when they share a design system; a check no app owns goes to assertions/shared/`);
     }

@@ -1,6 +1,6 @@
 # Layer Routing Algorithm
 
-A layer routing algorithm for the tests an agent writes. In this kit it is **switched on**: the rules (`.cursor/rules/plans.mdc` §Layers and §Routes), the skills and the gate (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`) work by it, and the coverage report (`scripts/agent/suite-coverage.mjs`) counts by it. Below is the syntax in use; the document can be taken to another project and applied there (§15).
+A layer routing algorithm for the tests an agent writes. In this kit it is **switched on**: the rules (`agents/rules/plans.md` §Layers and §Routes), the skills and the gate (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`) work by it, and the coverage report (`scripts/agent/suite-coverage.mjs`) counts by it. Below is the syntax in use; the document can be taken to another project and applied there (§15).
 
 The examples with an order, a payment and a discount are neutral. They hold the formula and do not describe a product. A real manual case is worked through in §18.
 
@@ -310,8 +310,9 @@ The statuses of `npm run suite:coverage`: **automated** — every scenario of th
 
 A prompt will not hold the tree. Below are the refusals of `qa:gate` (`scripts/gate/routes.mjs`, `cases.mjs`, `repeats.mjs`). A plan or a spec being written now (not committed on the branch) fails; one written before routing gets a warning — a "rework" list, without a red gate.
 
-The plan (`checkPlanRoutes`, parsed by `parseRoute` in `plans.mjs`):
+The plan (`checkOwners`, `checkPlanRoutes`, parsed by `parseRoute` in `plans.mjs`):
 
+- A feature plan has `## Owners` with a filled `found: UI <n> · API <n> · E2E <n> — <why>` line. An app with an API row in the map and `API 0` says why for each place an API scenario comes from: `none · other inputs: <why> · access: <why> · contract: <why>` — an agent that plans every case on the screen never skips the API silently.
 - A ready scenario has a `Level` and a `Route` line (several — each with `(step <n>)`). No `Route`, and `Needs:` names two layers — "one expected result proven twice: split it into scenarios".
 - `Level: API` stands only with a `Route` that starts with `api`; `Level: UI` and `Level: E2E` — only with `intercept`, `no-request` or `screen-only`.
 - The formula: the start is `api|intercept <METHOD> <path> →`, `no-request` or `screen-only`; `→ empty` without `read` / `until` is an error; `api` / `intercept` name at least a field, `check:`, a status, `sent:`, `query:`, `empty` or `input`; `no-request` and `screen-only` name neither fields nor a status, but name the screen; `api` has no `sent:` and no screen; `input` is only for `api` / `intercept`.
@@ -328,7 +329,7 @@ The test. The gate checks the structure, not the meaning of the fields. It does 
 - The screen kind is checked in each step with a route: `value` — `toEqual` / `toMatchObject` / `toContainEqual` with a call of `shown…`, or a named check; `text` — `toHaveText` / `toContainText` / `toHaveURL`, `expectToast` or a named check; `state` — `toBeDisabled`, `toBeEnabled`, `toBeHidden`, `toHaveCount`, `toHaveAttribute` and the like; `visible` — `toBeVisible`. One check for all the steps does not count.
 - `api`: the `check:` rule is called on the answer; a status other than `200` is checked.
 - A case is written whole (`cases.mjs`): a written case has a test for every ready scenario; a test does not link a case the plan keeps in *Not now* (except "Covered by …"); a `Blocked` line without a `· searched:` tail is a warning.
-- A mock does not stand in for a mutation's truth: `mocked` shows a state the stand cannot honestly be brought to, and is never the answer of the action under check (`data-and-fixtures.mdc`).
+- A mock does not stand in for a mutation's truth: `mocked` shows a state the stand cannot honestly be brought to, and is never the answer of the action under check (`data-and-fixtures.md`).
 
 The gate closes off a second test, a test without `answerTo` where `Route` intercepts, an extra GET, and a screen token without a check. It does not close off swapped fields and paths: `has:` with another set of names, or another `answerPath`, stays green until review sees it. The field names in `Route` are the contract of the author and the reviewer. There is no need to tie them to the helpers' AST.
 
@@ -391,8 +392,8 @@ Next to this idea there was an adoption checklist. Only what matched the kit's d
 
 | Place | What it does |
 |---|---|
-| `.cursor/rules/plans.mdc` §Layers, §Routes, §A case is written whole or not at all | The scenario's owner and its reason, the `Route` line, a whole case; `Needs` and layer pairs are not written |
-| `.cursor/rules/specs.mdc`, `code.mdc`, `ui.mdc`, `api.mdc` | One manual case — one test per scenario (`TC-101 · S2 · …`, without ` — `); the gesture's answer — `answerTo` in the spec; the Page Object does not listen to it; answer paths and schemas — in the client |
+| `agents/rules/plans.md` §Layers, §Routes, §A case is written whole or not at all | The scenario's owner and its reason, the `Route` line, a whole case; `Needs` and layer pairs are not written |
+| `agents/rules/specs.md`, `code.md`, `ui.md`, `api.md` | One manual case — one test per scenario (`TC-101 · S2 · …`, without ` — `); the gesture's answer — `answerTo` in the spec; the Page Object does not listen to it; answer paths and schemas — in the client |
 | `src/fixtures/pages.fixture.ts` | The `answerTo` / `answersTo` fixtures: the action, the answer, the checks `has` / `check` / `sent` / `query` / `status` |
 | `src/assertions/shared/http.ts` | `answerPath` (method, path, answer schema), `expectAnswer` for the browser's answer next to `expectJson` for the client's answer |
 | `src/setup/request-capture.ts` | `answersOf` — the listener behind `answerTo`; `whenAnswered` — the Page Object's wait for its own screen; `captureRequests` — "the request did not go out" |
@@ -404,7 +405,7 @@ Next to this idea there was an adoption checklist. Only what matched the kit's d
 | `scripts/agent/suite-coverage.mjs` | `automated` — every scenario has one test in its owner's folder; two tests of a scenario or a plan without `Route` — `to rework`; another owner's folder, a missing scenario, a link from *Not now* — `inconsistent` |
 | `scripts/agent/plan-block.mjs`, `plan-draft.mjs` | A plan block in the template's shape with `Route:` lines (per step), from an empty call or from a saved TMS case or bug |
 | `scripts/agent/spec-draft.mjs` | A test skeleton from a filled block: steps with the route and `expect` in comments; the gate fails a skeleton left as it is |
-| `.cursor/skills/*`, `.cursor/commands/*` | Point to the rules and this document, never copy the grammar |
+| `agents/skills/*`, `agents/commands/*` | Point to the rules and this document, never copy the grammar |
 | The smoke `tests/smoke/sign-in.smoke.spec.ts` | Not touched: it is the sign-in template, not a case with a `Route` |
 
 ## 15. How to carry it to another project

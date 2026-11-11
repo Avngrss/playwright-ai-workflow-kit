@@ -9,7 +9,7 @@ of them in layers:
 - CI scans for them.
 
 Prevention comes first. The scrubbing is a safety net. The rules are in
-`.cursor/rules/02-guardrails.mdc` (§Secrets and settings, §Sensitive data in artifacts, §Quality gate).
+`agents/rules/02-guardrails.md` (§Secrets and settings, §Sensitive data in artifacts, §Quality gate).
 
 ## `.env` — values only there, typed by you
 
@@ -92,7 +92,7 @@ See [Auth strategy](auth-strategy.md).
 - **No sensitive attachments:** never attach Authorization headers, cookies, storage state or full
   local or session storage.
 - **Generated data** is `AQA`-marked and uses non-routable domains
-  (`data-and-fixtures.mdc` §Where data lives).
+  (`data-and-fixtures.md` §Where data lives).
 - **The MCP browser:** the agent never types a password into it. Sign-ins run through the kit's
   sign-in code.
 

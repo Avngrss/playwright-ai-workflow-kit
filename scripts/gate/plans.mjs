@@ -124,8 +124,21 @@ function otherChecksOf(text) {
 }
 
 /**
+ * A plan's `## Owners` — what its owner check found: { line, counts: { UI, API, E2E }, why } from its
+ * `- found: UI <n> · API <n> · E2E <n> — <why>` line (`line` null without it, `counts` null when it does not
+ * read so); undefined without the section.
+ */
+function ownersOf(text) {
+  const section = /^## Owners\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text)?.[1];
+  if (section === undefined) return undefined;
+  const line = /^- found:\s*(.+)$/m.exec(section)?.[1]?.trim() ?? null;
+  const found = line && /^UI\s+(\d+)\s*·\s*API\s+(\d+)\s*·\s*E2E\s+(\d+)\s*[—–]\s*(.+)$/.exec(line);
+  return { line, counts: found ? { UI: Number(found[1]), API: Number(found[2]), E2E: Number(found[3]) } : null, why: found ? found[4].trim() : null };
+}
+
+/**
  * Every plan under specs/ (the map left out), of one app when given:
- * { plan, app, journey, cases: [{ number, ids, title, scenario, status, needs, level, tags, routes, route }],
+ * { plan, app, journey, owners, cases: [{ number, ids, title, scenario, status, needs, level, tags, routes, route }],
  *   notNow: [{ title, ids, status, since, reason, searched }], otherChecks, unreadable: [line] }.
  * A case block is one scenario: `routes` are its parsed `Route:` lines — one, or one per step
  * (`- Route (step 2): …`), several for a step awaiting several answers; `route` is the first. None in
@@ -167,7 +180,7 @@ export function readPlans(root, onlyApp) {
       const [, title, ids, status, since, why] = parsed;
       notNow.push({ title, ids: caseIds(ids), status: status.toLowerCase(), since: since ?? null, ...searchedIn(why) });
     }
-    return [{ plan, app, journey: plan.split("/")[1] === "e2e", cases, notNow, otherChecks: otherChecksOf(text), unreadable }];
+    return [{ plan, app, journey: plan.split("/")[1] === "e2e", owners: ownersOf(text), cases, notNow, otherChecks: otherChecksOf(text), unreadable }];
   });
 }
 

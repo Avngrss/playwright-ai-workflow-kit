@@ -1,5 +1,5 @@
 /**
- * Verify in one command — the verify skill's targeted run (.cursor/skills/verify/SKILL.md): the gate,
+ * Verify in one command — the verify skill's targeted run (agents/skills/verify/SKILL.md): the gate,
  * then each check this run wrote proven able to fail, then one run of the tests with their neighbours,
  * then one block to paste, every number copied from the run's own result files.
  *
@@ -28,6 +28,11 @@
  *    Both are kept in test-results/verify.json, the runs' own output in test-results/verify.log. A named
  *    spec none of whose tests ran reads "Not run" — never green.
  *
+ * 5. State — reports/verify-state.json (writeState): the result, how many verifies of these specs in a row
+ *    came out red and whether the automatic heal after a fresh implement is owed; a red run of specs this
+ *    session wrote ends "now the automatic heal: <spec>:<line> …", the next red one "still red after the
+ *    automatic heal".
+ *
  * Exit 0: all green · 1: not green, the last line says why · 2: a wrong call · 3: a spoiled line not put
  * back (named; fix it by hand). While lines are spoiled they are listed in reports/verify-spoils.json:
  * a verify cut off leaves it, the gate fails while it is there, and the next verify (or --restore) puts
@@ -43,6 +48,7 @@ import { appsOfMap } from "../run-tests.mjs";
 
 const ROOT = process.cwd();
 const SPOILS_FILE = path.join(ROOT, "reports", "verify-spoils.json");
+const STATE_FILE = path.join(ROOT, "reports", "verify-state.json");
 const SUMMARY_FILE = path.join(ROOT, "reports", "run-summary.json");
 const RESULTS_DIR = path.join(ROOT, "reports", "allure", "results");
 const OUT_DIR = path.join(ROOT, "test-results");
@@ -203,14 +209,14 @@ function testsHolding(tests, source, file, line) {
 }
 
 /**
- * Files under src/ changed against HEAD — in the index or the working tree, new ones too — from the test
- * home, with forward slashes. None without git. git names files from the repository's root; the test home
- * may be a folder inside it.
+ * Files under `dir` (src/ by default) changed against HEAD — in the index or the working tree, new ones too —
+ * from the test home, with forward slashes. None without git. git names files from the repository's root; the
+ * test home may be a folder inside it.
  */
-function changedSources() {
+function changedSources(dir = "src") {
   const git = (args) => spawnSync("git", args, { cwd: ROOT, encoding: "utf8" });
   const prefix = git(["rev-parse", "--show-prefix"]);
-  const status = git(["status", "--porcelain", "-z", "--untracked-files=all", "--", "src"]);
+  const status = git(["status", "--porcelain", "-z", "--untracked-files=all", "--", dir]);
   if (prefix.status !== 0 || status.status !== 0) return new Set();
   const home = prefix.stdout.trim();
   const files = new Set();
@@ -497,7 +503,7 @@ function verdicts(run, also) {
       if (wasSlow) return { ...base, outcome: "slow", green: true, verdict: `passed alone — the stand was slow (first pass: ${wasSlow.cause}${wasSlow.step ? ` — step "${wasSlow.step}"` : ""})` };
       const entry = failed.find((each) => same(each, result));
       if (entry?.outcome === "flaky") return { ...base, outcome: "unstable", green: false, verdict: "unstable — passed on a retry" };
-      if (entry) return { ...base, outcome: entry.cause === "known bug" ? "known bug" : "failed", green: false, verdict: entry.verdict, cause: entry.cause, step: entry.step, ticket: entry.ticket };
+      if (entry) return { ...base, line: entry.line, outcome: entry.cause === "known bug" ? "known bug" : "failed", green: false, verdict: entry.verdict, cause: entry.cause, step: entry.step, ticket: entry.ticket };
       return { ...base, outcome: result.status, green: result.status === "passed", verdict: result.status };
     })
     .sort((a, b) => Number(!!a.also) - Number(!!b.also) || a.file.localeCompare(b.file) || a.title.localeCompare(b.title) || Number(!!browserOf(a.project)) - Number(!!browserOf(b.project)) || (a.project ?? "").localeCompare(b.project ?? ""));
@@ -533,10 +539,34 @@ const planWords = (item) =>
     .filter(Boolean)
     .join(" · ");
 
+/**
+ * reports/verify-state.json — what this verify leaves for the next one and for an agent's stop hook: the
+ * specs, whether this session wrote them (changed against HEAD), the result (passed · failed — tests red ·
+ * stopped — the gate, can-fail or a run that did not run them), how many verifies of these specs in a row
+ * came out red, the red tests, and whether the one automatic heal after a fresh implement is still owed
+ * (the verify skill §5). A verify of the same specs (or some of them) after a red one counts on.
+ */
+function writeState(report, result) {
+  let previous;
+  try {
+    previous = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  } catch {
+    previous = undefined;
+  }
+  const same = previous?.result !== "passed" && report.files.every((file) => previous?.specs?.includes(file));
+  const before = same ? (previous.attempt ?? 0) : 0;
+  const attempt = result === "failed" ? before + 1 : result === "stopped" ? before : 0;
+  const state = { at: new Date().toISOString(), specs: report.files, fresh: report.fresh, result, attempt, red: report.red ?? [], healOwed: report.fresh && result === "failed" && attempt === 1 };
+  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+  fs.writeFileSync(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`);
+  return state;
+}
+
 // ── The command ───────────────────────────────────────────────────────────────────────────────────
 const PHASES = { gate: "gate", canFail: "can fail", run: "run", coverage: "coverage" };
 
 function finish(report, reason, code) {
+  report.state ??= writeState(report, code === 0 ? "passed" : "stopped");
   const block = [];
   const at = new Date(report.startedAt);
   block.push(`## Verify — ${report.apps.join(", ")} · ${at.toISOString().slice(0, 10)} ${at.toTimeString().slice(0, 5)}`);
@@ -603,6 +633,8 @@ function finish(report, reason, code) {
     restored: report.restored,
     run: run && { command: run.command, status: run.status, counts: run.counts, green: run.green, of: run.of, knownBugs: run.knownBugs, notRun: run.notRun, tests: run.listed.map(({ green, ...test }) => test) },
     coverage: report.coverage,
+    attempt: report.state.attempt || undefined,
+    healOwed: report.state.healOwed || undefined,
     seconds: { ...Object.fromEntries(Object.entries(report.ms).map(([phase, ms]) => [phase, Math.round(ms / 1000)])), total: Math.round((Date.now() - report.startedAt) / 1000) },
   };
   say(`\n${block.join("\n")}\n\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\``);
@@ -623,10 +655,14 @@ function main(argv) {
   restoreLeftovers();
   const named = resolveNamed([...call.specs, ...call.also]);
   [call.specs, call.also] = [named.slice(0, call.specs.length), named.slice(call.specs.length)];
+  // A named spec changed against HEAD is this session's: written or changed now, not verified before.
+  const changedSpecs = changedSources("tests");
   const report = {
     startedAt: Date.now(),
     app: call.app,
     apps: call.apps,
+    files: [...new Set(call.specs.map(({ file }) => file))],
+    fresh: call.specs.some(({ file }) => changedSpecs.has(file)),
     specs: call.specs.map(({ arg }) => arg),
     also: call.also.map(({ arg }) => arg),
     widened: named.flatMap(({ widened }) => (widened ? [widened] : [])),
@@ -706,7 +742,15 @@ function main(argv) {
   const red = [...counted.filter(({ green, outcome }) => !green && outcome !== "known bug"), ...listed.filter(({ outcome }) => outcome === "not run")];
   if (!run.summary) finish(report, "failed — the run wrote no reports/run-summary.json (test-results/verify.log says why)", 1);
   if (report.run.notRun.length) finish(report, `failed — the named tests did not run: ${report.run.notRun.join(", ")} (test-results/verify.log says why)`, 1);
-  if (run.status !== 0 || red.length) finish(report, `failed — ${red.length || "some"} test(s) not green: reports/run-summary.md has each verdict`, 1);
+  if (run.status !== 0 || red.length) {
+    report.red = [...new Set(red.map(({ file, line }) => (line ? `${file}:${line}` : file)))];
+    report.state = writeState(report, "failed");
+    const failed = `failed — ${red.length || "some"} test(s) not green: reports/run-summary.md has each verdict`;
+    // The one automatic heal after a fresh implement (the verify skill §5): owed now, or spent.
+    if (report.state.healOwed) finish(report, `${failed} · now the automatic heal (the verify skill §5, §8): ${report.red.join(" ")} — then this command again on them`, 1);
+    if (report.fresh && report.state.attempt > 1) finish(report, `${failed} · still red after the automatic heal: report the real state (the verify skill §5, §7) — no further heal unless the user asks`, 1);
+    finish(report, failed, 1);
+  }
   finish(report, "passed", 0);
 }
 

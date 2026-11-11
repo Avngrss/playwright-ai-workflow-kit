@@ -217,7 +217,9 @@ function appRun([app, second, ...rest]) {
 
 function main([what, ...rest]) {
   if (what === "--browsers") {
-    if (!rest.includes("--check")) return ensureBrowsers();
+    // The kit fetched as the installer's package (npx) has no Playwright of its own: the browser comes with the
+    // test home's own npm install.
+    if (!rest.includes("--check")) return fs.existsSync(path.join(ROOT, "node_modules", "@playwright", "test")) ? ensureBrowsers() : undefined;
     const missing = missingChromium();
     console.log(missing.length ? `missing: ${missing.join(", ")}` : `ready: ${(requiredFolders() ?? ["chromium"]).join(", ")}`);
     process.exit(missing.length ? 1 : 0);

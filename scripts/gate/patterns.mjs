@@ -15,7 +15,7 @@ const PATTERN_RULES = [
   { in: ["specs"], require: /\bexpect\w*\s*\(|\banswers?To\(|from\s+["'][^"']*\/assertions\//, says: "checks nothing — add expect(…), an assertion helper (expectJson, expectSignedIn, …) or an app's rule from src/assertions/<app>/" },
   { in: ["ui", "e2e", "smoke"], require: /\btest\.step\(/, says: "has no test.step() — the report shows a browser test as the steps a person takes" },
   { in: ["specs"], forbid: /import\s*{[^}]*\btest\b[^}]*}\s*from\s*["']@playwright\/test["']/, says: 'imports test from @playwright/test — import { test, expect } from "src/fixtures/<app>/test" (the app of its folder)' },
-  // E2E may: a second role's browser context has its own page (.cursor/rules/specs.mdc).
+  // E2E may: a second role's browser context has its own page (agents/rules/specs.md).
   { in: ["ui", "smoke"], forbid: /new\s+\w+Page\s*\(/, says: "creates a Page Object itself — take it from its app's fixtures (src/fixtures/<app>/pages.fixture.ts)" },
   { in: ["specs"], forbid: /process\.env/, says: "reads process.env — settings come through fixtures and the config" },
   { in: ["specs"], forbid: /["'][^"']*\.env["']/, says: "names the .env file — secrets and settings are never test assets" },
@@ -37,7 +37,7 @@ const PATTERN_RULES = [
   { in: ["uiModels"], warn: true, forbid: /\.waitForURL\s*\(/, says: "waits for the address — a client-side route changes it before the screen: wait for what the screen shows (the selected tab, the new heading)" },
   { in: ["uiModels"], forbid: /Date\.now\s*\(|Math\.random\s*\(/, says: "makes test data (Date.now, Math.random) — data comes from generators" },
   { in: ["uiModels"], forbid: /toHaveScreenshot\s*\(/, says: "compares screenshots — a visual check belongs in a spec" },
-  // They hold locators, actions and readers of what is shown — nothing else (.cursor/rules/ui.mdc).
+  // They hold locators, actions and readers of what is shown — nothing else (agents/rules/ui.md).
   {
     in: ["uiModels"],
     forbid: /\.(?:waitForResponse|waitForRequest)\s*\(|\.(?:on|waitForEvent)\(\s*["'](?:request|response|requestfinished|requestfailed)["']|\bcaptureRequests\s*\(/,
@@ -61,7 +61,7 @@ const PATTERN_RULES = [
   },
 
   // One home for each concern across all test code.
-  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, code: true, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (.cursor/rules/code.mdc)" },
+  { in: ["testCode"], except: /[\\/]src[\\/]reporting[\\/]/, code: true, forbid: /from\s*["']allure-(?:js-commons|playwright)["']|\ballure\./, says: "calls Allure directly — links come from annotations (tms, issue), extra text from testInfo.attach (agents/rules/code.md)" },
   { in: ["testCode"], except: /[\\/]src[\\/](logging|security)[\\/]/, forbid: /console\.(log|debug|info)\s*\(/, says: "writes to the console — use safeLogger (src/logging/safe-logger.helper.ts), never with secrets" },
   { in: ["testCode"], except: /[\\/]src[\\/]setup[\\/]app-wide\.ts$/, forbid: /addLocatorHandler\s*\(/, says: "closes an overlay itself — add it to the app-wide block of specs/project-map.md (dismiss: …)" },
   { in: ["testCode"], when: /(?:allure\.attachment|testInfo\.attach)\s*\(/, require: /maskSecrets|sanitize|redact/, says: "attaches text without masking it — pass it through maskSecrets (src/reporting/readable-error.ts)" },
@@ -119,7 +119,7 @@ const TOP_LEVEL_CONTAINER = /^(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*(?::.+?
 const KIND = { "[": "array", "{": "object" };
 const STATE_GOES =
   "shared by every test its worker runs. Keep it in the test (a value built in it), a fixture (src/fixtures/<app>/data.fixture.ts) or, for a stand lookup, oncePerWorker; " +
-  "a read-only memo of a file or the map says so on its line: // memo: <what> (.cursor/rules/specs.mdc §Isolation and shared state)";
+  "a read-only memo of a file or the map says so on its line: // memo: <what> (agents/rules/specs.md §Isolation and shared state)";
 
 /** A statement changing `name` in place: a mutating method, an assignment to one of its fields, Object.assign or delete. */
 const changes = (identifier) => {

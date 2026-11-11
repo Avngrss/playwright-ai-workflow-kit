@@ -11,14 +11,17 @@
  *   repeats.mjs   the same thing twice: copied lines, the same code in two apps, a scenario automated twice
  *   cases.mjs     a manual case automated whole or not at all: every scenario of it with its test; a Blocked one says where
  *                 the tests looked; browsers, phone and screenshots decided
- *   routes.mjs    one scenario, one owner, one test, proven as its route says (docs/Layer Routing Algorithm.md)
+ *   routes.mjs    one scenario, one owner, one test, proven as its route says (docs/Layer Routing Algorithm.md); a plan
+ *                 says what its owner check found — an app with an API never left without API scenarios unsaid
  *   reading.mjs   a UI test reads as its case: no data shaped in the spec, a step is one action and its checks
- *   pointers.mjs  every rule and skill the code names exists in .cursor/
+ *   pointers.mjs  every rule and skill the code names exists in agents/, never in an agent's own copy
+ *   agents.mjs    every agent's copy (.cursor/, .claude/, .mcp.json) matches agents/ — npm run agents:sync writes them
  *   advice.mjs    warnings: size, readability
  */
 import fs from "node:fs";
 import path from "node:path";
 import { adviceRules } from "./advice.mjs";
+import { agentRules } from "./agents.mjs";
 import { caseRules } from "./cases.mjs";
 import { collectFiles, createReport, ROOT } from "./context.mjs";
 import { layoutRules } from "./layout.mjs";
@@ -36,7 +39,7 @@ const report = createReport();
 // A cut-off `npm run verify` leaves its spoiled lines listed here: a test checking a wrong value is never committed.
 if (fs.existsSync(path.join(ROOT, "reports", "verify-spoils.json")))
   report.fail(null, "reports/verify-spoils.json — a cut-off `npm run verify` left spoiled lines in the specs: `npm run verify -- --restore` puts them back");
-for (const rule of [...patternRules, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...adviceRules]) rule(files, report);
+for (const rule of [...patternRules, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...agentRules, ...adviceRules]) rule(files, report);
 
 console.log(`qa:gate — ${files.specs.length} spec(s), ${files.support.length} support file(s)`);
 for (const warning of report.warnings) console.log(`! ${warning}`);

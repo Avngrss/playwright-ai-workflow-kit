@@ -6,9 +6,10 @@ is in [Workflow](workflow.md).
 ## Prerequisites
 
 - Node.js and npm (the CI uses Node 22), Git.
-- Cursor with this folder open. The rules, skills and slash commands load from `.cursor/`.
-- The Playwright MCP from `.cursor/mcp.json`, enabled in Cursor. The agent uses it to look at the
-  live app; without it, the agent looks through a short Playwright script instead.
+- Cursor or Claude Code with this folder open. The rules and slash commands load from `.cursor/` or
+  `.claude/`, the skills from `.claude/skills/` for both — copies of `agents/` (`npm run agents:sync`).
+- The Playwright MCP from `.cursor/mcp.json` (Cursor: enable it) or `.mcp.json` (Claude Code: approve it once).
+  The agent uses it to look at the live app; without it, the agent looks through a short Playwright script instead.
 - A test environment of the app (dev or QA) and a **test account** for it, not your personal one.
   Sign in with it by hand once before you give it to the tests.
 - Optional: an MCP server or API access for your TMS and tracker, so the agent can read cases and
@@ -16,11 +17,24 @@ is in [Workflow](workflow.md).
 
 ## 1. Install
 
+Into a folder of your project — in the project's folder:
+
 ```bash
-npm install
+npx github:Avngrss/playwright-ai-workflow-kit
 ```
 
-This also installs the Chromium build that this Playwright version runs (postinstall). Set
+The installer asks where (`qa` by default), which AI (Claude Code, Cursor or both) and which CI (GitHub, GitLab or
+none), copies the kit with only your AI's files, writes the CI at the repository's root, then runs `npm ci` and
+step 2 itself — skip to step 3 in the kit's folder. `--help` lists its flags (`--agent`, `--ci`, `--yes` …).
+
+From a clone of the kit (or a repository made with **Use this template**) instead:
+
+```bash
+npm install
+npm run agents:use -- claude    # or cursor, or cursor,claude — the AI you work with
+```
+
+`npm install` also installs the Chromium build that this Playwright version runs (postinstall). Set
 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` to skip it, and install it later with `npm run browsers:install`.
 Firefox and WebKit are needed only for `@cross-browser` tests — the runs that need them download them once
 (`npm run browsers:install:all` does it in advance).
@@ -106,8 +120,10 @@ The agent asks only what it cannot find out, checks the feature on the stand and
 confirm. Each case's scenarios get one owner each — API, UI or E2E, from what the stand shows — so no
 scenario is tested twice. No test is written before you say yes. After your yes, the same run writes
 the tests (`/implement`) and checks them with one `npm run verify` (`/verify`): the gate, each new check
-proven able to fail, one run without a retry. For new tests the summary ends with a `/review` line —
-paste it into a new chat for an independent review. Continue with [Workflow](workflow.md).
+proven able to fail, one run without a retry. For new tests comes an independent review: Claude Code runs
+it as its `reviewer` subagent; in Cursor the summary ends with a `/review` line — paste it into a new chat.
+Before the agent ends a turn, its stop hook runs the gate on the work and checks that a red run got its one
+automatic heal; it sends the agent back once when not. Continue with [Workflow](workflow.md).
 
 ## Where things live
 
@@ -125,5 +141,5 @@ paste it into a new chat for an independent review. Continue with [Workflow](wor
 | `reports/run-summary.md`, `reports/allure/` | the last run's summary and the Allure results |
 
 An app's folders appear with its first plan and test. They are never created empty in advance. Every
-npm script is listed in `.cursor/rules/00-project-map.mdc`. The strategy in one page is
+npm script is listed in `agents/rules/00-project-map.md`. The strategy in one page is
 [docs/test-strategy.md](test-strategy.md).
