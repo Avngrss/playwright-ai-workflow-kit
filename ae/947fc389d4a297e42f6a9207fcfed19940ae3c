@@ -1,0 +1,29 @@
+.claude/rules/02-guardrails.md
+  s_5a14ef979817d5::t_61b2cfa6616bb7 76-78
+.cursor/rules/02-guardrails.mdc
+  s_5a14ef979817d5::t_d5576948f7cda6 80-82
+scripts/agent/stop-check.mjs
+  s_5a14ef979817d5::t_50b7775f133a3a 6-10,30-31,55-67,100,104-111,114,152,166,168-169
+agents/rules/02-guardrails.md
+  s_5a14ef979817d5::t_b4e2488c63476b 79-81
+bin/test/stop-check.test.mjs
+  s_5a14ef979817d5::t_060745f89942c5 1-77
+docs/workflow.md
+  s_5a14ef979817d5::t_867aecad61aaf8 52-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ae947fc389d4a297e42f6a9207fcfed19940ae3c",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
