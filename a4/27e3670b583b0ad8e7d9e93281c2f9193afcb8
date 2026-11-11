@@ -1,0 +1,23 @@
+.claude/rules/data-and-fixtures.md
+  s_5a14ef979817d5::t_68c1c2f2f380b0 58-60
+.cursor/rules/data-and-fixtures.mdc
+  s_5a14ef979817d5::t_8b2bd3859a0256 56-58
+agents/rules/data-and-fixtures.md
+  s_5a14ef979817d5::t_036e2c2d54f4d9 55-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a427e3670b583b0ad8e7d9e93281c2f9193afcb8",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
