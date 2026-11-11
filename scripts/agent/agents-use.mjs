@@ -5,7 +5,8 @@
  *
  *   npm run agents:use -- claude           Claude Code only
  *   npm run agents:use -- cursor           Cursor only
- *   npm run agents:use -- cursor,claude    both
+ *   npm run agents:use -- copilot          GitHub Copilot only
+ *   npm run agents:use -- cursor,claude    several
  *   npm run agents:use                     say which are chosen
  */
 import fs from "node:fs";
@@ -16,8 +17,9 @@ import { AGENTS, chosenAgents, sync } from "./agents-sync.mjs";
 const OPEN = {
   cursor: "Cursor — open this folder, turn on the playwright MCP (Cursor Settings → MCP), then /setup in the chat",
   claude: "Claude Code — open this folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then /setup",
+  copilot: "GitHub Copilot — open this folder in VS Code (Copilot Chat, Agent) or run `copilot` in it, then /setup",
 };
-const ALIASES = { "claude-code": "claude", claudecode: "claude" };
+const ALIASES = { "claude-code": "claude", claudecode: "claude", "github-copilot": "copilot", "gh-copilot": "copilot" };
 
 /** "Cursor, claude-code" → ["cursor", "claude"]; an unknown name stops the call. */
 export function agentsOf(text) {
