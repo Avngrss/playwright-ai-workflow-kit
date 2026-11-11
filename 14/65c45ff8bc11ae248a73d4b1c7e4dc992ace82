@@ -1,0 +1,25 @@
+bin/kit.mjs
+  s_5a14ef979817d5::t_2a12443a1f3f66 1-202
+bin/install.mjs
+  s_5a14ef979817d5::t_8e29475dcfcd31 17-23,35,37,51,55-56,136-140
+bin/test/upgrade.test.mjs
+  s_5a14ef979817d5::t_2da603a86385f8 1-147
+bin/upgrade.mjs
+  s_5a14ef979817d5::t_e99baf517df7d5 1-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1465c45ff8bc11ae248a73d4b1c7e4dc992ace82",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
