@@ -9,7 +9,8 @@
  *                .claude/settings.json (its hooks)
  *   the skills   .claude/skills/<name>/ when Claude Code is chosen — Cursor reads Claude's skill folder too, a
  *                second copy would show every skill twice there — else .cursor/skills/<name>/
- * agents/hooks.json names each hook's command once: `stop` → scripts/agent/stop-check.mjs, told which agent calls it.
+ * agents/hooks.json names each hook's command once: `stop` → scripts/agent/stop-check.mjs, told which agent calls it;
+ * agents/permissions.json is what Claude Code may run without asking, and never.
  * A copy carries, right after its front matter, a line naming its source; `{{skill:<name>}}` in a command becomes
  * the agent's own way to load that skill. Removed: a copy whose source is gone or whose agent is no longer chosen
  * — only a file carrying that line, or a config file exactly as written here: an agent folder's own files stay.
@@ -91,10 +92,15 @@ function claudeMcp(text) {
   return json(config);
 }
 
-/** agents/hooks.json as Claude Code's project settings: the stop hook on its Stop event. */
+/**
+ * agents/hooks.json and agents/permissions.json as Claude Code's project settings: what the agent may do without
+ * asking (the Playwright MCP, the kit's scripts, git that only reads), what it is never let to (reading cookies and
+ * storage into the chat, 02-guardrails), and the stop hook on its Stop event.
+ */
 function claudeSettings(text) {
   const { stop } = JSON.parse(text);
-  return json({ hooks: stop ? { Stop: [{ hooks: [{ type: "command", command: `${stop} --agent claude`, timeout: 120 }] }] } : {} });
+  const permissions = fs.existsSync(path.join(ROOT, SOURCE, "permissions.json")) ? JSON.parse(read(`${SOURCE}/permissions.json`)) : undefined;
+  return json({ ...(permissions ? { permissions } : {}), hooks: stop ? { Stop: [{ hooks: [{ type: "command", command: `${stop} --agent claude`, timeout: 120 }] }] } : {} });
 }
 
 /** agents/hooks.json as Cursor's hooks file. */
