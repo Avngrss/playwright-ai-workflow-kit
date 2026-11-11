@@ -1,0 +1,23 @@
+bin/install.mjs
+  s_f460d77fbd9650::t_a07aec3eead1d6 1-361
+package.json
+  s_f460d77fbd9650::t_3022b82395ecc4 3,14-16
+scripts/run-tests.mjs
+  s_f460d77fbd9650::t_45832377311fde 220-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c1f8d7bd2a23bd43fe52b2c50c780f883d265084",
+  "prompts": {},
+  "sessions": {
+    "s_f460d77fbd9650": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_f460d77fbd9650",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
