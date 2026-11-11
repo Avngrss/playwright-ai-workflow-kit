@@ -37,6 +37,25 @@ When the installer stops, nothing was written yet:
 | `npm ci failed in …` | the kit is copied; run `npm ci` and `npm run env:prepare` in its folder yourself |
 | `… .gitlab-ci.yml is there already — add to it:` | paste the printed `include:` lines into your `.gitlab-ci.yml` |
 
+**Later — the kit's newest version.** In the kit's folder:
+
+```bash
+npx github:Avngrss/playwright-ai-workflow-kit --update --dry-run   # the plan, nothing changed
+npx github:Avngrss/playwright-ai-workflow-kit --update             # the same plan, then "Update? (Y/n)"
+```
+
+| The plan says | What it means |
+|---|---|
+| `replaced` · `added` · `removed` | the kit's files you never changed: they become the kit's new ones |
+| `beside yours (.kit-new)` | you and the kit both changed it: yours stays, the kit's new version is `<file>.kit-new` — compare, keep what you want, delete the `.kit-new` |
+| `yours kept` | you changed it and the kit did not: nothing to do |
+| `package.json: …` · `.gitignore: …` | the kit's new scripts and packages where you kept the kit's, its new ignore lines |
+| `the kit's template changed` | the map or `.env.example`: yours stays, the template's new version beside it |
+| `CI …` | the workflow the installer wrote — replaced when you never changed it, else beside it |
+
+Your plans, tests, app code, `.env` and the AI you chose are never in the plan. After it the agents' copies are
+written again, `npm install` runs and the gate says how the folder stands. Nothing is committed.
+
 From a clone of the kit (or a repository made with **Use this template**) instead:
 
 ```bash
