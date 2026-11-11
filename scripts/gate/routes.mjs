@@ -38,10 +38,15 @@ function checkOwners(files, report) {
       continue;
     }
     if (owners.counts.API > 0 || !withApi.has(app)) continue;
-    // An agent that plans every case on the screen says, place by place, why no API scenario exists.
-    const unsaid = API_PLACES.filter((place) => !new RegExp(`\\b${place}:\\s*[^\\s<·]`, "i").test(owners.why));
+    // An agent that plans every case on the screen says, place by place, why no API scenario exists — a reason
+    // of a few words from what it saw ("one role, no ids in the address"), never a bare "none".
+    const reasonOf = (place) => new RegExp(`\\b${place}:\\s*([^·]*)`, "i").exec(owners.why)?.[1].trim() ?? "";
+    const unsaid = API_PLACES.filter((place) => {
+      const reason = reasonOf(place);
+      return !reason || reason.startsWith("<") || reason.split(/\s+/).length < 3 || /^(none|n\/a|no|nothing|-|—)\W*$/i.test(reason);
+    });
     if (unsaid.length) {
-      say(`${app} has an API (specs/project-map.md), and "found:" names no API scenario — say why for each place one comes from: "API 0 · … — none · other inputs: <why> · access: <why> · contract: <why>" (not said: ${unsaid.join(", ")}) (plans.md §Layers, the owner check)`);
+      say(`${app} has an API (specs/project-map.md), and "found:" names no API scenario — say why for each place one comes from, a reason of a few words from the live check, never a bare "none": "API 0 · … — none · other inputs: <why> · access: <why> · contract: <why>" (not said: ${unsaid.join(", ")}) (plans.md §Layers, the owner check)`);
     }
   }
 }

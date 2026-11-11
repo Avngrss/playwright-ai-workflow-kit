@@ -100,8 +100,9 @@ one test in that owner's folder, decided by where a failure would point:
   the screens · no UI without a screen · no E2E when no journey crosses pages, roles or services. A run limited
   to one owner that finds none → ask: drop the limit · stop; E2E asked, nothing crossing → ask: write it as UI
   scenarios · stop. The outcome → `## Owners`. An app with an API (its map row) and no API scenario says, for each
-  place one comes from, why there is none — `none · other inputs: <why> · access: <why> · contract: <why>`;
-  `qa:gate` fails a plan without it.
+  place one comes from, why there is none — `none · other inputs: <why> · access: <why> · contract: <why>`, each a
+  reason of a few words from the live check ("one role, no ids in the address"), never a bare "none"; `qa:gate`
+  fails a plan without it.
 
 ## Routes — how each scenario proves its result
 
@@ -256,7 +257,8 @@ command** — `npm run plan:block -- <plan> --title "<title>" [--tms <id>] [--ow
 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"] [--steps "<step>" …]`, or drafted from a saved
 source with `--case | --bug state/sources/<id>.json` (§TMS cases, §Known bugs) — `--rules` when a route names a rule
 (`spec:draft` refuses a `check:` route without its `- Rules:` line); appended in this shape, its `<…>` and choices yours to fill
-from the live check (`npm run spec:draft` refuses a block still holding one).
+from the live check (`npm run spec:draft` refuses a block still holding one). A plan with a ready case holds no
+`<…>` of this template anywhere — filled, or its line dropped; `qa:gate` fails one left.
 
 ```markdown
 # <Area> — <Feature>
