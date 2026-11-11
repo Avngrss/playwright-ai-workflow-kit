@@ -79,6 +79,7 @@ const SLOW = "Stand was slow — passed alone on a second pass";
 // none, each for its reason.
 const RERUN_CAUSES = new Set(["stand unavailable", "out of time"]);
 const NOT_RERUN: Record<string, string> = {
+  "setting missing": "a rerun has the same settings",
   "stand data": "a rerun finds the same data",
   "sign-in or access": "a sign-in tried again counts toward a lock",
   "server error": "a 5xx is the server's answer: a retest by hand decides",
@@ -111,6 +112,10 @@ function runLink(): string {
  */
 function nextStep(look: SummaryTest[], home: string): Pick<SummaryData, "next" | "nextPath"> {
   if (!look.length) return { next: undefined, nextPath: null };
+  // A setting the run lacks comes first: no test needs fixing until it is set.
+  if (look.some(({ cause }) => cause === "setting missing")) {
+    return { next: "Next — set what the failures name as empty (.env on a machine, the CI's variables in CI), then run again: no test needs fixing", nextPath: null };
+  }
   const tell = "Next — tell the agent in this test home:";
   if (look.length >= 3) return { next: `${tell} triage the run ${runLink()}`, nextPath: "triage" };
   return { next: `${tell} heal the red tests: ${look.map(({ file, line }) => `${fromHome(home, file)}:${line}`).join(" ")}`, nextPath: "heal" };
