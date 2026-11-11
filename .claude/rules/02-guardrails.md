@@ -65,8 +65,16 @@ ones are warned, not reworked. It fails:
   listening (`answerTo`) where the route intercepts or listening where it does not, a client read in a check
   step beyond the route's one `read`, a screen kind the route names unchecked in its step, the screen compared
   with the answer where the case knew the values; a scenario with two tests; a written case with a scenario
-  left unwritten;
+  left unwritten; a feature plan without its `## Owners` `found:` line, or an app with an API and no API
+  scenario said why place by place (`plans.md` §Layers);
+- the agents' copies (`agents.mjs`) — a copy in `.cursor/` or `.claude/` that differs from `agents/`: edit
+  `agents/`, then `npm run agents:sync`;
 - `tsc` — type errors, an unused import, variable, parameter or fixture.
+
+**The stop check** (`scripts/agent/stop-check.mjs`, each agent's stop hook) runs this gate, without `tsc`, on the
+work in the tree before you end a turn, and looks for the automatic heal a red verify still owes (the verify
+skill §5). It sends you back once with what it found: do it, then stop. A question the user must answer first →
+ask it and stop again; the next stop goes through.
 
 Warnings: sizes, unnamed checks, long or dated comments, `try/finally` in specs, unused exports, client and
 setup size, Page Object state and second names, siblings repeating their base, case-title shape, a Blocked

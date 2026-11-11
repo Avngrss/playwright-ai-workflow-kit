@@ -41,3 +41,5 @@ reports/last-results.json
 reports/verify-spoils.json
 # The last verify's result and its automatic-heal attempt (an agent's stop hook reads it)
 reports/verify-state.json
+# What the stop hook last checked (scripts/agent/stop-check.mjs)
+reports/stop-check.json

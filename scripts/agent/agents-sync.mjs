@@ -2,9 +2,11 @@
  * The agents' own copies of the kit's texts — `npm run agents:sync`. The rules, skills, commands and the MCP
  * config are written once, in agents/; each agent reads them from its own folder in its own shape, and this
  * script writes those folders from agents/ (one target per agent, TARGETS below):
- *   Cursor       .cursor/rules/<name>.mdc, .cursor/commands/<name>.md, .cursor/mcp.json
+ *   Cursor       .cursor/rules/<name>.mdc, .cursor/commands/<name>.md, .cursor/mcp.json, .cursor/hooks.json
  *   Claude Code  .claude/rules/<name>.md (`paths:` from the rule's globs) and agents/notes/claude-code.md,
- *                .claude/commands/<name>.md, .claude/agents/reviewer.md (the /review brief as a subagent), .mcp.json
+ *                .claude/commands/<name>.md, .claude/agents/reviewer.md (the /review brief as a subagent), .mcp.json,
+ *                .claude/settings.json (its hooks)
+ * agents/hooks.json names each hook's command once: `stop` → scripts/agent/stop-check.mjs, told which agent calls it.
  *   both         .claude/skills/<name>/ — Cursor reads Claude's skill folder too, so a second copy would show
  *                every skill twice there
  * A copy carries, right after its front matter, a line naming its source; `{{skill:<name>}}` in a command becomes
@@ -60,7 +62,21 @@ function claudeMcp(text) {
     const bin = server.command === "npx" && LOCAL_BINS[server.args?.[0]];
     if (bin) Object.assign(server, { command: "node", args: [bin, ...server.args.slice(1)] });
   }
-  return `${JSON.stringify(config, null, 2)}\n`;
+  return json(config);
+}
+
+const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
+
+/** agents/hooks.json as Claude Code's project settings: the stop hook on its Stop event. */
+function claudeSettings(text) {
+  const { stop } = JSON.parse(text);
+  return json({ hooks: stop ? { Stop: [{ hooks: [{ type: "command", command: `${stop} --agent claude`, timeout: 120 }] }] } : {} });
+}
+
+/** agents/hooks.json as Cursor's hooks file. */
+function cursorHooks(text) {
+  const { stop } = JSON.parse(text);
+  return json({ version: 1, hooks: stop ? { stop: [{ command: `${stop} --agent cursor` }] } : {} });
 }
 
 /** The /review brief as Claude Code's `reviewer` subagent — a fresh context is the new chat the brief asks for. */
@@ -94,6 +110,7 @@ const TARGETS = [
         return [{ file: source.replace(/^agents\//, ".cursor/"), text: marked(withoutFront(text).replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "@.claude/skills/$1/SKILL.md"), source) }];
       }
       if (source === "agents/mcp.json") return [{ file: ".cursor/mcp.json", text }];
+      if (source === "agents/hooks.json") return [{ file: ".cursor/hooks.json", text: cursorHooks(text) }];
       return [];
     },
   },
@@ -110,6 +127,7 @@ const TARGETS = [
         return [{ file: source.replace(/^agents\//, ".claude/"), text: marked(text.replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "the `$1` skill (`.claude/skills/$1/SKILL.md`)"), source) }];
       }
       if (source === "agents/mcp.json") return [{ file: ".mcp.json", text: claudeMcp(text) }];
+      if (source === "agents/hooks.json") return [{ file: ".claude/settings.json", text: claudeSettings(text) }];
       return [];
     },
   },
