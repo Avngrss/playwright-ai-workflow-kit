@@ -1,0 +1,21 @@
+.env.example
+  s_5a14ef979817d5::t_ca264f32ce7c2f 9,11-12
+specs/project-map.md
+  s_5a14ef979817d5::t_94d2f5dadee4f1 17-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1fb9ee4674df0834a521a0e8431a38a3cff3ecce",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
