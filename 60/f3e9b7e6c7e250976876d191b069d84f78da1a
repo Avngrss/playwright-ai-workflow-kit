@@ -1,0 +1,103 @@
+.claude/agents/reviewer.md
+  s_5a14ef979817d5::t_15a86d6df39bba 1-45
+.claude/commands/coverage.md
+  s_5a14ef979817d5::t_1e1f6c9406176c 1-15
+.claude/commands/heal.md
+  s_5a14ef979817d5::t_02c836cbdee4d6 1-17
+.claude/commands/implement.md
+  s_5a14ef979817d5::t_698bb4e84c53c9 1-18
+.claude/commands/plan.md
+  s_5a14ef979817d5::t_974ee782234894 1-22
+.claude/commands/setup.md
+  s_5a14ef979817d5::t_c33a2f011eacf7 1-17
+.claude/commands/triage.md
+  s_5a14ef979817d5::t_9362ddd9913d49 1-18
+.claude/commands/verify.md
+  s_5a14ef979817d5::t_5dc02f3d116c6f 1-16
+.claude/rules/00-project-map.md
+  s_5a14ef979817d5::t_d84975f23de744 1-92
+.claude/rules/01-workflow.md
+  s_5a14ef979817d5::t_21cbab6aaca76e 1-110
+.claude/rules/02-guardrails.md
+  s_5a14ef979817d5::t_a56001752ccec2 1-108
+.claude/rules/api.md
+  s_5a14ef979817d5::t_5a6877aa3e9513 1-130
+.claude/rules/claude-code.md
+  s_5a14ef979817d5::t_656b2609477dc0 1-13
+.claude/rules/code.md
+  s_5a14ef979817d5::t_94639cb0fa2dc4 1-269
+.claude/rules/data-and-fixtures.md
+  s_5a14ef979817d5::t_954267d3c6cee6 1-237
+.claude/rules/live-app.md
+  s_5a14ef979817d5::t_9e39988b33ee73 1-123
+.claude/rules/plans.md
+  s_5a14ef979817d5::t_6006191b1318b4 1-422
+.claude/rules/specs.md
+  s_5a14ef979817d5::t_fa837b993e8698 1-283
+.claude/rules/ui.md
+  s_5a14ef979817d5::t_1fe5eb092cc5d3 1-229
+.cursor/commands/coverage.md
+  s_5a14ef979817d5::t_000203602e04c4 2
+.cursor/commands/heal.md
+  s_5a14ef979817d5::t_5f2b13b01d3a7e 2
+.cursor/commands/implement.md
+  s_5a14ef979817d5::t_9b3803786ea1df 2
+.cursor/commands/plan.md
+  s_5a14ef979817d5::t_d61a4ad07f1665 2
+.cursor/commands/setup.md
+  s_5a14ef979817d5::t_4757e85da4cfb3 2
+.cursor/commands/triage.md
+  s_5a14ef979817d5::t_1e8cbf37024819 2
+.cursor/commands/verify.md
+  s_5a14ef979817d5::t_18bb9642553b9c 2
+.cursor/rules/00-project-map.mdc
+  s_5a14ef979817d5::t_08ee4eea472f07 84
+.mcp.json
+  s_5a14ef979817d5::t_4804e1dc6a1b7d 1-11
+agents/commands/coverage.md
+  s_5a14ef979817d5::t_2cc593a023d11b 1-3
+agents/commands/heal.md
+  s_5a14ef979817d5::t_86602143a80dea 1-3
+agents/commands/implement.md
+  s_5a14ef979817d5::t_11aeab4009a493 1-3
+agents/commands/plan.md
+  s_5a14ef979817d5::t_fad9e78347383c 1-3
+agents/commands/review.md
+  s_5a14ef979817d5::t_bba9ad235d93d8 1-3
+agents/commands/setup.md
+  s_5a14ef979817d5::t_a6a0b11ef9588a 1-3
+agents/commands/triage.md
+  s_5a14ef979817d5::t_af272d2626b6cb 1-3
+agents/commands/verify.md
+  s_5a14ef979817d5::t_7b80e29ae77ba2 1-3
+agents/rules/00-project-map.md
+  s_5a14ef979817d5::t_c898aa7ea371fb 83
+scripts/gate/check.mjs
+  s_5a14ef979817d5::t_c7bd7916dbc18f 18
+.gitignore
+  s_5a14ef979817d5::t_db103fed3d6731 13-14
+README.md
+  s_5a14ef979817d5::t_a0660a493a1e8e 83-84,122,152
+agents/notes/claude-code.md
+  s_5a14ef979817d5::t_537193960ae2f8 1-12
+docs/getting-started.md
+  s_5a14ef979817d5::t_d9d0393083a8ad 9-12
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_22e3f05ac3e0f2 4-12,42-80,88,94,100-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "60f3e9b7e6c7e250976876d191b069d84f78da1a",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
