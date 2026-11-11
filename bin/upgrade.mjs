@@ -175,7 +175,7 @@ export async function runUpdate(call, ask) {
   const failures = (gate.stdout ?? "").split("\n").filter((line) => line.startsWith("✗ "));
   say(gate.status === 0 ? "✓ qa:gate passes" : `! qa:gate: ${failures.length} problem(s) — npm run qa:gate in ${where} lists them`);
 
-  const beside = [...count("conflict").map(({ file }) => file), ...templates, ...ci.filter(({ action }) => action === "conflict").map(({ file }) => path.relative(target, file))];
+  const beside = [...count("conflict").map(({ file }) => file), ...templates, ...ci.filter(({ action }) => action === "conflict").map(({ file }) => path.relative(target, file).split(path.sep).join("/"))];
   say(`\nDone — the kit ${VERSION} in ${where}.`);
   if (beside.length) say(`  Compare each with its ${NEW_SUFFIX}, keep what you want, then delete the ${NEW_SUFFIX}: ${beside.join(", ")}`);
   say("  Nothing is committed — review the changes and commit yourself.");
