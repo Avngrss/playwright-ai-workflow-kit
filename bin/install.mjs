@@ -14,6 +14,13 @@
  *   --yes             no questions — the defaults for what is not given (also when there is no terminal to ask in)
  *   --no-install      copy only: no npm ci, no .env
  *
+ *   npx github:Avngrss/playwright-ai-workflow-kit --update [<folder>] [--dry-run] [--yes] [--no-install]
+ *
+ *   --update          bring a test home the kit installed (this folder, or <folder>) to this version: the kit's files
+ *                     you never changed are replaced, yours stay with the new version beside them (<file>.kit-new),
+ *                     your map, plans, tests and app code are never touched (bin/upgrade.mjs)
+ *   --dry-run         with --update: show what would change, change nothing
+ *
  * The files come from the kit's git repository at this version's tag (v<version>; the default branch while the tag
  * is not there), or from the checkout the installer runs in — what git tracks, nothing else. The kit's own files
  * stay behind: this installer, its license, its CI templates. A project's own README.md and .gitattributes are
@@ -22,15 +29,13 @@
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
+import { ciOfRemote, git, kitSource, npm, say, stop, VERSION, writeCi } from "./kit.mjs";
 import { KIT_ONLY } from "./ownership.mjs";
+import { runUpdate } from "./upgrade.mjs";
 
-const KIT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const REPO = "https://github.com/Avngrss/playwright-ai-workflow-kit.git";
-const VERSION = JSON.parse(fs.readFileSync(path.join(KIT, "package.json"), "utf8")).version;
 const AGENTS = { claude: "Claude Code", cursor: "Cursor" };
 const OPEN = {
   claude: "Claude Code — open the folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then type /setup",
@@ -39,21 +44,16 @@ const OPEN = {
 // Files a project may have of its own before the kit comes: kept as they are.
 const PROJECT_OWNED = new Set(["README.md", ".gitattributes"]);
 
-const say = (line = "") => console.log(line);
-const stop = (message, code = 1) => {
-  console.error(`✗ ${message}`);
-  process.exit(code);
-};
-const git = (args, cwd) => spawnSync("git", args, { cwd, encoding: "utf8" });
-const npm = (args, cwd) => spawnSync("npm", args, { cwd, stdio: "inherit", shell: process.platform === "win32" });
 const isUrl = (text) => /^(https?:\/\/|git@|ssh:\/\/)/.test(text) || text.endsWith(".git");
 const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "tests";
 
 function parse(argv) {
-  const call = { target: undefined, dir: undefined, agents: undefined, ci: undefined, yes: false, install: true };
+  const call = { target: undefined, dir: undefined, agents: undefined, ci: undefined, yes: false, install: true, update: false, dryRun: false };
   for (let at = 0; at < argv.length; at += 1) {
     const arg = argv[at];
     if (arg === "--yes" || arg === "-y") call.yes = true;
+    else if (arg === "--update") call.update = true;
+    else if (arg === "--dry-run") call.dryRun = true;
     else if (arg === "--no-install") call.install = false;
     else if (arg === "--agent" || arg === "--agents") call.agents = argv[(at += 1)];
     else if (arg === "--dir") call.dir = argv[(at += 1)];
@@ -82,50 +82,6 @@ function agentsOf(text) {
 /** A folder that holds nothing but a git repository's own folder. */
 const isEmpty = (dir) => !fs.existsSync(dir) || fs.readdirSync(dir).every((entry) => entry === ".git");
 
-/**
- * The commit npx fetched this installer from — its lock records it ("…playwright-ai-workflow-kit.git#<sha>"). npm
- * leaves .gitignore and package-lock.json out of a package, so the files come from git at that commit.
- */
-function fetchedCommit() {
-  for (const lock of [path.join(KIT, "..", ".package-lock.json"), path.join(KIT, "..", "..", "package-lock.json")]) {
-    try {
-      const { packages } = JSON.parse(fs.readFileSync(lock, "utf8"));
-      const resolved = Object.entries(packages).find(([key]) => key.endsWith("node_modules/playwright-ai-workflow-kit"))?.[1]?.resolved;
-      const sha = /#([0-9a-f]{40})$/.exec(resolved ?? "")?.[1];
-      if (sha) return sha;
-    } catch {
-      // Not run through npx, or another layout: the version's tag below.
-    }
-  }
-  return undefined;
-}
-
-/**
- * The kit's files: { root, files, commit, from, done } — the checkout this installer runs in, or the kit's git at
- * npx's commit or this version. `commit` is the kit's commit they come from: a test home records it, so an update
- * knows which of its files the project changed since.
- */
-function kitSource() {
-  const head = (root) => git(["rev-parse", "HEAD"], root).stdout?.trim() || undefined;
-  if (fs.existsSync(path.join(KIT, ".git"))) {
-    const listed = git(["ls-files"], KIT);
-    if (listed.status === 0) return { root: KIT, files: listed.stdout.split("\n").filter(Boolean), commit: head(KIT), from: `the kit at ${KIT}`, done() {} };
-  }
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "playwright-ai-kit-"));
-  const done = () => fs.rmSync(root, { recursive: true, force: true });
-  const listed = () => git(["ls-files"], root).stdout.split("\n").filter(Boolean);
-  const sha = fetchedCommit();
-  if (sha && git(["init", "--quiet"], root).status === 0 && git(["fetch", "--quiet", "--depth", "1", REPO, sha], root).status === 0 && git(["checkout", "--quiet", "FETCH_HEAD"], root).status === 0) {
-    return { root, files: listed(), commit: sha, from: `${REPO} at ${sha.slice(0, 7)}`, done };
-  }
-  for (const ref of [`v${VERSION}`, null]) {
-    fs.rmSync(root, { recursive: true, force: true });
-    fs.mkdirSync(root);
-    if (git(["clone", "--quiet", "--depth", "1", ...(ref ? ["--branch", ref] : []), REPO, root]).status === 0) return { root, files: listed(), commit: head(root), from: `${REPO} (${ref ?? "its default branch"})`, done };
-  }
-  done();
-  return stop(`could not fetch the kit — git clone ${REPO} failed (the network, a proxy?)`);
-}
 
 /**
  * What the copy would do in the target: the files to write, those kept, the .gitignore lines to add, the
@@ -153,113 +109,6 @@ function planCopy(source, target) {
   return plan;
 }
 
-/** The CI the project's git remote points to: github, gitlab, or none. */
-function ciOfRemote(dir) {
-  const remote = git(["remote", "get-url", "origin"], dir).stdout ?? "";
-  return /github/i.test(remote) ? "github" : /gitlab/i.test(remote) ? "gitlab" : "none";
-}
-
-const prefixed = (prefix, value) => (prefix ? `${prefix}/${value}` : value);
-const ciNote = (prefix) => `# The tests live ${prefix ? `in ${prefix}/` : "at the repository's root"} — installed by the Playwright AI Workflow Kit.\n\n`;
-
-/**
- * The kit's GitHub workflow for a kit in a folder of the repository: every `run` in that folder, setup-node's cache
- * keyed by its lock, and the paths GitHub reads from the repository's root (hashFiles, artifacts) under it.
- */
-function githubWorkflow(text, prefix) {
-  const body = text.replace(/^# The test home in a folder[\s\S]*?\n\n/m, ciNote(prefix));
-  if (!prefix) return body;
-  const out = [];
-  let block = null;
-  for (const line of body.split("\n")) {
-    const indent = /^\s*/.exec(line)[0].length;
-    if (block !== null && line.trim() && indent > block) {
-      out.push(`${" ".repeat(indent)}${prefixed(prefix, line.trim())}`);
-      continue;
-    }
-    block = null;
-    if (/^jobs:/.test(line)) out.push("defaults:", "  run:", `    working-directory: ${prefix}`, "");
-    const pathLine = /^(\s*)path: (.+)$/.exec(line);
-    if (pathLine && pathLine[2].trim() === "|") block = pathLine[1].length;
-    else if (pathLine) {
-      out.push(`${pathLine[1]}path: ${prefixed(prefix, pathLine[2].trim())}`);
-      continue;
-    }
-    out.push(line.replace(/hashFiles\(([^)]*)\)/g, (_, args) => `hashFiles(${args.replace(/'([^']+)'/g, (__, file) => `'${prefixed(prefix, file)}'`)})`));
-    const cache = /^(\s*)cache: npm\s*$/.exec(line);
-    if (cache) out.push(`${cache[1]}cache-dependency-path: ${prefixed(prefix, "package-lock.json")}`);
-  }
-  return out.join("\n");
-}
-
-/**
- * The kit's GitLab CI for a kit in a folder of the repository: `cd` into it before each job's scripts (the secret
- * scan stays at the root), and the cache, artifact and dotenv paths under it.
- */
-function gitlabCi(text, prefix) {
-  const body = text.replace(/^# This path is the etalon template[\s\S]*?\n\n/m, ciNote(prefix));
-  if (!prefix) return body;
-  const out = [];
-  let job = "";
-  let list = null;
-  for (const line of body.split("\n")) {
-    const top = /^([.\w:-]+):\s*$/.exec(line);
-    if (top) job = top[1];
-    const indent = /^\s*/.exec(line)[0].length;
-    if (list !== null) {
-      if (line.trim().startsWith("- ") && indent >= list) {
-        const item = line.trim().slice(2);
-        out.push(item === ".npm/" || item.startsWith("#") ? line : `${" ".repeat(indent)}- ${prefixed(prefix, item)}`);
-        continue;
-      }
-      if (line.trim().startsWith("#") && indent >= list) {
-        out.push(line);
-        continue;
-      }
-      list = null;
-    }
-    const key = /^(\s*)(script|before_script|after_script|paths|dotenv):\s*(.*)$/.exec(line);
-    if (key?.[2] === "dotenv") {
-      out.push(`${key[1]}dotenv: ${prefixed(prefix, key[3].trim())}`);
-      continue;
-    }
-    out.push(line);
-    if (!key) continue;
-    if (key[2] === "paths") list = key[1].length;
-    else if (key[2] !== "script" || (job === "baseline")) out.push(`${key[1]}  - cd ${prefix}`);
-  }
-  return out.join("\n");
-}
-
-/** Writes the chosen CI at the repository's root, for the kit in `prefix`; never over a file that is there. */
-function writeCi(ci, source, repoRoot, target) {
-  const prefix = path.relative(repoRoot, target).split(path.sep).join("/");
-  const at = (...parts) => path.join(repoRoot, ...parts);
-  const shown = (file) => path.relative(process.cwd(), file).split(path.sep).join("/");
-  if (ci === "github") {
-    const file = at(".github", "workflows", "playwright.yml");
-    if (fs.existsSync(file)) return `! CI: ${shown(file)} is there already — not touched; the kit's workflow: github.com/Avngrss/playwright-ai-workflow-kit/blob/main/.github/workflows/playwright.yml`;
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, githubWorkflow(fs.readFileSync(path.join(source.root, ".github", "workflows", "playwright.yml"), "utf8"), prefix));
-    return `✓ CI: ${shown(file)} — add the app's addresses and logins in GitHub (Settings → Secrets and variables → Actions) and to its env: block`;
-  }
-  const template = gitlabCi(fs.readFileSync(path.join(source.root, "ci", "gitlab", "gitlab-ci.yml"), "utf8"), prefix);
-  const root = at(".gitlab-ci.yml");
-  if (!prefix) {
-    if (fs.existsSync(root)) return `! CI: ${shown(root)} is there already — not touched; the kit's: github.com/Avngrss/playwright-ai-workflow-kit/blob/main/ci/gitlab/gitlab-ci.yml`;
-    fs.writeFileSync(root, template);
-    return `✓ CI: ${shown(root)} — add the app's addresses and logins as GitLab CI/CD variables`;
-  }
-  const own = path.join(target, "ci", "gitlab-ci.yml");
-  fs.mkdirSync(path.dirname(own), { recursive: true });
-  fs.writeFileSync(own, template);
-  const include = `include:\n  - local: ${prefix}/ci/gitlab-ci.yml\n`;
-  if (!fs.existsSync(root)) {
-    fs.writeFileSync(root, include);
-    return `✓ CI: ${shown(own)}, included by ${shown(root)} — add the app's addresses and logins as GitLab CI/CD variables`;
-  }
-  return `! CI: ${shown(own)} written; ${shown(root)} is there already — add to it:\n${include}`;
-}
 
 /**
  * The kit's package.json as the test home's own: its name, no installer, no links to the kit's repository — and
@@ -284,6 +133,11 @@ async function main(argv) {
   const interactive = !call.yes && process.stdin.isTTY && process.stdout.isTTY;
   const rl = interactive ? readline.createInterface({ input: process.stdin, output: process.stdout }) : undefined;
   const ask = async (question, fallback) => (rl ? (await rl.question(`? ${question} `)).trim() : "") || fallback;
+  if (call.update) {
+    await runUpdate(call, ask);
+    rl?.close();
+    return;
+  }
 
   say(`Playwright AI Workflow Kit ${VERSION}\n`);
   // Where: a folder of this project, or a repository cloned here first.
