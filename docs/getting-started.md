@@ -27,6 +27,16 @@ The installer asks where (`qa` by default), which AI (Claude Code, Cursor or bot
 none), copies the kit with only your AI's files, writes the CI at the repository's root, then runs `npm ci` and
 step 2 itself — skip to step 3 in the kit's folder. `--help` lists its flags (`--agent`, `--ci`, `--yes` …).
 
+When the installer stops, nothing was written yet:
+
+| It says | Do |
+|---|---|
+| `… already has what the kit would write (src/, tests/ …)` | the folder is your project's own — give another one: `qa`, `tests/e2e` |
+| `Node … — the kit needs Node 20 or newer` | update Node (the CI uses 22) |
+| `could not fetch the kit — git clone … failed` | check the network or proxy for github.com, then run it again |
+| `npm ci failed in …` | the kit is copied; run `npm ci` and `npm run env:prepare` in its folder yourself |
+| `… .gitlab-ci.yml is there already — add to it:` | paste the printed `include:` lines into your `.gitlab-ci.yml` |
+
 From a clone of the kit (or a repository made with **Use this template**) instead:
 
 ```bash
@@ -129,6 +139,8 @@ automatic heal; it sends the agent back once when not. Continue with [Workflow](
 
 | Path | What |
 |---|---|
+| `agents/` | the rules, skills and commands your AI follows — edit them here, then `npm run agents:sync` |
+| `.cursor/`, `.claude/`, `.mcp.json` | your AI's copies of `agents/`, written by `npm run agents:sync` — never edited by hand |
 | `specs/project-map.md` | the project map: apps, `.env` names, ```auth blocks, TMS case links, tags, locks. Code and the gate read it |
 | `specs/known-bugs.md` | confirmed bugs the suite tracks |
 | `specs/<app>/<area>/<feature>/<feature>.md` | a feature's plan |
