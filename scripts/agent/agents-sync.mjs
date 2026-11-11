@@ -44,6 +44,14 @@ function marked(text, source) {
 // A command's front matter (its `description:`) is Claude Code's; Cursor sends a command's text to the model as is.
 const withoutFront = (text) => text.replace(/^---\n[\s\S]*?\n---\n/, "");
 
+/** A command as Cursor lists it — by its first line: the description first, the line naming the source last. */
+function cursorCommand(text, source) {
+  const front = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
+  const description = /^description:\s*"?(.*?)"?\s*$/m.exec(front)?.[1];
+  const body = withoutFront(text).replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "@.claude/skills/$1/SKILL.md").replace(/\n*$/, "\n");
+  return `${description ? `${description}.\n\n` : ""}${body}\n<!-- ${MARK} ${source} — edit the source, never this copy. -->\n`;
+}
+
 /** A Cursor rule's front matter as Claude Code reads it: `paths:` from its globs; none for an always-on rule. */
 function claudeRule(text, source) {
   const front = /^---\n([\s\S]*?)\n---\n/.exec(text);
@@ -106,9 +114,7 @@ const TARGETS = [
     copies(source, text) {
       const rule = /^agents\/rules\/(.+)\.md$/.exec(source);
       if (rule) return [{ file: `.cursor/rules/${rule[1]}.mdc`, text: marked(text, source) }];
-      if (source.startsWith("agents/commands/")) {
-        return [{ file: source.replace(/^agents\//, ".cursor/"), text: marked(withoutFront(text).replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "@.claude/skills/$1/SKILL.md"), source) }];
-      }
+      if (source.startsWith("agents/commands/")) return [{ file: source.replace(/^agents\//, ".cursor/"), text: cursorCommand(text, source) }];
       if (source === "agents/mcp.json") return [{ file: ".cursor/mcp.json", text }];
       if (source === "agents/hooks.json") return [{ file: ".cursor/hooks.json", text: cursorHooks(text) }];
       return [];
