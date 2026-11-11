@@ -1,0 +1,23 @@
+README.md
+  s_1162333acb809c::t_d4d8d32a6dd162 128,130,355-357
+docs/getting-started.md
+  s_1162333acb809c::t_514272e5d1acb1 30-39,142-143
+docs/workflow.md
+  s_1162333acb809c::t_86c0931a698a3a 41-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2641fd5f52299c5318ac973b2fb02401e855c4b4",
+  "prompts": {},
+  "sessions": {
+    "s_1162333acb809c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_1162333acb809c",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
