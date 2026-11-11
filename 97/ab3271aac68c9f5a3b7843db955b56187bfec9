@@ -1,0 +1,31 @@
+.cursor/rules/plans.mdc
+  s_615b2c049e8cdc::t_4fecf5fb3bdabf 102-104,267
+.cursor/skills/plan/SKILL.md
+  s_615b2c049e8cdc::t_d1a8fcad83e840 21-22
+"docs/Layer Routing Algorithm.md"
+  s_615b2c049e8cdc::t_95b62bc864eb46 313,315
+scripts/gate/check.mjs
+  s_615b2c049e8cdc::t_a392beceb8d0f7 14-15
+scripts/gate/context.mjs
+  s_615b2c049e8cdc::t_3997c0993d7ab4 50-51,55,58-65,69-73
+scripts/gate/plans.mjs
+  s_615b2c049e8cdc::t_bcba608520716e 126-138,141,183
+scripts/gate/routes.mjs
+  s_615b2c049e8cdc::t_30baf04e491d55 2,14-16,21-48,230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "97ab3271aac68c9f5a3b7843db955b56187bfec9",
+  "prompts": {},
+  "sessions": {
+    "s_615b2c049e8cdc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_615b2c049e8cdc",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
