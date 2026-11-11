@@ -92,7 +92,8 @@ function reviewerAgent(text, source) {
   const head = [
     "---",
     "name: reviewer",
-    "description: Independent review of tests this kit's agent wrote, against their manual cases — a fresh context that never saw how they were written. Use for the verify skill's full review (§6.2), given `<plan path> #<n> … — <spec paths>`.",
+    // Quoted: a " #" would start a YAML comment.
+    'description: "Independent review of tests this kit\'s agent wrote, against their manual cases — a fresh context that never saw how they were written. Use for the verify skill\'s full review (§6.2), given `<plan path> #<n> … — <spec paths>`."',
     "---",
     "",
     "You are the reviewer subagent: your context is fresh, so you are the new chat the brief below asks for. You are given",
