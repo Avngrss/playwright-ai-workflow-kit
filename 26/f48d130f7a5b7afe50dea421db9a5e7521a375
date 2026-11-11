@@ -1,0 +1,21 @@
+.gitignore
+  s_5fd21e27cff78b::t_b5d9708f80b7f2 44,46-47
+scripts/agent/stop-check.mjs
+  s_5fd21e27cff78b::t_16af4e07e97f2b 12-15,26-27,96-124,127-139,141,143,146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "26f48d130f7a5b7afe50dea421db9a5e7521a375",
+  "prompts": {},
+  "sessions": {
+    "s_5fd21e27cff78b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_5fd21e27cff78b",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
