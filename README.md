@@ -80,7 +80,8 @@ The kit can also live in a folder of your product's repository, for example `qa/
 1. Copy the kit's files into the folder (without its `.git`). Its own `.gitignore` comes along and keeps `.env`,
    `state/` and the reports out of git from there.
 2. In the folder: `npm install`, then `npm run env:prepare`.
-3. Open **that folder** in Cursor — the rules, skills and commands load from its `.cursor/`.
+3. Open **that folder** in Cursor or Claude Code — the rules and commands load from its `.cursor/` or `.claude/`,
+   the skills from `.claude/skills/` for both.
 4. CI: copy `.github/workflows/playwright.yml` to the repository's own `.github/workflows/` (GitLab:
    `ci/gitlab/gitlab-ci.yml` to `.gitlab-ci.yml` at the root) and follow the note at its top — the working
    directory, the cache path and `qa/` in front of its paths.
@@ -118,7 +119,7 @@ summary's last line names the one it needs.
 | `agents/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
 | `agents/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
 | `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
-| `.cursor/` | The agent's own copy of `agents/` — written by `npm run agents:sync`; edit `agents/`, never the copy (the gate fails one that differs) |
+| `.cursor/`, `.claude/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
@@ -148,7 +149,7 @@ script, the projects and CI.
 agents/rules/       ← 10 rules: 3 always-on (project map and layout, workflow, guardrails), the rest by file
 agents/skills/      ← 4 skills (setup, plan → implement → verify, which also heals, triages, reviews and shows coverage)
 agents/commands/    ← 8 commands: 7 short entries into the skills, and /review — the brief of an independent review
-.cursor/            ← the agent's copy of agents/ (npm run agents:sync)
+.cursor/, .claude/  ← each agent's copy of agents/ (npm run agents:sync)
 specs/project-map.md← the living registry the code and gate read
 scripts/gate/       ← what is enforced, not advised: npm run qa:gate, then tsc
 ```

@@ -1,3 +1,6 @@
+---
+description: "Plan automated coverage of a feature before any test is written"
+---
 Use Skill: {{skill:plan}}
 
 Plans a feature's coverage, or an E2E journey — planning only, no tests written. Each scenario gets one owner (API,

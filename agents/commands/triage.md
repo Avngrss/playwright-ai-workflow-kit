@@ -1,3 +1,6 @@
+---
+description: "Triage a red run: three or more failures, or a CI run"
+---
 Use Skill: {{skill:verify}} — §10 "Triage the run".
 
 Three or more red tests, or a CI run (a run summary's last line: "triage the run <link>"): every failure sorted by its

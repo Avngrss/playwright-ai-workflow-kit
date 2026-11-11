@@ -10,6 +10,8 @@ playwright-report/
 state/
 *.storage-state.json
 .playwright-mcp/
+# Claude Code: each person's own settings (the kit's are in .claude/)
+.claude/settings.local.json
 .env
 .env.uat
 # Allure generated output (the config is allurerc.mjs at the root, tracked)

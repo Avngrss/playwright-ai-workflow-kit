@@ -1,3 +1,6 @@
+---
+description: "Set up the test home, add an app or set up its sign-in"
+---
 Use Skill: {{skill:setup}} — §2 "Add an app" (a fresh clone checked first), §3 "Sign-in", §3.9 "A further account or role".
 
 Registers an app (its map rows and `.env` names, `npm run app:add -- <app>`, its sign-in, a first green sign-in

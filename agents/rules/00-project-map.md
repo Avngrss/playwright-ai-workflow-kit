@@ -80,7 +80,7 @@ features of one area. `qa:gate` (`layout.mjs`) fails any other place, depth or n
 | `npm run suite:coverage -- --app <app>` · `data:sweep` | each case automated / to rework / not automated / inconsistent · remove `AQA` leftovers |
 | `npm run allure:report` / `allure:open` | build / open the Allure report |
 | `npm run browsers:install` / `browsers:install:all` | Chromium / every browser |
-| `npm run agents:sync` | the agents' own copies of `agents/` (`.cursor/`) — after an edit of a rule, skill, command or `agents/mcp.json`; `qa:gate` fails a copy that differs |
+| `npm run agents:sync` | the agents' own copies of `agents/` (`.cursor/`, `.claude/`, `.mcp.json`) — after an edit of a rule, skill, command or `agents/mcp.json`; `qa:gate` fails a copy that differs |
 
 ## Playwright projects and CI
 

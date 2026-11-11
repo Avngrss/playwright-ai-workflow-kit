@@ -1,3 +1,6 @@
+---
+description: "Verify what was written or healed: one npm run verify, the report, the reviews, a summary"
+---
 Use Skill: {{skill:verify}}
 
 One `npm run verify -- <app> <spec[:line]…> [--also <spec…>] [--can-fail <spec>:<line>=<the line as spoiled>…]

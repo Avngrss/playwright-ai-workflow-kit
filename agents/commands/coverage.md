@@ -1,3 +1,6 @@
+---
+description: "A TMS suite's coverage: each case automated, to rework or not automated"
+---
 Use Skill: {{skill:verify}} — §9 "Coverage".
 
 Read-only: every case of a TMS suite as automated (owners, last run) · automated · to rework (a scenario tested

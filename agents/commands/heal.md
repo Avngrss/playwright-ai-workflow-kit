@@ -1,3 +1,6 @@
+---
+description: "Heal one or two red tests"
+---
 Use Skill: {{skill:verify}} — §8 "Heal".
 
 One or two red tests (a run summary's last line: "heal the red tests: <spec>:<line> …"), each by its verdict on §8's

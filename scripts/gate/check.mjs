@@ -15,7 +15,7 @@
  *                 says what its owner check found — an app with an API never left without API scenarios unsaid
  *   reading.mjs   a UI test reads as its case: no data shaped in the spec, a step is one action and its checks
  *   pointers.mjs  every rule and skill the code names exists in agents/, never in an agent's own copy
- *   agents.mjs    every agent's copy (.cursor/) matches agents/ — npm run agents:sync writes them
+ *   agents.mjs    every agent's copy (.cursor/, .claude/, .mcp.json) matches agents/ — npm run agents:sync writes them
  *   advice.mjs    warnings: size, readability
  */
 import fs from "node:fs";

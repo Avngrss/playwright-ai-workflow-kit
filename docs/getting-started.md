@@ -6,9 +6,10 @@ is in [Workflow](workflow.md).
 ## Prerequisites
 
 - Node.js and npm (the CI uses Node 22), Git.
-- Cursor with this folder open. The rules, skills and slash commands load from `.cursor/`.
-- The Playwright MCP from `.cursor/mcp.json`, enabled in Cursor. The agent uses it to look at the
-  live app; without it, the agent looks through a short Playwright script instead.
+- Cursor or Claude Code with this folder open. The rules and slash commands load from `.cursor/` or
+  `.claude/`, the skills from `.claude/skills/` for both — copies of `agents/` (`npm run agents:sync`).
+- The Playwright MCP from `.cursor/mcp.json` (Cursor: enable it) or `.mcp.json` (Claude Code: approve it once).
+  The agent uses it to look at the live app; without it, the agent looks through a short Playwright script instead.
 - A test environment of the app (dev or QA) and a **test account** for it, not your personal one.
   Sign in with it by hand once before you give it to the tests.
 - Optional: an MCP server or API access for your TMS and tracker, so the agent can read cases and

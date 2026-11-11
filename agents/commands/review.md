@@ -1,3 +1,6 @@
+---
+description: "The brief of an independent review of new tests, run in a new chat"
+---
 Run this in a **new chat** — the reviewer must not see how the tests were written. The verify skill (§6.2) asks for it
 for every new test and gives the line to paste: `/review <plan path> #<n> … — <spec paths>`.
 

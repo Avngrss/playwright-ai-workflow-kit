@@ -1,3 +1,6 @@
+---
+description: "Write the tests of a plan's ready cases"
+---
 Use Skill: {{skill:implement}}
 
 Writes the plan's ready cases whole — every scenario one test in its owner's folder (its `Level:`), each started with

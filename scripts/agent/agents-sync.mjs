@@ -1,10 +1,15 @@
 /**
  * The agents' own copies of the kit's texts — `npm run agents:sync`. The rules, skills, commands and the MCP
  * config are written once, in agents/; each agent reads them from its own folder in its own shape, and this
- * script writes those folders from agents/ (one target per agent, TARGETS below). A copy carries, right after
- * its front matter, a line naming its source; `{{skill:<name>}}` in a command becomes the agent's own way to
- * load that skill. A copy whose source is gone is removed — only a file carrying that line: an agent folder's
- * own files stay.
+ * script writes those folders from agents/ (one target per agent, TARGETS below):
+ *   Cursor       .cursor/rules/<name>.mdc, .cursor/commands/<name>.md, .cursor/mcp.json
+ *   Claude Code  .claude/rules/<name>.md (`paths:` from the rule's globs) and agents/notes/claude-code.md,
+ *                .claude/commands/<name>.md, .claude/agents/reviewer.md (the /review brief as a subagent), .mcp.json
+ *   both         .claude/skills/<name>/ — Cursor reads Claude's skill folder too, so a second copy would show
+ *                every skill twice there
+ * A copy carries, right after its front matter, a line naming its source; `{{skill:<name>}}` in a command becomes
+ * the agent's own way to load that skill. A copy whose source is gone is removed — only a file carrying that
+ * line: an agent folder's own files stay.
  *
  *   npm run agents:sync               write every agent's copies
  *   npm run agents:sync -- --check    list the copies that differ from agents/ and write nothing (exit 1 when any)
@@ -34,6 +39,45 @@ function marked(text, source) {
   return `${front}<!-- ${MARK} ${source} — edit the source, never this copy. -->\n${text.slice(front.length)}`;
 }
 
+// A command's front matter (its `description:`) is Claude Code's; Cursor sends a command's text to the model as is.
+const withoutFront = (text) => text.replace(/^---\n[\s\S]*?\n---\n/, "");
+
+/** A Cursor rule's front matter as Claude Code reads it: `paths:` from its globs; none for an always-on rule. */
+function claudeRule(text, source) {
+  const front = /^---\n([\s\S]*?)\n---\n/.exec(text);
+  const body = front ? text.slice(front[0].length) : text;
+  const globs = front && !/^alwaysApply:\s*true\s*$/m.test(front[1]) ? (/^globs:\s*(.+)$/m.exec(front[1])?.[1] ?? "") : "";
+  const paths = globs.split(",").map((glob) => glob.trim()).filter(Boolean);
+  return marked(`${paths.length ? `---\npaths:\n${paths.map((glob) => `  - "${glob}"`).join("\n")}\n---\n` : ""}${body}`, source);
+}
+
+// A devDependency's MCP server runs through node in Claude Code: its npx needs a `cmd /c` wrapper on Windows.
+const LOCAL_BINS = { "playwright-mcp": "node_modules/@playwright/mcp/cli.js" };
+
+function claudeMcp(text) {
+  const config = JSON.parse(text);
+  for (const server of Object.values(config.mcpServers ?? {})) {
+    const bin = server.command === "npx" && LOCAL_BINS[server.args?.[0]];
+    if (bin) Object.assign(server, { command: "node", args: [bin, ...server.args.slice(1)] });
+  }
+  return `${JSON.stringify(config, null, 2)}\n`;
+}
+
+/** The /review brief as Claude Code's `reviewer` subagent — a fresh context is the new chat the brief asks for. */
+function reviewerAgent(text, source) {
+  const head = [
+    "---",
+    "name: reviewer",
+    "description: Independent review of tests this kit's agent wrote, against their manual cases — a fresh context that never saw how they were written. Use for the verify skill's full review (§6.2), given `<plan path> #<n> … — <spec paths>`.",
+    "---",
+    "",
+    "You are the reviewer subagent: your context is fresh, so you are the new chat the brief below asks for. You are given",
+    "`<plan path> #<n> … — <spec paths>`; answer with the report the brief describes.",
+    "",
+  ].join("\n");
+  return marked(`${head}\n${withoutFront(text)}`, source);
+}
+
 /**
  * Each agent: the folders its copies live in (where a copy whose source is gone is removed) and its copies of
  * one source file — [{ file, text }]; none for a source it has no place for.
@@ -41,15 +85,31 @@ function marked(text, source) {
 const TARGETS = [
   {
     agent: "Cursor",
+    // .cursor/skills/ is kept here only for removing the copies written there before.
     folders: [".cursor/rules", ".cursor/skills", ".cursor/commands"],
     copies(source, text) {
       const rule = /^agents\/rules\/(.+)\.md$/.exec(source);
       if (rule) return [{ file: `.cursor/rules/${rule[1]}.mdc`, text: marked(text, source) }];
-      if (source.startsWith("agents/skills/")) return [{ file: source.replace(/^agents\//, ".cursor/"), text: source.endsWith(".md") ? marked(text, source) : text }];
       if (source.startsWith("agents/commands/")) {
-        return [{ file: source.replace(/^agents\//, ".cursor/"), text: marked(text.replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "@.cursor/skills/$1/SKILL.md"), source) }];
+        return [{ file: source.replace(/^agents\//, ".cursor/"), text: marked(withoutFront(text).replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "@.claude/skills/$1/SKILL.md"), source) }];
       }
       if (source === "agents/mcp.json") return [{ file: ".cursor/mcp.json", text }];
+      return [];
+    },
+  },
+  {
+    agent: "Claude Code",
+    folders: [".claude/rules", ".claude/skills", ".claude/commands", ".claude/agents"],
+    copies(source, text) {
+      const rule = /^agents\/rules\/(.+)\.md$/.exec(source);
+      if (rule) return [{ file: `.claude/rules/${rule[1]}.md`, text: claudeRule(text, source) }];
+      if (source === "agents/notes/claude-code.md") return [{ file: ".claude/rules/claude-code.md", text: marked(text, source) }];
+      if (source.startsWith("agents/skills/")) return [{ file: source.replace(/^agents\//, ".claude/"), text: source.endsWith(".md") ? marked(text, source) : text }];
+      if (source === "agents/commands/review.md") return [{ file: ".claude/agents/reviewer.md", text: reviewerAgent(text, source) }];
+      if (source.startsWith("agents/commands/")) {
+        return [{ file: source.replace(/^agents\//, ".claude/"), text: marked(text.replace(/\{\{skill:([a-z0-9-]+)\}\}/g, "the `$1` skill (`.claude/skills/$1/SKILL.md`)"), source) }];
+      }
+      if (source === "agents/mcp.json") return [{ file: ".mcp.json", text: claudeMcp(text) }];
       return [];
     },
   },
