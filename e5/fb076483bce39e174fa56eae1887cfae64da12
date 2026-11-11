@@ -1,0 +1,19 @@
+README.md
+  s_d64e6482f6ab77::t_43e14380f3c621 27-46,83-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e5fb076483bce39e174fa56eae1887cfae64da12",
+  "prompts": {},
+  "sessions": {
+    "s_d64e6482f6ab77": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_d64e6482f6ab77",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
