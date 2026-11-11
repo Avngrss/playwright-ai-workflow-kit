@@ -24,6 +24,26 @@ the app registered in the map, a feature planned from the live screen, the tests
 | The tests — each one reads as its case | [tests/ui/todomvc/todos/todo-list/todo-list.ui.spec.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/tests/ui/todomvc/todos/todo-list/todo-list.ui.spec.ts) |
 | The Page Object and what the screen should show | [src/pages/todomvc/todo-list.page.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/src/pages/todomvc/todo-list.page.ts), [src/assertions/todomvc/todo-list.ts](https://github.com/Avngrss/playwright-ai-workflow-kit/blob/demo/todomvc/src/assertions/todomvc/todo-list.ts) |
 
+The same app with the kit installed into a fresh repository and Claude Code: before any test is written, the
+agent checks the feature on the live app and shows the plan to confirm — each case's owner and why, what it
+checks, its suite and priority, and why it is needed.
+
+![The plan to confirm in the agent's chat: six UI cases, each with its owner, checks, suite, priority and reason](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/agent-plan.png)
+
+After "Yes, write them" the agent writes the tests, proves each check can fail, runs them once and has them
+reviewed by a subagent that did not write them. From its summary of that run:
+
+> **Passed:** all 6 new tests pass on the first try (no retries), and the convention check (qa:gate) passes with no warnings.<br>
+> **Can each check fail?** Yes, all 6. I changed each test's expected result on purpose and every one went red at its check, then I put the lines back.<br>
+> **Independent review:** a reviewer with no knowledge of how the tests were written found nothing wrong (0 findings).
+
+Before the agent ends a turn, the stop check runs the gate on its work. Here a plan written without its owners
+line sent the agent back — and it asked instead of filling in what it had not checked:
+
+![The stop check in the agent's chat: two problems found, the agent stops with a question rather than inventing evidence](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/agent-stop-check.png)
+
+The report of the demo branch's run:
+
 ![The Allure report of the demo run: app › area › feature › layer](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-tree.png)
 
 ![One test in the report: its steps, worded as the case](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-test.png)
@@ -59,6 +79,32 @@ npm run allure:open
    kit there with only your AI's files, writes the CI at the repository's root with the paths to that folder,
    runs `npm ci` (Chromium too) and creates `.env`. It never overwrites a file: a folder of your project the kit
    would mix into (`src/`, `tests/` …) stops it before anything is written. Nothing is committed.
+
+   <details>
+   <summary>What it looks like</summary>
+
+   ```text
+   $ npx github:Avngrss/playwright-ai-workflow-kit
+   Playwright AI Workflow Kit 1.3.0
+
+   ? Folder for the kit? (Enter = qa)
+   ? Which AI do you work with? 1 Claude Code · 2 Cursor · 3 both (Enter = 1)
+   ? CI? 1 GitHub Actions · 2 GitLab CI · 3 none (Enter = 1)
+   The kit goes into qa/ for Claude Code, CI: github — from https://github.com/Avngrss/playwright-ai-workflow-kit.git at <commit>.
+   ? Install? (Y/n)
+   ✓ 165 files of the kit copied
+   ✓ CI: .github/workflows/playwright.yml — add the app's addresses and logins in GitHub (Settings → Secrets and variables → Actions) and to its env: block
+   ✓ the rules, skills and commands for Claude Code
+   Installing (npm ci, then Chromium) …
+   ✓ npm ci
+   ✓ .env created from .env.example — enter the empty values there yourself
+
+   Done. Next, in qa/:
+     1. Claude Code — open the folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then type /setup
+     The new files are not committed — review them and commit yourself.
+   ```
+
+   </details>
 
    Without questions: `npx github:Avngrss/playwright-ai-workflow-kit qa --agent claude --ci github --yes`.
    A repository by its link: `npx github:Avngrss/playwright-ai-workflow-kit <git URL> --dir qa` clones it here
