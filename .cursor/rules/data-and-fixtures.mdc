@@ -53,7 +53,9 @@ Reaching for a higher number when a lower one fits is a defect.
 
 ## Adding a fixture
 
-A fixture the user asked for → add it. One you infer from repeated setup → recommend it first:
+A fixture the user asked for → add it. One `qa:gate` asks for — the same `Setup:` step in several tests of the
+confirmed run (`repeats.mjs`) — → add it in the app's file for its kind and name it in the summary: the confirm's
+yes covers it. Any other you infer from repeated setup → recommend it first:
 
 ```text
 Fixture recommendation:
