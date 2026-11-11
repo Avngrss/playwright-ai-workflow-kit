@@ -369,7 +369,10 @@ never tagged on its own — it is a line in the summary for you to decide. A `@v
 own in the feature's `<feature>-visual.ui.spec.ts`, never a second test of a scenario: it reaches the state
 through the Page Objects and checks it is ready first; dynamic and sensitive parts are masked; a baseline is
 created or updated only when you answer `Approve baseline: yes`. A baseline belongs to the OS it was made on
-(`…-win32.png` on Windows, `…-linux.png` in CI). CI runs these as separate jobs.
+(`…-win32.png` on Windows, `…-linux.png` in CI). CI runs these as separate jobs, and writes its own Linux
+baselines once you have approved the look: GitHub — Actions → Playwright Starter CI → **Run workflow** on your
+branch (`baselines: missing`; `all` re-approves what differs), committed to the branch; GitLab — the manual
+`test:visual-baselines` job, its `*-linux.png` artifact to commit.
 
 ### A second app
 
