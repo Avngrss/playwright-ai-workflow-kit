@@ -3,9 +3,11 @@
  * `npm run agents:sync` from agents/hooks.json). Before the agent ends its turn it looks for what a rule asks and
  * an agent can skip: the automatic heal a red verify of fresh specs still owes (reports/verify-state.json, the
  * verify skill §5) and the gate's conventions on the work in the tree (scripts/gate/check.mjs — the plan's owners,
- * routes, a copy of agents/ edited by hand …; not tsc, verify runs it). Found → the agent is sent back once with
- * what to do; its next stop goes through (a question the user must answer first). A tree unchanged since the
- * last check is never reported twice. Any error of its own → silent: the hook never stands in the agent's way.
+ * routes, a copy of agents/ edited by hand …; not tsc, verify runs it) — a failure in a file the agent changed: one
+ * in a file it did not is the tree's from before, named but not sent back. Found → the agent is sent back once with
+ * what to do; its next stop goes through. A stop whose last message asks the user something (Claude Code passes
+ * that message) goes through at once — the check comes after the answer. A tree unchanged since the last check is
+ * never reported twice. Any error of its own → silent: the hook never stands in the agent's way.
  *
  *   node scripts/agent/stop-check.mjs --agent claude|cursor     the hook's JSON on stdin
  *
@@ -25,8 +27,8 @@ const STATE = path.join(ROOT, "reports", "verify-state.json");
 const SEEN = path.join(ROOT, "reports", "stop-check.json");
 const LOG = path.join(ROOT, "reports", "stop-check.log");
 const LOCK = path.join(ROOT, "reports", "stop-check.lock");
-// The folders an agent's work lands in.
-const WORK = ["specs", "tests", "src", "agents", "scripts"];
+// The folders an agent's work lands in — the agents' copies too: one edited by hand is the agent's to undo.
+const WORK = ["specs", "tests", "src", "agents", "scripts", ".cursor", ".claude"];
 const agent = process.argv[process.argv.indexOf("--agent") + 1];
 
 const readJson = (file) => {
@@ -48,6 +50,19 @@ function hookInput() {
   } catch {
     return {};
   }
+}
+
+/**
+ * The agent's last message asks the user something: a line ending in "?" among its last lines (a confirm's question
+ * stands above its numbered answers; markdown around it aside). Claude Code passes that message; without it, no.
+ */
+function asksTheUser(hook) {
+  const text = typeof hook.last_assistant_message === "string" ? hook.last_assistant_message : "";
+  return text
+    .trim()
+    .split("\n")
+    .slice(-12)
+    .some((line) => /\?$/.test(line.replace(/[\s`*_)]+$/, "")));
 }
 
 /** A stop right after the hook sent the agent back, or one the person cut short, goes through. */
@@ -82,15 +97,21 @@ function findingsOf(work) {
   if (state?.healOwed) {
     findings.push(`the automatic heal after a fresh implement is owed (the verify skill §5, §8): ${state.red.join(" ")} — heal, then \`npm run verify\` again on them`);
   }
+  let elsewhere = 0;
   if (work.files.length) {
     const gate = spawnSync(process.execPath, [path.join(ROOT, "scripts", "gate", "check.mjs")], { cwd: ROOT, encoding: "utf8" });
     const failures = (gate.stdout ?? "").split("\n").filter((line) => line.startsWith("✗ ")).map((line) => line.slice(2));
-    if (failures.length) {
-      const shown = failures.slice(0, 8).map((failure) => `  - ${failure}`);
-      findings.push(`qa:gate fails (${failures.length}):\n${shown.join("\n")}${failures.length > shown.length ? `\n  … ${failures.length - shown.length} more: npm run qa:gate` : ""}`);
+    // A failure names its file first ("<file> — <what>"): only those the agent changed are its own now.
+    const own = failures.filter((failure) => work.files.includes(failure.split(" — ")[0]));
+    elsewhere = failures.length - own.length;
+    if (own.length) {
+      const shown = own.slice(0, 8).map((failure) => `  - ${failure}`);
+      const more = own.length > shown.length ? `\n  … ${own.length - shown.length} more: npm run qa:gate` : "";
+      const before = elsewhere ? `\n  (${elsewhere} more in files you did not change — the tree's from before, not yours now)` : "";
+      findings.push(`qa:gate fails in the files you changed (${own.length}):\n${shown.join("\n")}${more}${before}`);
     }
   }
-  return findings;
+  return { findings, elsewhere };
 }
 
 /** One line per run in reports/stop-check.log, the last 50 kept. */
@@ -128,6 +149,7 @@ function main() {
   if (!["claude", "cursor"].includes(agent)) return note(hook, "no --agent claude|cursor");
   if (agent === "claude" && ("cursor_version" in hook || "conversation_id" in hook)) return note(hook, "skipped — Cursor runs its own stop hook");
   if (secondTry(hook)) return note(hook, "let through — the second stop");
+  if (asksTheUser(hook)) return note(hook, "let through — the agent asks the user; the check comes after the answer");
   if (!locked()) return note(hook, "skipped — another check is running");
   try {
     check(hook);
@@ -141,9 +163,10 @@ function check(hook) {
   if (!work) return note(hook, "no git — nothing checked");
   // The same tree as at the last check: what it found was said then.
   if (readJson(SEEN)?.fingerprint === work.fingerprint) return note(hook, "silent — nothing changed since the last check");
-  const findings = findingsOf(work);
+  const { findings, elsewhere } = findingsOf(work);
   fs.writeFileSync(SEEN, `${JSON.stringify({ at: new Date().toISOString(), fingerprint: work.fingerprint, findings: findings.length })}\n`);
-  note(hook, findings.length ? `sent back — ${findings.length} finding(s)` : `clean — ${work.files.length} changed file(s) checked`);
+  const before = elsewhere ? ` (${elsewhere} gate failure(s) in files the agent did not change)` : "";
+  note(hook, findings.length ? `sent back — ${findings.length} finding(s)${before}` : `clean — ${work.files.length} changed file(s) checked${before}`);
   if (!findings.length) return;
   const message = [
     "Before you stop — the kit's stop check found:",
