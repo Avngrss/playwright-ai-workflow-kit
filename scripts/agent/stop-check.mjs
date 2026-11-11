@@ -9,7 +9,10 @@
  *
  *   node scripts/agent/stop-check.mjs --agent claude|cursor     the hook's JSON on stdin
  *
- * Claude Code: exit 2, the message on stderr. Cursor: {"followup_message": "…"} on stdout.
+ * Claude Code: exit 2, the message on stderr. Cursor: {"followup_message": "…"} on stdout. Cursor also runs
+ * Claude Code's hooks (.claude/settings.json): called as claude with Cursor's input, it leaves the stop to
+ * Cursor's own hook; a second run while one is checking stays silent. Each run leaves one line in
+ * reports/stop-check.log — which agent, what it found — the last 50 kept.
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -20,6 +23,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const STATE = path.join(ROOT, "reports", "verify-state.json");
 const SEEN = path.join(ROOT, "reports", "stop-check.json");
+const LOG = path.join(ROOT, "reports", "stop-check.log");
+const LOCK = path.join(ROOT, "reports", "stop-check.lock");
 // The folders an agent's work lands in.
 const WORK = ["specs", "tests", "src", "agents", "scripts"];
 const agent = process.argv[process.argv.indexOf("--agent") + 1];
@@ -88,16 +93,57 @@ function findingsOf(work) {
   return findings;
 }
 
+/** One line per run in reports/stop-check.log, the last 50 kept. */
+function note(hook, outcome) {
+  try {
+    const keep = fs.existsSync(LOG) ? fs.readFileSync(LOG, "utf8").split("\n").filter(Boolean).slice(-49) : [];
+    keep.push(`${new Date().toISOString()} --agent ${agent} · input: ${Object.keys(hook).sort().join(",") || "none"} · ${outcome}`);
+    fs.writeFileSync(LOG, `${keep.join("\n")}\n`);
+  } catch {
+    // The log never stops the check.
+  }
+}
+
+/** One check at a time: a run that finds another one checking (a lock younger than a minute) stays silent. */
+function locked() {
+  try {
+    fs.writeFileSync(LOCK, String(process.pid), { flag: "wx" });
+    return true;
+  } catch {
+    try {
+      if (Date.now() - fs.statSync(LOCK).mtimeMs > 60_000) {
+        fs.writeFileSync(LOCK, String(process.pid));
+        return true;
+      }
+    } catch {
+      // Gone in between: the other run finished.
+    }
+    return false;
+  }
+}
+
 function main() {
   const hook = hookInput();
-  if (!["claude", "cursor"].includes(agent) || secondTry(hook)) return;
-  const work = workNow();
-  if (!work) return;
-  // The same tree as at the last check: what it found was said then.
-  if (readJson(SEEN)?.fingerprint === work.fingerprint) return;
-  const findings = findingsOf(work);
   fs.mkdirSync(path.dirname(SEEN), { recursive: true });
+  if (!["claude", "cursor"].includes(agent)) return note(hook, "no --agent claude|cursor");
+  if (agent === "claude" && ("cursor_version" in hook || "conversation_id" in hook)) return note(hook, "skipped — Cursor runs its own stop hook");
+  if (secondTry(hook)) return note(hook, "let through — the second stop");
+  if (!locked()) return note(hook, "skipped — another check is running");
+  try {
+    check(hook);
+  } finally {
+    fs.rmSync(LOCK, { force: true });
+  }
+}
+
+function check(hook) {
+  const work = workNow();
+  if (!work) return note(hook, "no git — nothing checked");
+  // The same tree as at the last check: what it found was said then.
+  if (readJson(SEEN)?.fingerprint === work.fingerprint) return note(hook, "silent — nothing changed since the last check");
+  const findings = findingsOf(work);
   fs.writeFileSync(SEEN, `${JSON.stringify({ at: new Date().toISOString(), fingerprint: work.fingerprint, findings: findings.length })}\n`);
+  note(hook, findings.length ? `sent back — ${findings.length} finding(s)` : `clean — ${work.files.length} changed file(s) checked`);
   if (!findings.length) return;
   const message = [
     "Before you stop — the kit's stop check found:",
