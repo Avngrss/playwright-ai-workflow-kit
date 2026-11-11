@@ -136,3 +136,20 @@ test:responsive:
   variables:
     PLAYWRIGHT_BROWSER: chromium
     JOB_COMMAND: npx playwright test --project="mobile*" --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
+
+# Run by hand (the pipeline's play button on this job): the Linux screenshot baselines of the @visual tests — CI
+# runs Linux; a baseline approved on Windows or a Mac is not one. They come as this job's artifact: download it and
+# commit the *-linux.png files. VISUAL_BASELINES: missing (only those not there yet) or all (also those that differ).
+test:visual-baselines:
+  extends: .playwright-job
+  when: manual
+  allow_failure: true
+  variables:
+    PLAYWRIGHT_BROWSER: chromium
+    VISUAL_BASELINES: missing
+    JOB_COMMAND: npx playwright test --grep @visual --grep-invert "@wip|@flaky" --update-snapshots=$VISUAL_BASELINES --pass-with-no-tests
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - tests/**/*-linux.png

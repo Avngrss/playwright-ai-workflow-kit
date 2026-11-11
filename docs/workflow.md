@@ -8,8 +8,9 @@ reviews, audits and refactors live, what you will see in the chat, and example p
 
 Eight slash commands live in `agents/commands/`. Seven open the four skills in `agents/skills/`
 (setup, plan, implement, verify); `/review` is the brief of an independent review, run in a new chat
-(Claude Code: the `reviewer` subagent). In the agent's chat — Cursor or Claude Code — type `/<command>` and
-then what it needs: a link, a plan path or a few words. If you leave something out, the skill asks.
+(Claude Code and Copilot: the `reviewer` agent). In the agent's chat — Claude Code, Cursor or Copilot, where
+the commands are skills called by name — type `/<command>` and then what it needs: a link, a plan path or a few
+words. If you leave something out, the skill asks.
 
 When the agent ends a turn, its stop hook (`scripts/agent/stop-check.mjs`) runs the gate on the work in the
 tree and checks that a red verify of new tests got its one automatic heal. Found → the agent is sent back once
@@ -49,8 +50,10 @@ Without a command of its own — ask in words, or name the skill (`.claude/skill
   the kit's `npm run …` and `node scripts/…`, git that only reads. Reading cookies or storage is denied; file
   edits follow the mode you chose in Claude Code (Manual asks each time). Cursor keeps such settings in its own
   user settings.
-- **The stop check** — when the agent stops with the gate red on its work, or with a red run's automatic heal
-  undone, it is sent back once with what to do. `reports/stop-check.log` lists each check: which AI, what it found.
+- **The stop check** — when the agent stops with the gate red in a file it changed, or with a red run's automatic
+  heal undone, it is sent back once with what to do. A failure in a file it did not change is the tree's from
+  before: logged, not sent back. A turn that ends with a question to you goes through at once (Claude Code passes
+  the agent's last message; in Cursor the second stop goes through). `reports/stop-check.log` lists each check.
 - **The kit's newest version** — `npx github:Avngrss/playwright-ai-workflow-kit --update` in this folder (`--dry-run`
   first to see the plan): the kit's files you never changed are replaced, the ones you changed stay with the new
   version beside them (`<file>.kit-new` — compare, keep, delete), your plans, tests and app code are never touched
@@ -369,7 +372,10 @@ never tagged on its own — it is a line in the summary for you to decide. A `@v
 own in the feature's `<feature>-visual.ui.spec.ts`, never a second test of a scenario: it reaches the state
 through the Page Objects and checks it is ready first; dynamic and sensitive parts are masked; a baseline is
 created or updated only when you answer `Approve baseline: yes`. A baseline belongs to the OS it was made on
-(`…-win32.png` on Windows, `…-linux.png` in CI). CI runs these as separate jobs.
+(`…-win32.png` on Windows, `…-linux.png` in CI). CI runs these as separate jobs, and writes its own Linux
+baselines once you have approved the look: GitHub — Actions → Playwright Starter CI → **Run workflow** on your
+branch (`baselines: missing`; `all` re-approves what differs), committed to the branch; GitLab — the manual
+`test:visual-baselines` job, its `*-linux.png` artifact to commit.
 
 ### A second app
 
@@ -587,7 +593,7 @@ planned yet: `/plan` with this folder link".
 
 ## 6. Example prompts
 
-What to type in the agent's chat (Cursor or Claude Code), and what happens next. Replace the app, links and
+What to type in the agent's chat (Claude Code, Cursor or Copilot), and what happens next. Replace the app, links and
 paths with your own.
 
 | # | Type | What happens |

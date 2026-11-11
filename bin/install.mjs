@@ -8,7 +8,7 @@
  *   <folder>          where the kit goes: qa (the default), . (this folder, when it holds no project yet), any path
  *   <git URL>         clone that repository here first, then the kit into its --dir (qa by default)
  *   --dir <folder>    the folder inside a cloned repository
- *   --agent <list>    claude, cursor, or both: claude,cursor
+ *   --agent <list>    claude, cursor, copilot, several (claude,copilot) or all
  *   --ci <name>       github, gitlab or none — the default from the repository's remote (none without one); written
  *                     at the repository's root with the paths to the kit's folder, never over a file that is there
  *   --yes             no questions — the defaults for what is not given (also when there is no terminal to ask in)
@@ -36,10 +36,11 @@ import { ciOfRemote, git, kitSource, npm, say, stop, VERSION, writeCi } from "./
 import { KIT_ONLY } from "./ownership.mjs";
 import { runUpdate } from "./upgrade.mjs";
 
-const AGENTS = { claude: "Claude Code", cursor: "Cursor" };
+const AGENTS = { claude: "Claude Code", cursor: "Cursor", copilot: "GitHub Copilot" };
 const OPEN = {
   claude: "Claude Code — open the folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then type /setup",
   cursor: "Cursor — open the folder, turn on the playwright MCP (Cursor Settings → MCP), then type /setup",
+  copilot: "GitHub Copilot — open the folder in VS Code (Copilot Chat, Agent) or run `copilot` in it, then type /setup",
 };
 // Files a project may have of its own before the kit comes: kept as they are.
 const PROJECT_OWNED = new Set(["README.md", ".gitattributes"]);
@@ -68,14 +69,14 @@ function parse(argv) {
   return call;
 }
 
-/** "Cursor, claude-code" or "3" → ["claude", "cursor"]; undefined for what it cannot read. */
+/** "1,3", "Cursor, claude-code" or "all" → ["claude", "copilot"] …; undefined for what it cannot read. */
 function agentsOf(text) {
-  const byNumber = { 1: ["claude"], 2: ["cursor"], 3: ["claude", "cursor"] };
-  if (byNumber[text?.trim()]) return byNumber[text.trim()];
+  const byNumber = { 1: "claude", 2: "cursor", 3: "copilot" };
+  if (text?.trim().toLowerCase() === "all") return Object.keys(AGENTS);
   const named = (text ?? "")
     .split(/[\s,]+/)
-    .map((name) => name.toLowerCase().replace(/^claude-?code$/, "claude"))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((name) => byNumber[name] ?? name.toLowerCase().replace(/^claude-?code$/, "claude").replace(/^(github|gh)-?copilot$/, "copilot"));
   return named.length && named.every((name) => name in AGENTS) ? [...new Set(named)] : undefined;
 }
 
@@ -158,10 +159,10 @@ async function main(argv) {
 
   // Which agents.
   let agents = call.agents ? agentsOf(call.agents) : undefined;
-  if (call.agents && !agents) stop(`--agent ${call.agents} — claude, cursor, or claude,cursor`, 2);
+  if (call.agents && !agents) stop(`--agent ${call.agents} — claude, cursor, copilot, several (claude,copilot) or all`, 2);
   while (!agents) {
-    agents = agentsOf(await ask("Which AI do you work with? 1 Claude Code · 2 Cursor · 3 both (Enter = 1)", "1"));
-    if (!agents) say("  1, 2 or 3 — or the names: claude, cursor");
+    agents = agentsOf(await ask("Which AI do you work with? 1 Claude Code · 2 Cursor · 3 GitHub Copilot — one or several, e.g. 1,3 (Enter = 1)", "1"));
+    if (!agents) say("  1, 2, 3 or several (1,3), or the names: claude, cursor, copilot, all");
   }
 
   // Which CI — at the repository's root (this folder without git).

@@ -10,6 +10,22 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Actions → this workflow → Run workflow on a branch: the Linux screenshot baselines of its @visual tests, written
+  # here (CI runs Linux; a baseline approved on Windows or a Mac is not one) and committed to that branch.
+  workflow_dispatch:
+    inputs:
+      baselines:
+        description: "Screenshot baselines to write: missing — only those not there yet; all — also those that differ (approves the look the run sees)"
+        type: choice
+        options: [missing, all]
+        default: missing
+
+# GitHub passes only what is named here (Settings → Secrets and variables → Actions): add every .env name of
+# specs/project-map.md — vars.<NAME> for addresses, secrets.<NAME> for logins, passwords and keys
+# (e.g. SHOP_LOGIN: ${{ secrets.SHOP_LOGIN }}). Empty when unset. Every job reads them.
+env:
+  UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
+  API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
 
 jobs:
   baseline:
@@ -55,15 +71,9 @@ jobs:
   matrix-tests:
     name: ${{ matrix.name }}
     needs: baseline
-    if: needs.baseline.outputs.has_tests == 'true'
+    if: needs.baseline.outputs.has_tests == 'true' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # GitHub passes only what is named here (Settings → Secrets and variables → Actions): add every
-    # .env name of specs/project-map.md — vars.<NAME> for addresses, secrets.<NAME> for logins,
-    # passwords and keys (e.g. SHOP_LOGIN: ${{ secrets.SHOP_LOGIN }}). Empty when unset.
-    env:
-      UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
-      API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -143,5 +153,42 @@ jobs:
           path: |
             reports/run-summary.md
             reports/run-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  visual-baselines:
+    name: Visual Baselines (Linux)
+    needs: baseline
+    if: github.event_name == 'workflow_dispatch' && needs.baseline.outputs.has_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Write the screenshot baselines
+        run: npx playwright test --grep @visual --grep-invert "@wip|@flaky" --update-snapshots=${{ inputs.baselines }} --pass-with-no-tests
+      # A push with this token starts no other run: push again, or re-run the checks, to see them green.
+      - name: Commit the baselines to the branch
+        shell: bash
+        run: |
+          git add -A -- '*-linux.png'
+          if git diff --cached --quiet; then echo "No Linux baseline to add or change."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Screenshot baselines for Linux (@visual, ${{ inputs.baselines }})"
+          git push
+      - name: Upload the baselines
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-baselines-linux
+          path: tests/**/*-linux.png
           if-no-files-found: ignore
           retention-days: 14

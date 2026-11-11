@@ -6,10 +6,12 @@ is in [Workflow](workflow.md).
 ## Prerequisites
 
 - Node.js and npm (the CI uses Node 22), Git.
-- Cursor or Claude Code with this folder open. The rules and slash commands load from `.cursor/` or
-  `.claude/`, the skills from `.claude/skills/` for both — copies of `agents/` (`npm run agents:sync`).
-- The Playwright MCP from `.cursor/mcp.json` (Cursor: enable it) or `.mcp.json` (Claude Code: approve it once).
-  The agent uses it to look at the live app; without it, the agent looks through a short Playwright script instead.
+- Claude Code, Cursor or GitHub Copilot (VS Code or Copilot CLI) with this folder open. The rules and commands
+  load from `.claude/`, `.cursor/` or `.github/` — copies of `agents/` (`npm run agents:sync`); in Copilot the
+  commands are skills called by name (`/plan`, `/heal` …).
+- The Playwright MCP from `.cursor/mcp.json` (Cursor: enable it) or `.mcp.json` (Claude Code: approve it once;
+  Copilot CLI reads it; VS Code's Copilot with its workspace MCP setting on). The agent uses it to look at the
+  live app; without it, the agent looks through a short Playwright script instead.
 - A test environment of the app (dev or QA) and a **test account** for it, not your personal one.
   Sign in with it by hand once before you give it to the tests.
 - Optional: an MCP server or API access for your TMS and tracker, so the agent can read cases and
@@ -23,8 +25,9 @@ Into a folder of your project — in the project's folder:
 npx github:Avngrss/playwright-ai-workflow-kit
 ```
 
-The installer asks where (`qa` by default), which AI (Claude Code, Cursor or both) and which CI (GitHub, GitLab or
-none), copies the kit with only your AI's files, writes the CI at the repository's root, then runs `npm ci` and
+The installer asks where (`qa` by default), which AI (Claude Code, Cursor, GitHub Copilot — one or several) and
+which CI (GitHub, GitLab or none), copies the kit with only your AI's files, writes the CI at the repository's root,
+then runs `npm ci` and
 step 2 itself — skip to step 3 in the kit's folder. `--help` lists its flags (`--agent`, `--ci`, `--yes` …).
 
 When the installer stops, nothing was written yet:

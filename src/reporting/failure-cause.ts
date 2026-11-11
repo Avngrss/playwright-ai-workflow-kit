@@ -196,7 +196,7 @@ const RULES: Rule[] = [
     cause: "screenshot without a baseline",
     matches: ({ message }) => /A snapshot doesn't exist at/.test(message),
     checkByHand: () =>
-      "The screenshot has no approved baseline yet (on this OS). Look at the actual image in the report: right → approve it (/implement <plan> Layer: visual · Approve baseline: yes); wrong → the screen or its masks.",
+      "The screenshot has no approved baseline yet (on this OS). Look at the actual image in the report: right → approve it (/implement <plan> Layer: visual · Approve baseline: yes; in CI, which runs Linux — GitHub: Actions → the workflow → Run workflow, baselines: missing; GitLab: the manual test:visual-baselines job); wrong → the screen or its masks.",
   },
   {
     cause: "screenshot differs",

@@ -73,8 +73,9 @@ ones are warned, not reworked. It fails:
 
 **The stop check** (`scripts/agent/stop-check.mjs`, each agent's stop hook) runs this gate, without `tsc`, on the
 work in the tree before you end a turn, and looks for the automatic heal a red verify still owes (the verify
-skill §5). It sends you back once with what it found: do it, then stop. A question the user must answer first →
-ask it and stop again; the next stop goes through.
+skill §5). A failure in a file you changed sends you back once with what it found: do it, then stop. A failure
+in a file you did not change is the tree's from before — named, never yours to chase now. A turn that ends with a
+question to the user goes through (Claude Code); in Cursor, ask it and stop again — the next stop goes through.
 
 Warnings: sizes, unnamed checks, long or dated comments, `try/finally` in specs, unused exports, client and
 setup size, Page Object state and second names, siblings repeating their base, case-title shape, a Blocked
