@@ -1,0 +1,195 @@
+.cursor/commands/coverage.md
+  s_5a14ef979817d5::t_70a6c261cf9af4 1
+.cursor/commands/heal.md
+  s_5a14ef979817d5::t_f5daf4ad1a4635 1
+.cursor/commands/implement.md
+  s_5a14ef979817d5::t_dba60259773307 1
+.cursor/commands/plan.md
+  s_5a14ef979817d5::t_af482270fdcca2 1
+.cursor/commands/review.md
+  s_5a14ef979817d5::t_fafffe7dd7b78c 1
+.cursor/commands/setup.md
+  s_5a14ef979817d5::t_f6b6e3523148d0 1
+.cursor/commands/triage.md
+  s_5a14ef979817d5::t_6d082b95880673 1
+.cursor/commands/verify.md
+  s_5a14ef979817d5::t_4e89bdcfa2ebd9 1
+.cursor/rules/00-project-map.mdc
+  s_5a14ef979817d5::t_c9fd0c91315cce 5,14,70,76,78,80,84
+.cursor/rules/01-workflow.mdc
+  s_5a14ef979817d5::t_620577064f4dcb 5,19,26-27,30,35,48,58,74,106
+.cursor/rules/02-guardrails.mdc
+  s_5a14ef979817d5::t_2825a577288b90 5,25,42,78
+.cursor/rules/api.mdc
+  s_5a14ef979817d5::t_a4a57cc2f87ff6 6,13,67,73-74,79,114
+.cursor/rules/code.mdc
+  s_5a14ef979817d5::t_dba11746c787ba 6,16-18,43,49,64,112,131,157,213,257,261,263,269
+.cursor/rules/data-and-fixtures.mdc
+  s_5a14ef979817d5::t_bad0558a47d1ee 6,13,43,67,140,142,150,188,199,228
+.cursor/rules/live-app.mdc
+  s_5a14ef979817d5::t_289c8144003187 6,11-14,17,55,78-79,88,105,121
+.cursor/rules/plans.mdc
+  s_5a14ef979817d5::t_6623322baf6ac5 6,47,49,58,61-62,157,170,185,240,400,404
+.cursor/rules/specs.mdc
+  s_5a14ef979817d5::t_60abfb1f5b975f 6,51,132,140,142,156,245
+.cursor/rules/ui.mdc
+  s_5a14ef979817d5::t_5d8761de2033c7 6,29,52,142,165,187,199,207
+.cursor/skills/implement/SKILL.md
+  s_5a14ef979817d5::t_a215e5218bf01c 5,12-13,15,33-34,40,45,50-51,54,56,59,62,64,69,73-74,81,83-85,87,97-98,101,108,133,135-136,139-140,146,152,156,162,167
+.cursor/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_c3144c88473308 5,11-13,18,23,43,56,63-64,66,76,109,134,139-140,146,151,166,171,178-179,182,184,191,197,206,227,232,240,245,250,266,273
+.cursor/skills/setup/SKILL.md
+  s_5a14ef979817d5::t_04336a0eb8b734 5,10-11,20,57,63,66,75,133,232,320,351,356,366,377-378
+.cursor/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_6bb16b6448e899 5,9-10,12,45,51,54,91,111,117-118,125-127,130,132-134,139,147,154-155,173,233,251,257,265,274,280,286,291,298,313,319,329,335,357,402,408
+agents/commands/coverage.md
+  s_5a14ef979817d5::t_ced5fd41abd0ca 1-11
+agents/commands/heal.md
+  s_5a14ef979817d5::t_88683e36160fee 1-13
+agents/commands/implement.md
+  s_5a14ef979817d5::t_76013e96bb86a1 1-14
+agents/commands/plan.md
+  s_5a14ef979817d5::t_52e6e6eac0b6f1 1-18
+agents/commands/review.md
+  s_ee612948e849d2::t_cc911fc99835ce 1-36
+agents/commands/setup.md
+  s_5a14ef979817d5::t_170b94f987ce62 1-13
+agents/commands/triage.md
+  s_5a14ef979817d5::t_08a4dda6301b2c 1-14
+agents/commands/verify.md
+  s_5a14ef979817d5::t_9c20c87ebe2e56 1-12
+agents/mcp.json
+  s_fa44aae9d5998c::t_5763ed26eda7d1 1-8
+agents/rules/00-project-map.md
+  s_5a14ef979817d5::t_22ad85a688b05b 1-95
+agents/rules/01-workflow.md
+  s_5a14ef979817d5::t_452f8d99e97636 1-113
+agents/rules/02-guardrails.md
+  s_5a14ef979817d5::t_73e21cb4e65250 1-111
+agents/rules/api.md
+  s_5a14ef979817d5::t_280df1ff80d2ea 1-128
+agents/rules/code.md
+  s_5a14ef979817d5::t_ecebcd05c438bd 1-268
+agents/rules/data-and-fixtures.md
+  s_5a14ef979817d5::t_4fa31562125f33 1-234
+agents/rules/plans.md
+  s_5a14ef979817d5::t_030b8ac746c7d3 1-422
+agents/rules/specs.md
+  s_5a14ef979817d5::t_4bd4167a810365 1-283
+agents/rules/ui.md
+  s_5a14ef979817d5::t_abdb205f12b9dc 1-226
+agents/skills/implement/SKILL.md
+  s_5a14ef979817d5::t_0c2469e12b6a3c 1-171
+agents/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_eb93433e514ca1 1-317
+agents/skills/setup/SKILL.md
+  s_5a14ef979817d5::t_d08b34ad972576 1-380
+agents/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_ff9291966bd3e8 1-450
+"docs/Layer Routing Algorithm.md"
+  s_5a14ef979817d5::t_c2112ebeafc951 3,332,395-396,408
+docs/auth-strategy.md
+  s_5a14ef979817d5::t_7f7b6ffcdb37e9 7-8
+docs/failure-reporting.md
+  s_5a14ef979817d5::t_c70566fb5474b5 5-6
+docs/getting-started.md
+  s_5a14ef979817d5::t_8b31b3a3106fb6 128
+docs/security-data-handling.md
+  s_5a14ef979817d5::t_0916e0c3df21cd 12,95
+docs/workflow.md
+  s_5a14ef979817d5::t_643043ba76d028 9,25,35,184,381,398-400
+scripts/agent/api-types.mjs
+  s_5a14ef979817d5::t_83a7731ef39545 6
+scripts/agent/plan-block.mjs
+  s_5a14ef979817d5::t_7786a66981ddd9 2,16,155,159,167
+scripts/agent/plan-draft.mjs
+  s_5a14ef979817d5::t_857ac8805a85ba 188-189,191,215,231
+scripts/agent/spec-draft.mjs
+  s_5a14ef979817d5::t_ac42a1cbc70dd8 2,95,324,330
+scripts/agent/verify.mjs
+  s_5a14ef979817d5::t_9c1ca663cb1e4d 2
+scripts/gate/advice.mjs
+  s_5a14ef979817d5::t_f89e2c9eb5bd2f 5,54,72,115,117,131
+scripts/gate/cases.mjs
+  s_5a14ef979817d5::t_7c847538d0956f 87
+scripts/gate/context.mjs
+  s_5a14ef979817d5::t_747f51bf9a4f03 74
+scripts/gate/layout.mjs
+  s_5a14ef979817d5::t_6ebab48237cab5 96,121
+scripts/gate/models.mjs
+  s_5a14ef979817d5::t_f933b934efaa0e 4,93
+scripts/gate/patterns.mjs
+  s_5a14ef979817d5::t_db71bf1c844a0b 18,40,64,122
+scripts/gate/reading.mjs
+  s_5a14ef979817d5::t_3a6672236a3fae 4,35
+scripts/gate/repeats.mjs
+  s_5a14ef979817d5::t_2e78f6199d7ce3 7,32,65,97,135,137
+scripts/gate/routes.mjs
+  s_5a14ef979817d5::t_03e9d52427b9c8 21,33,37,44
+scripts/gate/specs.mjs
+  s_5a14ef979817d5::t_88dd8e5db111bd 81,204,218,296
+scripts/gate/support.mjs
+  s_5a14ef979817d5::t_58ed579585a752 6
+specs/project-map.md
+  s_5a14ef979817d5::t_a8274961b5b1c7 25,37,112,170
+src/assertions/shared/sort-filter.ts
+  s_5a14ef979817d5::t_9a93ad00bf0223 6
+src/fixtures/api.fixture.ts
+  s_5a14ef979817d5::t_1badaea7e8701e 11
+src/fixtures/data.fixture.ts
+  s_5a14ef979817d5::t_85d185d17461af 3
+src/fixtures/reporting.fixture.ts
+  s_5a14ef979817d5::t_11cf62100590ef 9
+src/setup/auth/api-credentials.ts
+  s_5a14ef979817d5::t_ae2e198f8e432a 20
+src/setup/auth/auth-config.ts
+  s_5a14ef979817d5::t_35c60645d388d8 22
+src/setup/shared-state.ts
+  s_5a14ef979817d5::t_5a4b87024be561 11,82
+README.md
+  s_5a14ef979817d5::t_bd29da9dcf4378 118-121,138,148-151,292
+agents/rules/live-app.md
+  s_5a14ef979817d5::t_da19930cc2babe 1-121
+package.json
+  s_5a14ef979817d5::t_beeb203381444b 39
+scripts/agent/agents-sync.mjs
+  s_5a14ef979817d5::t_222657e8d65fec 1-105
+scripts/gate/agents.mjs
+  s_5a14ef979817d5::t_37ec236f00a08a 1-15
+scripts/gate/check.mjs
+  s_5a14ef979817d5::t_57b23959576e8f 17-18,24,42
+scripts/gate/pointers.mjs
+  s_5a14ef979817d5::t_4d355de4f22fb0 6-7,9-10,12,14-15,22-25,27-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "764e67744e27b6486736e75f6a762c71cc826768",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    },
+    "s_ee612948e849d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "083612a2-9980-40c8-8825-b761052ca5fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    },
+    "s_fa44aae9d5998c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "405d1074-9391-4f3c-8ce7-f39a9c444b07",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
