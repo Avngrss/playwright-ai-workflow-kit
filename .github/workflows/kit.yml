@@ -1,0 +1,28 @@
+name: Kit Tests
+
+# The kit's own tests (npm run kit:test — bin/test/): the installer and, later, its update. This workflow stays in
+# the kit's repository; a project gets playwright.yml from the installer, never this file.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  kit:
+    name: Kit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - name: Run the kit's tests
+        run: npm run kit:test

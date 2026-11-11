@@ -26,6 +26,7 @@ import os from "node:os";
 import path from "node:path";
 import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
+import { KIT_ONLY } from "./ownership.mjs";
 
 const KIT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = "https://github.com/Avngrss/playwright-ai-workflow-kit.git";
@@ -35,9 +36,7 @@ const OPEN = {
   claude: "Claude Code — open the folder (`claude` in it, or VS Code with the Claude Code extension), approve the playwright MCP when asked, then type /setup",
   cursor: "Cursor — open the folder, turn on the playwright MCP (Cursor Settings → MCP), then type /setup",
 };
-// The kit's own files: this installer, its license, the template's CI (a project gets its own from the installer).
-const KIT_ONLY = [/^bin\//, /^LICENSE$/, /^\.github\//, /^ci\//];
-// Files a project has its own of: kept as they are.
+// Files a project may have of its own before the kit comes: kept as they are.
 const PROJECT_OWNED = new Set(["README.md", ".gitattributes"]);
 
 const say = (line = "") => console.log(line);
@@ -101,23 +100,28 @@ function fetchedCommit() {
   return undefined;
 }
 
-/** The kit's files: { root, files, from, done } — the checkout this installer runs in, or the kit's git at npx's commit or this version. */
+/**
+ * The kit's files: { root, files, commit, from, done } — the checkout this installer runs in, or the kit's git at
+ * npx's commit or this version. `commit` is the kit's commit they come from: a test home records it, so an update
+ * knows which of its files the project changed since.
+ */
 function kitSource() {
+  const head = (root) => git(["rev-parse", "HEAD"], root).stdout?.trim() || undefined;
   if (fs.existsSync(path.join(KIT, ".git"))) {
     const listed = git(["ls-files"], KIT);
-    if (listed.status === 0) return { root: KIT, files: listed.stdout.split("\n").filter(Boolean), from: `the kit at ${KIT}`, done() {} };
+    if (listed.status === 0) return { root: KIT, files: listed.stdout.split("\n").filter(Boolean), commit: head(KIT), from: `the kit at ${KIT}`, done() {} };
   }
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "playwright-ai-kit-"));
   const done = () => fs.rmSync(root, { recursive: true, force: true });
   const listed = () => git(["ls-files"], root).stdout.split("\n").filter(Boolean);
   const sha = fetchedCommit();
   if (sha && git(["init", "--quiet"], root).status === 0 && git(["fetch", "--quiet", "--depth", "1", REPO, sha], root).status === 0 && git(["checkout", "--quiet", "FETCH_HEAD"], root).status === 0) {
-    return { root, files: listed(), from: `${REPO} at ${sha.slice(0, 7)}`, done };
+    return { root, files: listed(), commit: sha, from: `${REPO} at ${sha.slice(0, 7)}`, done };
   }
   for (const ref of [`v${VERSION}`, null]) {
     fs.rmSync(root, { recursive: true, force: true });
     fs.mkdirSync(root);
-    if (git(["clone", "--quiet", "--depth", "1", ...(ref ? ["--branch", ref] : []), REPO, root]).status === 0) return { root, files: listed(), from: `${REPO} (${ref ?? "its default branch"})`, done };
+    if (git(["clone", "--quiet", "--depth", "1", ...(ref ? ["--branch", ref] : []), REPO, root]).status === 0) return { root, files: listed(), commit: head(root), from: `${REPO} (${ref ?? "its default branch"})`, done };
   }
   done();
   return stop(`could not fetch the kit — git clone ${REPO} failed (the network, a proxy?)`);
@@ -257,16 +261,20 @@ function writeCi(ci, source, repoRoot, target) {
   return `! CI: ${shown(own)} written; ${shown(root)} is there already — add to it:\n${include}`;
 }
 
-/** The kit's package.json as the test home's own: its name, no installer, no links to the kit's repository. */
-function ownPackage(target, projectRoot) {
+/**
+ * The kit's package.json as the test home's own: its name, no installer, no links to the kit's repository — and
+ * `playwrightAiKit: { version, commit }`, the kit it came from (an update starts there).
+ */
+function ownPackage(target, projectRoot, commit) {
   const file = path.join(target, "package.json");
   const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
   const names = projectRoot && path.resolve(projectRoot) !== path.resolve(target) ? [path.basename(projectRoot), path.basename(target)] : [path.basename(target)];
   pkg.name = slug(names.join("-"));
   pkg.version = "0.1.0";
   pkg.description = `Playwright tests written with an AI agent — from the Playwright AI Workflow Kit ${VERSION}`;
-  pkg.playwrightAiKit = VERSION;
+  pkg.playwrightAiKit = { version: VERSION, commit };
   for (const key of ["bin", "files", "repository", "bugs", "homepage", "author", "license", "keywords"]) delete pkg[key];
+  delete pkg.scripts?.["kit:test"];
   fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
@@ -337,7 +345,7 @@ async function main(argv) {
   }
   if (plan.ignoreLines.length) fs.appendFileSync(path.join(target, ".gitignore"), `\n# Playwright AI Workflow Kit\n${plan.ignoreLines.join("\n")}\n`);
   const repoRoot = git(["rev-parse", "--show-toplevel"], target).stdout?.trim() || projectRoot;
-  ownPackage(target, repoRoot);
+  ownPackage(target, repoRoot, source.commit);
   say(`✓ ${plan.write.length} files of the kit copied`);
   if (ci !== "none") say(writeCi(ci, source, path.resolve(repoRoot), target));
   source.done();
