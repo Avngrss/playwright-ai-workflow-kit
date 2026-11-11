@@ -324,7 +324,7 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 | `npm run allure:report` / `allure:open` | the report |
 | `npm run env:prepare` / `app:add` | used by `/setup`: `.env` names and addresses, edited in place (`-- --tidy` lays the file out by app) / an app's fixtures |
 | `npm run agents:sync` | after an edit in `agents/`: writes the chosen agents' copies (`.cursor/`, `.claude/`, `.mcp.json`); `-- --check` only lists what differs |
-| `npm run agents:use -- <cursor|claude|cursor,claude>` | which agents this folder works with: writes `agents/agents.json`, adds the chosen agents' copies, removes the others' |
+| `npm run agents:use -- <cursor\|claude\|cursor,claude>` | which agents this folder works with: writes `agents/agents.json`, adds the chosen agents' copies, removes the others' |
 
 ---
 
