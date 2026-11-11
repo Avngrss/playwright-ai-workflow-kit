@@ -39,6 +39,7 @@ jobs:
     timeout-minutes: 20
     outputs:
       has_tests: ${{ steps.detect-tests.outputs.has_tests }}
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,6 +51,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      # The test jobs run in the Playwright image of this exact version — its browsers match, nothing is downloaded.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
       - name: Run quality gate
         run: npm run qa:gate
       - name: Secret scan
@@ -79,30 +84,26 @@ jobs:
     if: needs.baseline.outputs.has_tests == 'true' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.baseline.outputs.playwright }}-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: Functional Smoke
-            browser: chromium
             command: npm run test:smoke
           - name: Functional Regression
-            browser: chromium
             command: npm run test:regression
           - name: Visual
-            browser: chromium
             command: npm run test:visual
           - name: Cross-Browser Chromium
-            browser: chromium
             command: npx playwright test --project="ui*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser Firefox
-            browser: firefox
             command: npx playwright test --project="firefox*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Cross-Browser WebKit
-            browser: webkit
             command: npx playwright test --project="webkit*" --grep @cross-browser --grep-invert "@wip|@flaky" --pass-with-no-tests
           - name: Responsive Mobile Chromium
-            browser: chromium
             command: npx playwright test --project="mobile*" --grep @responsive --grep-invert "@wip|@flaky" --pass-with-no-tests
     steps:
       - uses: actions/checkout@v7
@@ -112,11 +113,6 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright browser runtime
-        if: matrix.browser != 'none'
-        timeout-minutes: 10
-        # Chromium always: every project waits for the app's sign-in smoke, which runs in Chromium.
-        run: npx playwright install --with-deps chromium ${{ matrix.browser }}
       - name: Run matrix command
         run: ${{ matrix.command }}
       - name: Generate Allure report
@@ -168,6 +164,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && needs.baseline.outputs.has_tests == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # The same image as the Visual job: a baseline compares only with screenshots rendered where it was made.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.baseline.outputs.playwright }}-noble
+      options: --user 1001
     permissions:
       contents: write
     steps:
@@ -178,8 +178,6 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright browser runtime
-        run: npx playwright install --with-deps chromium
       - name: Write the screenshot baselines
         run: npx playwright test --grep @visual --grep-invert "@wip|@flaky" --update-snapshots=${{ inputs.baselines }} --pass-with-no-tests
       # A push with this token starts no other run: push again, or re-run the checks, to see them green.
