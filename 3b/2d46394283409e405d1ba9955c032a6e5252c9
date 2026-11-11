@@ -1,0 +1,19 @@
+bin/install.mjs
+  s_5a14ef979817d5::t_3ce02d47d26a4c 295,322,324,352,354-355,357
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3b2d46394283409e405d1ba9955c032a6e5252c9",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
