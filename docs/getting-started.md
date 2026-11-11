@@ -66,6 +66,13 @@ priority and reason. Nothing is written before your yes. After **Yes, write them
 `npm run verify`, heals a failure once, has new tests reviewed by a reviewer that did not write them and sums up
 with the next command.
 
+## 6. CI
+
+The installer wrote the workflow; CI only lacks the values. Give it every `.env` name of the map — GitHub:
+Settings → Secrets and variables → Actions, addresses as **Variables**, logins and passwords as **Secrets**, and
+the name in the workflow's `env:` (the agent adds it there when it adds the name to the map). A name left out:
+the gate passes, the app's smoke fails with *setting missing*, and its other tests do not run.
+
 ## Later — the kit's newest version
 
 ```bash

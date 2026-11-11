@@ -17,6 +17,51 @@ its work reviewable. It ships with no application tests — only the machinery a
 - **Sign-in, test data and cleanup from one project map.** Secrets stay in `.env`, never in the chat or reports.
 - **One install, kept up to date** — into any folder of your project, with your AI and your CI.
 
+## How it works
+
+```mermaid
+flowchart LR
+  S["/setup<br/>app, sign-in"] --> P["/plan<br/>live check, owners, routes"]
+  P --> C{"your yes"}
+  C --> I["implement<br/>a test per scenario"]
+  I --> V["verify<br/>gate · can fail · one run · review"]
+  V -->|red| H["/heal · /triage"]
+  H --> V
+```
+
+| Step | What appears | Who decides |
+|---|---|---|
+| `/setup` | the app's row and sign-in block in `specs/project-map.md`, empty login names in `.env`, a green sign-in smoke | you type the secrets into `.env` |
+| `/plan` | `specs/<app>/<area>/<feature>/<feature>.md` — each case with its owner, route, data, steps and status | you confirm or adjust the plan |
+| implement | `tests/<layer>/<app>/…spec.ts`, Page Objects, clients, fixtures — each test started by `npm run spec:draft` | the plan |
+| verify | one block of results; each new check seen red once on purpose; an independent review | the gate and the run |
+
+A case in a plan, and the test it becomes (from the [demo](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc)):
+
+```markdown
+### 2. A completed todo leaves the items-left counter
+- Level: UI — the mark and the counter on this screen · Tag: @regression
+- Route: no-request · screen list=value
+- Preconditions: "buy milk" and "walk the dog" in the list, neither done
+- Steps:
+  1. Complete "buy milk"
+     - expect: "buy milk" is shown completed and the counter says "1 item left"
+```
+
+```ts
+await test.step('Setup: add "buy milk" and "walk the dog"', () => todoListPage.addTodos(["buy milk", "walk the dog"]));
+await test.step('Complete "buy milk" and verify the counter', async () => {
+  await todoListPage.complete("buy milk");
+  expect(await todoListPage.read(), "The todo list").toEqual(
+    shownTodoList({ todos: ["buy milk", "walk the dog"], completed: ["buy milk"], left: 1 }),
+  );
+});
+```
+
+`Level` names the one owner: TodoMVC sends no request, so the result lives only on the screen and there is no API
+test of it. `Route` says how the test proves it — here the screen alone; with a request, the answer the action got
+and the screen built from the case's data ([Layer Routing Algorithm](docs/Layer%20Routing%20Algorithm.md)).
+
 ## Quick start
 
 In your project's folder (Node 20+, git):
@@ -46,8 +91,8 @@ A repository of its own instead: **Use this template** on GitHub. Step by step: 
 ## See it in action
 
 The [`demo/todomvc`](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc) branch is the kit
-after one pass on [TodoMVC](https://demo.playwright.dev/todomvc): the app in the map, a plan made from the live
-screen, the tests. Run it — no account needed:
+after one pass on [TodoMVC](https://demo.playwright.dev/todomvc) — its README lists every file the agent wrote.
+Run it — no account needed:
 
 ```bash
 git clone -b demo/todomvc https://github.com/Avngrss/playwright-ai-workflow-kit.git todomvc-demo
@@ -110,13 +155,21 @@ cross-browser and responsive jobs with the report. Give CI the map's `.env` name
 the workflow's `env:`). Screenshot baselines for Linux: GitHub — Actions → **Run workflow**; GitLab — the manual
 `test:visual-baselines` job.
 
+**Before the first green run:** create each name in the repository — GitHub: Settings → Secrets and variables →
+Actions, addresses (`UI_BASE_URL` …) as **Variables**, logins and passwords as **Secrets**. Without them the gate
+passes, but each app's smoke fails with *setting missing* and that app's other tests do not run.
+
 ## Documentation
 
-- [Test strategy](docs/test-strategy.md) — layers, structure, process, definition of done
-- [Getting started](docs/getting-started.md) — from install to the first plan
-- [Workflow](docs/workflow.md) — the commands, the everyday path, which command after a run
-- [Failure reporting](docs/failure-reporting.md) · [Sign-in](docs/auth-strategy.md) · [Secrets and data](docs/security-data-handling.md)
-- [Layer Routing Algorithm](docs/Layer%20Routing%20Algorithm.md) — one owner and one test per scenario, in depth
+| Read | When |
+|---|---|
+| [Getting started](docs/getting-started.md) | first install, up to the first plan |
+| [Workflow](docs/workflow.md) | every day: which command after a run, what each one shows (§5 has the real shapes) |
+| [Test strategy](docs/test-strategy.md) | to agree with the team on layers, structure, definition of done |
+| [Failure reporting](docs/failure-reporting.md) | a red test: what each verdict means and what to do |
+| [Sign-in](docs/auth-strategy.md) | accounts, roles, SSO, a refused sign-in |
+| [Secrets and data](docs/security-data-handling.md) | what may end up in reports, traces and CI |
+| [Layer Routing Algorithm](docs/Layer%20Routing%20Algorithm.md) | why a scenario has one owner and one test, in depth |
 
 ## Known limitations
 
