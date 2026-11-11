@@ -6,3 +6,5 @@
 *.gif binary
 *.webm binary
 *.zip binary
+# Demo branch: a merge of main keeps the demo's README (needs `git config merge.ours.driver true` once per clone).
+README.md merge=ours

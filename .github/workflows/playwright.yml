@@ -7,7 +7,7 @@ name: Playwright Starter CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, demo/todomvc]
   pull_request:
     branches: [main, master]
   # Actions → this workflow → Run workflow on a branch: the Linux screenshot baselines of its @visual tests, written
@@ -24,7 +24,8 @@ on:
 # specs/project-map.md — vars.<NAME> for addresses, secrets.<NAME> for logins, passwords and keys
 # (e.g. SHOP_LOGIN: ${{ secrets.SHOP_LOGIN }}). Empty when unset. Every job reads them.
 env:
-  UI_BASE_URL: ${{ vars.UI_BASE_URL || '' }}
+  # The demo's app is public: its address is the fallback, so the demo runs without repository variables.
+  UI_BASE_URL: ${{ vars.UI_BASE_URL || 'https://demo.playwright.dev/todomvc' }}
   API_BASE_URL: ${{ vars.API_BASE_URL || '' }}
 
 jobs:
