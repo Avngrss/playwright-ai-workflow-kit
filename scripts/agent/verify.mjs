@@ -56,7 +56,7 @@ const PLAYWRIGHT = path.join(ROOT, "node_modules", "@playwright", "test", "cli.j
 const USAGE = "npm run verify -- <app> <spec[:line]…> [--also <spec[:line]…>] [--can-fail <spec>:<line>=<the line as spoiled>…] [--with-browsers] | --restore";
 // Causes that are the stand's, not the check's (src/reporting/failure-cause.ts); "test code" and
 // "screenshot without a baseline" are a spoil that broke the test, not its check catching a wrong value.
-const NOT_THE_CHECK = new Set(["stand unavailable", "out of time", "sign-in or access", "server error", "stand data", "cleanup", "test code", "screenshot without a baseline"]);
+const NOT_THE_CHECK = new Set(["setting missing", "stand unavailable", "out of time", "sign-in or access", "server error", "stand data", "cleanup", "test code", "screenshot without a baseline"]);
 // The other-browser projects of playwright.config.ts (firefox:<app>, webkit:<app>, mobile:<app>) — only --with-browsers runs them.
 const browserOf = (project) => /^(firefox|webkit|mobile)(?::|$)/.exec(project ?? "")?.[1];
 const BIG = 256 * 1024 * 1024;

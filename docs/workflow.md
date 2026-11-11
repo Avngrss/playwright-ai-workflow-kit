@@ -38,6 +38,20 @@ Without a command of its own — ask in words, or name the skill (`.claude/skill
 - **A refactor of passing tests** ("split OrdersPage into components"): on request only — §4.
 - **Turning a project back into the reusable kit**: `01-workflow.md` §Starter conversion.
 
+### Your AI and its files
+
+- **Which AI** — the installer asked; `npm run agents:use -- cursor` (or `claude`, `cursor,claude`) changes it:
+  the chosen AI's files appear, the others' go. `npm run agents:use` alone says which are chosen.
+- **The rules, skills and commands** live in `agents/`. To change one, edit it there and run
+  `npm run agents:sync`; the copies in `.cursor/` and `.claude/` are rewritten. A copy edited by hand fails the
+  gate — it would be lost at the next sync anyway.
+- **What runs without asking** (Claude Code, `agents/permissions.json`): the browser through the Playwright MCP,
+  the kit's `npm run …` and `node scripts/…`, git that only reads. Reading cookies or storage is denied; file
+  edits follow the mode you chose in Claude Code (Manual asks each time). Cursor keeps such settings in its own
+  user settings.
+- **The stop check** — when the agent stops with the gate red on its work, or with a red run's automatic heal
+  undone, it is sent back once with what to do. `reports/stop-check.log` lists each check: which AI, what it found.
+
 ## 2. The everyday path
 
 One feature:

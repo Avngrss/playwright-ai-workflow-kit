@@ -39,7 +39,7 @@ one at a time, without a retry, in the project each failed in. Passed now → li
 slow, and the run is not red for it; failed again → red, as the first pass said. Every such failure
 says which: `passed on its second pass`, `failed again on its second pass` (with the new cause when
 it differs) or `no second pass — <why>` — the sign-in smoke never runs again (a dead stand stops the
-run), `stand data`, `sign-in or access`, `server error` and `cleanup` are never rerun, and a run
+run), `setting missing`, `stand data`, `sign-in or access`, `server error` and `cleanup` are never rerun, and a run
 started with `npx playwright test` gets none. Its traces and HTML report go to
 `test-results/second-pass/` and `playwright-report/second-pass/`, so the first pass's stay.
 `npm run test:failed` reruns only the last run's failures and the tests it left unrun (after their
@@ -55,7 +55,7 @@ Every failure opens with two lines: the verdict, and `Cause: <cause>`.
 | **Known bug looks fixed — retest the ticket** | `known bug looks fixed`: a test listed in `specs/known-bugs.md` passed |
 | **Possible bug — retest by hand** | `check did not match` · `element not found` · `server error` (a 5xx, also one in the background) · `request did not match` (the page sent other data than the case expects) · `answer did not match` (the server answered the action with another status or other data) · `screenshot differs` |
 | **Not a bug — the product changed: refresh the plan** | `API changed`: a 404/405 on a path the app's contract (the Docs cell of its API row in `specs/project-map.md`) no longer lists — with the path most like it — or a field the tests read missing or retyped in the answer (its schema names it; `npm run api:types`, then `npm run typecheck` names every place) · `screen changed`: the page shows the expected text reworded (another case or spacing, a letter or two). Read only under a committed spec: a new or changed one cannot see the product change under it, so its failure keeps its usual verdict with the finding as a note |
-| **Not a bug — the stand or its data** | `stand data` · `stand unavailable` (no answer, 502–504) · `sign-in or access` (401/403, session ended) · `out of time` · `cleanup` |
+| **Not a bug — the stand or its data** | `setting missing` (an app's address empty: `<NAME> is not set in .env` — set it in `.env`, or as the CI's variable of that name; the run summary's last line says so, never "heal") · `stand data` · `stand unavailable` (no answer, 502–504) · `sign-in or access` (401/403, session ended) · `out of time` · `cleanup` |
 | **Not a bug — the test needs fixing** | `test code` (a TypeError or similar in the suite's own code) · `element not found` in a spec not committed yet — a new or changed test has not been green on the stand, so its locator is the first suspect (read from git; without git the failure reads as a possible bug) · `screenshot without a baseline` (look at the image; right → `/implement <plan> Layer: visual · Approve baseline: yes`) |
 | **Known bug — waiting for the fix** | `known bug`: a test in `specs/known-bugs.md` still failing at its step |
 

@@ -9,6 +9,7 @@ import type { ContractFinding, ScreenFinding } from "./product-change";
  */
 
 export type Cause =
+  | "setting missing"
   | "API changed"
   | "screen changed"
   | "known bug looks fixed"
@@ -39,6 +40,7 @@ export const VERDICTS = [
 export type Verdict = (typeof VERDICTS)[number];
 
 const VERDICT_OF: Record<Cause, Verdict> = {
+  "setting missing": "Not a bug — the stand or its data",
   "API changed": "Not a bug — the product changed: refresh the plan",
   "screen changed": "Not a bug — the product changed: refresh the plan",
   "known bug looks fixed": "Known bug looks fixed — retest the ticket",
@@ -118,8 +120,17 @@ function whereTo({ page, message }: FailureFacts): string {
 
 const REFRESH = "Not a retest: the feature's plan needs a refresh — the run summary's last line says what to tell the agent.";
 
+const UNSET = /\b([A-Z][A-Z0-9_]*) is not set in \.env\b/;
+
 const RULES: Rule[] = [
-  // First: a fact from the product's own contract or page outweighs how the failure reads — under a test
+  // Before anything: a setting the run lacks (an app's address) — nothing ran against the app, nothing to retest.
+  {
+    cause: "setting missing",
+    matches: ({ message }) => UNSET.test(message),
+    checkByHand: ({ message }) =>
+      `Nothing ran against the app: ${UNSET.exec(message)?.[1] ?? "its address"} is empty. On a machine — set it in .env (npm run env:prepare lists what is empty); in CI — a variable of that name (GitHub: Settings → Secrets and variables → Actions, and the workflow's env: block; GitLab: CI/CD variables).`,
+  },
+  // Then: a fact from the product's own contract or page outweighs how the failure reads — under a test
   // that has been green only: a new or changed one (unproven) cannot see the product change under it.
   {
     cause: "API changed",

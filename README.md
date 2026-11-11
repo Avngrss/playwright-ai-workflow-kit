@@ -125,7 +125,9 @@ with what to do; a question it must ask you still gets through.
 | `agents/rules/` | 10 rules the agent follows: 3 always-on, the rest by file |
 | `agents/skills/` | 4 skills, step-by-step procedures: setup, plan, implement, verify (with its Heal, Coverage and Triage sections) |
 | `agents/commands/` | 8 slash commands: `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` open a skill; `/review` is the brief of an independent review, run in a new chat |
+| `agents/agents.json`, `hooks.json`, `permissions.json`, `mcp.json` | Which AI this folder works with (`npm run agents:use`), the stop hook's command, what Claude Code may run without asking (and never: reading cookies and storage), the Playwright MCP server |
 | `.cursor/`, `.claude/`, `.mcp.json` | Each agent's own copy of `agents/` (Cursor; Claude Code, whose `.claude/skills/` Cursor reads too) — written by `npm run agents:sync`; edit `agents/`, never a copy (the gate fails one that differs) |
+| `bin/install.mjs` | The installer `npx github:Avngrss/playwright-ai-workflow-kit` runs — it stays in the kit, a project never gets it |
 | `specs/project-map.md` | **The project map** — apps, URLs, sign-in, external systems, TMS case links, tags, test locks. Code and gate read it |
 | `specs/known-bugs.md` | Confirmed bugs the suite tracks (the test turns grey at its step) |
 | `specs/<app>/<area>/<feature>/` | Feature plans, written before any test |
@@ -350,6 +352,9 @@ The full table is in `agents/rules/00-project-map.md`. The ones you use most:
 - **A rule is still text.** A weaker model can skip what no script checks. The gate, `npm run verify` and the
   stop check hold what can be checked (the owners of a plan, routes, can-fail, the automatic heal); the plan's
   confirm table is where you catch the rest.
+- **The installer does not update a kit it installed.** A newer version goes into a new folder; to move an
+  installed kit along, take `agents/`, `scripts/` and the shared `src/` code from the new version by hand and run
+  `npm run agents:sync` and `npm run qa:gate`. Your plans, tests and app code stay yours.
 - **Screenshot baselines are per operating system.** Playwright names them by platform (`…-win32.png`,
   `…-linux.png`), so a baseline approved on Windows does not cover the Linux CI: approve the baselines on the
   system that runs them, or keep `@visual` tests out of CI until the Linux ones exist.
