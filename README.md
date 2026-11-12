@@ -1,8 +1,8 @@
 # Playwright AI Workflow Kit
 
-A Playwright + TypeScript test project you build with an AI agent — **Claude Code, Cursor or GitHub Copilot**.
-The agent plans tests from your cases, writes them and proves they work; the kit's rules, scripts and checks keep
-its work reviewable. It ships with no application tests — only the machinery around them.
+A Playwright + TypeScript test project you build with an AI agent. The agent plans tests from your cases, writes
+them and proves they work; the kit's rules, scripts and checks keep its work reviewable. It ships with no
+application tests — only the machinery around them.
 
 ## What you get
 
@@ -15,7 +15,61 @@ its work reviewable. It ships with no application tests — only the machinery a
 - **Guards the agent cannot skip.** A quality gate, and a stop check that sends the agent back when its work
   breaks the gate or a red run is left unhealed.
 - **Sign-in, test data and cleanup from one project map.** Secrets stay in `.env`, never in the chat or reports.
-- **One install, kept up to date** — into any folder of your project, with your AI and your CI.
+
+## Which AI
+
+| | Claude Code | Cursor | GitHub Copilot (VS Code, Copilot CLI) |
+|---|---|---|---|
+| Its files | `.claude/`, `.mcp.json` | `.cursor/` | `.github/` (instructions, skills, agent, hook), `.mcp.json` |
+| Turn on the Playwright MCP | approve it when asked | Cursor Settings → MCP | Copilot CLI reads `.mcp.json`; VS Code — its workspace MCP setting on |
+| Commands | `/setup`, `/plan` … | `/setup`, `/plan` … | skills called by name |
+| Independent review | `reviewer` subagent | `/review` in a new chat | `reviewer` agent |
+| Stop check | Stop hook | stop hook | `agentStop` hook |
+
+Codex is not set up yet.
+
+- **The Playwright MCP** is how the agent sees the live app: it opens pages, reads the screen and the requests each
+  action sends. Without it the agent cannot plan or fix a locator — turn it on once per AI.
+- **Choosing the AI.** The installer asks; later `npm run agents:use -- cursor` (or `claude`, `copilot`, several:
+  `claude,copilot`) adds the chosen AI's files and removes the others'. `npm run agents:use` alone says which are on.
+- **One source for every AI.** Rules, skills and commands live in `agents/`; the AI folders above are copies written
+  by `npm run agents:sync`. Edit `agents/`, never a copy — the gate fails a copy edited by hand.
+
+## Install
+
+Node 20+ and git. Two ways:
+
+| Your case | Do |
+|---|---|
+| Tests next to your product's code (a `qa/` folder of its repository) | in that repository: `npx github:Avngrss/playwright-ai-workflow-kit` — it asks the folder, the AI and the CI, copies only your AI's files, writes the CI, runs `npm ci` and creates `.env`; never overwrites a file, commits nothing |
+| A repository of its own for the tests | **Use this template** on GitHub, clone it, then `npm install`, `npm run env:prepare`, `npm run agents:use -- <ai>` |
+
+Then:
+
+1. Open **the kit's folder** in your AI (the `qa/` folder, not the repository's root) and turn on the Playwright MCP.
+2. `/setup` — add your app and how its tests sign in; you type the test account into `.env` yourself.
+3. `/plan <a TMS link, a ticket or your words>` — answer **Yes, write them**: the agent writes the tests, verifies
+   them and sums up.
+
+Each step, what the installer may say, the TMS through MCP: [Getting started](docs/getting-started.md). The kit's
+newest version later: `npx github:Avngrss/playwright-ai-workflow-kit --update` in the same folder.
+
+## Where everything is
+
+| Path | What | Who edits it |
+|---|---|---|
+| `agents/` | rules, skills and commands every AI follows, MCP and hooks | you, then `npm run agents:sync` |
+| `.claude/`, `.cursor/`, `.github/`, `.mcp.json` | your AI's copies of `agents/` (`.github/workflows/` is the CI) | nobody — generated |
+| `specs/project-map.md` | apps, their `.env` names, sign-in, tags, locks — code and the gate read it | the agent (`/setup`) |
+| `specs/<app>/<area>/<feature>/<feature>.md` | a feature's plan; an E2E journey's: `specs/e2e/<app>/<area>/` | the agent (`/plan`), you confirm |
+| `tests/<api\|ui\|e2e>/<app>/…` | the tests; `tests/smoke/` holds the sign-in smoke | the agent (`/implement`) |
+| `src/pages/<app>/`, `src/api/clients/<app>/`, `src/data/…/<app>/`, `src/fixtures/<app>/` | the app's Page Objects, API clients, test data, fixtures | the agent |
+| `src/setup/`, `src/reporting/`, `src/fixtures/*.ts`, `scripts/` | the kit's own machinery: sign-in, report, gate, verify | only on your request |
+| `.env` (`.env.example` lists the names) | addresses and test accounts — git-ignored | you, with `npm run env:prepare` |
+| `state/` | saved sign-in sessions — git-ignored | the tests |
+| `reports/`, `test-results/` | the last run: `run-summary.md`, `test-result.md`, the Allure report | the runs |
+| `docs/` | this documentation | — |
+| `bin/`, `ci/gitlab/` | the installer and its tests; GitLab's CI template | — |
 
 ## How it works
 
@@ -32,82 +86,17 @@ flowchart LR
 | Step | What appears | Who decides |
 |---|---|---|
 | `/setup` | the app's row and sign-in block in `specs/project-map.md`, empty login names in `.env`, a green sign-in smoke | you type the secrets into `.env` |
-| `/plan` | `specs/<app>/<area>/<feature>/<feature>.md` — each case with its owner, route, data, steps and status | you confirm or adjust the plan |
-| implement | `tests/<layer>/<app>/…spec.ts`, Page Objects, clients, fixtures — each test started by `npm run spec:draft` | the plan |
+| `/plan` | the feature's plan — each case with its owner, route, data, steps and status | you confirm or adjust it |
+| implement | the tests, Page Objects, clients, fixtures — each test started by `npm run spec:draft` | the plan |
 | verify | one block of results; each new check seen red once on purpose; an independent review | the gate and the run |
 
-A case in a plan, and the test it becomes (from the [demo](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc)):
+Why each scenario has one owner and one test: [Layer Routing Algorithm](docs/Layer%20Routing%20Algorithm.md).
 
-```markdown
-### 2. A completed todo leaves the items-left counter
-- Level: UI — the mark and the counter on this screen · Tag: @regression
-- Route: no-request · screen list=value
-- Preconditions: "buy milk" and "walk the dog" in the list, neither done
-- Steps:
-  1. Complete "buy milk"
-     - expect: "buy milk" is shown completed and the counter says "1 item left"
-```
+## Demo
 
-```ts
-await test.step('Setup: add "buy milk" and "walk the dog"', () => todoListPage.addTodos(["buy milk", "walk the dog"]));
-await test.step('Complete "buy milk" and verify the counter', async () => {
-  await todoListPage.complete("buy milk");
-  expect(await todoListPage.read(), "The todo list").toEqual(
-    shownTodoList({ todos: ["buy milk", "walk the dog"], completed: ["buy milk"], left: 1 }),
-  );
-});
-```
-
-`Level` names the one owner: TodoMVC sends no request, so the result lives only on the screen and there is no API
-test of it. `Route` says how the test proves it — here the screen alone; with a request, the answer the action got
-and the screen built from the case's data ([Layer Routing Algorithm](docs/Layer%20Routing%20Algorithm.md)).
-
-## Quick start
-
-In your project's folder (Node 20+, git):
-
-```bash
-npx github:Avngrss/playwright-ai-workflow-kit
-```
-
-It asks where (`qa` by default), which AI (one or several) and which CI (GitHub, GitLab or none), copies the kit
-with only your AI's files, writes the CI, runs `npm ci` and creates `.env`. It never overwrites a file and commits
-nothing. Without questions: `npx github:Avngrss/playwright-ai-workflow-kit qa --agent claude --ci github --yes`.
-
-Then open **the kit's folder** in your AI, turn on the `playwright` MCP server and type:
-
-1. `/setup` — add your app and how its tests sign in;
-2. `/plan <a TMS link, a ticket or your words>` — answer **Yes, write them**: the agent writes the tests,
-   verifies them and sums up.
-
-Later, in the same folder:
-
-- `npx github:Avngrss/playwright-ai-workflow-kit --update` — the kit's newest version (`--dry-run` shows the plan;
-  a file you changed stays, the new version goes beside it as `<file>.kit-new`);
-- `npm run agents:use -- copilot` — change or add an AI (`claude`, `cursor`, `copilot`, or several: `claude,copilot`).
-
-A repository of its own instead: **Use this template** on GitHub. Step by step: [docs/getting-started.md](docs/getting-started.md).
-
-## See it in action
-
-The [`demo/todomvc`](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc) branch is the kit
-after one pass on [TodoMVC](https://demo.playwright.dev/todomvc) — its README lists every file the agent wrote.
-Run it — no account needed:
-
-```bash
-git clone -b demo/todomvc https://github.com/Avngrss/playwright-ai-workflow-kit.git todomvc-demo
-cd todomvc-demo && npm install && npm run env:prepare
-npm test               # 6 passed
-npm run allure:open
-```
-
-![The Allure report of the demo run: app › area › feature › layer](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-tree.png)
-
-![One test in the report: its steps, worded as the case](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-test.png)
-
-A failure made on purpose — the test expects "2 items left":
-
-![A failing test in the report: the verdict, what differs, the page and what to check by hand](https://raw.githubusercontent.com/Avngrss/playwright-ai-workflow-kit/refs/heads/demo/todomvc/docs/images/allure-failure.png)
+The [`demo/todomvc`](https://github.com/Avngrss/playwright-ai-workflow-kit/tree/demo/todomvc) branch is this kit
+after one pass on [TodoMVC](https://demo.playwright.dev/todomvc): the plan, the tests, the report — and how to run
+it in four commands, no account needed.
 
 ## Commands
 
@@ -120,20 +109,9 @@ A failure made on purpose — the test expects "2 items left":
 | `/heal` | one or two red tests |
 | `/triage` | three or more red tests, or a CI run |
 | `/coverage` | a TMS folder, case by case |
-| `/review` | an independent review of new tests — Claude Code and Copilot run it as their `reviewer` agent |
+| `/review` | an independent review of new tests, in a new chat |
 
-A run's summary ends with the command it needs next. In Copilot the commands are skills called by name.
-
-## Your AI
-
-| | Claude Code | Cursor | GitHub Copilot |
-|---|---|---|---|
-| Its files | `.claude/`, `.mcp.json` | `.cursor/` (the skills from `.claude/` when both) | `.github/`: instructions, skills, agent, hook; `.mcp.json` |
-| Playwright MCP | approve it once | Cursor Settings → MCP | Copilot CLI reads it; VS Code with its workspace MCP setting on |
-| Independent review | `reviewer` subagent | `/review` in a new chat | `reviewer` agent |
-| Stop check | Stop hook | stop hook | `agentStop` hook |
-
-All are copies of `agents/`, written by `npm run agents:sync` — edit `agents/`, never a copy.
+A run's summary ends with the command it needs next. Which command when: [Workflow](docs/workflow.md).
 
 ## Scripts you use most
 
@@ -150,14 +128,10 @@ Every script: `npm run help`.
 
 ## CI
 
-The installer writes GitHub's or GitLab's: the gate, a secret scan, the test list, then smoke, regression, visual,
-cross-browser and responsive jobs with the report. Give CI the map's `.env` names as variables (GitHub: `env:prepare`
-adds each to the workflow and says what to create). Screenshot baselines for Linux: GitHub — Actions → **Run workflow**; GitLab — the manual
-`test:visual-baselines` job.
-
-**Before the first green run:** create each name in the repository — GitHub: Settings → Secrets and variables →
-Actions, addresses (`UI_BASE_URL` …) as **Variables**, logins and passwords as **Secrets**. Without them the gate
-passes, but each app's smoke fails with *setting missing* and that app's other tests do not run.
+The installer writes GitHub's or GitLab's workflow: the gate, a secret scan, then smoke, regression, visual,
+cross-browser and responsive jobs with the report; on GitHub the tests run in the Playwright image, so no browser
+is downloaded. Before the first green run, CI needs the map's `.env` names as variables and secrets:
+[Getting started §6](docs/getting-started.md#6-ci).
 
 ## Documentation
 
@@ -173,7 +147,6 @@ passes, but each app's smoke fails with *setting missing* and that app's other t
 
 ## Known limitations
 
-- Codex is not set up yet.
 - A rule is still text: a weaker model can skip what no script checks — the plan's confirm is where you catch it.
 - An update merges no file by itself: compare each `<file>.kit-new` with yours.
 - The agent works with the live app: it must be reachable, and an app behind a sign-in needs a test account.
