@@ -178,7 +178,7 @@ const git = (root, ...args) => {
     return undefined;
   }
 };
-const titlesIn = (text) => [...(text ?? "").matchAll(/\btest(?:\.(?:only|fixme|slow))?\(\s*(["'`])((?:(?!\1)[^\\]|\\.)*)\1/g)].map((match) => match[2]);
+export const titlesIn = (text) => [...(text ?? "").matchAll(/\btest(?:\.(?:only|fixme|slow))?\(\s*(["'`])((?:(?!\1)[^\\]|\\.)*)\1/g)].map((match) => match[2]);
 
 /** The tests these specs gained and lost against the last commit, and the specs changed at all. */
 function gitChanges(root, specs) {

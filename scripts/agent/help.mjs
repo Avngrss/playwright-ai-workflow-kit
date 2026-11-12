@@ -25,7 +25,8 @@ export const SCRIPTS = [
     ["suite:coverage", "-- --app <app>", "each TMS case: automated · to rework · not automated · inconsistent"],
   ]],
   ["Plan and write", [
-    ["plan:block", "-- <plan> [--case <link>] [--bug state/sources/<id>.json]", "a plan's next case block — empty, or filled from the case or bug"],
+    ["plan:block", "-- <plan> --title \"<title>\" [--tms <id>] [--owner API|UI|E2E] [--why …] [--role …] [--tag …] [--rules …] [--steps …] · -- <plan> --case|--bug state/sources/<id>.json", "a plan's next case block in the template's shape — from the call's words, or drafted from a saved TMS case or bug"],
+    ["plan:confirm", "-- <plan>", "the confirm the plan ends with — Will be written, the data, smoke and browsers lines, Not now, \"Write these <n> now?\" — from the plan file"],
     ["spec:draft", "-- <plan> <#>", "a test's skeleton from a filled case block"],
     ["api:types", "[-- <app>]", "the app's answer types from its contract → src/api/clients/<app>/contract.client.ts"],
   ]],

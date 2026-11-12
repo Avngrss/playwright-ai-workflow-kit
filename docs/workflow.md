@@ -108,7 +108,7 @@ another wait as `Needs <owner>`, and the confirm offers to drop the limit. The a
 
 **Where it lands:** `specs/<app>/<area>/<feature>/<feature>.md`. No test code is written in this step.
 
-The plan ends with a confirm in the chat: **Will be written** (each test with its owner, why that owner
+The plan ends with a confirm in the chat, printed from the plan by `npm run plan:confirm`: **Will be written** (each test with its owner, why that owner
 and what it checks), **Will be changed or removed** (on a refresh) and **Not now**, with the reason for
 each case (§5). Then it asks "Write these <n> now?": **Yes, write them** · **Drop the limit and write
 <k> more** · **Add them to <feature> instead** · **Let me adjust the plan first** (the middle two appear
