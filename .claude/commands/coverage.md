@@ -6,7 +6,7 @@ Use Skill: the `verify` skill (`.claude/skills/verify/SKILL.md`) — §9 "Covera
 
 Read-only: every case of a TMS suite as automated (owners, last run) · automated · to rework (a scenario tested
 twice, written before routing) · not automated (why, since when, what unblocks it) · inconsistent — from the TMS,
-`npm run suite:coverage -- --app <app>`, the plans and each test's last result (kept until a later run holds the
+`npm run suite:coverage -- --app <app> --table`, the plans and each test's last result (kept until a later run holds the
 test). No TMS, or a plan without TMS ids → that plan's own scenarios and counts (`withoutTmsSummary`).
 
 Red tests or a change instead? One or two → `/heal <spec>:<line> …` · three or more, or a CI run → `/triage` · a named

@@ -73,13 +73,11 @@ Starts by itself when the plan exists (§1 step 7), no command of its own; the u
 ### Already automated — every pass starts here
 
 `plans.md` §A later pass and §TMS cases (Already automated), in this order:
-1. `npm run suite:coverage -- --app <app>` (clean JSON: `node scripts/agent/suite-coverage.mjs --app <app>`): this
-   plan's cases are those whose `plan.plan` is this plan, and its `withoutTms` rows (matched by title).
-2. Show the rule's "Already automated" line and table — automated cases first, then the rest with their status and
-   since date.
-3. Re-check every `Blocked` line — stand data with the `npm run stand:find` its `searched:` tail names — and say it
+1. `npm run suite:coverage -- --app <app> --table --plan <plan>` — show it: this plan's cases, automated first, the
+   rest with their status, why and since when.
+2. Re-check every `Blocked` line — stand data with the `npm run stand:find` its `searched:` tail names — and say it
    in one line ("Unblocked: TC-408 — the map now has a second account · still blocked: TC-416").
-4. **Nothing left** (and no refresh asked) → stop as the rule says, no confirm question: the table, the re-check
+3. **Nothing left** (and no refresh asked) → stop as the rule says, no confirm question: the table, the re-check
    line and one next step (a failed last run → `/heal` or `/triage`; never run → the run command; the product or a
    rule changed → `/plan <plan path> — <what changed>`; new cases → their link).
 
@@ -269,49 +267,15 @@ implement skill §5 and the verify skill §2, §3 per further role, §6.2 **Full
 
 ## 8. Confirm — "Write these n now?"
 
-The tables and lines of `plans.md` §Confirm before any code, printed in chat:
-
-```markdown
-Plan: `specs/<app>/<area>/<feature>/<feature>.md` · basis: value-and-risk · role: customer
-
-**Will be written (<n>)**
-
-| # | Test | Owner | Why this owner | Checks | Suite | Priority | Why it is needed |
-|---|------|-------|----------------|--------|-------|----------|------------------|
-| 1 | Customer adds a delivery address | UI | the result on the same screen: the list | answer: street, city · screen: the list, the toast | Regression + Smoke | P1 · Critical | main scenario: keep my addresses |
-| 2 | Another customer cannot read the addresses | API | no screen: a direct request is refused | answer: 403 · error code | Regression | P1 · Critical | risk: someone else's data |
-
-Test data: the tests create their own entries and remove them (create and delete tried today).
-Priority: P1 is looked at first when it fails · Critical / Major / Minor — how bad a breakage is.
-Smoke: #1 — the feature's main scenario, under the first account — say "no smoke" to keep it regression only.
-Browsers, phone, screenshots: #1 @cross-browser — the delivery date is an input type=date · phone: none — at 393 px the form keeps its fields · screenshot of the empty list (your approval) — say "no" to any of them.
-
-**Will be changed or removed (<c>)**
-
-| Test | Spec | Change | Why |
-|------|------|--------|-----|
-| The address list answers street and city | `addresses.api.spec.ts` | removed — folded into #1 | #1 checks that answer on its own action |
-
-**Not now (<m>)**
-
-| Test | Why not now |
-|------|-------------|
-| 200-character limit on Street | P3, low risk |
-```
-
+`npm run plan:confirm -- <plan>` prints it; show it as `plans.md` §Confirm before any code says, its `<…>` filled.
 **A pass that only changes tests** — the rule's short form; *Not now* there only for a case entering or leaving it.
 A claim about another plan's test ("it will fail") only after running it: `npm run test:app -- <app> <layer> <its
-spec> -g "<its title>" --retries=0`.
-
-Then ask "Write these <n> now?" with the rule's options:
-1. **Yes, write them** — "<n> to write (API <a>, UI <u>) · <c> to change or remove · <m> not now: <reasons>".
-2. **Drop the limit and write <k> more** — only when the rule says.
-3. **Add them to <feature> instead** — only for a new plan whose cases sit on another plan's screen or requests (its
-   `Covered by <that plan>` lines): this plan file is removed, the cases join that plan as a later pass with a
+spec> -g "<its title>" --retries=0`. Its options, as printed:
+1. **Yes, write them** → the implement skill (each test from `npm run spec:draft`), then the verify skill.
+2. **Drop the limit and write <k> more** — the `Needs <owner>` cases the run's owner limit kept out join this pass.
+3. **Add them to <feature> instead** — this plan file is removed, the cases join that plan as a later pass with a
    `## Change log` line there.
 4. **Let me adjust the plan first** — back into this skill.
-
-Only after **Yes** → the implement skill (each test from `npm run spec:draft`), then the verify skill.
 
 **Stop** — no feature, or a scenario with no route proven on the stand → `blocked`, never a guessed route; no answer
 about the feature → ask once. Never implement from this skill.

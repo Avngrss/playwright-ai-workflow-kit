@@ -16,6 +16,7 @@
  *   reading.mjs   a UI test reads as its case: no data shaped in the spec, a step is one action and its checks
  *   pointers.mjs  every rule and skill the code names exists in agents/, never in an agent's own copy
  *   agents.mjs    every agent's copy (.cursor/, .claude/, .mcp.json) matches agents/ — npm run agents:sync writes them
+ *   leftovers.mjs a temporary artifact left behind: a debug, discovery, scratch or probe file
  *   advice.mjs    warnings: size, readability
  */
 import fs from "node:fs";
@@ -25,6 +26,7 @@ import { agentRules } from "./agents.mjs";
 import { caseRules } from "./cases.mjs";
 import { collectFiles, createReport, ROOT } from "./context.mjs";
 import { layoutRules } from "./layout.mjs";
+import { leftoverRules } from "./leftovers.mjs";
 import { patternRules } from "./patterns.mjs";
 import { repeatRules } from "./repeats.mjs";
 import { specRules } from "./specs.mjs";
@@ -39,7 +41,7 @@ const report = createReport();
 // A cut-off `npm run verify` leaves its spoiled lines listed here: a test checking a wrong value is never committed.
 if (fs.existsSync(path.join(ROOT, "reports", "verify-spoils.json")))
   report.fail(null, "reports/verify-spoils.json — a cut-off `npm run verify` left spoiled lines in the specs: `npm run verify -- --restore` puts them back");
-for (const rule of [...patternRules, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...agentRules, ...adviceRules]) rule(files, report);
+for (const rule of [...patternRules, ...layoutRules, ...specRules, ...supportRules, ...modelRules, ...repeatRules, ...caseRules, ...routeRules, ...readingRules, ...pointerRules, ...agentRules, ...leftoverRules, ...adviceRules]) rule(files, report);
 
 console.log(`qa:gate — ${files.specs.length} spec(s), ${files.support.length} support file(s)`);
 for (const warning of report.warnings) console.log(`! ${warning}`);

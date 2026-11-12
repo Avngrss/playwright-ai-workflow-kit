@@ -202,11 +202,9 @@ smoke, one line why.
 - A step no owner can automate (a person's eye, a captcha, a device) → *Not now* `Cannot be automated`. A
   documented rule or critical risk no case covers → *Not now* `Gap`; the user decides.
 - No step-by-step sync with the TMS; a changed expectation goes through the plan. **A suite's coverage** (on
-  request, and after writing tests from TMS cases): the suite's case list from the TMS + `npm run
-  suite:coverage -- --app <app>` → a table: automated (every scenario its one test, last result) · to rework
-  (written before routing — no routes, or a scenario tested twice) · not automated (blocked and what unblocks
-  it, postponed, cannot be automated, planned but not written, not planned) · inconsistent (fix the plan or the
-  tests — the gate fails these too).
+  request, and after writing tests from TMS cases): `npm run suite:coverage -- --app <app> --table --suite
+  <the folder's saved cases>` (the verify skill §9) — automated · to rework · not automated and why ·
+  inconsistent (the gate fails these too).
 
 ## E2E journeys
 
@@ -284,7 +282,7 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 - Route: <one line, docs/Layer Routing Algorithm.md §7 — e.g. intercept POST /api/orders → 201 · id, total · screen list=value, toast=text>
   (a scenario of several steps: one `- Route (step <n>): …` line per step)
 - Value: Core | Common | Rare | — · Severity: Critical | Major | Minor · Priority: P1 | P2 | P3
-- Why: <the basis in ≤ 8 words; an API scenario: what no screen shows — "another input of the cap">
+- Why: <the basis in ≤ 8 words, starting main scenario | frequent scenario | rare scenario | risk | case TC-… | rule AC-…; an API scenario: what no screen shows — "another input of the cap">
 - Status: ready to implement now
 - Data: none | stand | API setup | UI setup | mocked — <what; an illustration: case says "<value>" → <the criterion>>
 - Rules: <each check: rule of the routes — where it is written: the case, the PRD, a doc> (only when a route names a rule)
@@ -335,8 +333,8 @@ feature or a journey automates it) keep a case written; every other *Not now* re
 
 - Starts from what is automated: `npm run suite:coverage -- --app <app>`. A case `automated` (every scenario
   with its one test) is never drafted, written or rewritten again — but in a refresh, which edits the tests a
-  change touches; one short of a scenario gets only that one. Show "Already automated: <n> of <m>" and a table
-  `Case | Owners | Coverage | Last run`.
+  change touches; one short of a scenario gets only that one. Show `npm run suite:coverage -- --app <app> --table
+  --plan <plan>`.
 - **`to rework`** — a feature written before routing (no routes, or a scenario tested twice; the gate warns)
   is reworked only in a refresh the user asks for, then **whole**: every ready case routed, every test checked
   against its routes, a pair merged into the owner's one test and the twin deleted (its spec too when emptied).
@@ -348,32 +346,20 @@ feature or a journey automates it) keep a case written; every other *Not now* re
 
 ## Confirm before any code
 
-Show markdown tables in chat — the user decides from this message alone:
-- **Will be written (<n>)** — `# | Test | Owner | Why this owner | Checks | Suite | Priority | Why it is
-  needed`; Checks — the route in plain words (`answer: street, city · screen: the list, the toast`, `no request ·
-  screen: Save disabled`) — no two rows prove the same thing; Suite *Regression* or *Regression + Smoke*;
-  Priority `P1 · Critical`; Why ≤ 8 words starting with *main scenario* / *frequent scenario* / *rare scenario* /
-  *risk* / *case TC-…* / *rule AC-…*.
+`npm run plan:confirm -- <plan>` prints the confirm from the plan: **Will be written** (each ready case without
+its test — owner and why, its route in plain words, suite, priority, why it is needed), the Test data, Priority,
+Smoke and Browsers lines, Already automated, **Not now**, and "Write these <n> now?" with the options that apply.
+Show it in chat as it is — the user decides from this message alone — with its `<…>` filled: **Test data** in
+plain words (the setups tried, exceptions by number — a faked answer, a setup proven in part, a kept object to
+approve, an illustration tested by its criterion), a smoke left out with its reason. A row it shows wrong is the
+plan's: fix the plan, print it again — never edit the table. Added by hand:
 - **Will be changed or removed (<c>)** — when the pass edits or deletes tests (a refresh, a rework): `Test | Spec
-  | Change | Why`, `edited: <what>` or `removed — folded into #N | the twin of #N | the case dropped the step`. **A
-  pass that only changes tests** shows the header line and this table alone (no empty "Will be written", no
-  data, priority or smoke line).
-- One line each under the tables: **Test data** (in plain words, the setups tried, exceptions by number — a
-  faked answer, a setup proven in part, a kept object to approve, an illustration tested by its criterion) ·
-  **Priority** legend ("P1 is looked at first when it fails · Critical / Major / Minor — how bad a breakage
-  is") · **Smoke** (which case, "say 'no smoke' to keep it regression only") · **Browsers, phone,
-  screenshots** (the three decisions in a few words, "say 'no' to any of them") · **Already automated (<n>)** on
-  a later pass (ids, spec, last run) · findings outside this plan (a word about another plan's test only after
-  running it with `--retries=0`).
-- **Not now (<m>)** — `Test | Why not now`, one actionable clause each (the `searched:` tail stays in the plan);
-  grouped by reason above ~15 rows.
+  | Change | Why`, `edited: <what>` or `removed — folded into #N | the twin of #N | the case dropped the step`,
+  counted in the question's `<n>`. **A pass that only changes tests** shows the plan line and this table alone.
+- findings outside this plan — a word about another plan's test only after running it with `--retries=0`.
 
-Then, in the same turn, ask "Write these <n> now?" (`<n>` — the rows to write, change and remove) with
-numbered options: write them · drop the limit and write <k> more (only when the run is limited to one owner and
-*Not now* holds `Needs <owner>` cases) · add them to <feature> instead (only when the cases sit on another plan's
-screen) · let me adjust the plan first. Only after "write them" does implementation start. After implementing,
-the plan matches the code: wherever a test does or checks something other than the plan's step or `expect`,
-fix the case and add a change-log line.
+Only after "write them" does implementation start. After implementing, the plan matches the code: wherever a
+test does or checks something other than the plan's step or `expect`, fix the case and add a change-log line.
 
 ## When the product changes — refresh, not heal
 

@@ -19,6 +19,11 @@
  *   npm run env:prepare -- UI_BASE_URL APP_LOGIN                    only report filled/empty
  *   npm run env:prepare -- --tidy                                   lay both files out again
  *   npm run env:prepare -- --drop API_BASE_URL                      remove a name no map row or ```auth block uses
+ *
+ * GitHub passes CI only the names its workflow lists: a map name the call touches (every map name when it names
+ * none) joins the top-level env: of the repository's .github/workflows/playwright.yml — an address or setting as
+ * vars.<NAME>, a login, password or key as secrets.<NAME> — and --drop takes it out. GitLab passes its CI/CD
+ * variables itself.
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -368,6 +373,49 @@ function namesInUse(apps) {
   return used;
 }
 
+/** The repository's GitHub workflow — here, or at the repository's root for a test home in a folder (qa/). */
+function workflowFile() {
+  for (let dir = process.cwd(); ; dir = path.dirname(dir)) {
+    const candidate = path.join(dir, ".github", "workflows", "playwright.yml");
+    if (fs.existsSync(candidate)) return candidate;
+    if (fs.existsSync(path.join(dir, ".git")) || path.dirname(dir) === dir) return undefined;
+  }
+}
+
+/**
+ * The map names CI must get, in the workflow's top-level env: — the missing ones added (`drop`: the given ones
+ * taken out). Lines for the report.
+ */
+function syncCi(names, apps, drop = false) {
+  const file = workflowFile();
+  if (!file || !names.length) return [];
+  const shown = path.relative(process.cwd(), file).split(path.sep).join("/") || file;
+  const lines = read(file).split("\n");
+  const start = lines.findIndex((line) => /^env:\s*(#.*)?$/.test(line));
+  let end = start + 1;
+  while (start !== -1 && end < lines.length && (/^\s+\S/.test(lines[end]) || !lines[end].trim())) end += 1;
+  while (end > start + 1 && !lines[end - 1].trim()) end -= 1;
+  const at = (name) => (start === -1 ? -1 : lines.findIndex((line, index) => index > start && index < end && new RegExp(`^\\s+${name}\\s*:`).test(line)));
+  if (drop) {
+    const gone = names.filter((name) => at(name) !== -1);
+    for (const name of gone) lines.splice(at(name), 1);
+    if (gone.length) save(file, lines.join("\n"));
+    return gone.length ? [`✓ ${gone.join(", ")} removed from ${shown} env: — delete ${gone.length > 1 ? "them" : "it"} in GitHub → Settings → Secrets and variables → Actions too`] : [];
+  }
+  const missing = names.filter((name) => at(name) === -1);
+  if (!missing.length) return [];
+  const stand = new Set(apps.flatMap((app) => app.stand));
+  const kind = (name) => (stand.has(name) ? "vars" : "secrets");
+  const entry = (name, type) => `${name}: ${"${{"} ${type}.${name} || '' }}`;
+  if (start === -1) return [`! ${shown} has no top-level env: — CI gets none of ${missing.join(", ")}; add each there as ${entry("NAME", "vars")} (an address) or ${entry("NAME", "secrets")}`];
+  const indent = /^(\s+)/.exec(lines.slice(start + 1, end).find((line) => line.trim() && !line.trim().startsWith("#")) ?? "")?.[1] ?? "  ";
+  lines.splice(end, 0, ...missing.map((name) => `${indent}${entry(name, kind(name))}`));
+  save(file, lines.join("\n"));
+  const of = (type) => missing.filter((name) => kind(name) === type);
+  const create = [of("vars").length && `variables ${of("vars").join(", ")}`, of("secrets").length && `secrets ${of("secrets").join(", ")}`].filter(Boolean).join("; ");
+  return [`✓ ${missing.join(", ")} added to ${shown} env: — the user creates ${missing.length > 1 ? "them" : "it"} in GitHub → Settings → Secrets and variables → Actions (${create})`];
+}
+
 /**
  * --drop <NAME>…: names gone from .env and .env.example — only names no map row, ```auth block or external
  * system uses; any still used → nothing changes. Never creates .env.
@@ -384,15 +432,14 @@ function dropNames(names, apps) {
     console.log("Nothing dropped.");
     process.exit(1);
   }
-  const workflow = path.join(process.cwd(), ".github", "workflows", "playwright.yml");
   const report = [];
   const exampleFile = editor(read(example), apps, true);
   const env = fs.existsSync(file) ? editor(read(file), apps, false) : undefined;
   for (const name of names) {
     const from = [env?.drop(name) && ".env", exampleFile.drop(name) && ".env.example"].filter(Boolean);
     report.push(from.length ? `✓ ${name} dropped from ${from.join(" and ")}` : `· ${name} is in neither file — nothing to drop`);
-    if (fs.existsSync(workflow) && new RegExp(`^\\s+${name}\\s*:`, "m").test(read(workflow))) report.push(`! ${name} is still in .github/workflows/playwright.yml env: — remove it there too`);
   }
+  report.push(...syncCi(names, apps, true));
   if (env) save(file, env.text());
   save(example, exampleFile.text());
   console.log(report.join("\n"));
@@ -408,6 +455,7 @@ const exampleFile = editor(read(example), apps, true);
 
 let note;
 const report = [];
+const touched = [];
 if (created) report.push("✓ .env created from .env.example — enter the empty values there yourself");
 const args = process.argv.slice(2).filter((arg) => arg !== "--tidy");
 for (const arg of args) {
@@ -420,6 +468,7 @@ for (const arg of args) {
     continue;
   }
   const [name, ...rest] = arg.split("=");
+  touched.push(name);
   if (rest.length) {
     const value = rest.join("=");
     env.put(name, fileValue(value), note || undefined);
@@ -437,5 +486,7 @@ for (const arg of args) {
 const tidy = process.argv.includes("--tidy");
 save(file, tidy ? render(parse(env.text()), apps, false) : env.text());
 save(example, tidy ? render(parse(exampleFile.text()), apps, true) : exampleFile.text());
+const inMap = namesInUse(apps);
+report.push(...syncCi((touched.length ? touched : [...inMap.keys()]).filter((name) => inMap.has(name) && !name.startsWith("AQA_")), apps));
 if (tidy) report.push(`✓ .env and .env.example laid out by app (${apps.map((app) => app.slug).join(", ") || "no apps yet"})`);
 console.log(report.join("\n") || "Nothing to prepare — name the entries (NAME or NAME=value), or --tidy to lay the files out again.");
