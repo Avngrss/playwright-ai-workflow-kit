@@ -1,0 +1,49 @@
+.claude/commands/coverage.md
+  s_5a14ef979817d5::t_e8201586d7877c 9
+.claude/rules/plans.md
+  s_5a14ef979817d5::t_6d40e1a5f18f9f 205-207,336-337
+.claude/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_cc9d6c085c1215 77-79,81
+.claude/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_028b2c93471bcb 297-298,301-311
+.cursor/commands/coverage.md
+  s_5a14ef979817d5::t_11473ed38bc69f 7
+.cursor/rules/plans.mdc
+  s_5a14ef979817d5::t_6f726d8a3e30ae 206-208,337-338
+agents/commands/coverage.md
+  s_5a14ef979817d5::t_eb4b6c9b6542be 8
+agents/rules/plans.md
+  s_5a14ef979817d5::t_e514bc1855ecce 205-207,336-337
+agents/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_8311eb3f3b01b8 76-78,80
+agents/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_a433181f0d0257 296-297,300-310
+docs/workflow.md
+  s_5a14ef979817d5::t_28f2cbb905e02c 252
+scripts/agent/help.mjs
+  s_5a14ef979817d5::t_ab781e87a376a2 25
+bin/test/coverage-table.test.mjs
+  s_5a14ef979817d5::t_20c58ad3be1666 1-77
+scripts/agent/coverage-table.mjs
+  s_5a14ef979817d5::t_142ea2155ccdaf 1-143
+scripts/agent/suite-coverage.mjs
+  s_5a14ef979817d5::t_bce361accdaf5f 16-18,228-258
+scripts/agent/test-result.mjs
+  s_5a14ef979817d5::t_2d933e67de1b5f 124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "485d0a04f139fe35624b641f3b34218bb9c5aed6",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}

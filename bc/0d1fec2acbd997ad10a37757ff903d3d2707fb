@@ -1,0 +1,39 @@
+.claude/rules/plans.md
+  s_5a14ef979817d5::t_ac92c4dc42917b 287,351-357,359-364
+.claude/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_77c17aaa52d847 273,276-279
+.cursor/rules/plans.mdc
+  s_5a14ef979817d5::t_05cce7d8c8194f 288,352-358,360-365
+agents/rules/plans.md
+  s_5a14ef979817d5::t_a0271b36d31289 287,351-357,359-364
+agents/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_2c87a244694709 272,275-278
+docs/workflow.md
+  s_5a14ef979817d5::t_5ef36574b68587 111
+package.json
+  s_5a14ef979817d5::t_8b1224ae082064 41
+scripts/agent/help.mjs
+  s_5a14ef979817d5::t_3028482f773fcf 28-29
+scripts/agent/test-result.mjs
+  s_5a14ef979817d5::t_bdb64aeb37434b 181
+bin/test/plan-confirm.test.mjs
+  s_5a14ef979817d5::t_3a467dcf64756d 1-67
+scripts/agent/plan-confirm.mjs
+  s_5a14ef979817d5::t_4260190ced24f3 1-171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc0d1fec2acbd997ad10a37757ff903d3d2707fb",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
