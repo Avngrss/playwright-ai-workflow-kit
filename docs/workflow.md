@@ -249,7 +249,7 @@ Give the TMS folder link. You get every case of the suite with one of four statu
 - **inconsistent** — part of a case is written, or a test sits outside its scenario's owner; `qa:gate`
   fails it, and it is fixed before anything is marked.
 
-The table is built from the TMS, `npm run suite:coverage -- --app <app>`, the plans and each test's last
+The table is printed by `npm run suite:coverage -- --app <app> --table` from the TMS folder's cases, the plans and each test's last
 result, kept until a later run holds that test. It is read-only. Without a TMS, or for a plan without TMS
 ids, you get the plan's own scenarios and counts.
 

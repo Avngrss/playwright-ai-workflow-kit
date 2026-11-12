@@ -74,13 +74,11 @@ Starts by itself when the plan exists (§1 step 7), no command of its own; the u
 ### Already automated — every pass starts here
 
 `plans.md` §A later pass and §TMS cases (Already automated), in this order:
-1. `npm run suite:coverage -- --app <app>` (clean JSON: `node scripts/agent/suite-coverage.mjs --app <app>`): this
-   plan's cases are those whose `plan.plan` is this plan, and its `withoutTms` rows (matched by title).
-2. Show the rule's "Already automated" line and table — automated cases first, then the rest with their status and
-   since date.
-3. Re-check every `Blocked` line — stand data with the `npm run stand:find` its `searched:` tail names — and say it
+1. `npm run suite:coverage -- --app <app> --table --plan <plan>` — show it: this plan's cases, automated first, the
+   rest with their status, why and since when.
+2. Re-check every `Blocked` line — stand data with the `npm run stand:find` its `searched:` tail names — and say it
    in one line ("Unblocked: TC-408 — the map now has a second account · still blocked: TC-416").
-4. **Nothing left** (and no refresh asked) → stop as the rule says, no confirm question: the table, the re-check
+3. **Nothing left** (and no refresh asked) → stop as the rule says, no confirm question: the table, the re-check
    line and one next step (a failed last run → `/heal` or `/triage`; never run → the run command; the product or a
    rule changed → `/plan <plan path> — <what changed>`; new cases → their link).
 

@@ -293,54 +293,21 @@ Only as `01-workflow.md` §Hardening rules allows; then:
 
 ## 9. Coverage — a TMS suite
 
-**Read-only**: no file changed, no test run, no TMS or tracker write. A case is automated whole or not at all (its
-tester would still run a part).
+**Read-only**: no test run, no TMS or tracker write; the one file written is the suite's saved list. A case is
+automated whole or not at all (its tester would still run a part).
 
 1. **The suite** — the TMS folder link given (a case's link → its folder); else the feature's TMS; else one message:
-   "Paste the link to the TMS folder whose coverage you want." Every case (id, title) through the TMS's MCP or API;
-   unreachable → ask for the folder's ids and titles. No TMS in the map, or a plan without TMS ids → the plan's own
-   coverage from `withoutTms` (counts: `withoutTmsSummary`), one table per plan, `Scenario | Owner | Last run |
-   Status`, never a substitute from tickets.
-2. **Our side** — `node scripts/agent/suite-coverage.mjs --app <app>` (clean JSON; `npm run suite:coverage` adds
-   npm's header) for the app whose `case link <app>` matches the suite. Per case number: `tests`, `lastRun` (the
-   worst of each test's last result, kept until a later run holds that test; `not run` while a linked test has
-   none, `ran: "<k> of <n>"`), `plan`, `scenarios`, `coverage`, `missing`, `twice`, `rework`, `keptOut` (any *Not
-   now* line but `Covered by …`), `notNow` (its `· searched:` tail never in "Why not"); besides, `withoutTms`
-   (plans without TMS ids, matched by title) and `unreadableNotNowLines` (off the shape of `plans.md`: "fix these
-   plan lines" under the table, never guessed).
-3. **Classify every case of the suite** (its number: the id's digits, `TC-408` → `408`; rows: the suite's cases
-   only) by the script's `coverage`, a case it does not list → not automated. Its detail:
-   - **automated** (every scenario its one test in its owner's folder, no *Not now* line keeping it out) — its
-     owners + last run;
-   - **automated · to rework** (written before routing: a scenario tested twice by an API and a UI test, or a plan
-     with no routes) — `rework`: the scenarios tested twice, or "not routed";
-   - **not automated** — a *Not now* `Blocked` / `Cannot be automated` / `Postponed` line: its reason (Blocked: the
-     step that stops it and what unblocks it) · `Needs <owner>`: planned, a scenario of that owner not in a run yet
-     · `ready to implement now`: planned, not written yet · in no plan: not planned yet;
-   - **inconsistent** (tests and a *Not now* line keeping it out, a scenario with no test, or a test outside its
-     scenario's owner) — a part of a case written, the plan or the tests wrong (`qa:gate` fails it); fixed before
-     anything is marked.
-
-4. **The table**:
-
-   ```markdown
-   Suite "<folder title>" (<TMS>) — <n> cases · automated <a> (<%>) · to rework <r> · not automated <z> · inconsistent <i> · last run <date | none>
-
-   | Case | Title | Scenarios | Owners | Last run | Status | Why not |
-   |------|-------|:---------:|--------|:--------:|--------|---------|
-   | TC-408 | Another customer cannot edit my order | 1 | API | — | not automated | Blocked — step 2: needs a second test account without admin rights (since 2026-10-07) |
-   ```
-
-   - Ids as links (the app's `case link <app>`); rows automated → to rework → inconsistent → not automated (by
-     reason); **Scenarios** the plan's count (`—` when not planned), **Owners** with counts, **Last run** ✅ every test of it
-     passed when it last ran, ❌ one failed, — not every one ran.
-   - Under it, one line each that applies: the to rework cases ("tested twice — refresh their features to merge
-     each pair into one test", their plans named); the inconsistent ones ("a part of these cases is written — fix
-     the plan or the tests; `qa:gate` names them"); the cases whose tests failed last run; the unreadable plan lines.
-   - Over ~30 rows → automated as counts per owner plus the failed ones; not automated grouped by reason (count +
-     ids). An old `Blocked` date is worth a look: the next plan pass re-checks it.
-   - At most one next command (e.g. "plan the cases not planned yet: `/plan` with this folder link").
-5. **In the TMS** — as §7 says, with their owners.
+   "Paste the link to the TMS folder whose coverage you want." Its cases (id, title) through the TMS's MCP or API —
+   unreachable → ask for the folder's ids and titles — saved as `state/sources/suite-<folder>.json`: `{ "title":
+   "<folder title>", "cases": [{ "id": "TC-408", "title": "…" }] }`. No TMS in the map, or plans without TMS ids →
+   no suite file: each plan's own scenarios, never a substitute from tickets.
+2. **The table** — `npm run suite:coverage -- --app <app> --table --suite state/sources/suite-<folder>.json` (the
+   app whose `case link <app>` matches the suite): the counts line, a row per case of the suite with its owners,
+   last run and status (automated · to rework · inconsistent · not automated) and why not, grouped over 30 rows, the
+   lines under it and one next command. Show it as it is; a row that looks wrong is the plan's or the tests' — fix
+   them and print it again, never edit the table. A `Blocked` line dated long ago is worth a look: the next plan
+   pass re-checks it.
+3. **In the TMS** — as §7 says, with their owners.
 
 ## 10. Triage the run
 

@@ -121,7 +121,7 @@ export function renderTestResult(input) {
       break;
     }
     if (!rows.length) continue;
-    out.push("", `Plan "${plan.feature}" — ${rows.length} cases · ${countsOf(rows)}`, "", "| Case | Title | Scenarios | Owners | This run | Status |", "|------|-------|:---------:|--------|:--------:|--------|");
+    out.push("", `Plan "${plan.feature}" — ${rows.length} case${rows.length === 1 ? "" : "s"} · ${countsOf(rows)}`, "", "| Case | Title | Scenarios | Owners | This run | Status |", "|------|-------|:---------:|--------|:--------:|--------|");
     const shown = rows.length <= FULL_TABLE ? rows : rows.filter(({ touched }) => touched);
     for (const row of shown) out.push(`| ${row.id} | ${row.title.replace(/\|/g, "\\|")} | ${row.scenarios} | ${row.owners} | ${row.run} | ${row.status.replace(/\|/g, "\\|")} |`);
     const rest = rows.filter((row) => !shown.includes(row));

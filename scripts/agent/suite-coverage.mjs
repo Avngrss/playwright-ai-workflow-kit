@@ -13,6 +13,9 @@
  *
  *   npm run suite:coverage                 every app
  *   npm run suite:coverage -- --app crm    one app — a TMS suite belongs to one app's TMS project
+ *   npm run suite:coverage -- --app crm --table [--suite state/sources/suite-<folder>.json | --plan <plan>]
+ *                                          the /coverage table instead of JSON — of the TMS folder the agent saved, else
+ *                                          of every case the app's tests and plans know, or of one plan (scripts/agent/coverage-table.mjs)
  *
  * Cases are matched by their number: the `{id}` of the app's case link (§Test cases (TMS):
  * `- case link <app>: <URL with {id}>`, one per app — each app has its own TMS project) and the
@@ -222,21 +225,34 @@ for (const { plan, coverage } of withoutTms) {
 const withoutTmsSummary = { plans: Object.keys(byPlan).length, ...counts(), byPlan };
 for (const one of Object.values(byPlan)) for (const key of Object.keys(counts())) withoutTmsSummary[key] += one[key];
 
-console.log(
-  JSON.stringify(
-    {
-      app: onlyApp ?? null,
-      caseLink: caseLinkOf(onlyApp) ?? null,
-      caseLinks,
-      lastRunAt: lastRunAt ? new Date(lastRunAt).toISOString() : null,
-      plans: plans.map(({ plan }) => plan),
-      summary,
-      withoutTmsSummary,
-      cases,
-      withoutTms,
-      unreadableNotNowLines: unreadable,
-    },
-    null,
-    2,
-  ),
-);
+const result = {
+  app: onlyApp ?? null,
+  caseLink: caseLinkOf(onlyApp) ?? null,
+  caseLinks,
+  lastRunAt: lastRunAt ? new Date(lastRunAt).toISOString() : null,
+  plans: plans.map(({ plan }) => plan),
+  summary,
+  withoutTmsSummary,
+  cases,
+  withoutTms,
+  unreadableNotNowLines: unreadable,
+};
+
+// --table: the /coverage table itself (scripts/agent/coverage-table.mjs) — of the suite saved with --suite, else of
+// every case the app's tests and plans know.
+if (process.argv.includes("--table")) {
+  const suiteFile = process.argv.includes("--suite") ? process.argv[process.argv.indexOf("--suite") + 1] : undefined;
+  let suite;
+  if (suiteFile) {
+    try {
+      suite = JSON.parse(read(path.resolve(ROOT, suiteFile)));
+    } catch (error) {
+      console.log(`✗ --suite ${suiteFile}: ${error.message} — a JSON file { "title": "<folder title>", "cases": [{ "id": "TC-408", "title": "…" }] }`);
+      process.exit(1);
+    }
+  }
+  const tms = /^- tms:\s*([^<\n][^\n]*)$/m.exec(map)?.[1]?.trim();
+  const plan = process.argv.includes("--plan") ? process.argv[process.argv.indexOf("--plan") + 1]?.replace(/\\/g, "/") : undefined;
+  const { renderCoverage } = await import("./coverage-table.mjs");
+  console.log(renderCoverage(result, { suite, tms, plan }).trimEnd());
+} else console.log(JSON.stringify(result, null, 2));

@@ -22,7 +22,7 @@ export const SCRIPTS = [
     ["verify", "-- --restore", "put back what a cut-off verify left spoiled"],
     ["qa:gate", "", "the conventions, then tsc — after every change, before every commit; each finding says how to fix it"],
     ["typecheck", "", "tsc only — the second half of the gate"],
-    ["suite:coverage", "-- --app <app>", "each TMS case: automated · to rework · not automated · inconsistent"],
+    ["suite:coverage", "-- --app <app> [--table [--suite state/sources/suite-<folder>.json | --plan <plan>]]", "each TMS case: automated · to rework · not automated · inconsistent — JSON, or --table: the /coverage table of a saved TMS folder or of one plan"],
   ]],
   ["Plan and write", [
     ["plan:block", "-- <plan> --title \"<title>\" [--tms <id>] [--owner API|UI|E2E] [--why …] [--role …] [--tag …] [--rules …] [--steps …] · -- <plan> --case|--bug state/sources/<id>.json", "a plan's next case block in the template's shape — from the call's words, or drafted from a saved TMS case or bug"],

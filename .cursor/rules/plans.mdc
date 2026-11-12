@@ -203,11 +203,9 @@ smoke, one line why.
 - A step no owner can automate (a person's eye, a captcha, a device) → *Not now* `Cannot be automated`. A
   documented rule or critical risk no case covers → *Not now* `Gap`; the user decides.
 - No step-by-step sync with the TMS; a changed expectation goes through the plan. **A suite's coverage** (on
-  request, and after writing tests from TMS cases): the suite's case list from the TMS + `npm run
-  suite:coverage -- --app <app>` → a table: automated (every scenario its one test, last result) · to rework
-  (written before routing — no routes, or a scenario tested twice) · not automated (blocked and what unblocks
-  it, postponed, cannot be automated, planned but not written, not planned) · inconsistent (fix the plan or the
-  tests — the gate fails these too).
+  request, and after writing tests from TMS cases): `npm run suite:coverage -- --app <app> --table --suite
+  <the folder's saved cases>` (the verify skill §9) — automated · to rework · not automated and why ·
+  inconsistent (the gate fails these too).
 
 ## E2E journeys
 
@@ -336,8 +334,8 @@ feature or a journey automates it) keep a case written; every other *Not now* re
 
 - Starts from what is automated: `npm run suite:coverage -- --app <app>`. A case `automated` (every scenario
   with its one test) is never drafted, written or rewritten again — but in a refresh, which edits the tests a
-  change touches; one short of a scenario gets only that one. Show "Already automated: <n> of <m>" and a table
-  `Case | Owners | Coverage | Last run`.
+  change touches; one short of a scenario gets only that one. Show `npm run suite:coverage -- --app <app> --table
+  --plan <plan>`.
 - **`to rework`** — a feature written before routing (no routes, or a scenario tested twice; the gate warns)
   is reworked only in a refresh the user asks for, then **whole**: every ready case routed, every test checked
   against its routes, a pair merged into the owner's one test and the twin deleted (its spec too when emptied).
