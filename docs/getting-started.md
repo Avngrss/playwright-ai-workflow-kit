@@ -31,11 +31,36 @@ too) and creates `.env`. `--help` lists the flags (`--agent`, `--ci`, `--yes` �
 A repository made with **Use this template** instead: `npm install`, `npm run env:prepare`,
 `npm run agents:use -- claude` (or `cursor`, `copilot`, several).
 
+The browser: `npm ci` installs the Chromium of this Playwright version once, into Playwright's usual folder; a
+later `npm ci` with the same Playwright finds it and downloads nothing.
+
 ## 2. Open it in your AI
 
-Open **the kit's folder** (not the repository's root, when the kit is in `qa/`) and turn on the `playwright` MCP
-server: Claude Code — approve it when asked; Cursor — Cursor Settings → MCP; Copilot CLI reads `.mcp.json`, VS
-Code's Copilot with its workspace MCP setting on. In Copilot the commands are skills called by name.
+Open **the kit's folder** — `qa/`, not the repository's root, when the kit is in a folder. Then turn on the
+`playwright` MCP server, through which the agent opens the live app:
+
+| AI | Turn it on |
+|---|---|
+| Claude Code | on the first start in the folder it asks to approve the project's MCP servers — approve `playwright`; `/mcp` shows it |
+| Cursor | Cursor Settings → MCP → turn on `playwright` (the project's `.cursor/mcp.json`); a Playwright server of your own in the user settings — turn it off, so the agent uses the project's |
+| Copilot CLI | reads `.mcp.json` itself |
+| VS Code (Copilot) | turn on its workspace MCP setting; in Copilot the commands are skills called by name |
+
+### Optional: your TMS and tracker through MCP
+
+With an MCP server for your TMS (or tracker) the agent reads cases and tickets itself; without one you paste them.
+It only reads: nothing is created, edited or marked there without your yes. The server and its token are yours,
+never the repository's:
+
+1. Put the token in an environment variable — Windows: `setx QASE_API_TOKEN <token>`, then restart the AI fully.
+2. Add the server to your **user** MCP settings, not to the project's. Cursor (`~/.cursor/mcp.json`), with Qase:
+
+   ```json
+   { "mcpServers": { "qase": { "command": "npx", "args": ["-y", "@qase/mcp-server"],
+     "env": { "QASE_API_TOKEN": "${env:QASE_API_TOKEN}" } } } }
+   ```
+
+3. Turn it on beside `playwright`. The first case link you give `/plan` fills the map's TMS line.
 
 ## 3. Add your app: `/setup`
 
@@ -88,16 +113,5 @@ npx github:Avngrss/playwright-ai-workflow-kit --update             # the plan, t
 
 Your map, plans, tests, app code, `.env` and AI choice are never touched. Nothing is committed.
 
-## Where things live
-
-| Path | What |
-|---|---|
-| `agents/` | the rules, skills and commands your AI follows — edit here, then `npm run agents:sync` |
-| `.claude/`, `.cursor/`, `.github/`, `.mcp.json` | your AI's copies of `agents/` — never edited by hand |
-| `specs/project-map.md` | apps, `.env` names, sign-in, tags, locks — code and the gate read it |
-| `specs/<app>/<area>/<feature>/<feature>.md` | a feature's plan (an E2E journey's: `specs/e2e/<app>/<area>/`) |
-| `tests/<api\|ui\|e2e>/<app>/…` | the tests; `tests/smoke/` holds the sign-in smoke |
-| `src/…/<app>/` | the app's fixtures, Page Objects, clients, data |
-| `reports/run-summary.md`, `reports/allure/` | the last run's summary and report |
-
-Every npm script: `npm run help`. The strategy in one page: [Test strategy](test-strategy.md).
+Where every file lives: [README — Where everything is](../README.md#where-everything-is). Every npm script:
+`npm run help`. The strategy in one page: [Test strategy](test-strategy.md).
