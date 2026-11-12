@@ -41,50 +41,22 @@ Every log, report, trace, screenshot and video is assumed shared: prevention fir
 
 ## Quality gate
 
-`npm run qa:gate` = `scripts/gate/check.mjs` (every finding at once, each says how to fix it), then
-`tsc --noEmit` — after every change to specs, support code, plans or the map, and before any commit. It runs
-no tests. ✗ fails, ! warns; readability rules judge only files being written now (uncommitted) — committed
-ones are warned, not reworked. It fails:
-- specs — fixed waits, no check, no `test.step` (UI/E2E), `test` not from the app's fixtures, `new XPage(`
-  (UI), `process.env`, `.env` paths, tokens, lowercase titles/steps, implementation words in steps,
-  `test.fail`, `test.skip()` without a reason, unregistered tags or locks, missing layer/scope tags, smoke
-  rules, a `Setup:` step or page opening repeated across tests, quarantine without a reason, misused
-  `beforeAll`/serial/default mode, UI login in `beforeEach`, `page.route` without `// mocked:`, a case link
-  that is not a URL, ending the shared session, a UI/E2E spec shaping data, a test still holding
-  `spec:draft`'s skeleton (`// Route…:` / `// expect:` comments, a `<…>` in a title), a `verify` spoil not put back;
-- Page Objects, components, clients — `expect`, `test.step`, `process.env`, `page.route`; Page Objects and
-  components also fixed waits, `Date.now`/`Math.random`, screenshots, network listening, browser
-  preparation, exports besides the class, a member nothing uses;
-- anywhere — Allure calls, raw `console.*`, `addLocatorHandler` outside `app-wide.ts`, unmasked attachments;
-  files off the layout, imports across apps; the fixture chain out of order, roles in code, a `disposable…`
-  fixture without its sweep, bad map blocks, an app fixture shadowing a shared one;
-  two lines copied, one code in two apps, a case automated in two features, a test linking a case kept in
-  *Not now*, bad `specs/known-bugs.md` rows;
-- routes (`routes.mjs`, `cases.mjs`, `repeats.mjs`; `docs/Layer Routing Algorithm.md` §9) — a ready scenario
-  without its `Level:` or a parsable `Route:` agreeing with it; its test outside the owner's folder, not
-  listening (`answerTo`) where the route intercepts or listening where it does not, a client read in a check
-  step beyond the route's one `read`, a screen kind the route names unchecked in its step, the screen compared
-  with the answer where the case knew the values; a scenario with two tests; a written case with a scenario
-  left unwritten; a feature plan without its `## Owners` `found:` line, or an app with an API and no API
-  scenario said why place by place (`plans.md` §Layers);
-- the agents' copies (`agents.mjs`) — a copy in `.cursor/` or `.claude/` that differs from `agents/`: edit
-  `agents/`, then `npm run agents:sync`;
-- `tsc` — type errors, an unused import, variable, parameter or fixture.
+`npm run qa:gate` = `scripts/gate/check.mjs`, then `tsc --noEmit` — after every change to specs, support code,
+plans or the map, and before any commit; it runs no tests. It checks what the rules state — specs, Page Objects,
+clients, fixtures, the layout, the map, plans and their routes (`docs/Layer Routing Algorithm.md` §9), the
+agents' copies — and lists every finding at once, each with its rule and its fix. ✗ fails, ! warns; readability
+rules judge only files being written now (uncommitted) — committed ones are warned, not reworked; plans and
+tests written before routing get their route findings as a list to rework (`plans.md` §A later pass).
 
-**The stop check** (`scripts/agent/stop-check.mjs`, each agent's stop hook) runs this gate, without `tsc`, on the
-work in the tree before you end a turn, and looks for the automatic heal a red verify still owes (the verify
-skill §5). A failure in a file you changed sends you back once with what it found: do it, then stop. A failure
-in a file you did not change is the tree's from before — named, never yours to chase now. A turn that ends with a
-question to the user goes through (Claude Code); in Cursor, ask it and stop again — the next stop goes through.
-
-Warnings: sizes, unnamed checks, long or dated comments, `try/finally` in specs, unused exports, client and
-setup size, Page Object state and second names, siblings repeating their base, case-title shape, a Blocked
-line without its `· searched:` tail; the route findings of plans and tests written before routing (listed to
-rework, `plans.md` §A later pass).
 **A finding** is fixed the way its message says — never dodged (an equivalent call, a renamed method, a moved
 copy, a Page Object's body pasted into the spec). One that looks wrong is a suspected gate bug: keep the code
 as the rules want it and name it in the summary; never edit the gate unasked (§Shared code). A warning is
 fixed or its reason given.
+
+**The stop check** (each agent's stop hook) runs the gate without `tsc` on the files you changed and looks for
+the heal a red verify still owes (the verify skill §5): what it finds sends you back once — do it, then stop. A
+finding in a file you did not change is the tree's from before: named, never yours to chase now. Stopped for a
+question the user must answer → ask it and stop again.
 
 ## Never fitted to the product
 

@@ -33,6 +33,10 @@
  *    session wrote ends "now the automatic heal: <spec>:<line> …", the next red one "still red after the
  *    automatic heal".
  *
+ * 6. The test result — reports/test-result.md (scripts/agent/test-result.mjs): the summary the verify skill shows,
+ *    every number, verdict, coverage row and the next command filled from what the run left; `<…>` for the agent's
+ *    own parts. A verify that ran no test removes an older one.
+ *
  * Exit 0: all green · 1: not green, the last line says why · 2: a wrong call · 3: a spoiled line not put
  * back (named; fix it by hand). While lines are spoiled they are listed in reports/verify-spoils.json:
  * a verify cut off leaves it, the gate fails while it is there, and the next verify (or --restore) puts
@@ -45,6 +49,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 import { CASE_PREFIX } from "../gate/plans.mjs";
 import { appsOfMap } from "../run-tests.mjs";
+import { RESULT_FILE, writeTestResult } from "./test-result.mjs";
 
 const ROOT = process.cwd();
 const SPOILS_FILE = path.join(ROOT, "reports", "verify-spoils.json");
@@ -510,7 +515,7 @@ function verdicts(run, also) {
 }
 
 /** The cases the specs link, as scripts/agent/suite-coverage.mjs reads them after this run. */
-function coverage(app, files) {
+function coverage(app, files, report) {
   const { status, stdout } = exec(path.join("scripts", "agent", "suite-coverage.mjs"), ["--app", app]);
   let data;
   try {
@@ -518,6 +523,7 @@ function coverage(app, files) {
   } catch {
     return { error: `suite:coverage gave no data (exit ${status})` };
   }
+  report.coverageData = data;
   const cases = Object.entries(data.cases ?? {})
     .filter(([, known]) => known.tests.some(({ file }) => files.has(file)))
     .map(([key, known]) => {
@@ -641,6 +647,11 @@ function finish(report, reason, code) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(path.join(OUT_DIR, "verify.json"), mask(JSON.stringify({ block: block.join("\n"), ...data }, null, 2)));
   fs.writeFileSync(path.join(OUT_DIR, "verify.log"), mask(log.join("\n")));
+  try {
+    if (writeTestResult({ root: ROOT, report, block, reason, mask })) say(`\nTest result: ${posix(RESULT_FILE)} — fill its <…>, then show it (the verify skill §7)`);
+  } catch (error) {
+    say(`\n! ${posix(RESULT_FILE)} not written (${error.message}) — write the summary from the block above (the verify skill §7)`);
+  }
   say(`\nVerify: ${reason}`);
   process.exit(code);
 }
@@ -736,7 +747,7 @@ function main(argv) {
   };
 
   // 4. The coverage of the cases the specs link.
-  report.coverage = phase("coverage", () => coverage(call.app, new Set(call.specs.map(({ file }) => file))));
+  report.coverage = phase("coverage", () => coverage(call.app, new Set(call.specs.map(({ file }) => file)), report));
 
   // A test that did not run proves nothing: it is never green.
   const red = [...counted.filter(({ green, outcome }) => !green && outcome !== "known bug"), ...listed.filter(({ outcome }) => outcome === "not run")];
