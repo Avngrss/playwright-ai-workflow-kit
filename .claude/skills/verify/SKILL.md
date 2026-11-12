@@ -41,7 +41,8 @@ npm run verify -- <app> <spec[:line]…> [--also <spec[:line]…>] [--can-fail <
 
 It runs the gate (`qa:gate`, `tsc` included), can-fail, then **one run** with `--retries=0` (a pass on a retry is
 unstable, not green; the stand's second pass and a failed sign-in smoke's rerun included), stops at the first that
-fails, its last line saying why; the summary copies its block (`test-results/verify.json`). Then:
+fails, its last line saying why; the block is in `test-results/verify.json`, the summary in `reports/test-result.md`
+(§7). Then:
 - gate findings → fixed as they say (`02-guardrails.md` §Quality gate), the command again: no run spent;
 - a red run → by its verdicts, §5; a neighbour (`--also`) red on its own check in code this run did not touch →
   its verdict in the summary, never healed here;
@@ -169,62 +170,19 @@ edits the gate, a rule or a skill for it.
 
 ## 7. Summary — the verdict first
 
-Verdict first, then what it covers, then what the user does; never the run's mechanics. Every number and verdict
-(the stand-slow ones and time too) is copied from the last verify block or the result files (`02-guardrails.md`
-§Never fitted to the product).
+`npm run verify` writes it: `reports/test-result.md` — the verdict, each red test with its verdict, the plan's
+cases with this run's result, the TMS line, can-fail, the files changed, the time and the one next command, all
+from the result files. Fill its `<…>`, drop a line that does not apply, and show it; never change a number, verdict,
+row or command it gives, nor write one from memory (`02-guardrails.md` §Never fitted to the product). Its `<…>`:
+**Report** — §4's address · **Blockers** · **Review** — §6.1 · **Independent review** — §6.2: the full one's
+findings once `/review` is back, or the light one's five lines · **Tests removed** — what each was folded into.
+A screenshot the plan proposes adds `screenshot of <state> proposed — /implement <plan> Layer: visual` to the
+browsers line. No file (a plan-only run, §1, or the block says why) → the same shape by hand from the block.
 
-```markdown
-## Test result — <feature> (<App> › <Area>) · <the owners written: API | UI | E2E, joined with " + ">
-
-**<Passed | Failed | Partly passed | Not run>** — <n> of <m> tests green, no retry; qa:gate <passed | n warnings>.
-<a failed or partial run: one line per failing test with its verdict · a test left out: <title> — not run — <why>>
-
-<the suite's coverage, short form — below (basis test-cases); a plan without TMS ids: the block's Coverage line>
-
-**In the TMS:** mark Automated — <automated cases, links: every scenario has its test> · already Automated — nothing to mark — <cases automated before this run> · not automated, add the reason — <TC-…: why — what unblocks it> · fix by hand — <the manual case corrections> (only the parts that apply)
-
-- Report: <http://localhost:<port> | not generated>
-- Browsers, phone, screenshots: <#N Firefox ✅ WebKit ✅ · #M phone ✅ · screenshot of <state> proposed — /implement <plan> Layer: visual | none planned> (the plan's decisions and what ran)
-- Blockers: <none | list>
-- Review: <none | findings, one line each>
-- Can fail: <n> of <m> red on purpose · <title>: fixed — <what> | not proven — <why>
-- Independent review: <full | full — waiting for /review | light | not independent> — <none | <n> findings — <k> fixed, <a> answered · open: <one line each>> · later refresh: <untouched test — finding> · gate rule proposed: <the kind, what it would catch>
-  <light: one line per kind>
-- Files changed: <list | none>
-- Tests removed: <none | <title> — folded into <title> | gone with its scenario>
-- Time: <the verify block's Time line>
-
-### Next
-- <one command>
-- Look over each case beside its test (the table above, else the plan) and its steps in the report — a new feature's first tests, every one
-```
-
-`Can fail`, `Independent review`, `Tests removed`, `Look over`: only the parts that apply, none when this run wrote
-or changed no test.
-
-**The suite's coverage, short form** — the case list loaded at planning and `node scripts/agent/suite-coverage.mjs
---app <app>` (after a heal or a refresh: the plan's cases, no TMS load, first line `Plan "<feature>" — …`; a plan
-without TMS ids: the verify block's `Coverage` line, `plan "<feature>" — <n> cases · automated <a> · …`, as it is):
-the first line, the rows of the cases this run touched (every case when the suite has ≤ ~10), one line for the rest:
-
-```markdown
-Suite "<folder>" — <n> cases · automated <a> (<%>) · not automated <z>
-
-| Case | Title | Scenarios | Owners | This run | Status |
-|------|-------|:---------:|--------|:--------:|--------|
-| TC-408 | Another customer cannot edit my order | 1 | API | — | not automated — step 2: needs a second test account |
-
-Other cases of the suite: automated <x>, not automated <z> — full table on request (`/coverage`).
-```
-
-**This run**: ✅ every test of the case passed in this run, ❌ one failed, — not every test of it ran. **Status** as
-§9's, the reason in a few words (`inconsistent` never at a run's end: the gate fails it).
-
-- **In the TMS** — basis `test-cases` only: a case is marked Automated (it leaves everyone's manual run) only when
-  every test of it passed in this run and every scenario has its test (to rework included). A write: ask "Mark <n>
+- **In the TMS** — basis `test-cases` only. The file's `mark Automated` cases passed in this run with every
+  scenario tested; one the TMS already shows Automated (loaded at planning) leaves the list. A write: ask "Mark <n>
   cases as Automated in <TMS>? 1. Yes · 2. Not now", only when its MCP or API can; else the line says what to mark
-  by hand. **Manual case corrections** (a plan with that section: `<case link> step <n> — <expected now>`) are never
-  written to the TMS without the user's yes.
+  by hand. **Manual case corrections** are never written to the TMS without the user's yes.
 - **What only the engineer can give** — a case blocked on something the tests can neither read nor make but the
   user can give once: one message right under the summary, cheapest first, saying where the tests already looked
   (the *Not now* line's `searched:` tail). Stand data asked for or re-checked (a later pass, a "ready" reply) → `npm
@@ -239,12 +197,7 @@ Other cases of the suite: automated <x>, not automated <z> — full table on req
     "**TC-408 needs another account: a user without admin rights.** Fill `<APP>_MEMBER_LOGIN` /
     `<APP>_MEMBER_PASSWORD` in `.env` (prepared empty) and reply ready — an account you have signed in with by
     hand." Then the setup skill §3.9; the case is written with `test.use({ role: "member" })`.
-- **One next command:** no plan, an owner choice, a product or rule change → `/plan` (an existing plan: `/plan
-  <plan path> — <what changed>`, a refresh) · ready cases left → `/implement` with the plan · a new test's full
-  review due → `/review <plan> #<n> … — <spec paths>` in a new chat · one or two red tests, no heal tried yet →
-  `/heal <spec>:<line> …`; three or more, or a CI run → `/triage` · still failing after this run's automatic heal →
-  say so plainly, heal again only from a genuinely different angle · the stability gate stopped the plan → "none —
-  come back when the feature is stable on the stand" · all green → none.
+- **Next** — the file's command. A product or rule change named meanwhile → `/plan <plan path> — <what changed>`.
 
 ## 8. Heal
 
@@ -380,8 +333,8 @@ tester would still run a part).
    ```
 
    - Ids as links (the app's `case link <app>`); rows automated → to rework → inconsistent → not automated (by
-     reason); **Scenarios** the plan's count (`—` when not planned), **Owners** with counts, **Last run** as §7's
-     **This run**.
+     reason); **Scenarios** the plan's count (`—` when not planned), **Owners** with counts, **Last run** ✅ every test of it
+     passed when it last ran, ❌ one failed, — not every one ran.
    - Under it, one line each that applies: the to rework cases ("tested twice — refresh their features to merge
      each pair into one test", their plans named); the inconsistent ones ("a part of these cases is written — fix
      the plan or the tests; `qa:gate` names them"); the cases whose tests failed last run; the unreadable plan lines.

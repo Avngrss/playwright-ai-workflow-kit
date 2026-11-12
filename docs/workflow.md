@@ -167,9 +167,9 @@ Around it, the verify skill:
 - asks for the **independent review**: full for every new test (`/review` in a new chat), light for a test
   it only edited (the same five questions answered in the same chat).
 
-**What you get:** a summary that leads with the verdict (Passed / Failed / Partly passed / Not run) and
-takes every number from the verify block, then the TMS suite's coverage in short form, what to mark
-Automated in the TMS (written there only on your yes), the manual case corrections, what only you can
+**What you get:** `reports/test-result.md`, written by verify from the result files and completed by the
+agent: the verdict first (Passed / Failed / Partly passed / Not run), the plan's cases with this run's result, what
+to mark Automated in the TMS (written there only on your yes), the manual case corrections, what only you can
 give (an account, a fact from another system), and one next command (§5).
 
 ### Review: `/review`
@@ -421,7 +421,7 @@ concern is covered here:
 | Review of what a batch wrote or changed | `npm run qa:gate` for everything it can check; can-fail for every new or changed check (`npm run verify`); then `/verify` §6.1 for only what the gate cannot: scope, the plan matching the code, value and routes (no UI test re-asserting its API test), plain happy path vs an optional-path positive, positive + negative per mutation, real expected values, synchronisation, data, the security of changed code, config and CI, shared code changed only on request |
 | Independent review of new tests | `/review` in a new chat (verify §6.2, Full): only the cases, the plan's `Data:` and `Rules:` lines, the tests and the run's report; an edited test gets the light review in the same chat |
 | A red run | one or two red tests → `/heal` (verify §8); three or more, or a CI run → `/triage` (verify §10) |
-| Coverage of a TMS suite | `/coverage` (verify §9); its short form closes every `/verify` summary |
+| Coverage of a TMS suite | `/coverage` (verify §9); the plan's part closes every `/verify` summary |
 | Stability: flaky patterns, weak waits, hidden flows | the gate (fixed waits, a test without a check, misused `beforeAll` or serial mode, UI login in `beforeEach`, quarantine without a reason); `npm run verify` runs once with `--retries=0` — a pass on a retry is unstable, not green; the stand's second pass tells a slow stand from a broken test; `/heal` classifies a flaky test and quarantines it with `@flaky`; the review's synchronisation line |
 | Test data: shared data, cleanup, isolation | the plan proves every case's `Data:` and setup on the stand before you confirm, and searches every account and tenant (`npm run stand:find`) before a case is blocked; the gate (a `disposable…` fixture without its sweep, a UI/E2E spec shaping data, copied setup); `npm run data:sweep`; the review's data line |
 | Security: secrets and sensitive data | the gate (tokens, `process.env`, raw `console.*`, unmasked attachments); the CI secret scan (gitleaks) over the whole repository; the review's two security lines for changed code, config and CI ([Security and data](security-data-handling.md)) |
@@ -503,11 +503,11 @@ What `npm run verify` prints and keeps in `test-results/verify.json`; the summar
 ### The verify summary
 
 ```markdown
-## Test result — Addresses (Shop › Account) · API + UI
+## Test result — Addresses (shop › Account) · API + UI
 
 **Passed** — 4 of 4 tests green, no retry; qa:gate passed.
 
-Suite "Account › Addresses" — 12 cases · automated 6 (50%) · not automated 6
+Plan "Addresses" — 5 cases · automated 4 · not automated 1
 
 | Case | Title | Scenarios | Owners | This run | Status |
 |------|-------|:---------:|--------|:--------:|--------|
@@ -516,8 +516,6 @@ Suite "Account › Addresses" — 12 cases · automated 6 (50%) · not automated
 | TC-403 | An address without a street is refused | 1 | UI | ✅ | automated |
 | TC-404 | Customer edits a delivery address | 1 | UI | ✅ | automated |
 | TC-409 | Another customer cannot edit my address | 1 | API | — | not automated — step 2: needs a second test account |
-
-Other cases of the suite: automated 2, not automated 5 — full table on request (`/coverage`).
 
 **In the TMS:** mark Automated — TC-401, TC-402, TC-403, TC-404 · not automated, add the reason — TC-409: needs a second test account — a member account in `.env` · fix by hand — TC-403 step 3 — expected now "Street is required"
 
@@ -531,7 +529,7 @@ Other cases of the suite: automated 2, not automated 5 — full table on request
 - Time: gate 0:38 · can fail 0:51 · run 1:24 · coverage 0:02 · total 2:55
 
 ### Next
-- In a new chat: `/review specs/shop/account/addresses/addresses.md #1 #2 #3 #4 — tests/ui/shop/account/addresses/addresses.ui.spec.ts tests/api/shop/account/addresses/addresses.api.spec.ts`
+- /review specs/shop/account/addresses/addresses.md #1 #2 #3 #4 — tests/ui/shop/account/addresses/addresses.ui.spec.ts tests/api/shop/account/addresses/addresses.api.spec.ts — in a new chat
 - Look over each case beside its test (the table above) and its steps in the report — a new feature's first tests, every one
 ```
 

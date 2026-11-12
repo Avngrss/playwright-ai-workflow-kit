@@ -18,7 +18,7 @@ export const SCRIPTS = [
     ["test:list", "", "list the tests without running them"],
   ]],
   ["Check", [
-    ["verify", "-- <app> <spec[:line]…> [--also …] [--can-fail <spec>:<line>=<spoiled line>…] [--with-browsers]", "the gate, each new check proven able to fail, one run with --retries=0, one block of results from the result files (test-results/verify.json)"],
+    ["verify", "-- <app> <spec[:line]…> [--also …] [--can-fail <spec>:<line>=<spoiled line>…] [--with-browsers]", "the gate, each new check proven able to fail, one run with --retries=0, one block of results (test-results/verify.json) and the summary to show (reports/test-result.md)"],
     ["verify", "-- --restore", "put back what a cut-off verify left spoiled"],
     ["qa:gate", "", "the conventions, then tsc — after every change, before every commit; each finding says how to fix it"],
     ["typecheck", "", "tsc only — the second half of the gate"],
