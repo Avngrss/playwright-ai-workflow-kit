@@ -93,4 +93,4 @@ Your map, plans, tests, app code, `.env` and AI choice are never touched. Nothin
 | `src/…/<app>/` | the app's fixtures, Page Objects, clients, data |
 | `reports/run-summary.md`, `reports/allure/` | the last run's summary and report |
 
-Every npm script: `agents/rules/00-project-map.md`. The strategy in one page: [Test strategy](test-strategy.md).
+Every npm script: `npm run help`. The strategy in one page: [Test strategy](test-strategy.md).

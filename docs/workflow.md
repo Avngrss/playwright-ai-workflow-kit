@@ -37,7 +37,7 @@ Without a command of its own — ask in words, or name the skill (`.claude/skill
 - **Allure metadata** (severity, a `tms(<id>)` case link): `/implement` writes it from the plan.
   Readable failures and the report tree are built in; there is nothing to configure.
 - **A refactor of passing tests** ("split OrdersPage into components"): on request only — §4.
-- **Turning a project back into the reusable kit**: `01-workflow.md` §Starter conversion.
+- **Turning a project back into the reusable kit**: the setup skill §6.
 
 ### Your AI and its files
 
@@ -428,7 +428,7 @@ concern is covered here:
 | An API collection: inventory and coverage | `/plan <collection path>` (plan §4.4) |
 | Refactor: an over-abstraction, a Page Object grown too large, siblings repeating their base | on request only, usually after a gate warning: a behaviour-preserving refactor, then `npm run verify` of the impacted specs; a component split only for one of the three reasons (`ui.md` §Ownership decisions and refactoring) |
 | Hardening after a recurring failure or agent mistake | `/heal` (verify §8.9, `01-workflow.md` §Hardening rules) |
-| Turning a project back into the reusable kit | ask in words (`01-workflow.md` §Starter conversion) |
+| Turning a project back into the reusable kit | ask in words (the setup skill §6) |
 
 ## 5. What you will see
 

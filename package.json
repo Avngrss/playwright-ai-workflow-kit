@@ -45,6 +45,7 @@
     "api:types": "node scripts/agent/api-types.mjs",
     "agents:sync": "node scripts/agent/agents-sync.mjs",
     "agents:use": "node scripts/agent/agents-use.mjs",
+    "help": "node scripts/agent/help.mjs",
     "kit:test": "node --test bin/test/*.test.mjs",
     "test:flaky": "node scripts/run-tests.mjs flaky",
     "test:failed": "node scripts/run-tests.mjs failed",

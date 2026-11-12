@@ -105,7 +105,8 @@ See [Auth strategy](auth-strategy.md).
   - GitLab: `ci/gitlab/gitlab-ci.yml` runs `gitleaks detect --redact` in its `gate` stage.
 - **CI variables:** CI reads URLs and accounts from variables named like the `.env` entries. Keep
   passwords in the CI's secret (masked) variables, never in the workflow file. GitHub passes only the names
-  the workflow's `env:` lists (`secrets.<NAME>` for passwords); GitLab passes its CI/CD variables itself.
+  the workflow's `env:` lists — `npm run env:prepare` adds each new map name there (`secrets.<NAME>` for
+  logins and passwords); GitLab passes its CI/CD variables itself.
 
 ## Checks on demand
 

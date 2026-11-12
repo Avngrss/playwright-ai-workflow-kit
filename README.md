@@ -101,13 +101,13 @@ All are copies of `agents/`, written by `npm run agents:sync` — edit `agents/`
 | `npm run env:prepare` | `.env` names and addresses — you type the secrets |
 | `npm run agents:use -- <ai>` | which AI this folder works with |
 
-Every script: `agents/rules/00-project-map.md`.
+Every script: `npm run help`.
 
 ## CI
 
 The installer writes GitHub's or GitLab's: the gate, a secret scan, the test list, then smoke, regression, visual,
-cross-browser and responsive jobs with the report. Give CI the map's `.env` names as variables (GitHub: once, in
-the workflow's `env:`). Screenshot baselines for Linux: GitHub — Actions → **Run workflow**; GitLab — the manual
+cross-browser and responsive jobs with the report. Give CI the map's `.env` names as variables (GitHub: `env:prepare`
+adds each to the workflow and says what to create). Screenshot baselines for Linux: GitHub — Actions → **Run workflow**; GitLab — the manual
 `test:visual-baselines` job.
 
 ## Documentation

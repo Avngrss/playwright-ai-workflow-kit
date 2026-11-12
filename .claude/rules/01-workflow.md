@@ -63,19 +63,14 @@ failure before a change; every rerun after one is `npm run verify` of the touche
 
 ## Cleanup before "done"
 
-Debug in temporary artifacts, deliver in the proper layers, delete the temporary ones before calling a task
-(implement, heal, verify, explore) complete — even unasked, at the end of the task, not after every attempt:
-one-off scripts (`scripts/debug-*.mjs`, `discover-*`, `scratch-*`, any ad-hoc script), dumps
-(`discover-*-output.json`, `*-discovery.json`, MCP snapshots or logs copied into source — `.playwright-mcp/`
-is runtime output), probe specs and their folders (`live-app.md`), throwaway copies of a Page Object, spec or
-plan, notes at the repo root. Move a probe's findings first (a locator to its Page Object, a decision to the
-plan); never keep something "just in case" or move a debug script into `src/` or `tests/`. Code taken out of
-the suite is deleted — never kept in `state/`, beside the tests or commented out; the change log says what
-left; a copy the user wants goes outside the repository. Keep `tests/**`, `src/**`, reviewed `specs/**`, the
-permanent scripts (`scripts/gate/`, `scripts/agent/`, `run-tests.mjs`, `auth.mjs`) and files the user made
-or asked to keep; unsure → report, never delete silently. A dump holding a secret is
-deleted, never summarized, and the user told to rotate it; a recurring artifact goes into `.gitignore`. The
-summary names what was removed and what was left as unsure (nothing removed → no line).
+Debug in temporary artifacts, deliver in the proper layers. Before calling a task (implement, heal, verify,
+explore) complete — even unasked, once at its end — move a probe's findings home (a locator to its Page Object, a
+decision to the plan) and delete every temporary file: one-off scripts, dumps, MCP snapshots copied into source,
+probe specs, throwaway copies, notes at the repo root. The gate fails the names that say so (`debug-*`,
+`discover-*`, `scratch-*`, `probe-*`, `*-discovery.json`). Code taken out of the suite is deleted, never kept in
+`state/`, beside the tests or commented out; a copy the user wants goes outside the repository. Files the user
+made or asked to keep stay; unsure → report, never delete silently. A dump holding a secret is deleted, never
+summarized, and the user told to rotate it. The summary names what was removed and what was left as unsure.
 
 ## Hardening rules
 
@@ -93,18 +88,3 @@ detail into a universal rule, never duplicate or contradict guidance.
 | **Minor** | cosmetic | readability worth fixing now: a name, an order, a wrapper to inline, an import |
 
 Never report a speculative finding without evidence.
-
-## Starter conversion
-
-Turning a project back into the reusable kit (asked in words — no command of its own): inventory and classify
-every file — **keep** (rules, skills, commands, reusable docs, package and config files such as
-`playwright.config.ts`, `tsconfig.json`, `.gitignore` and a generic `.env.example`, generic scripts and workflow
-templates, the shared sign-in smoke, `agents/mcp.json` with safe MCP only) · **remove** (tests, plans,
-`src/<kind>/<app>/` folders, the product's map rows and blocks, known-bug rows, `src/**` code bound to the
-product even in a generic folder, sample tests not marked as templates, visual snapshot folders, product-only
-docs and URLs, committed credentials or sessions, app-specific CI) · **generated** (`state/`, `reports/allure/**`, `reports/run-summary.*`,
-`test-results/`, `playwright-report/`, `.playwright-mcp/`, scratch scripts and dumps, traces, videos, logs, a
-local `.env` — delete or ignore) · **unsure** (ask, never delete); `.github/**` per file. Nothing is deleted
-before the user decides on the lists; then `npm run test:list` and `npm run qa:gate`. The map, known-bugs and
-`docs/test-strategy.md` become blank templates, `src/data/sweeps.ts` an empty list. Report Removed · Preserved
-· Unsure · Verification · Remaining risks; not complete while unsure files remain unless the user accepted it.
