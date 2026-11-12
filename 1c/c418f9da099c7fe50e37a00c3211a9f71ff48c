@@ -1,0 +1,99 @@
+.claude/commands/coverage.md
+  s_5a14ef979817d5::t_a75a4567f2332f 9
+.claude/rules/00-project-map.md
+  s_5a14ef979817d5::t_9aee06a66f7eee 62-64,72-74
+.claude/rules/01-workflow.md
+  s_5a14ef979817d5::t_fd0feaa6c6f69f 66-73
+.claude/rules/02-guardrails.md
+  s_5a14ef979817d5::t_cbe8fc8b32838a 44-49,56-60
+.claude/rules/plans.md
+  s_5a14ef979817d5::t_177a0b8ad2931b 205-207,285,336-337,349-355,357-362
+.claude/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_5e29d8aa566fb4 77-79,81,271,274-277
+.claude/skills/setup/SKILL.md
+  s_5a14ef979817d5::t_6513405ffd0186 3,74-75,310-311,381-395
+.claude/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_28f23913e895f0 44-45,173-183,185,200,297-298,301-311
+.cursor/commands/coverage.md
+  s_5a14ef979817d5::t_eb7419a8e1c033 7
+.cursor/rules/00-project-map.mdc
+  s_5a14ef979817d5::t_17363afd4debe9 2,66-68,76-78
+.cursor/rules/01-workflow.mdc
+  s_5a14ef979817d5::t_c75836760f18ed 2,70-77
+.cursor/rules/02-guardrails.mdc
+  s_5a14ef979817d5::t_902fd76008702c 2,48-53,60-64
+.cursor/rules/plans.mdc
+  s_5a14ef979817d5::t_d602cbe7d10fea 206-208,286,337-338,350-356,358-363
+.gitignore
+  s_5a14ef979817d5::t_4509ff230361d4 44-45
+agents/commands/coverage.md
+  s_5a14ef979817d5::t_4e187236e9fdae 8
+agents/rules/00-project-map.md
+  s_5a14ef979817d5::t_25d8b0197cb4e8 2,65-67,75-77
+agents/rules/01-workflow.md
+  s_5a14ef979817d5::t_f89903be966155 2,69-76
+agents/rules/02-guardrails.md
+  s_5a14ef979817d5::t_2900dd47ef40d9 2,47-52,59-63
+agents/rules/plans.md
+  s_5a14ef979817d5::t_b42295767e1e6b 205-207,285,336-337,349-355,357-362
+agents/skills/plan/SKILL.md
+  s_5a14ef979817d5::t_ce1e4d6abcf394 76-78,80,270,273-276
+agents/skills/setup/SKILL.md
+  s_5a14ef979817d5::t_15a69574a25538 3,73-74,309-310,380-394
+agents/skills/verify/SKILL.md
+  s_5a14ef979817d5::t_760cc0f551db3b 43-44,172-182,184,199,296-297,300-310
+bin/test/coverage-table.test.mjs
+  s_5a14ef979817d5::t_a5ef2dc7f96d9a 1-77
+bin/test/env-ci.test.mjs
+  s_5a14ef979817d5::t_e9e2369bb14252 1-62
+bin/test/help.test.mjs
+  s_5a14ef979817d5::t_d8631e04e188e7 1-21
+bin/test/plan-confirm.test.mjs
+  s_5a14ef979817d5::t_23fe6365c48239 1-67
+bin/test/test-result.test.mjs
+  s_5a14ef979817d5::t_a6bd233db3f78f 1-80
+docs/getting-started.md
+  s_5a14ef979817d5::t_20cfcbdc4ef1c3 103
+docs/security-data-handling.md
+  s_5a14ef979817d5::t_cb8ca01df99ad1 108-109
+docs/workflow.md
+  s_5a14ef979817d5::t_6d70f00b3d1e7c 40,111,170-172,252,424,431,506,510,532
+package-lock.json
+  s_5a14ef979817d5::t_12f943eb1d48a9 3,9
+package.json
+  s_5a14ef979817d5::t_368e7c3c0a5f05 3,41,49
+scripts/agent/coverage-table.mjs
+  s_5a14ef979817d5::t_eb92ed33f1bbf3 1-143
+scripts/agent/help.mjs
+  s_5a14ef979817d5::t_acc680acd0c5a5 1-75
+scripts/agent/plan-confirm.mjs
+  s_5a14ef979817d5::t_9c403a77c564ae 1-171
+scripts/agent/prepare-env.mjs
+  s_5a14ef979817d5::t_7400ad784251d0 22-26,376-418,442,458,471,489-490
+scripts/agent/suite-coverage.mjs
+  s_5a14ef979817d5::t_3e43a185818064 16-18,228-258
+scripts/agent/test-result.mjs
+  s_5a14ef979817d5::t_47ef9fda01dc55 1-239
+scripts/agent/verify.mjs
+  s_5a14ef979817d5::t_5b5385ca3a2dc9 36-39,52,518,526,650-654,750
+scripts/gate/check.mjs
+  s_5a14ef979817d5::t_d1efcc0f80b417 19,29,44
+scripts/gate/leftovers.mjs
+  s_5a14ef979817d5::t_8c75a6f954c543 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1cc418f9da099c7fe50e37a00c3211a9f71ff48c",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
