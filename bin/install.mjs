@@ -129,7 +129,7 @@ function ownPackage(target, projectRoot, commit) {
 }
 
 async function main(argv) {
-  if (Number(process.versions.node.split(".")[0]) < 20) stop(`Node ${process.versions.node} — the kit needs Node 20 or newer (CI uses 22)`);
+  if (Number(process.versions.node.split(".")[0]) < 22) stop(`Node ${process.versions.node} — the kit needs Node 22 or newer`);
   const call = parse(argv);
   const interactive = !call.yes && process.stdin.isTTY && process.stdout.isTTY;
   const rl = interactive ? readline.createInterface({ input: process.stdin, output: process.stdout }) : undefined;

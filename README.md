@@ -4,6 +4,9 @@ A Playwright + TypeScript test project you build with an AI agent. The agent pla
 them and proves they work; the kit's rules, scripts and checks keep its work reviewable. It ships with no
 application tests — only the machinery around them.
 
+**Status:** an early version, tried on two public apps (TodoMVC, Toolshop). Trying it on your project? Open an
+[issue](https://github.com/Avngrss/playwright-ai-workflow-kit/issues): what broke, and where.
+
 ## What you get
 
 - **A plan before any test.** The agent checks the feature on the live app and shows what it will write — each
@@ -37,7 +40,7 @@ Codex is not set up yet.
 
 ## Install
 
-Node 20+ and git. Two ways:
+Node 22+ and git. Two ways:
 
 | Your case | Do |
 |---|---|
@@ -46,7 +49,8 @@ Node 20+ and git. Two ways:
 
 Then:
 
-1. Open **the kit's folder** in your AI (the `qa/` folder, not the repository's root) and turn on the Playwright MCP.
+1. Open **the kit's folder** in your AI — the folder the installer used (`qa/` by default, not the repository's
+   root) or the template's clone — and turn on the Playwright MCP.
 2. `/setup` — add your app and how its tests sign in; you type the test account into `.env` yourself.
 3. `/plan <a TMS link, a ticket or your words>` — answer **Yes, write them**: the agent writes the tests, verifies
    them and sums up.
@@ -109,7 +113,7 @@ it in four commands, no account needed.
 | `/heal` | one or two red tests |
 | `/triage` | three or more red tests, or a CI run |
 | `/coverage` | a TMS folder, case by case |
-| `/review` | an independent review of new tests, in a new chat |
+| `/review` | Cursor: an independent review of new tests, in a new chat (Claude Code and Copilot run the `reviewer` agent themselves) |
 
 A run's summary ends with the command it needs next. Which command when: [Workflow](docs/workflow.md).
 
@@ -148,6 +152,8 @@ is downloaded. Before the first green run, CI needs the map's `.env` names as va
 ## Known limitations
 
 - A rule is still text: a weaker model can skip what no script checks — the plan's confirm is where you catch it.
+- Tests you already have are not taken over: the kit writes its own in its folder; yours stay where they are,
+  outside its gate.
 - An update merges no file by itself: compare each `<file>.kit-new` with yours.
 - The agent works with the live app: it must be reachable, and an app behind a sign-in needs a test account.
 - Allure's report packages carry `npm audit` findings and an older DOMPurify in the report page: share reports
