@@ -1,0 +1,29 @@
+.gitignore
+  s_5a14ef979817d5::t_fb7bccde9203fb 44-45
+scripts/agent/help.mjs
+  s_5a14ef979817d5::t_347597d3b3c667 1-74
+scripts/agent/test-result.mjs
+  s_5a14ef979817d5::t_46718d25644f08 1-237
+scripts/agent/verify.mjs
+  s_5a14ef979817d5::t_96fdb4de1d93c9 36-39,52,518,526,650-654,750
+scripts/gate/check.mjs
+  s_5a14ef979817d5::t_e3c9eb80f88d9d 19,29,44
+scripts/gate/leftovers.mjs
+  s_5a14ef979817d5::t_36f605768a0695 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5b5ddf8f88def54abb7bb7c79c5bda74beee0b2",
+  "prompts": {},
+  "sessions": {
+    "s_5a14ef979817d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6586234-08a2-446c-b9e2-f5c8a7f3a2b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
