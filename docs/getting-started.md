@@ -4,7 +4,7 @@ From install to the first plan. The everyday path after that: [Workflow](workflo
 
 ## Before you start
 
-- Node 20+ (CI uses 22) and git.
+- Node 22+ and git.
 - Claude Code, Cursor or GitHub Copilot (VS Code or Copilot CLI).
 - A test environment of the app (dev or QA) and a **test account** for it — not your own; sign in with it by hand
   once first.
