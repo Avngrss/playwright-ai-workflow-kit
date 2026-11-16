@@ -1,0 +1,23 @@
+README.md
+  s_c46558a3591eb5::t_4cd5802d954b0a 7-9,43,52-53,116,155-156
+bin/install.mjs
+  s_c46558a3591eb5::t_b2a8c851f02c40 132
+docs/getting-started.md
+  s_c46558a3591eb5::t_beb19c61fefce1 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6640a1d7cd1b8cf7e5f0a73cdaa567a26311d6a6",
+  "prompts": {},
+  "sessions": {
+    "s_c46558a3591eb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_c46558a3591eb5",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
