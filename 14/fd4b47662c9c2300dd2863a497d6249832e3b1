@@ -1,0 +1,83 @@
+.claude/agents/reviewer.md
+  s_eb17811f3021f7::t_79a96fb4b6308a 11-12,47-72
+.claude/rules/claude-code.md
+  s_eb17811f3021f7::t_67feab026a8929 8
+.claude/rules/code.md
+  s_eb17811f3021f7::t_fd611bcd90be56 44-46
+.claude/rules/plans.md
+  s_eb17811f3021f7::t_3719105e7aff61 85,99-102,136-138,173,196-199,209,273-274,300,306-307,325-326,376-382
+.claude/skills/plan/SKILL.md
+  s_eb17811f3021f7::t_d2ae22d9047dc4 171-175,275-278
+.cursor/commands/review.md
+  s_eb17811f3021f7::t_15aa56f2d8df0d 1,4-5,41-66
+.cursor/rules/code.mdc
+  s_eb17811f3021f7::t_d45d31dbfe9578 44-46
+.cursor/rules/plans.mdc
+  s_eb17811f3021f7::t_12c7bef0a82c02 86,100-103,137-139,174,197-200,210,274-275,301,307-308,326-327,377-383
+README.md
+  s_eb17811f3021f7::t_e58176c55d1ba0 116
+agents/commands/review.md
+  s_eb17811f3021f7::t_64689b33c70ce2 2,5-6,41-66
+agents/notes/claude-code.md
+  s_eb17811f3021f7::t_d5be99528e6e93 7
+agents/notes/copilot.md
+  s_eb17811f3021f7::t_da18b2a84e26d0 10-11
+agents/rules/code.md
+  s_eb17811f3021f7::t_361804471709f0 43-45
+agents/rules/plans.md
+  s_eb17811f3021f7::t_37de45a4b3604b 85,99-102,136-138,173,196-199,209,273-274,300,306-307,325-326,376-382
+agents/skills/plan/SKILL.md
+  s_eb17811f3021f7::t_2ddc090e8d9e38 170-174,274-277
+bin/test/plan-guards.test.mjs
+  s_eb17811f3021f7::t_6e3cfb34702aa5 1-237
+"docs/Layer Routing Algorithm.md"
+  s_eb17811f3021f7::t_91bf1c0fab194b 180,320-322,332
+docs/workflow.md
+  s_eb17811f3021f7::t_8bc4d460c166e7 28,189-193
+playwright.config.ts
+  s_eb17811f3021f7::t_730576402353fb 9-12
+scripts/agent/coverage-table.mjs
+  s_eb17811f3021f7::t_22e3981a6d6d3e 56,65
+scripts/agent/plan-block.mjs
+  s_eb17811f3021f7::t_101fc3031c51bf 11-12,45,120-122,128-130,142,145,148,175-179
+scripts/agent/plan-confirm.mjs
+  s_eb17811f3021f7::t_bd57bc9c1e77d2 13,80
+scripts/agent/plan-draft.mjs
+  s_eb17811f3021f7::t_6b01e5ec2e460f 11-14,32,45,84-85,196-197,212-220
+scripts/agent/spec-draft.mjs
+  s_eb17811f3021f7::t_53716b06c048ee 99
+scripts/agent/test-result.mjs
+  s_eb17811f3021f7::t_45ed2877478a1f 41-44,48
+scripts/gate/cases.mjs
+  s_eb17811f3021f7::t_225e85634e4512 1,3-4,140-377
+scripts/gate/context.mjs
+  s_eb17811f3021f7::t_ad53d5d3fa467a 99,101-102,106-107,112-154
+scripts/gate/plans.mjs
+  s_eb17811f3021f7::t_af5852e92605a2 15-18,20-33,154-212,215-217,220-224,237-241,251,253-270
+scripts/gate/routes.mjs
+  s_eb17811f3021f7::t_b2e8cb7af5dd9e 104-105,111
+scripts/run-tests.mjs
+  s_eb17811f3021f7::t_61dbe38f9f4ccf 31-34
+src/fixtures/pages.fixture.ts
+  s_eb17811f3021f7::t_171720aef082c4 28-32,74-76,86-92
+src/reporting/readable-allure.reporter.ts
+  s_eb17811f3021f7::t_db5576fa6efbe5 260
+src/reporting/tms.ts
+  s_eb17811f3021f7::t_9b1737a74b9e51 16-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "14fd4b47662c9c2300dd2863a497d6249832e3b1",
+  "prompts": {},
+  "sessions": {
+    "s_eb17811f3021f7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa2ad4d9-18fd-4a83-84b5-fe9284ddb8c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
