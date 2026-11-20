@@ -1,0 +1,19 @@
+.github/workflows/playwright.yml
+  s_a63d21b8e741ff::t_240fdd871b2b1f 40-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "efd485e1a3cf7537f8e254a220421f94d608599b",
+  "prompts": {},
+  "sessions": {
+    "s_a63d21b8e741ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_a63d21b8e741ff",
+        "model": "unknown"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
