@@ -51,7 +51,8 @@ text changed, a re-checked `Blocked` line):
 - UI: the real page by the case's own gesture; a documented block missing → `blocked`, drift noted.
 - **Routes**, per action: the network requests — does it reach the server, its method, path and query, what
   it sent and what came back — decide the `Route:` (§Routes). **Twice where the app caches** (first open,
-  reopen, a changed period): no request the second time → routed on the first only, or `screen-only`.
+  reopen, a changed period): no request the second time → routed on the first only, the reopen `no-request`
+  (its screen from the first answer).
 - API: read the service's registered contract, a few real calls where it is ambiguous — status codes are the
   usual drift. A status or message no source states is never guessed — searched for (§Searched before blocked).
 - A state cases change that other cases see → a lock (`specs.md`). An overlay or global spinner the test
@@ -82,7 +83,7 @@ one test in that owner's folder, decided by where a failure would point:
 |---|---|---|
 | **UI** (`tests/ui`) | on the screen of the feature where the action happened — the test checks the action's answer and the screen | another feature's screen; an API twin "to check the data" |
 | **E2E** (`tests/e2e`) | somewhere else — another feature, role or app: the action here, the result there | a single-page check |
-| **API** (`tests/api`) | on no screen: another input of a rule (other values, a boundary), access the page never tries (someone else's id, a call the page does not make), the contract, a file's content, a refusal with no screen of its own; two places showing the same figures | a person's scenario written again |
+| **API** (`tests/api`) | on no screen: another input of a rule (other values, a boundary), access the page never tries (someone else's id, a call the page does not make), the contract, a file's content, a refusal with no screen of its own; two places showing the same figures; the answer itself — the fields a case reads in the browser's developer tools | a person's scenario written again |
 
 - Several obligations → scenarios `S1`, `S2`, … — a block and a test each (`<case id> · S2 · <what it proves>`);
   a scenario may take several steps, each with its route. Never split by layer ("the server stores it" / "the
@@ -96,6 +97,11 @@ one test in that owner's folder, decided by where a failure would point:
   bare route line (`intercept GET /api/reports → 403`). A download: the UI starts it; its content is API.
 - An action the app answers with a message: `toast=text` (the exact words, the brief's `Messages:`) **and**
   what it left on screen (`list=value`) — the message alone never passes the case.
+- **The answer itself** — a step reading it (DevTools, a response, a payload) is an *answer step*; the block
+  says who proves it: `- Answer steps: <n> — API: …` (the answer's own fields — an API scenario of the case) or
+  `— UI check: …` (the answer held to the screen — the block listens to it); a step only worded like one (a
+  "payload limit" message on screen) is `— none: <why>`. `plan:block --case` writes the line from the case;
+  `qa:gate` fails it empty, or naming an owner the plan does not have.
 - **Owner check** — never a test for the sake of an owner, from evidence only: no API when nothing falls outside
   the screens · no UI without a screen · no E2E when no journey crosses pages, roles or services. A run limited
   to one owner that finds none → ask: drop the limit · stop; E2E asked, nothing crossing → ask: write it as UI
@@ -129,6 +135,10 @@ never changes it.
   <rule>`, a named rule of `src/assertions/<app>/` stating what the server could get wrong (parts add up, a
   period's bounds — never "the list has items"), its source on `- Rules:`, its oracle (another endpoint) read by
   a fixture or the app's helper, never a spec step; only then the screen from `shown<Block>(answer)`.
+- A later step that shows more of an earlier answer — a reopen from the front end's cache, a value the browser
+  works out of it (a masked card, a client-side total) — is `no-request · screen …`, its fields or `check:` on the
+  route of the step the answer came in; `screen-only` holds only what no answer does (a message, a label) —
+  `qa:gate` fails a `=value` token on a `screen-only` step after an `intercept` in a block being written.
 - The path is evidence, like a locator: moved with the same fields → updated with the test, never a new
   scenario. A route the stand does not hold goes back to the plan, never into a changed check.
 
@@ -163,7 +173,7 @@ never silence.
    | Major | P1 | P2 | P3 |
    | Minor | P2 | P3 | — |
 
-P1 and P2 are written; P3 goes to *Not now* `Postponed`. Priority is for triage, never for choosing a run:
+P1 and P2 are written; P3 goes to *Not now* `Postponed` (`qa:gate` warns of a ready one). Priority is for triage, never for choosing a run:
 every feature case is `@regression`. A case another plan of the app already holds (same outcome, same screen
 or request) → *Not now* `Covered by <that plan> #N`. More than ~8 API or ~6 UI scenarios for one feature
 usually means variants of one rule rated apart — fold them. A mutation whose contract documents an error gets
@@ -186,8 +196,11 @@ smoke, one line why.
 - Given a TMS location its cases **are** the set — one block each, or one per scenario (`### 1. TC-101 · <the
   case's title>`, `### 2. TC-101 · S2 · <what it proves>`); cases named by link or id → only those; a refresh
   loads only the cases the change touches. A loaded case is saved as `state/sources/<id>.json` and drafted by
-  `plan:block --case` (§Plan body) in its own words; a priority word off the plan's scale stays the plan's
-  choice until picked (`Priority: P1 | P2 | P3 (TMS: "High")`).
+  `plan:block --case` (§Plan body) in its own words — never typed: a typed block loses the case's words and its
+  answer steps. The plan's header names its cases (`- Cases: <TMS> <links>`; `none` when it only links them —
+  a new plan of TMS cases without the line fails); there `qa:gate` fails a new case block without `- Drafted
+  from:` and `plan:block --tms` refuses a case. A priority word off the plan's scale
+  stays the plan's choice until picked (`Priority: P1 | P2 | P3 (TMS: "High")`).
 - **Already automated**: a case linked by a test of another feature is *Not now* `Covered by <that spec>`,
   never written again (moving it here moves the existing test). A case whose title and steps match another
   id's is one case copied in the TMS: `Covered by <spec> — the same as <other id>`, and
@@ -197,7 +210,7 @@ smoke, one line why.
   stand is right** — test what it does now, each correction under `## Manual case corrections` · (2) **the case
   is right** — `blocked` with the difference, `· searched: none (the user kept the case)` · (3) **the value is
   an example — test by the criterion** — `Data:` `case says "<value>" → <the criterion>`, the correction `data
-  "<value>" → "<the criterion>"`. Recommended: a drift with a source (a ticket, a commit) → 1; an illustration
+  "<value>" → "<the criterion>"` (`qa:gate` fails such a block whose case the corrections do not name). Recommended: a drift with a source (a ticket, a commit) → 1; an illustration
   → 3; the rest → 2; an unclear value → none; drifts of several kinds → one question per kind.
 - A step no owner can automate (a person's eye, a captcha, a device) → *Not now* `Cannot be automated`. A
   documented rule or critical risk no case covers → *Not now* `Gap`; the user decides.
@@ -261,6 +274,8 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 ```markdown
 # <Area> — <Feature>
 - Ticket: <KEY>-<number> | none
+- Cases: <TMS> <the folder's or the cases' links> | none
+- Review: independent <YYYY-MM-DD> — <n> findings, each fixed or answered (more than 8 ready scenarios)
 
 ## Owners
 - this run: auto | api | ui | e2e
@@ -286,12 +301,14 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 - Status: ready to implement now
 - Data: none | stand | API setup | UI setup | mocked — <what; an illustration: case says "<value>" → <the criterion>>
 - Rules: <each check: rule of the routes — where it is written: the case, the PRD, a doc> (only when a route names a rule)
+- Answer steps: <n> — <API: the answer's own fields | UI check: the answer against the screen> (only when a step reads the server's answer itself)
 - Preconditions: <what must exist | none>
 - Steps:
   1. <what the person or the client does>
      - expect: <the observable outcome that proves THIS scenario — the answer's fields and what the screen shows, as its route names them>
 - Cleanup: <what is removed and how | none>
-  (a block from a bug ends with `- Seen: <its actual result> — <id> "<its title>": the bug's behaviour, never an expect`; no test checks it)
+  (a block from a bug ends with `- Seen: <its actual result> — <id> "<its title>": the bug's behaviour, never an expect`; no test checks it;
+  a block from a TMS case ends with `- Drafted from: state/sources/<id>.json`, written by `plan:block --case`)
 
 ## Browsers, phone, screenshots (a plan with UI cases)
 - browsers: <#N @cross-browser — <the control and why engines differ> | none — <what was checked>>
@@ -309,6 +326,9 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 
 ## API brief
 - endpoints the routes name, statuses from the contract (the fields to assert are in each route)
+- a call only setup, cleanup or a lookup makes says so right after it (`GET /api/shops — setup`); a contract call
+  no case covers is a *Not now* `Gap` line naming it — `qa:gate` fails a call left only here; a family of calls is
+  one line with a `<…>` part (`GET /api/reports/<section>`), covered when a route sends one of them
 
 ## UI brief
 - page, actions, step names
@@ -357,6 +377,13 @@ plan's: fix the plan, print it again — never edit the table. Added by hand:
   | Change | Why`, `edited: <what>` or `removed — folded into #N | the twin of #N | the case dropped the step`,
   counted in the question's `<n>`. **A pass that only changes tests** shows the plan line and this table alone.
 - findings outside this plan — a word about another plan's test only after running it with `--retries=0`.
+
+**A plan of more than 8 ready scenarios is reviewed first** — the writer of a big plan does not see its own gaps:
+`/review <plan>` in a new chat (Claude Code: the reviewer subagent), each finding checked against the plan, the
+cases and the stand — a review is not a source — then fixed, or answered in one line; a choice only the user makes
+goes into one question. Then the header line `- Review: independent <YYYY-MM-DD> — <n> findings, each fixed or
+answered`; a change after that date → the review again. `qa:gate` fails such a plan, new on the branch or gaining
+blocks, without the line or changed after its date.
 
 Only after "write them" does implementation start. After implementing, the plan matches the code: wherever a
 test does or checks something other than the plan's step or `expect`, fix the case and add a change-log line.

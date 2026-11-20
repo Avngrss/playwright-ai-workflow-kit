@@ -53,7 +53,7 @@ function countsLine(rows, lastRunAt) {
 /** The suite's rows: its cases (or every case the app's tests and plans know), sorted as §9 orders them. */
 function suiteRows(data, suite, plan) {
   const known = Object.fromEntries(Object.entries(data.cases ?? {}).filter(([, entry]) => !plan || entry.plan?.plan === plan));
-  const listed = suite?.cases?.length ? suite.cases.map(({ id, title }) => ({ id, key: caseKey(String(id)), title })) : Object.entries(known).map(([key, entry]) => ({ id: entry.tests[0]?.title.match(/^([A-Z][A-Z0-9]*-[A-Z]*\d+)/)?.[1] ?? key, key, title: entry.plan?.title }));
+  const listed = suite?.cases?.length ? suite.cases.map(({ id, title }) => ({ id, key: caseKey(String(id)), title })) : Object.entries(known).map(([key, entry]) => ({ id: entry.tests[0]?.title.match(/^((?:[A-Z][A-Z0-9]*-[A-Z]*|(?!S\d)[A-Z]+)\d+)\s*·/)?.[1] ?? key, key, title: entry.plan?.title }));
   return listed
     .map(({ id, key, title }) => {
       const entry = known[key];
@@ -62,7 +62,7 @@ function suiteRows(data, suite, plan) {
       return {
         id: url ? `[${id}](${url})` : id,
         plainId: id,
-        title: title ?? entry?.plan?.title?.replace(/^[A-Z][A-Z0-9]*-[A-Z]*\d+\s*·\s*/, "") ?? "",
+        title: title ?? entry?.plan?.title?.replace(/^(?:[A-Z][A-Z0-9]*-[A-Z]*|(?!S\d)[A-Z]+)\d+\s*·\s*/, "") ?? "",
         scenarios: entry?.scenarios?.length || (entry?.plan ? 1 : "—"),
         owners: entry ? ownersOf(entry.tests) : "—",
         lastRun: entry?.tests.length ? mark(entry.lastRun) : "—",

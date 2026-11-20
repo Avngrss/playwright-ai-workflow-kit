@@ -95,6 +95,19 @@ function missingChromium() {
   return present.some((entry) => entry.startsWith("chromium-") || entry.startsWith("chromium_headless_shell-")) ? [] : ["chromium"];
 }
 
+/**
+ * An agent's sandbox (Cursor's) points PLAYWRIGHT_BROWSERS_PATH at an empty Temp\cursor-sandbox-cache folder, so an
+ * install there would download Chromium again on every npm install. When this Playwright's Chromium is in the OS
+ * cache and not in that folder, the OS cache's is used; when the OS cache lacks it too, the sandbox folder stays.
+ */
+function preferOsCacheOverSandbox() {
+  const set = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (!set?.includes("cursor-sandbox-cache") || !missingChromium().length) return;
+  delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (missingChromium().length) process.env.PLAYWRIGHT_BROWSERS_PATH = set;
+}
+preferOsCacheOverSandbox();
+
 /** Installs this Playwright's Chromium when it is missing. CI and PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 install browsers their own way. */
 export function ensureBrowsers() {
   if (process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD === "1" || process.env.CI === "true") return;

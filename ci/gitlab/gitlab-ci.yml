@@ -28,7 +28,12 @@ cache:
 baseline:
   stage: gate
   timeout: 20 minutes
+  variables:
+    # The gate judges what this branch changed since the default branch: the whole history, and that branch.
+    GIT_DEPTH: "0"
+    AQA_BASE_BRANCH: origin/$CI_DEFAULT_BRANCH
   script:
+    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH" || true
     - npm ci
     - npm run qa:gate
     - npm run test:list

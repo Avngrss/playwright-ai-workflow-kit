@@ -10,7 +10,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { parseRoute, readPlans } from "../gate/plans.mjs";
+import { CASE_PREFIX, parseRoute, readPlans } from "../gate/plans.mjs";
 import { titlesIn } from "./test-result.mjs";
 
 const cell = (text) => String(text ?? "").replace(/\|/g, "\\|").trim();
@@ -77,7 +77,7 @@ export function renderConfirm({ plan, text, existing, lastResults = [] }) {
   const written = ready.filter((block) => has(block));
   const notNow = plan.notNow;
   const auth = /^- auth as:.*?role:\s*([^\n·]+)/m.exec(text)?.[1]?.trim() ?? "none";
-  const basis = blocks.some(({ title }) => /^[A-Z][A-Z0-9]*-[A-Z]*\d+\b/.test(title)) || notNow.some(({ ids }) => ids.length) ? "test-cases" : /^- Ticket:\s*(?!none\b)\S/m.test(text) ? "requirements" : "value-and-risk";
+  const basis = blocks.some(({ title }) => new RegExp(`^${CASE_PREFIX}\\d+\\s*·`).test(title)) || notNow.some(({ ids }) => ids.length) ? "test-cases" : /^- Ticket:\s*(?!none\b)\S/m.test(text) ? "requirements" : "value-and-risk";
   const out = [`Plan: \`${plan.plan}\` · basis: ${basis} · role: ${auth}`, ""];
 
   if (!toWrite.length) {

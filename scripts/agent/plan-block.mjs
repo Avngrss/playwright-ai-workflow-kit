@@ -8,7 +8,8 @@
  *   npm run plan:block -- <plan> --title "<title>" [--tms <id>[,<id>…]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>] [--tag <tag>…] [--rules "<source>"] [--steps "<step>" …]
  *
  *   --title  the outcome in one sentence; with --tms the case id goes first ("TC-101 · …", a scenario "S2 · …" → "TC-101 · S2 · …")
- *   --tms    the case(s) it proves, the first one naming it; then Why is "case <id>"
+ *   --tms    the case(s) it proves, the first one naming it; then Why is "case <id>" — never in a plan
+ *            built from TMS cases (its header's `- Cases:`): a case's block there comes from --case
  *   --owner  its one owner; --why the reason on its Level line — where the result is
  *   --role   a role of specs/project-map.md
  *   --tag    a tag besides @regression on its Level line (@smoke, @cross-browser, @responsive); once per tag
@@ -41,6 +42,7 @@ export const PLACEHOLDER = {
   basis: "<the basis in ≤ 8 words>",
   data: 'none | stand | API setup | UI setup | mocked — <what; an illustration: case says "<value>" → <the criterion>>',
   rules: "<each check: rule of the routes — where it is written: the case, the PRD, a doc>",
+  answer: "<API: the answer's own fields — an API scenario of the case | UI check: the answer against the screen — this block listens to it>",
   preconditions: "<what must exist | none>",
   step: "<what the person or the client does>",
   expect: "<the observable outcome that proves THIS scenario — the answer's fields and what the screen shows, as its route names them>",
@@ -115,12 +117,17 @@ function parse(argv) {
  * `value`, `basis`, `rules`, `preconditions`, `expects` (one per step), `after` (lines below Cleanup)
  * — replaces the template's words; without them it is the empty block. `tags` join @regression on
  * the Level line; a Rules line only with `rules` — a route naming a rule (`check:`) cites its source there.
+ * A drafted block adds two lines of its own: `- Answer steps:` (`answerSteps`, the steps reading the
+ * server's answer itself — who proves them is the agent's to say) and, last, `- Drafted from:` (`drafted`,
+ * the source file — the gate reads it). `firstStep` numbers a scenario's steps as its case does.
  */
 export function blockOf(number, call) {
   const [first] = call.ids;
   const title = first && !call.title.startsWith(`${first} · `) ? `${first} · ${call.title}` : call.title;
   const steps = call.steps.length ? call.steps : [PLACEHOLDER.step];
-  const routed = steps.map((step, index) => ({ step, n: index + 1 })).filter(({ step }) => !isPrep(step));
+  // A scenario split out of a case keeps the case's step numbers (docs/Layer Routing Algorithm.md §7).
+  const start = call.firstStep ?? 1;
+  const routed = steps.map((step, index) => ({ step, n: start + index })).filter(({ step }) => !isPrep(step));
   const routes =
     routed.length > 1 ? routed.map(({ n }, index) => `- Route (step ${n}): ${index === 0 ? PLACEHOLDER.route : PLACEHOLDER.routeOfStep}`) : [`- Route: ${PLACEHOLDER.route}`];
   return [
@@ -132,11 +139,13 @@ export function blockOf(number, call) {
     "- Status: ready to implement now",
     `- Data: ${PLACEHOLDER.data}`,
     ...(call.rules ? [`- Rules: ${call.rules}`] : []),
+    ...(call.answerSteps?.length ? [`- Answer steps: ${call.answerSteps.join(", ")} — ${PLACEHOLDER.answer}`] : []),
     `- Preconditions: ${call.preconditions ?? PLACEHOLDER.preconditions}`,
     "- Steps:",
-    ...steps.flatMap((step, index) => [`  ${index + 1}. ${step}`, `     - expect: ${call.expects?.[index] || PLACEHOLDER.expect}`]),
+    ...steps.flatMap((step, index) => [`  ${start + index}. ${step}`, `     - expect: ${call.expects?.[index] || PLACEHOLDER.expect}`]),
     `- Cleanup: ${PLACEHOLDER.cleanup}`,
     ...(call.after ?? []),
+    ...(call.drafted ? [`- Drafted from: ${call.drafted}`] : []),
   ].join("\n");
 }
 
@@ -163,6 +172,11 @@ export function appendBlock(call, { held, notes = [] } = {}) {
   const original = fs.readFileSync(full, "utf8");
   const eol = original.includes("\r\n") ? "\r\n" : "\n";
   const text = original.replace(/\r\n/g, "\n");
+  // A plan built from TMS cases (`- Cases:` in its header) takes a case's block only from its saved source.
+  const fromCases = /^- Cases:[ \t]*(?!none\b|<)\S/im.test(text.split(/^## Test cases[ \t]*$/m)[0]);
+  if (fromCases && call.ids.length && !call.drafted) {
+    stop(`${place.file} is built from TMS cases — a case's block comes from its saved source: save it as state/sources/<id>.json, then npm run plan:block -- ${place.file} --case state/sources/<id>.json (it copies the case and marks its answer steps)`);
+  }
   const head = /^## Test cases[ \t]*$/m.exec(text);
   if (!head) stop(`${place.file} has no "## Test cases" section — the plan template's sections come first (agents/rules/plans.md §Plan body)`);
   const start = head.index + head[0].length;
