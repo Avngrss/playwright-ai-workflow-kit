@@ -37,6 +37,11 @@ jobs:
     name: Baseline Gate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # The secret scan reads a pull request's commits through the API (and comments on a leak): in a private
+    # repository the default token is not allowed to, and the scan fails before it looks at anything.
+    permissions:
+      contents: read
+      pull-requests: write
     outputs:
       has_tests: ${{ steps.detect-tests.outputs.has_tests }}
       playwright: ${{ steps.playwright.outputs.version }}
