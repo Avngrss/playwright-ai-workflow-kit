@@ -1,0 +1,59 @@
+.claude/agents/reviewer.md
+  s_eb17811f3021f7::t_f5423462f64f15 3,8,15-16
+.claude/rules/plans.md
+  s_eb17811f3021f7::t_7d6e750e179cd1 54-55,102-104,138-141,200-202,329-330
+.cursor/commands/review.md
+  s_eb17811f3021f7::t_177a91431af94e 8-9
+.cursor/rules/plans.mdc
+  s_eb17811f3021f7::t_dd81c4011e9f28 55-56,103-105,139-142,201-203,330-331
+scripts/gate/cases.mjs
+  s_eb17811f3021f7::t_a7d69c24f9e2a3 4,145-147,151-154,165-167,169-170,175-192,217-218,221,223-233,241-244,257-258,274,276,281-284,286,343-347,357-370,375-376,382,385-386,396-398,402,407,411
+scripts/gate/plans.mjs
+  s_eb17811f3021f7::t_3b7cef52ffc899 155-158,161
+agents/commands/review.md
+  s_eb17811f3021f7::t_4e0e0783c7211c 9-10
+agents/rules/plans.md
+  s_eb17811f3021f7::t_5a0bbef828fc49 54-55,102-104,138-141,200-202,329-330
+bin/test/plan-guards.test.mjs
+  s_eb17811f3021f7::t_a1f333458ff6a3 238-339
+ci/gitlab/gitlab-ci.yml
+  s_eb17811f3021f7::t_2ce7e3febc5a63 31-34,36
+"docs/Layer Routing Algorithm.md"
+  s_eb17811f3021f7::t_4f4ab8e5ff47e9 128,130,180,320-322
+playwright.config.ts
+  s_eb17811f3021f7::t_dffb30bccfc34e 6,10
+scripts/agent/agents-sync.mjs
+  s_eb17811f3021f7::t_660a1686fbfdfe 164,168
+scripts/agent/coverage-table.mjs
+  s_eb17811f3021f7::t_ef6fbef15da808 56
+scripts/agent/plan-block.mjs
+  s_eb17811f3021f7::t_1133a09adf88de 176
+scripts/agent/plan-confirm.mjs
+  s_eb17811f3021f7::t_c6567148b3262a 80
+scripts/agent/spec-draft.mjs
+  s_eb17811f3021f7::t_3aff33cec85a6e 99-100
+scripts/agent/test-result.mjs
+  s_eb17811f3021f7::t_0b816e726b8b9c 41-48,52
+scripts/gate/context.mjs
+  s_eb17811f3021f7::t_ffa3f39de2637e 124-125
+scripts/run-tests.mjs
+  s_eb17811f3021f7::t_c76a3008ef05be 98-110
+src/setup/browsers-path.ts
+  s_eb17811f3021f7::t_5b0acecc5b96d8 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b15fc582e1e6db71566696da7a8b29a08554ce86",
+  "prompts": {},
+  "sessions": {
+    "s_eb17811f3021f7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa2ad4d9-18fd-4a83-84b5-fe9284ddb8c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
