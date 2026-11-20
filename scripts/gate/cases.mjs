@@ -345,15 +345,25 @@ function checkP3Postponed(_files, report) {
  * with "…"), `**GET** /api/x`, a table's `| GET | /api/x |`. A path has a "/" — "a second GET with a wrong id" names none.
  */
 const CALL = /\b(GET|POST|PUT|PATCH|DELETE|QUERY|HEAD|OPTIONS)\b[*`|\s]+((?:…|\.\.\.)?[\w{}<>:.-]*\/[\w{}<>:.\/-]*[\w}>])/g;
-/** A path as one key: no query, every parameter `{}`, no leading slash, any case; `…` kept as "a path ending so". */
+/**
+ * A path as one key: no query, every parameter (`{id}`, `:id`) `{}`, a family placeholder (`<section>`) `*`, no
+ * leading slash, any case; `…` kept as "a path ending so".
+ */
 const pathKey = (path) =>
   path
     .replace(/[?#].*$/, "")
-    .replace(/\{[^}]*\}|<[^>]*>|:\w+/g, "{}")
+    .replace(/<[^>]*>/g, "*")
+    .replace(/\{[^}]*\}|:\w+/g, "{}")
     .replace(/^\/+|\/+$/g, "")
     .toLowerCase();
 const callsIn = (text) => [...String(text ?? "").matchAll(CALL)].map(([, method, path]) => ({ method, key: pathKey(path.replace(/^(?:…|\.\.\.)\/?/, "")), cut: /^(?:…|\.\.\.)/.test(path) }));
-const sameCall = (named, { method, key }) => named.method === method && (named.cut ? key === named.key || key.endsWith(`/${named.key}`) : key === named.key);
+/** A named call's key as a pattern: `*` — a family — one or more segments; a cut path any start. */
+const keyPattern = ({ key, cut }) =>
+  new RegExp(`^${cut ? "(?:.+/)?" : ""}${key.split("*").map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[^/]+(?:/[^/]+)*")}$`);
+/** A brief's call is a route's: the same method and path — a family (`GET /api/x/<section>`) covered by any one of its members. */
+const sameCall = (named, { method, key }) => named.method === method && keyPattern(named).test(key);
+/** A brief's call a Not now line names — either one's path may be the other's cut short. */
+const parkedCall = (named, call) => call.method === named.method && (keyPattern({ ...named, cut: true }).test(call.key) || keyPattern({ ...call, cut: true }).test(named.key));
 /**
  * A call's own mark that only setup, cleanup or a lookup makes it — "— setup", "(cleanup)", "- the lookup" right
  * after it, before the next call of the line: no scenario of its own owes it.
@@ -379,9 +389,9 @@ function checkApiBrief(_files, report) {
   for (const { plan, file, brief, cases, notNow } of readPlans(ROOT)) {
     const routed = cases.flatMap(({ routes }) => routes.flatMap((route) => [route, ...(route.read ? [route.read] : [])])).filter(({ method, path: route }) => method && route).map(({ method, path: route }) => ({ method, key: pathKey(route) }));
     const parked = notNow.flatMap(({ line }) => callsIn(line));
-    const loose = briefCalls(brief).filter((named) => !routed.some((call) => sameCall(named, call)) && !parked.some((call) => call.method === named.method && (call.key === named.key || call.key.endsWith(`/${named.key}`) || named.key.endsWith(`/${call.key}`))));
+    const loose = briefCalls(brief).filter((named) => !routed.some((call) => sameCall(named, call)) && !parked.some((call) => parkedCall(named, call)));
     if (!loose.length) continue;
-    const names = [...new Set(loose.map(({ method, key, cut }) => `${method} ${cut ? "…/" : "/"}${key}`))];
+    const names = [...new Set(loose.map(({ method, key, cut }) => `${method} ${cut ? "…/" : "/"}${key.replace(/\*/g, "<…>")}`))];
     const writing = inProgressPlan(file);
     const say = withoutGit() || (writing && (writing.isNew || writing.briefChanged || writing.touched.length)) ? report.fail : report.warn;
     say(

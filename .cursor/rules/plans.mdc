@@ -328,7 +328,8 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 ## API brief
 - endpoints the routes name, statuses from the contract (the fields to assert are in each route)
 - a call only setup, cleanup or a lookup makes says so right after it (`GET /api/shops — setup`); a contract call
-  no case covers is a *Not now* `Gap` line naming it — `qa:gate` fails a call left only here
+  no case covers is a *Not now* `Gap` line naming it — `qa:gate` fails a call left only here; a family of calls is
+  one line with a `<…>` part (`GET /api/reports/<section>`), covered when a route sends one of them
 
 ## UI brief
 - page, actions, step names

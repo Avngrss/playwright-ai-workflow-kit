@@ -251,6 +251,16 @@ test("API brief reading: a method in prose is no call, bold and table calls are 
   assert.doesNotMatch(marked.out, /names POST/);
 });
 
+test("API brief: a family of calls (`<section>`) is covered by any one of its members a route sends, and missed when none is", () => {
+  const home = project();
+  home.write(PLAN, planOf([block(1, "TC-301")], { brief: "- The order's parts, each a GET of /api/orders/{id}/<part> → 200\n- GET /api/<resource>/{id} → 200" }));
+  const covered = home.gate();
+  home.write(PLAN, planOf([block(1, "TC-301")], { brief: "- GET /api/reports/<section> → 200" }));
+  const missed = home.gate();
+  assert.deepEqual(lines(covered.out, "## API brief"), [], covered.out);
+  assert.match(missed.out, /^✗ .*"## API brief" names GET \/api\/reports\/<…>, which no route sends/m, missed.out);
+});
+
 test("a plan the branch only renamed, or touched in its change log, keeps its old findings as warnings", () => {
   const home = project();
   const old = planOf([block(1, "TC-309", { route: ["- Route (step 1): intercept GET /api/orders/{id} → id, total · screen order=value", "- Route (step 2): screen-only · screen total=value"], steps: ["Open the order", "Look at its total"] })], {
