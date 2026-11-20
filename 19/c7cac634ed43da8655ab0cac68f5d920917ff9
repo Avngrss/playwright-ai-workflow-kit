@@ -1,0 +1,93 @@
+.claude/agents/reviewer.md
+  s_eb17811f3021f7::t_df99099b333b89 3,8,11-12,15-16,48-73
+.claude/rules/claude-code.md
+  s_eb17811f3021f7::t_a2352e49e1b5e0 8
+.claude/rules/code.md
+  s_eb17811f3021f7::t_32d6f215a0df4f 44-46
+.claude/rules/plans.md
+  s_eb17811f3021f7::t_15746fd544aeb1 54-55,86,100-104,138-141,176,199-203,213,277-278,304,310-311,329-331,381-387
+.claude/skills/plan/SKILL.md
+  s_eb17811f3021f7::t_bca5c8a2493cf3 171-175,275-278
+.cursor/commands/review.md
+  s_eb17811f3021f7::t_7c054c55dc20d7 1,4-5,8-9,42-67
+.cursor/rules/code.mdc
+  s_eb17811f3021f7::t_50dc0ed9c95207 44-46
+.cursor/rules/plans.mdc
+  s_eb17811f3021f7::t_7ae9d395f46d91 55-56,87,101-105,139-142,177,200-204,214,278-279,305,311-312,330-332,382-388
+.github/workflows/playwright.yml
+  s_eb17811f3021f7::t_e21e37ece79499 41-45
+agents/commands/review.md
+  s_eb17811f3021f7::t_79bed29cb5b4a3 2,5-6,9-10,42-67
+agents/notes/claude-code.md
+  s_eb17811f3021f7::t_96a877fa949798 7
+agents/notes/copilot.md
+  s_eb17811f3021f7::t_c3d2ceae6d8361 10-11
+agents/rules/code.md
+  s_eb17811f3021f7::t_c17c0a540f98e2 43-45
+agents/rules/plans.md
+  s_eb17811f3021f7::t_c6eab65805efe6 54-55,86,100-104,138-141,176,199-203,213,277-278,304,310-311,329-331,381-387
+agents/skills/plan/SKILL.md
+  s_eb17811f3021f7::t_deb22b9f07367e 170-174,274-277
+bin/test/plan-guards.test.mjs
+  s_eb17811f3021f7::t_f89c76524745ff 1-349
+ci/gitlab/gitlab-ci.yml
+  s_eb17811f3021f7::t_9d85c3fb7f46b9 31-34,36
+"docs/Layer Routing Algorithm.md"
+  s_eb17811f3021f7::t_01c950009b009f 128,130,180,320-322,332
+docs/workflow.md
+  s_eb17811f3021f7::t_c1905aa5b2690d 28,189-193
+package-lock.json
+  s_eb17811f3021f7::t_4764601054ec1b 3,9
+package.json
+  s_eb17811f3021f7::t_9f9b06aea08928 3
+playwright.config.ts
+  s_eb17811f3021f7::t_3e9a01d35de3db 6,10
+scripts/agent/agents-sync.mjs
+  s_eb17811f3021f7::t_649d016fe88be9 164,168
+scripts/agent/coverage-table.mjs
+  s_eb17811f3021f7::t_5a39d77faf45b4 56,65
+scripts/agent/plan-block.mjs
+  s_eb17811f3021f7::t_0f11bad2145c39 11-12,45,120-122,128-130,142,145,148,175-179
+scripts/agent/plan-confirm.mjs
+  s_eb17811f3021f7::t_6f91a4d25f37d0 13,80
+scripts/agent/plan-draft.mjs
+  s_eb17811f3021f7::t_7ca9dc1cf2be98 11-14,32,45,84-85,196-197,212-220
+scripts/agent/spec-draft.mjs
+  s_eb17811f3021f7::t_0d7ad18b462a01 99-100
+scripts/agent/test-result.mjs
+  s_eb17811f3021f7::t_73209d4da16e87 41-48,52
+scripts/gate/cases.mjs
+  s_eb17811f3021f7::t_3b3f57d265c9fd 1,3-4,140-440
+scripts/gate/context.mjs
+  s_eb17811f3021f7::t_585d18a500fa25 99,101-102,106-107,112-155
+scripts/gate/plans.mjs
+  s_eb17811f3021f7::t_8b0b1d172cdf0e 15-18,20-33,154-213,216-218,221-225,238-242,252,254-271
+scripts/gate/routes.mjs
+  s_eb17811f3021f7::t_d2b72d0b0c8e52 104-105,111
+scripts/run-tests.mjs
+  s_eb17811f3021f7::t_944a7f14d65190 98-110
+src/fixtures/pages.fixture.ts
+  s_eb17811f3021f7::t_bcae41554f0d87 28-32,74-76,86-92
+src/reporting/readable-allure.reporter.ts
+  s_eb17811f3021f7::t_70d0aabab990d7 260
+src/reporting/tms.ts
+  s_eb17811f3021f7::t_6640063fb11518 16-17
+src/setup/browsers-path.ts
+  s_eb17811f3021f7::t_4fce38754b7ae5 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19c7cac634ed43da8655ab0cac68f5d920917ff9",
+  "prompts": {},
+  "sessions": {
+    "s_eb17811f3021f7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa2ad4d9-18fd-4a83-84b5-fe9284ddb8c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "avngrss <sedow94@mail.ru>"
+    }
+  }
+}
