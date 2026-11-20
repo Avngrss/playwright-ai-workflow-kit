@@ -51,7 +51,8 @@ text changed, a re-checked `Blocked` line):
 - UI: the real page by the case's own gesture; a documented block missing → `blocked`, drift noted.
 - **Routes**, per action: the network requests — does it reach the server, its method, path and query, what
   it sent and what came back — decide the `Route:` (§Routes). **Twice where the app caches** (first open,
-  reopen, a changed period): no request the second time → routed on the first only, or `screen-only`.
+  reopen, a changed period): no request the second time → routed on the first only, the reopen `no-request`
+  (its screen from the first answer).
 - API: read the service's registered contract, a few real calls where it is ambiguous — status codes are the
   usual drift. A status or message no source states is never guessed — searched for (§Searched before blocked).
 - A state cases change that other cases see → a lock (`specs.md`). An overlay or global spinner the test
@@ -98,8 +99,9 @@ one test in that owner's folder, decided by where a failure would point:
   what it left on screen (`list=value`) — the message alone never passes the case.
 - **The answer itself** — a step reading it (DevTools, a response, a payload) is an *answer step*; the block
   says who proves it: `- Answer steps: <n> — API: …` (the answer's own fields — an API scenario of the case) or
-  `— UI check: …` (the answer held to the screen — the block listens to it). `plan:block --case` writes the line
-  from the case; `qa:gate` fails it empty, or naming an owner the plan does not have.
+  `— UI check: …` (the answer held to the screen — the block listens to it); a step only worded like one (a
+  "payload limit" message on screen) is `— none: <why>`. `plan:block --case` writes the line from the case;
+  `qa:gate` fails it empty, or naming an owner the plan does not have.
 - **Owner check** — never a test for the sake of an owner, from evidence only: no API when nothing falls outside
   the screens · no UI without a screen · no E2E when no journey crosses pages, roles or services. A run limited
   to one owner that finds none → ask: drop the limit · stop; E2E asked, nothing crossing → ask: write it as UI
@@ -133,9 +135,10 @@ never changes it.
   <rule>`, a named rule of `src/assertions/<app>/` stating what the server could get wrong (parts add up, a
   period's bounds — never "the list has items"), its source on `- Rules:`, its oracle (another endpoint) read by
   a fixture or the app's helper, never a spec step; only then the screen from `shown<Block>(answer)`.
-- A later step that shows more of an earlier answer is `no-request · screen …`, its fields or `check:` on the
-  route of the step the answer came in; `screen-only` holds only what no answer does (a message, a reopen from
-  cache) — `qa:gate` fails a `=value` token on a `screen-only` step after an `intercept` in a plan being written.
+- A later step that shows more of an earlier answer — a reopen from the front end's cache, a value the browser
+  works out of it (a masked card, a client-side total) — is `no-request · screen …`, its fields or `check:` on the
+  route of the step the answer came in; `screen-only` holds only what no answer does (a message, a label) —
+  `qa:gate` fails a `=value` token on a `screen-only` step after an `intercept` in a block being written.
 - The path is evidence, like a locator: moved with the same fields → updated with the test, never a new
   scenario. A route the stand does not hold goes back to the plan, never into a changed check.
 
@@ -194,8 +197,9 @@ smoke, one line why.
   case's title>`, `### 2. TC-101 · S2 · <what it proves>`); cases named by link or id → only those; a refresh
   loads only the cases the change touches. A loaded case is saved as `state/sources/<id>.json` and drafted by
   `plan:block --case` (§Plan body) in its own words — never typed: a typed block loses the case's words and its
-  answer steps. The plan's header names its cases (`- Cases: <TMS> <links>`); there `qa:gate` fails a new case
-  block without `- Drafted from:` and `plan:block --tms` refuses a case. A priority word off the plan's scale
+  answer steps. The plan's header names its cases (`- Cases: <TMS> <links>`; `none` when it only links them —
+  a new plan of TMS cases without the line fails); there `qa:gate` fails a new case block without `- Drafted
+  from:` and `plan:block --tms` refuses a case. A priority word off the plan's scale
   stays the plan's choice until picked (`Priority: P1 | P2 | P3 (TMS: "High")`).
 - **Already automated**: a case linked by a test of another feature is *Not now* `Covered by <that spec>`,
   never written again (moving it here moves the existing test). A case whose title and steps match another
@@ -322,8 +326,8 @@ from the live check (`npm run spec:draft` refuses a block still holding one). A 
 
 ## API brief
 - endpoints the routes name, statuses from the contract (the fields to assert are in each route)
-- a call only setup, cleanup or a lookup makes says so on its line (`— setup`); a contract call no case covers is a
-  *Not now* `Gap` line naming it — `qa:gate` fails a call left only here
+- a call only setup, cleanup or a lookup makes says so right after it (`GET /api/shops — setup`); a contract call
+  no case covers is a *Not now* `Gap` line naming it — `qa:gate` fails a call left only here
 
 ## UI brief
 - page, actions, step names

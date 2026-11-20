@@ -235,3 +235,105 @@ test("plan:block --case --take: a scenario keeps the case's step numbers", () =>
   assert.match(text, /^- Route \(step 2\): /m);
   assert.match(text, /^- Route \(step 3\): /m);
 });
+
+test("API brief reading: a method in prose is no call, bold and table calls are read, a setup mark covers only its own call", () => {
+  const home = project();
+  const brief = (text) => planOf([block(1, "TC-301")], { brief: text });
+  home.write(PLAN, brief("- GET /api/orders/{id} → 200; a second GET with a wrong id → 404 — POST of the form is not sent"));
+  const prose = home.gate();
+  home.write(PLAN, brief("| Method | Path |\n|---|---|\n| GET | /api/orders/{id} |\n| **DELETE** | /api/orders/{id} |"));
+  const table = home.gate();
+  home.write(PLAN, brief("- POST /api/orders → 201 — setup; PATCH /api/orders/{id} → 200"));
+  const marked = home.gate();
+  assert.deepEqual(lines(prose.out, "## API brief"), [], prose.out);
+  assert.match(table.out, /names DELETE \/api\/orders\/\{\}, which no route sends/, table.out);
+  assert.match(marked.out, /names PATCH \/api\/orders\/\{\}, which/, marked.out);
+  assert.doesNotMatch(marked.out, /names POST/);
+});
+
+test("a plan the branch only renamed, or touched in its change log, keeps its old findings as warnings", () => {
+  const home = project();
+  const old = planOf([block(1, "TC-309", { route: ["- Route (step 1): intercept GET /api/orders/{id} → id, total · screen order=value", "- Route (step 2): screen-only · screen total=value"], steps: ["Open the order", "Look at its total"] })], {
+    brief: "- GET /api/orders/{id} → 200\n- DELETE /api/orders/{id} → 204",
+  });
+  home.write(PLAN, old);
+  home.commit(PLAN);
+  home.git("checkout", "-q", "-b", "feature/next");
+  home.write(PLAN, old.replace("cases affected: none, new plan", "cases affected: none, new plan\n- 2026-11-21 — a heal — cases affected: none"));
+  const logged = home.gate();
+  const renamed = "specs/shop/orders/order-page/order-page.md";
+  fs.mkdirSync(path.join(home.dir, path.dirname(renamed)), { recursive: true });
+  home.write(PLAN, old);
+  home.git("mv", PLAN, renamed);
+  const moved = home.gate();
+  for (const run of [logged, moved]) {
+    assert.match(run.out, /^! .*a value shown after the answer of step 1/m, run.out);
+    assert.match(run.out, /^! .*"## API brief" names DELETE/m, run.out);
+    assert.doesNotMatch(run.out, /^✗ .*(a value shown after|## API brief)/m, run.out);
+  }
+});
+
+test("answer steps: a word alone is none, `none: <why>` is an answer, an intercept with a read listens", () => {
+  const home = project();
+  const withSteps = (steps, extra = [], route) => planOf([block(1, "TC-305", { steps, extra, route })]);
+  home.write(PLAN, withSteps(["The payload limit message is shown", 'Click "Response" in the menu']));
+  const words = home.gate();
+  home.write(PLAN, withSteps(["Open the order", "Read the response body"], ["- Answer steps: 2 — none: the body is shown on the page itself"]));
+  const none = home.gate();
+  home.write(PLAN, withSteps(["Open the order", "Read the response body"], ["- Answer steps: 2 — UI check: the answer against the screen"], "intercept PUT /api/profile → sent: card.number · empty · read GET /api/profile → name · screen card=state"));
+  const read = home.gate();
+  for (const run of [words, none, read]) assert.deepEqual(lines(run.out, "read the server's answer"), [], run.out);
+  assert.deepEqual(lines(none.out, "Answer steps"), [], none.out);
+});
+
+test("a plan under a folder named in another alphabet keeps its old blocks", () => {
+  const home = project();
+  const plan = "specs/shop/заказы/orders/orders.md";
+  const old = planOf([block(1, "TC-307", { drafted: false })]);
+  home.write(plan, old);
+  home.commit(plan);
+  home.git("checkout", "-q", "-b", "feature/next");
+  home.write("state/sources/TC-308.json", JSON.stringify({ id: "TC-308", title: "Customer sees an order", steps: "1. Open the order" }));
+  home.write(plan, old.replace("## Test cases\n### 1.", `## Test cases\n${block(1, "TC-308")}\n\n### 2.`));
+  const run = home.gate();
+  assert.deepEqual(lines(run.out, "TC-307"), [], run.out);
+});
+
+test("a case's source: its JSON's id counts, whatever the file is called; two blocks of one case stay apart", () => {
+  const home = project();
+  home.write(PLAN, planOf([]));
+  home.write("state/sources/order-page.json", JSON.stringify({ id: "TC-304", title: "Customer sees an order", steps: "1. Open the order" }));
+  const drafted = home.run("scripts/agent/plan-block.mjs", [PLAN, "--case", "state/sources/order-page.json"]);
+  const named = home.gate();
+  const twice = planOf([block(1, "TC-401", { data: 'stand — case says "Blue mug" → any product' }), block(2, "TC-401", { title: "Customer sees an order again" })], { corrections: "- TC-401 step 1 — data \"Blue mug\" → \"any product\"\n" });
+  home.write(PLAN, twice);
+  home.commit(PLAN);
+  home.git("checkout", "-q", "-b", "feature/next");
+  home.write("state/sources/TC-402.json", JSON.stringify({ id: "TC-402", title: "Customer pays", steps: "1. Pay" }));
+  home.write(PLAN, twice.replace("\n## Browsers", `\n\n${block(3, "TC-402", { title: "Customer pays" })}\n\n## Browsers`).replace(/^- TC-401 step 1 .*\n/m, ""));
+  const apart = home.gate();
+  assert.equal(drafted.code, 0, drafted.out);
+  assert.deepEqual(lines(named.out, "another case's source"), [], named.out);
+  assert.doesNotMatch(apart.out, /^✗ .*TC-401/m, apart.out);
+});
+
+test("- Cases: the template's own <…> names no cases; a new plan of TMS cases without the line fails", () => {
+  const home = project();
+  home.write(PLAN, planOf([block(1, "TC-301", { drafted: false })], { cases: false }).replace("- Ticket: none", "- Ticket: none\n- Cases: <TMS> <the folder's or the cases' links> | none"));
+  const typedHere = home.run("scripts/agent/plan-block.mjs", [PLAN, "--title", "Customer sees an order", "--tms", "TC-303"]);
+  home.write(PLAN, planOf([block(1, "TC-301", { drafted: false })], { cases: false }));
+  const unsaid = home.gate();
+  home.write(PLAN, planOf([block(1, "TC-301", { drafted: false })], { cases: false }).replace("- Ticket: none", "- Ticket: none\n- Cases: none"));
+  const linkedOnly = home.gate();
+  assert.equal(typedHere.code, 0, typedHere.out);
+  assert.match(unsaid.out, /^✗ .*are TMS cases \(TC-301\), and the header does not say where they come from/m, unsaid.out);
+  assert.deepEqual(lines(linkedOnly.out, "TMS cases"), [], linkedOnly.out);
+});
+
+test("GitLab CI's gate job has the default branch to compare with — else the block guards would have no base", () => {
+  const ci = fs.readFileSync(path.join(KIT, "ci", "gitlab", "gitlab-ci.yml"), "utf8");
+  const baseline = /^baseline:\n((?:[ ].*\n|\n)*)/m.exec(ci.replace(/\r\n/g, "\n"))?.[1] ?? "";
+  assert.match(baseline, /GIT_DEPTH: "0"/);
+  assert.match(baseline, /AQA_BASE_BRANCH: origin\/\$CI_DEFAULT_BRANCH/);
+  assert.match(baseline, /git fetch --quiet origin "\+refs\/heads\/\$CI_DEFAULT_BRANCH:refs\/remotes\/origin\/\$CI_DEFAULT_BRANCH"/);
+});

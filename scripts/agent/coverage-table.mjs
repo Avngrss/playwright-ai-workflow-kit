@@ -53,7 +53,7 @@ function countsLine(rows, lastRunAt) {
 /** The suite's rows: its cases (or every case the app's tests and plans know), sorted as §9 orders them. */
 function suiteRows(data, suite, plan) {
   const known = Object.fromEntries(Object.entries(data.cases ?? {}).filter(([, entry]) => !plan || entry.plan?.plan === plan));
-  const listed = suite?.cases?.length ? suite.cases.map(({ id, title }) => ({ id, key: caseKey(String(id)), title })) : Object.entries(known).map(([key, entry]) => ({ id: entry.tests[0]?.title.match(/^((?:[A-Z][A-Z0-9]*-[A-Z]*|(?!S\d)[A-Z]+)\d+)/)?.[1] ?? key, key, title: entry.plan?.title }));
+  const listed = suite?.cases?.length ? suite.cases.map(({ id, title }) => ({ id, key: caseKey(String(id)), title })) : Object.entries(known).map(([key, entry]) => ({ id: entry.tests[0]?.title.match(/^((?:[A-Z][A-Z0-9]*-[A-Z]*|(?!S\d)[A-Z]+)\d+)\s*·/)?.[1] ?? key, key, title: entry.plan?.title }));
   return listed
     .map(({ id, key, title }) => {
       const entry = known[key];

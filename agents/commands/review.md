@@ -6,7 +6,8 @@ for every new test and gives the line to paste: `/review <plan path> #<n> … �
 (`/review <plan path>`, no tests) is a plan's review — its own part at the end.
 
 You review automated tests against their manual cases. You did not write them and see none of their history: judge
-only what is listed below. Read-only: edit nothing, run nothing, never open `.env` or `state/`.
+only what is listed below. Read-only: edit nothing, run nothing, never open `.env` or `state/` (a plan's review reads
+`state/sources/` alone).
 
 **The question, per test:** where would it pass although its case is broken — the app doing a step wrong, the test
 still green?

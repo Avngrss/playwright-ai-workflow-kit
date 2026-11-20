@@ -38,14 +38,18 @@ function rowsOf(plan, coverage, ran) {
   const status = (word, extra) => (extra ? `${word} — ${extra}` : word);
   const keys = [...new Set([...plan.cases.flatMap(({ ids }) => ids), ...plan.notNow.flatMap(({ ids }) => ids)])];
   if (keys.length) {
-    // The id as the plan spells it (TC-401, C401); one it spells nowhere takes the plan's prefix. A priority
-    // (P1) or a scenario (S2) is never a case's.
-    const ID = `(?![SP]\\d)${CASE_PREFIX}`;
-    const prefix = new RegExp(`\\b(${ID})\\d+\\b`).exec(plan.text)?.[1] ?? "";
+    // The id as the plan spells it where it names cases — a block's title (### 1. TC-401 · …) or a TMS field
+    // (TC-401, C401) — never a word of its prose (Q4, ISO8601); one it spells nowhere takes the plan's prefix.
+    const ids = (field) => [...field.replace(/\([^)]*\)/g, " ").matchAll(new RegExp(`\\b${CASE_PREFIX}\\d+\\b`, "g"))].map(([id]) => id);
+    const spelled = [
+      ...[...plan.text.matchAll(new RegExp(`^### \\d+\\.\\s+(${CASE_PREFIX}\\d+)\\s*·`, "gm"))].map(([, id]) => id),
+      ...[...plan.text.matchAll(/TMS:\s*([^\n·]+)/g)].flatMap(([, field]) => ids(field)),
+    ];
+    const prefix = new RegExp(`^(${CASE_PREFIX})\\d+$`).exec(spelled[0] ?? "")?.[1] ?? "";
     return keys.map((key) => {
       const known = coverage.cases?.[key] ?? { tests: [], coverage: "not automated", layers: [] };
       const blocks = plan.cases.filter(({ ids }) => ids.includes(key));
-      const shown = new RegExp(`\\b(${ID})${key}\\b`).exec(plan.text)?.[0] ?? `${prefix}${key}`;
+      const shown = spelled.find((id) => /(\d+)$/.exec(id)?.[1] === key) ?? `${prefix}${key}`;
       const notNow = reasonOf([key]);
       const extra = known.coverage === "not automated" ? notNow?.reason : known.coverage === "inconsistent" ? known.missing?.length && `missing ${known.missing.join(", ")}` : known.coverage === "to rework" ? known.rework?.join(", ") : undefined;
       return {

@@ -77,7 +77,7 @@ export function renderConfirm({ plan, text, existing, lastResults = [] }) {
   const written = ready.filter((block) => has(block));
   const notNow = plan.notNow;
   const auth = /^- auth as:.*?role:\s*([^\n·]+)/m.exec(text)?.[1]?.trim() ?? "none";
-  const basis = blocks.some(({ title }) => new RegExp(`^${CASE_PREFIX}\\d+\\b`).test(title)) || notNow.some(({ ids }) => ids.length) ? "test-cases" : /^- Ticket:\s*(?!none\b)\S/m.test(text) ? "requirements" : "value-and-risk";
+  const basis = blocks.some(({ title }) => new RegExp(`^${CASE_PREFIX}\\d+\\s*·`).test(title)) || notNow.some(({ ids }) => ids.length) ? "test-cases" : /^- Ticket:\s*(?!none\b)\S/m.test(text) ? "requirements" : "value-and-risk";
   const out = [`Plan: \`${plan.plan}\` · basis: ${basis} · role: ${auth}`, ""];
 
   if (!toWrite.length) {

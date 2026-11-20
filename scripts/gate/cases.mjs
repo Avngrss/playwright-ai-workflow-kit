@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { at, atBase, inProgress, read, ROOT } from "./context.mjs";
-import { ANSWER_STEP, caseIds, caseLinksIn, casesOf, keepsOut, numberedLines, readPlans, scenarioOf, stepRangeOf } from "./plans.mjs";
+import { ANSWER_STEP, CASE_PREFIX, caseIds, caseLinksIn, casesOf, keepsOut, numberedLines, readPlans, scenarioOf, stepRangeOf } from "./plans.mjs";
 import { isVisualCheckpoint, testsOf } from "./specs.mjs";
 
 /**
@@ -142,12 +142,16 @@ const keyOf = ({ ids, scenario, title }) => (ids.length ? `${ids.join(",")}|${sc
 /** A block's text without its "### <n>." line: a block moved down a number is the same block. */
 const bodyOf = (text) => text.split("\n").slice(1).join("\n").trimEnd();
 
+/** A plan text's `## API brief`, its lines trimmed — "" without it. */
+const briefOf = (text) => (/^## API brief\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text.replace(/\r\n/g, "\n"))?.[1] ?? "").trim();
+
 let progress;
 /**
  * The plans being written on this branch (new or changed since the default branch, or in the working tree),
- * each with `isNew` (no such plan where the branch began; a plan renamed on the branch is read at its old name)
- * and its blocks that are new (`fresh`: no block of that case and scenario there) or changed (`touched`: new, or
- * its text differs, its number aside). A plan the branch left alone keeps what it had. Read once per run.
+ * each with `isNew` (no such plan where the branch began; a plan renamed on the branch is read at its old name),
+ * its blocks that are new (`fresh`: no block of that case and scenario there) or changed (`touched`: new, or its
+ * text differs, its number aside), and `briefChanged` (its `## API brief` differs). A plan the branch left alone
+ * — renamed, or only its change log touched — keeps what it had. Read once per run.
  */
 function plansInProgress() {
   if (progress) return progress;
@@ -158,13 +162,33 @@ function plansInProgress() {
         .filter(({ file }) => changed.has(file))
         .map((plan) => {
           const before = atBase(plan.file);
-          const was = new Map((before ? casesOf(before) : []).map((block) => [keyOf(block), bodyOf(block.text)]));
+          // Two blocks may share a key (a case planned twice): each keeps its own text.
+          const was = new Map();
+          for (const block of before ? casesOf(before) : []) was.set(keyOf(block), [...(was.get(keyOf(block)) ?? []), bodyOf(block.text)]);
           const fresh = plan.cases.filter((block) => !was.has(keyOf(block)));
-          const touched = plan.cases.filter((block) => was.get(keyOf(block)) !== bodyOf(block.text));
-          return { ...plan, isNew: !before, fresh, touched };
+          const touched = plan.cases.filter((block) => !was.get(keyOf(block))?.includes(bodyOf(block.text)));
+          return { ...plan, isNew: !before, fresh, touched, briefChanged: !before || briefOf(before) !== plan.brief.trim() };
         });
   return progress;
 }
+
+/** A plan in progress by its file — undefined for a plan the branch left alone. */
+const inProgressPlan = (file) => plansInProgress().find((plan) => plan.file === file);
+
+/** The case ids a `- Drafted from:` source holds: its JSON's id when the file is here, else its file name's — [] when neither says. */
+function sourceIds(drafted) {
+  const file = path.resolve(ROOT, drafted);
+  try {
+    const { id } = JSON.parse(fs.readFileSync(file, "utf8").replace(/^﻿/, ""));
+    if (id !== undefined && id !== null) return caseIds(String(id));
+  } catch {
+    // not here (state/ is never committed) or not JSON — the file's name says it
+  }
+  return caseIds(path.basename(drafted));
+}
+
+/** A header naming the plan's cases — `- Cases: <TMS> <links>`; "none" and the template's own <…> name none. */
+const BUILT_FROM_CASES = /^- Cases:[ \t]*(?!none\b|<)\S/im;
 
 /** A saved TMS case's steps (state/sources/<id>.json, plan:block --case's shape), each with its expected result: [{ n, text }]. */
 function sourceSteps(file) {
@@ -190,12 +214,23 @@ function sourceSteps(file) {
  * A TMS case's block is drafted from its saved source (plans.md §TMS cases): `plan:block --case` copies the
  * case's words and marks the steps that read the server's answer; a block typed by hand loses both. In a plan
  * built from TMS cases — its header's `- Cases: <TMS> <location>`, any TMS — a new block of a case carries the
- * command's `- Drafted from:` line, naming that case's source.
+ * command's `- Drafted from:` line, naming that case's source. A new plan whose blocks are TMS cases says where
+ * they come from on that line (`none` when it only links them) — the guard is never skipped by leaving it out.
  */
 function checkDraftedFromSource(_files, report) {
-  for (const { plan, header, fresh } of plansInProgress()) {
-    if (!/^- Cases:[ \t]*(?!none\b)\S/im.test(header)) continue;
+  for (const { plan, header, cases, fresh, isNew } of plansInProgress()) {
     const where = at(...plan.split("/"));
+    if (!/^- Cases:/im.test(header)) {
+      const titled = cases.filter(({ title }) => new RegExp(`^${CASE_PREFIX}\\d+\\s*·`).test(title));
+      if (isNew && titled.length) {
+        report.fail(
+          where,
+          `${titled.length} block(s) are TMS cases (${titled.map(({ title }) => title.split(" · ")[0]).join(", ")}), and the header does not say where they come from — add "- Cases: <TMS> <the folder's or the cases' links>" under the title, or "- Cases: none" when the plan only links them (plans.md §TMS cases)`,
+        );
+      }
+      continue;
+    }
+    if (!BUILT_FROM_CASES.test(header)) continue;
     const typed = fresh.filter(({ ids, drafted }) => ids.length && !drafted);
     if (typed.length) {
       report.fail(
@@ -203,7 +238,10 @@ function checkDraftedFromSource(_files, report) {
         `${typed.length} block(s) of TMS cases were not drafted from their source (${typed.map(({ title }) => `"${title.split(" · ")[0]}"`).join(", ")}) — remove each typed block, save its case as state/sources/<id>.json and add it with npm run plan:block -- ${plan} --case state/sources/<id>.json: the command copies the case's words and marks its answer steps (plans.md §TMS cases)`,
       );
     }
-    const borrowed = fresh.filter(({ ids, drafted }) => ids.length && drafted && !caseIds(path.basename(drafted)).some((id) => ids.includes(id)));
+    const borrowed = fresh.filter(({ ids, drafted }) => {
+      const named = ids.length && drafted ? sourceIds(drafted) : [];
+      return named.length > 0 && !named.some((id) => ids.includes(id));
+    });
     if (borrowed.length) {
       report.fail(where, `${borrowed.length} block(s) name another case's source on "- Drafted from:" (${borrowed.map(({ title, drafted }) => `"${title.split(" · ")[0]}" ← ${drafted}`).join(", ")}) — a block is drafted from its own case: npm run plan:block -- ${plan} --case state/sources/<its id>.json`);
     }
@@ -216,7 +254,8 @@ function checkDraftedFromSource(_files, report) {
  * result (another block of the case is API), `— UI check: …` when the answer is held to the screen (this block
  * listens to it). Read in the block's steps and, when it is on this machine, in its saved source too — a block
  * retelling the step keeps it; a line present is held to its owner either way. An API block is the answer's own
- * scenario: nothing to say.
+ * scenario: nothing to say. A step only worded like one (a "payload limit" message on screen) is
+ * `— none: <why>` — the reason in a few words.
  */
 function checkAnswerSteps(_files, report) {
   for (const { plan, cases, touched } of plansInProgress()) {
@@ -232,17 +271,19 @@ function checkAnswerSteps(_files, report) {
       const named = reading.length
         ? `"${block.title}" — step(s) ${[...new Set(reading.map(({ n }) => n))].join(", ")} read the server's answer itself ("${ANSWER_STEP.exec(reading[0].text)[0]}")`
         : `"${block.title}" — "- Answer steps: ${decision}"`;
-      const owner = /^[\d,\s–-]*?[—–-]\s*(API|UI check)\b/.exec(decision)?.[1];
+      const [, owner, why = ""] = /^[\d,\s–-]*?[—–-]\s*(API|UI check|none)\b[\s:—–-]*(.*)$/.exec(decision) ?? [];
       if (!decision || decision.includes("<")) {
-        report.fail(where, `${named}: say who proves them — "- Answer steps: <n> — API: the answer's own fields" (an API scenario of the case) or "— UI check: the answer against the screen" (this block listens to it) (plans.md §Layers)`);
+        report.fail(where, `${named}: say who proves them — "- Answer steps: <n> — API: the answer's own fields" (an API scenario of the case) or "— UI check: the answer against the screen" (this block listens to it), or "— none: <why>" when the step does not read the answer (plans.md §Layers)`);
       } else if (owner === "API") {
         const api = block.level === "API" || cases.some((other) => other !== block && other.level === "API" && other.ids.some((id) => block.ids.includes(id)));
         if (!api) report.fail(where, `${named}: "- Answer steps" gives them to API, and no API scenario of the case is in the plan — add it (the answer's own fields are the contract, plans.md §Layers), or say "UI check" when the answer is only held to the screen`);
       } else if (owner === "UI check") {
-        const listens = block.level !== "API" && block.routes.some(({ kind, check, fields, status }) => kind === "intercept" && (check || fields.length || status !== null));
-        if (!listens) report.fail(where, `${named}: "- Answer steps" says "UI check", and no route of the block listens to the answer — an intercept route with its fields or check: (docs/Layer Routing Algorithm.md §7), or give them to an API scenario`);
+        const listens = block.level !== "API" && block.routes.some(({ kind }) => kind === "intercept");
+        if (!listens) report.fail(where, `${named}: "- Answer steps" says "UI check", and no route of the block listens to the answer — an intercept route (docs/Layer Routing Algorithm.md §7), or give them to an API scenario`);
+      } else if (owner === "none") {
+        if (why.split(/\s+/).filter(Boolean).length < 3) report.fail(where, `${named}: "- Answer steps: ${decision}" — say in a few words why the step does not read the server's answer ("— none: the message on screen names the payload limit")`);
       } else {
-        report.fail(where, `${named}: "- Answer steps: ${decision}" names neither "API" nor "UI check" right after its step numbers ("<n> — API: …")`);
+        report.fail(where, `${named}: "- Answer steps: ${decision}" names neither "API", "UI check" nor "none" right after its step numbers ("<n> — API: …")`);
       }
     }
   }
@@ -299,8 +340,11 @@ function checkP3Postponed(_files, report) {
   }
 }
 
-/** "<METHOD> <path>" pairs a text names: `GET /api/orders/{id}`, `POST api/cart`, `GET …/orders` (a path cut short with "…"). */
-const CALL = /\b(GET|POST|PUT|PATCH|DELETE|QUERY|HEAD|OPTIONS)\s+`?((?:…|\.\.\.)?\/?[\w{}<>:.\/-]*[\w}>])/g;
+/**
+ * "<METHOD> <path>" pairs a text names: `GET /api/orders/{id}`, `POST api/cart`, `GET …/orders` (a path cut short
+ * with "…"), `**GET** /api/x`, a table's `| GET | /api/x |`. A path has a "/" — "a second GET with a wrong id" names none.
+ */
+const CALL = /\b(GET|POST|PUT|PATCH|DELETE|QUERY|HEAD|OPTIONS)\b[*`|\s]+((?:…|\.\.\.)?[\w{}<>:.-]*\/[\w{}<>:.\/-]*[\w}>])/g;
 /** A path as one key: no query, every parameter `{}`, no leading slash, any case; `…` kept as "a path ending so". */
 const pathKey = (path) =>
   path
@@ -310,28 +354,36 @@ const pathKey = (path) =>
     .toLowerCase();
 const callsIn = (text) => [...String(text ?? "").matchAll(CALL)].map(([, method, path]) => ({ method, key: pathKey(path.replace(/^(?:…|\.\.\.)\/?/, "")), cut: /^(?:…|\.\.\.)/.test(path) }));
 const sameCall = (named, { method, key }) => named.method === method && (named.cut ? key === named.key || key.endsWith(`/${named.key}`) : key === named.key);
-/** A brief line naming a call only setup, cleanup or a lookup uses — no scenario of its own owes it. */
-const AID = /\b(setup|cleanup|lookups?|look-?up|oracle|input|seed|sweep|undo|sign-?in)\b/i;
+/**
+ * A call's own mark that only setup, cleanup or a lookup makes it — "— setup", "(cleanup)", "- the lookup" right
+ * after it, before the next call of the line: no scenario of its own owes it.
+ */
+const AID = /[—–(-]\s*(?:(?:a|an|the|its|for|by)\s+)*(setup|cleanup|lookups?|look-?up|oracle|seed|sweep|undo|sign-?in)\b/i;
+/** The brief's calls no mark exempts, each judged on its own part of its line. */
+const briefCalls = (brief) =>
+  brief.split("\n").flatMap((line) => {
+    const found = [...line.matchAll(CALL)];
+    return found.filter((match, index) => !AID.test(line.slice(match.index + match[0].length, found[index + 1]?.index ?? line.length))).flatMap(([text]) => callsIn(text));
+  });
+/** No git here: every plan is being written. Asked once. */
+let gitless;
+const withoutGit = () => (gitless ??= inProgress("specs") === null);
 
 /**
  * Every call the plan's `## API brief` names is accounted for (plans.md §Plan body, §TMS cases "Gap"): a route
  * of the plan sends or reads it, a Not now line names it (a contract call no case covers is a `Gap`), or its
- * brief line says it is setup, cleanup or a lookup. A call left only in the brief is coverage nobody sees is
- * missing. Fails in a plan being written, warns in one the branch left alone.
+ * own mark says only setup, cleanup or a lookup makes it. A call left only in the brief is coverage nobody sees
+ * is missing. Fails in a plan new on the branch, or whose brief or blocks the branch changed; warns in the rest.
  */
 function checkApiBrief(_files, report) {
-  const changed = inProgress("specs");
   for (const { plan, file, brief, cases, notNow } of readPlans(ROOT)) {
     const routed = cases.flatMap(({ routes }) => routes.flatMap((route) => [route, ...(route.read ? [route.read] : [])])).filter(({ method, path: route }) => method && route).map(({ method, path: route }) => ({ method, key: pathKey(route) }));
     const parked = notNow.flatMap(({ line }) => callsIn(line));
-    const loose = brief
-      .split("\n")
-      .filter((line) => !AID.test(line))
-      .flatMap((line) => callsIn(line))
-      .filter((named) => !routed.some((call) => sameCall(named, call)) && !parked.some((call) => call.method === named.method && (call.key === named.key || call.key.endsWith(`/${named.key}`) || named.key.endsWith(`/${call.key}`))));
+    const loose = briefCalls(brief).filter((named) => !routed.some((call) => sameCall(named, call)) && !parked.some((call) => call.method === named.method && (call.key === named.key || call.key.endsWith(`/${named.key}`) || named.key.endsWith(`/${call.key}`))));
     if (!loose.length) continue;
     const names = [...new Set(loose.map(({ method, key, cut }) => `${method} ${cut ? "…/" : "/"}${key}`))];
-    const say = !changed || changed.has(file) ? report.fail : report.warn;
+    const writing = inProgressPlan(file);
+    const say = withoutGit() || (writing && (writing.isNew || writing.briefChanged || writing.touched.length)) ? report.fail : report.warn;
     say(
       at(...plan.split("/")),
       `"## API brief" names ${names.join(", ")}, which no route sends and no Not now line names — a call no case covers is a Not now "Gap" (the user decides), a call only setup, cleanup or a lookup makes says so on its brief line (plans.md §Plan body)`,
@@ -341,21 +393,22 @@ function checkApiBrief(_files, report) {
 
 /**
  * A later step showing a value of an earlier answer is that answer's (docs/Layer Routing Algorithm.md §7):
- * `no-request · screen …` on that step, its check or fields on the answer's line; `screen-only` holds what no
- * answer does (a message, a reopen from cache). Fails in a plan being written, warns in one the branch left alone.
+ * `no-request · screen …` on that step — a reopen from the front end's cache and a value the browser works out of
+ * the answer (a masked card, a client-side total) too — its check or fields on the answer's line; `screen-only`
+ * holds what no answer does (a message, a label). Fails in a block being written, warns in one the branch left alone.
  */
 function checkLaterScreenOnly(_files, report) {
-  const changed = inProgress("specs");
   for (const { plan, file, cases } of readPlans(ROOT)) {
+    const writing = new Set((inProgressPlan(file)?.touched ?? []).map(keyOf));
     for (const block of cases.filter(({ status }) => /^ready/i.test(status))) {
       const heard = block.routes.filter(({ kind }) => kind === "intercept").map(({ step }) => step ?? 0);
       if (!heard.length) continue;
       const first = Math.min(...heard);
-      const say = !changed || changed.has(file) ? report.fail : report.warn;
+      const say = withoutGit() || writing.has(keyOf(block)) ? report.fail : report.warn;
       for (const shown of block.routes.filter(({ kind, step, screen }) => kind === "screen-only" && (step ?? 0) > first && screen.some(({ kind: shownAs }) => shownAs === "value"))) {
         say(
           at(...plan.split("/")),
-          `"${block.title}" — Route (step ${shown.step}) "${shown.line}": a value shown after the answer of step ${first} is that answer's — "no-request · screen …" on this step, its check or fields on step ${first}'s line; screen-only only for what no answer holds (a message, a reopen from cache) (docs/Layer Routing Algorithm.md §7)`,
+          `"${block.title}" — Route (step ${shown.step}) "${shown.line}": a value shown after the answer of step ${first} is that answer's — "no-request · screen …" on this step (a reopen from cache, a value the browser works out of it), its check or fields on step ${first}'s line; screen-only only for what no answer holds (a message, a label) (docs/Layer Routing Algorithm.md §7)`,
         );
       }
     }

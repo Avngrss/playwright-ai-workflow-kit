@@ -121,7 +121,8 @@ export function atBase(file) {
   try {
     const from = branchBase() ?? git("rev-parse --verify -q HEAD").trim();
     if (!from) return null;
-    const fromRoot = git(`ls-files --full-name -- "${file}"`).trim() || `${git("rev-parse --show-prefix").trim()}${rel(file)}`;
+    // NUL-ended, never quoted: a name with letters outside ASCII comes as it is.
+    const fromRoot = git(`ls-files -z --full-name -- "${file}"`).split("\0")[0] || `${git("-c core.quotePath=false rev-parse --show-prefix").trim()}${rel(file)}`;
     const shown = (name) => {
       try {
         return git(`show "${from}:${name}"`);

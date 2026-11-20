@@ -173,7 +173,7 @@ export function appendBlock(call, { held, notes = [] } = {}) {
   const eol = original.includes("\r\n") ? "\r\n" : "\n";
   const text = original.replace(/\r\n/g, "\n");
   // A plan built from TMS cases (`- Cases:` in its header) takes a case's block only from its saved source.
-  const fromCases = /^- Cases:[ \t]*(?!none\b)\S/im.test(text.split(/^## Test cases[ \t]*$/m)[0]);
+  const fromCases = /^- Cases:[ \t]*(?!none\b|<)\S/im.test(text.split(/^## Test cases[ \t]*$/m)[0]);
   if (fromCases && call.ids.length && !call.drafted) {
     stop(`${place.file} is built from TMS cases — a case's block comes from its saved source: save it as state/sources/<id>.json, then npm run plan:block -- ${place.file} --case state/sources/<id>.json (it copies the case and marks its answer steps)`);
   }

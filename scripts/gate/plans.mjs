@@ -152,12 +152,13 @@ function ownersOf(text) {
 }
 
 /**
- * A manual step that reads the server's answer itself — the browser's developer tools, a response, a
- * payload — rather than the screen (plans.md §Layers "the answer itself"): its own fields are an API
- * scenario, the answer held to the screen is the UI test's check; the block says which.
+ * A manual step that reads the server's answer itself — the browser's developer tools, the response's body —
+ * rather than the screen (plans.md §Layers "the answer itself"): its own fields are an API scenario, the answer
+ * held to the screen is the UI test's check; the block says which. A word alone ("payload", a "Response" button)
+ * is not one; a step only worded like one says `— none: <why>`.
  */
 export const ANSWER_STEP =
-  /\bdev[ -]?tools\b|\bdeveloper tools\b|\bnetwork["”]? tab\b|["“]response["”]|\bresponse body\b|\bin the (?:\w+ )?response\b|\bpayload\b|(?<!\p{L})(?:ответ\p{L}*\s+(?:сервера|запроса|API)|в\s+ответе|тело\s+ответа|вкладк\p{L}*\s+["“«]?(?:Network|Сеть))(?!\p{L})/iu;
+  /\bdev[ -]?tools\b|\bdeveloper tools\b|\bnetwork["”]? tab\b|\bresponse (?:body|payload|json)\b|\bin the (?:\w+ )?response\b|\b(?:server|api)(?:'s)? (?:response|answer)\b|(?<!\p{L})(?:ответ\p{L}*\s+(?:сервера|запроса|API)|тело\s+ответа|вкладк\p{L}*\s+["“«]?(?:Network|Сеть))(?!\p{L})/iu;
 
 /** "case TC-101 steps 2–3" / "case TC-101 step 4" on a Why line → [2, 3] / [4, 4]; the whole case → null. */
 export function stepRangeOf(why) {
