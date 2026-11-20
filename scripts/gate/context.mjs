@@ -96,16 +96,62 @@ const git = (args) => execSync(`git ${args}`, { cwd: ROOT, encoding: "utf8", std
  * master — the first that exists. None (no such branch, a clone that fetched only this branch, no commit
  * yet) → null. On the default branch itself it is HEAD: nothing there is being written.
  */
+let base;
 function branchBase() {
+  if (base !== undefined) return base;
+  base = null;
   const candidates = [process.env.AQA_BASE_BRANCH, "origin/HEAD", "main", "master", "origin/main", "origin/master"].filter(Boolean);
   for (const ref of candidates) {
     try {
-      return git(`merge-base ${ref} HEAD`).trim() || null;
+      base = git(`merge-base ${ref} HEAD`).trim() || null;
+      return base;
     } catch {
       // that branch does not exist here — the next one
     }
   }
-  return null;
+  return base;
+}
+
+/**
+ * A file's text where this branch left the default branch (`branchBase`; no such branch known → the last
+ * commit): undefined when the file did not exist there, null without git or without any commit (a project
+ * with no commit yet — then all of it is new).
+ */
+export function atBase(file) {
+  try {
+    const from = branchBase() ?? git("rev-parse --verify -q HEAD").trim();
+    if (!from) return null;
+    const fromRoot = git(`ls-files --full-name -- "${file}"`).trim() || `${git("rev-parse --show-prefix").trim()}${rel(file)}`;
+    const shown = (name) => {
+      try {
+        return git(`show "${from}:${name}"`);
+      } catch {
+        return undefined;
+      }
+    };
+    // Renamed since then (committed, or staged with git mv): its text under the old name.
+    return shown(fromRoot) ?? (renamedFrom(from).has(fromRoot) ? shown(renamedFrom(from).get(fromRoot)) : undefined);
+  } catch {
+    return null;
+  }
+}
+
+let renames;
+/** New name → old name of every file renamed since `from` (paths from the repository's root), read once. */
+function renamedFrom(from) {
+  if (!renames) {
+    renames = new Map();
+    // NUL-separated: "R<score>", the old path, the new path; any other status, one path.
+    const records = git(`diff -M --name-status -z ${from} -- .`).split("\0");
+    for (let at = 0; at < records.length; at += 1) {
+      if (!records[at]) continue;
+      if (/^[RC]/.test(records[at])) {
+        if (records[at].startsWith("R")) renames.set(records[at + 2], records[at + 1]);
+        at += 2;
+      } else at += 1;
+    }
+  }
+  return renames;
 }
 
 /**

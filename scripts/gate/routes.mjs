@@ -101,13 +101,14 @@ const HELPER = /\bexpect(?!(?:Json|Status|Answer|StandData)\()[A-Z]\w*\(/;
 // The matchers that check each kind on screen; a named helper counts for any kind.
 const KIND_PROOF = {
   value: /\.(toEqual|toStrictEqual|toMatchObject|toContainEqual|toContain)\(/g,
-  text: /\.(toHaveText|toContainText|toHaveURL|toContain)\(/g,
+  // A field's value is its text too (toHaveValue) — and stays a state.
+  text: /\.(toHaveText|toContainText|toHaveValues?|toHaveURL|toContain)\(/g,
   state: /\.(toBeDisabled|toBeEnabled|toBeHidden|toBeAttached|toBeFocused|toHaveCount|toHaveLength|toBeChecked|toBeEditable|toHaveAttribute|toHaveValue|toBe|toBeTruthy|toBeFalsy)\(/g,
   visible: /\.toBeVisible\(/g,
 };
 const KIND_WORDS = {
   value: "a reader compared with shown<Block>(…) (toEqual / toMatchObject / toContainEqual) — a value the case states too: shown<Block>() — or a named check",
-  text: "the exact words shown (a message, a label, a control's choice, the address) — expectToast, toHaveText, toHaveURL or a named check",
+  text: "the exact words shown (a message, a label, a control's choice, the address) — expectToast, toHaveText, toHaveValue (a field's text), toHaveURL or a named check",
   state: "a control's state — toBeDisabled / toBeEnabled / toBeHidden / toHaveCount / toHaveAttribute / toBe(true), or a named check",
   visible: "that it appeared — toBeVisible",
 };

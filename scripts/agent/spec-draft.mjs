@@ -96,6 +96,7 @@ function draftOf(block) {
   const checks = block.routes.map(({ line }) => parseRoute(line).check).filter(Boolean);
   const rules = value("Rules");
   if (checks.length && (!rules || rules.startsWith("<each check"))) unfilled.push(`Rules (where ${checks.join(", ")} is written — the route names it)`);
+  if ((value("Answer steps") ?? "").includes(PLACEHOLDER.answer)) unfilled.push("Answer steps (who proves them: API or UI check)");
   if (unfilled.length) stop(`block "${block.title}" still holds the plan template's words in: ${unfilled.join("; ")} — fill them from the live check first (the plan skill §5)`);
   const status = value("Status") ?? "";
   if (!/^ready/i.test(status)) stop(`"${block.title}" is ${status || "without a Status"} — only a scenario ready to implement now gets its test`);

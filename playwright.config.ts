@@ -6,6 +6,10 @@ import { testIdOf, zoneAndLocaleOf } from "./src/setup/app-wide";
 import { skipIpv6LookupWhenAsked } from "./src/setup/network";
 import { isRegistered, platforms, urlOf, type Platform } from "./src/setup/platforms";
 
+// An agent's sandbox (Cursor's) points PLAYWRIGHT_BROWSERS_PATH at an empty Temp\cursor-sandbox-cache folder.
+// Drop it so the run uses the Chromium already in the OS cache instead of downloading another.
+if (process.env.PLAYWRIGHT_BROWSERS_PATH?.includes("cursor-sandbox-cache")) delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+
 dotenv.config({ path: path.resolve(__dirname, ".env"), quiet: true });
 skipIpv6LookupWhenAsked();
 // Test code's own clock: `new Date()` math in a worker gives the same day and hour on every machine (a laptop

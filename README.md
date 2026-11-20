@@ -113,7 +113,7 @@ it in four commands, no account needed.
 | `/heal` | one or two red tests |
 | `/triage` | three or more red tests, or a CI run |
 | `/coverage` | a TMS folder, case by case |
-| `/review` | Cursor: an independent review of new tests, in a new chat (Claude Code and Copilot run the `reviewer` agent themselves) |
+| `/review` | Cursor: an independent review of new tests, or of a big plan, in a new chat (Claude Code and Copilot run the `reviewer` agent themselves) |
 
 A run's summary ends with the command it needs next. Which command when: [Workflow](docs/workflow.md).
 

@@ -28,6 +28,10 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const ACTIVE_ONLY = ["--grep-invert", "@wip|@flaky"];
+
+// An agent's sandbox (Cursor's) points PLAYWRIGHT_BROWSERS_PATH at an empty Temp\cursor-sandbox-cache folder.
+// Postinstall would then download Chromium there on every npm install, past the copy already in the OS cache.
+if (process.env.PLAYWRIGHT_BROWSERS_PATH?.includes("cursor-sandbox-cache")) delete process.env.PLAYWRIGHT_BROWSERS_PATH;
 const EVERY_LAYER = ["--project=api*", "--project=ui*", "--project=e2e*"];
 
 /** What each npm script runs: its Playwright arguments, and whether it needs a browser. */

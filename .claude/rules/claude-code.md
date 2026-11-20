@@ -5,7 +5,7 @@ The rules, skills and commands are the kit's texts from `agents/`, copied here b
 speak of every agent alike; in Claude Code these differ:
 
 - **Independent review** — wherever a text says `/review` in a new chat, run the `reviewer` subagent with the same
-  line: `<plan path> #<n> … — <spec paths>`. Its context is fresh, so its report is the full independent review:
+  line: `<plan path> #<n> … — <spec paths>` (a plan's review: `<plan path>` alone). Its context is fresh, so its report is the full independent review:
   the summary says `full`, never "waiting for /review". There is no `/review` command here.
 - **Commands** — `/setup`, `/plan`, `/implement`, `/verify`, `/heal`, `/coverage`, `/triage` (`.claude/commands/`),
   each opening its skill (`.claude/skills/`).

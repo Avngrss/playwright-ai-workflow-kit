@@ -12,10 +12,25 @@ import { SPECS_OWN_FILES } from "./context.mjs";
 const read = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 
 /**
- * A case id's part before its number: "TC-" of TC-123, "PROJ-T" of PROJ-T123 — a RegExp source, one
- * pattern for the plans, the tests' links and verify. The case's key is its number.
+ * A case id's part before its number: "TC-" of TC-123, "PROJ-T" of PROJ-T123, "C" of C123 (a TMS whose ids
+ * have no dash) — a RegExp source, one pattern for the plans, the tests' links and verify. Letters alone in
+ * the second form (a letter-and-digit run would swallow the number), never a scenario's "S2". The case's key
+ * is its number.
  */
-export const CASE_PREFIX = "[A-Z][A-Z0-9]*-[A-Z]*";
+export const CASE_PREFIX = "(?:[A-Z][A-Z0-9]*-[A-Z]*|(?!S\\d)[A-Z]+)";
+
+/** "1. …\n2. …" → [{ n, text }], a line without a number joining the item above; undefined when the first line has no number. */
+export function numberedLines(text) {
+  const items = [];
+  for (const line of String(text ?? "").split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const item = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+    if (item) items.push({ n: Number(item[1]), text: item[2] });
+    else if (items.length) items.at(-1).text += ` ${line}`;
+    else return undefined;
+  }
+  return items.map(({ n, text: words }) => ({ n, text: words.replace(/\s+/g, " ").trim() }));
+}
 
 /**
  * The case numbers a plan's `TMS:` field names: ids like TC-123 or PROJ-T123 (bare numbers only when
@@ -137,13 +152,76 @@ function ownersOf(text) {
 }
 
 /**
+ * A manual step that reads the server's answer itself — the browser's developer tools, a response, a
+ * payload — rather than the screen (plans.md §Layers "the answer itself"): its own fields are an API
+ * scenario, the answer held to the screen is the UI test's check; the block says which.
+ */
+export const ANSWER_STEP =
+  /\bdev[ -]?tools\b|\bdeveloper tools\b|\bnetwork["”]? tab\b|["“]response["”]|\bresponse body\b|\bin the (?:\w+ )?response\b|\bpayload\b|(?<!\p{L})(?:ответ\p{L}*\s+(?:сервера|запроса|API)|в\s+ответе|тело\s+ответа|вкладк\p{L}*\s+["“«]?(?:Network|Сеть))(?!\p{L})/iu;
+
+/** "case TC-101 steps 2–3" / "case TC-101 step 4" on a Why line → [2, 3] / [4, 4]; the whole case → null. */
+export function stepRangeOf(why) {
+  const range = /\bsteps?\s+(\d+)(?:\s*[-–]\s*(\d+))?/.exec(why ?? "");
+  return range ? [Number(range[1]), Number(range[2] ?? range[1])] : null;
+}
+
+/** A plan text's case blocks, as readPlans gives them (cases[]) — also for another version of the same plan. */
+export function casesOf(planText) {
+  const text = planText.replace(/\r\n/g, "\n");
+  // A field's value with its wrapped lines (indented, never a numbered step or a "- " line) joined.
+  const field = (block, key) => new RegExp(`^- ${key}:[ \\t]*(.+(?:\\n[ \\t]+(?!\\d+\\.\\s|- )\\S.*)*)`, "m").exec(block)?.[1]?.replace(/\s+/g, " ").trim() ?? null;
+  return text.split(/^### /m).slice(1).flatMap((raw) => {
+    // The block ends where the next section starts.
+    const block = raw.split(/^## /m)[0];
+    const ids = /TMS:\s*([^\n·]+)/.exec(block)?.[1];
+    const status = field(block, "Status");
+    if (!ids || !status) return [];
+    const needs = field(block, "Needs");
+    const routes = [...block.matchAll(/^- Route(?:\s*\(step\s*(\d+)\))?:\s*(.+)$/gm)].map(([, step, line]) => ({ step: step ? Number(step) : null, line: line.trim(), ...parseRoute(line.trim()) }));
+    const title = block.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
+    const value = field(block, "Value") ?? "";
+    const steps = [...block.matchAll(/^ {2}(\d+)\.\s+(.+)(?:\n|$)((?: {5}.*(?:\n|$))*)/gm)].map(([, n, action, rest]) => ({ n: Number(n), text: `${action} ${rest.replace(/\s+/g, " ")}`.trim() }));
+    return [
+      {
+        number: /^(\d+)\./.exec(block)?.[1] ?? null,
+        ids: caseIds(ids),
+        // The ids as the TMS writes them (TC-101, C101) — a correction line names the case by one.
+        written: [...ids.replace(/\([^)]*\)/g, " ").matchAll(new RegExp(`\\b${CASE_PREFIX}\\d+\\b`, "g"))].map(([id]) => id),
+        title,
+        scenario: scenarioOf(title),
+        status,
+        needs: needs ? layersOf(needs) : null,
+        level: /^- Level:\s*(API|UI|E2E)\b/m.exec(block)?.[1] ?? null,
+        tags: (/Tag:\s*([^·\n]+)/.exec(block)?.[1] ?? "").match(/@[a-z-]+/g) ?? [],
+        routes,
+        route: routes[0] ?? null,
+        text: block.trimEnd(),
+        answer: field(block, "Answer steps"),
+        drafted: field(block, "Drafted from"),
+        data: field(block, "Data"),
+        priority: /Priority:\s*(P[123])\b(?!\s*\|)/.exec(value)?.[1] ?? null,
+        why: field(block, "Why"),
+        steps,
+      },
+    ];
+  });
+}
+
+/** A section's text, up to the next `## ` heading — "" without it. */
+const sectionOf = (text, heading) => new RegExp(`^## ${heading}\\s*$([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m").exec(text)?.[1] ?? "";
+
+/**
  * Every plan under specs/ (the map left out), of one app when given:
- * { plan, app, journey, owners, cases: [{ number, ids, title, scenario, status, needs, level, tags, routes, route }],
- *   notNow: [{ title, ids, status, since, reason, searched }], otherChecks, unreadable: [line] }.
+ * { plan, app, file, journey, owners, header, review, corrections, newestChange, brief,
+ *   cases: [{ number, ids, written, title, scenario, status, needs, level, tags, routes, route, text, answer, drafted, data, priority, why, steps }],
+ *   notNow: [{ title, ids, status, since, line, reason, searched }], otherChecks, unreadable: [line] }.
  * A case block is one scenario: `routes` are its parsed `Route:` lines — one, or one per step
  * (`- Route (step 2): …`), several for a step awaiting several answers; `route` is the first. None in
- * a plan written before routing, which has `needs` instead. A journey plan (specs/e2e/<app>/<area>/<journey>.md)
- * has no `## Owners`: E2E owns each of its blocks, named on the block's `Level:`.
+ * a plan written before routing, which has `needs` instead. `answer` is its `- Answer steps:` line, `drafted`
+ * its `- Drafted from:` source (plan:block --case's), `steps` its Steps' texts with their expects. A journey
+ * plan (specs/e2e/<app>/<area>/<journey>.md) has no `## Owners`: E2E owns each of its blocks, named on the
+ * block's `Level:`. `header` is the text above `## Test cases`; `review` its `- Review: independent <date>`
+ * date; `newestChange` the newest date of `## Change log`; `brief` the text of `## API brief`.
  */
 export function readPlans(root, onlyApp) {
   const list = (dir) =>
@@ -156,19 +234,11 @@ export function readPlans(root, onlyApp) {
     const app = plan.split("/")[1] === "e2e" ? plan.split("/")[2] : plan.split("/")[1];
     if (onlyApp && app !== onlyApp) return [];
     const text = read(file);
-    const cases = text.split(/^### /m).slice(1).flatMap((block) => {
-      const ids = /TMS:\s*([^\n·]+)/.exec(block)?.[1];
-      const status = /^- Status:\s*(.+)$/m.exec(block)?.[1]?.trim();
-      if (!ids || !status) return [];
-      const needs = /^- Needs:\s*(.+)$/m.exec(block)?.[1];
-      const number = /^(\d+)\./.exec(block)?.[1] ?? null;
-      const level = /^- Level:\s*(API|UI|E2E)\b/m.exec(block)?.[1] ?? null;
-      const tags = (/Tag:\s*([^·\n]+)/.exec(block)?.[1] ?? "").match(/@[a-z-]+/g) ?? [];
-      const routes = [...block.matchAll(/^- Route(?:\s*\(step\s*(\d+)\))?:\s*(.+)$/gm)].map(([, step, line]) => ({ step: step ? Number(step) : null, line: line.trim(), ...parseRoute(line.trim()) }));
-      const title = block.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
-      return [{ number, ids: caseIds(ids), title, scenario: scenarioOf(title), status, needs: needs ? layersOf(needs) : null, level, tags, routes, route: routes[0] ?? null }];
-    });
-    const section = /^## Not now\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text)?.[1] ?? "";
+    const cases = casesOf(text);
+    const header = text.split(/^## Test cases\s*$/m)[0];
+    const review = /^- Review:\s*independent\s+(\d{4}-\d{2}-\d{2})\b/m.exec(header)?.[1] ?? null;
+    const newestChange = [...sectionOf(text, "Change log").matchAll(/^- (\d{4}-\d{2}-\d{2})\b/gm)].map(([, date]) => date).sort().at(-1) ?? null;
+    const section = sectionOf(text, "Not now");
     const notNow = [];
     const unreadable = [];
     for (const line of section.split("\n").filter((row) => row.startsWith("- "))) {
@@ -178,9 +248,26 @@ export function readPlans(root, onlyApp) {
         continue;
       }
       const [, title, ids, status, since, why] = parsed;
-      notNow.push({ title, ids: caseIds(ids), status: status.toLowerCase(), since: since ?? null, ...searchedIn(why) });
+      notNow.push({ title, ids: caseIds(ids), status: status.toLowerCase(), since: since ?? null, line, ...searchedIn(why) });
     }
-    return [{ plan, app, journey: plan.split("/")[1] === "e2e", owners: ownersOf(text), cases, notNow, otherChecks: otherChecksOf(text), unreadable }];
+    return [
+      {
+        plan,
+        app,
+        file,
+        journey: plan.split("/")[1] === "e2e",
+        owners: ownersOf(text),
+        header,
+        review,
+        corrections: sectionOf(text, "Manual case corrections"),
+        newestChange,
+        brief: sectionOf(text, "API brief"),
+        cases,
+        notNow,
+        otherChecks: otherChecksOf(text),
+        unreadable,
+      },
+    ];
   });
 }
 
