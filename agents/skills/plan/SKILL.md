@@ -167,7 +167,11 @@ the neutral shape of `scripts/agent/plan-draft.mjs`, then `npm run plan:block --
 state/sources/<id>.json [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner …] [--why …]
 [--role …]` — copied in its own words (`plans.md` §TMS cases, §Known bugs; a bug's expected result is its last
 expect). A case of several scenarios (`docs/Layer Routing Algorithm.md` §18) → one call per scenario with
-`--scenario` and `--take`.
+`--scenario` and `--take` (the steps keep the case's numbers). A plan built from TMS cases names them in its header
+(`- Cases: <TMS> <links>`), and a case's block there comes only from `--case`: it ends with `- Drafted from:
+<source>`, and a step reading the server's answer itself gets `- Answer steps: <n> — <who proves it>` — fill it
+(`plans.md` §Layers). `qa:gate` fails a typed case block there, and that line empty or naming an owner the plan
+lacks.
 
 ## 5. Live check and preconditions — proven, never promised
 
@@ -266,6 +270,10 @@ implement skill §5 and the verify skill §2, §3 per further role, §6.2 **Full
    skill §5, then the verify skill, in the same run.
 
 ## 8. Confirm — "Write these n now?"
+
+**More than 8 ready scenarios → the plan's independent review first** (`plans.md` §Confirm before any code):
+`/review <plan>` in a new chat, each finding checked against the plan, the cases and the stand, then fixed or
+answered; then the header line `- Review: independent <YYYY-MM-DD> — <n> findings, each fixed or answered`.
 
 `npm run plan:confirm -- <plan>` prints it; show it as `plans.md` §Confirm before any code says, its `<…>` filled.
 **A pass that only changes tests** — the rule's short form; *Not now* there only for a case entering or leaving it.

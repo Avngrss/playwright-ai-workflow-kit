@@ -25,7 +25,7 @@ with what to do; a question it must ask you still gets through.
 | `/heal` | verify, §8 Heal | One or two red tests, each from its verdict, or only explain the failures | the failing tests `<spec>:<line> …` (default: the "heal the red tests" line of `reports/run-summary.md`) · mode `heal` or `explain` |
 | `/triage` | verify, §10 Triage the run | Three or more red tests, or a CI run: every failure sorted by its verdict, every changed expectation traced to a source | the run (default: `reports/run-summary.json`) · later, your answers: `1 yes, 2 no` |
 | `/coverage` | verify, §9 Coverage | A TMS suite case by case: automated, to rework, not automated or inconsistent. Read-only | the TMS folder link |
-| `/review` | — (in a new chat; Claude Code: the `reviewer` subagent) | An independent review of new tests against their cases | the plan and its blocks, the spec paths — the verify summary gives the whole line |
+| `/review` | — (in a new chat; Claude Code: the `reviewer` subagent) | An independent review of new tests against their cases, or of a plan of more than 8 ready scenarios before its confirm | the plan and its blocks, the spec paths — the verify summary gives the whole line; a plan's review: the plan alone |
 
 Without a command of its own — ask in words, or name the skill (`.claude/skills/<name>/SKILL.md`):
 
@@ -185,6 +185,11 @@ fact re-proved by another layer, a mock where the case is about the real server.
 
 You get one line per finding (or "none"); paste the report into the chat that wrote the tests. There each
 finding is fixed and the command run again, or answered with the check that holds it.
+
+**A big plan** — more than 8 ready scenarios — gets its own review before the confirm: `/review <plan path>`,
+the plan alone. The reviewer holds it to the plan rules and the cases (owners, routes, data, whole cases, nothing
+lost); each finding is fixed or answered, and the plan's header gets `- Review: independent <date> — …`. The gate
+fails such a plan without it, or changed after that date.
 
 ### Heal: `/heal`
 

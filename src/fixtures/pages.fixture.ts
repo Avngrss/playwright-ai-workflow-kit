@@ -25,7 +25,11 @@ export interface AnswerExpected<T> {
   query?: Record<string, string>;
   /** Fields the answer holds, as `toMatchObject` — the case's own data: what the test made, or values the case states (a total of 0); a list answer takes a list (`expect.arrayContaining([...])` for a part of it). */
   has?: Record<string, unknown> | unknown[];
-  /** An app's named rule over the answer (src/assertions/<app>/) — for values only the stand knows; a rule needing arguments is built by a call: `check: paidAsInBilling(billing)`. */
+  /**
+   * An app's named rule over the answer (src/assertions/<app>/) — for values only the stand knows; a rule needing
+   * arguments is built by a call: `check: paidAsInBilling(billing)`. It returns what breaks it — a list, empty when it
+   * holds (or "none") — and the call fails with it; a rule may throw instead.
+   */
   check?: (answer: T) => unknown;
 }
 
@@ -67,6 +71,9 @@ async function labelled(words: string, check: () => unknown): Promise<void> {
   }
 }
 
+/** A rule holds when it returns nothing, true, "none" or an empty list — anything else is what breaks it. */
+const holds = (found: unknown): boolean => found === undefined || found === true || found === "none" || (Array.isArray(found) && found.length === 0);
+
 /** What the action sent first (a wrong request explains a wrong answer), then the answer's status, fields and rule. */
 async function checkedAnswer<T>(response: Response, expected: AnswerExpected<T> = {}): Promise<T> {
   const request = response.request();
@@ -76,7 +83,13 @@ async function checkedAnswer<T>(response: Response, expected: AnswerExpected<T> 
   if (expected.query) expect(Object.fromEntries(new URL(request.url()).searchParams) as unknown, `${SENT_CHECK} ${label}`).toMatchObject(expected.query);
   const answer = await expectAnswer<T>(response, expected.status ?? 200);
   if (expected.has) expect(answer as unknown, `${ANSWER_CHECK} ${label}`).toMatchObject(expected.has);
-  if (expected.check) await labelled(`${ANSWER_CHECK} ${label}`, () => expected.check?.(answer));
+  const rule = expected.check;
+  if (rule) {
+    await labelled(`${ANSWER_CHECK} ${label}`, async () => {
+      const found = await rule(answer);
+      if (!holds(found)) expect(found, `${rule.name || "The rule"} — what breaks it`).toEqual(Array.isArray(found) ? [] : typeof found === "boolean" ? true : "none");
+    });
+  }
   return answer;
 }
 

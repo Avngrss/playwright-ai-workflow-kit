@@ -41,7 +41,9 @@ sections its changed lines meet.
 - What a route names is what the test checks — the action's answer by `answerTo(…, { has | check })`, the
   screen by the token's kind — nothing more, nothing less; never a second read of what the answer held
   (`plans.md` §Routes). A stand-data rule says what the server could get wrong; one restating the answer
-  ("the list has items") checks nothing.
+  ("the list has items") checks nothing. A `check:` rule either throws (an `expect…` helper) or returns what
+  breaks it — a list, empty when it holds — and `answerTo` fails with that list; a spec calling such a rule
+  itself expects the list empty: `expect(totalsAddUp(answer), "totals").toEqual([])`.
 
 ## Locators
 

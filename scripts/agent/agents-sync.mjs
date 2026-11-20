@@ -161,11 +161,11 @@ function reviewerAgent(text, source) {
     "---",
     "name: reviewer",
     // Quoted: a " #" would start a YAML comment.
-    'description: "Independent review of tests this kit\'s agent wrote, against their manual cases — a fresh context that never saw how they were written. Use for the verify skill\'s full review (§6.2), given `<plan path> #<n> … — <spec paths>`."',
+    'description: "Independent review of tests this kit\'s agent wrote, against their manual cases, or of a big plan before its confirm — a fresh context that never saw how they were written. Use for the verify skill\'s full review (§6.2), given `<plan path> #<n> … — <spec paths>`, and for a plan\'s review (plans.md §Confirm before any code), given `<plan path>` alone."',
     "---",
     "",
     "You are the reviewer subagent: your context is fresh, so you are the new chat the brief below asks for. You are given",
-    "`<plan path> #<n> … — <spec paths>`; answer with the report the brief describes.",
+    "`<plan path> #<n> … — <spec paths>`, or a plan path alone (a plan's review); answer with the report the brief describes.",
     "",
   ].join("\n");
   return marked(`${head}\n${withoutFront(text)}`, source);

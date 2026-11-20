@@ -8,7 +8,10 @@
  * step's expect line. What the agent decides stays the template's <…> and choices — owner and why
  * (unless given), route, data, rules, cleanup — so spec:draft refuses the block until the agent fills
  * it from the live check. A value a step names stays the source's words: rule or example is the plan's
- * call (its Data: line), never this command's.
+ * call (its Data: line), never this command's. Two lines of its own: `- Answer steps:` when a step reads
+ * the server's answer itself (DevTools, a response) — who proves it is the agent's to say, the gate holds
+ * it — and, last, `- Drafted from: <the source file>`, which the gate asks of every new TMS case block in a
+ * plan built from TMS cases and reads to find those steps however the block retells them.
  *
  *   npm run plan:block -- <plan> --case <file.json> [--scenario S<k> --title "<what it proves>" [--take <n>[-<m>]]] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>]
  *   npm run plan:block -- <plan> --bug <file.json> [--title "<the outcome it expects>"] [--owner API|UI|E2E] [--why "<≤ 8 words>"] [--role <slug>]
@@ -26,7 +29,7 @@
  *
  *   --case      the block proves the case: title "<id> · <its title>", TMS: <id>, Why: case <id>
  *   --scenario  one scenario of the case (docs/Layer Routing Algorithm.md §18): title
- *               "<id> · S<k> · <--title>"; --take its steps n..m of the case, renumbered from 1, Why:
+ *               "<id> · S<k> · <--title>"; --take its steps n..m of the case, keeping their numbers, Why:
  *               "case <id> steps n–m"
  *   --bug       the block proves the expected result the bug names: its steps, its expected result as
  *               the last step's expect, TMS: not yet documented, Why: bug <id>, Rules: the ticket; its
@@ -39,7 +42,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { caseIds, scenarioOf } from "../gate/plans.mjs";
+import { ANSWER_STEP, caseIds, numberedLines, scenarioOf } from "../gate/plans.mjs";
 import { PLACEHOLDER, USAGE, addTag, appendBlock, posix, stopper } from "./plan-block.mjs";
 
 const stop = stopper("plan:block");
@@ -78,18 +81,8 @@ function parse(argv) {
   return call;
 }
 
-/** "1. …\n2. …" → [{ n, text }], a line without a number joining the item above; undefined when the first line has no number. */
-function numbered(text) {
-  const items = [];
-  for (const line of String(text).split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    const item = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
-    if (item) items.push({ n: Number(item[1]), text: item[2] });
-    else if (items.length) items.at(-1).text += ` ${line}`;
-    else return undefined;
-  }
-  return items.map(({ n, text: words }) => ({ n, text: one(words) }));
-}
+/** "1. …\n2. …" → [{ n, text }] — the gate reads a saved source the same way (plans.mjs numberedLines). */
+const numbered = numberedLines;
 
 /** The source file, checked against its shape: { id, title, precondition, priority, severity, steps: [{ action, expected }], actual }. */
 function readSource(file, kind) {
@@ -200,6 +193,8 @@ export function main(argv) {
       const [first, last] = [Number(from), Number(to)];
       if (first < 1 || last < first || last > steps.length) stop(`--take ${call.take}: the case has steps 1–${steps.length}`);
       steps = steps.slice(first - 1, last);
+      // The scenario keeps the case's numbers (docs/Layer Routing Algorithm.md §7).
+      draft.firstStep = first;
       basis = `case ${source.id} ${first === last ? `step ${first}` : `steps ${first}–${last}`}`;
     }
     Object.assign(draft, { ids: [source.id], title: call.scenario ? `${call.scenario} · ${call.title}` : source.title, basis });
@@ -214,7 +209,15 @@ export function main(argv) {
     });
     notes.push(`! While ${source.id} is open its test fails at its step — then a row in specs/known-bugs.md (agents/rules/plans.md §Known bugs); fixed, it passes`);
   }
-  Object.assign(draft, { steps: steps.map(({ action }) => action), expects: steps.map(({ expected }) => expected) });
+  // A TMS case's block names its source (the gate reads it); a bug's ticket is the tracker's, never stamped.
+  Object.assign(draft, { steps: steps.map(({ action }) => action), expects: steps.map(({ expected }) => expected), drafted: kind === "case" ? source.shown : undefined });
+  // A step reading the server's answer itself (DevTools, a response): who proves it is the agent's to say — the gate holds it.
+  draft.answerSteps = steps.flatMap(({ action, expected }, index) => (ANSWER_STEP.test(`${action} ${expected ?? ""}`) ? [(draft.firstStep ?? 1) + index] : []));
+  if (draft.answerSteps.length) {
+    notes.push(
+      `! Step(s) ${draft.answerSteps.join(", ")} read the server's answer itself — on "- Answer steps:" say who proves them: "API: the answer's own fields" (an API scenario of the case) or "UI check: the answer against the screen" (this block listens to it) (agents/rules/plans.md §Layers)`,
+    );
+  }
 
   const [number] = caseIds(String(source.id));
   const held = (blocks) => {
